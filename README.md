@@ -11,6 +11,11 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
+Make sure to run all following commands within the virtual env. You can always enter it through **source .venv/bin/activate**
+in the top directory of our trustpoint project. To leave it use **deactivate**.
+
+(.venv) should be displayed in the beginning of the cli prompt to indicate that you are indeed within the virtual env.
+
 ### Setting up the DB and SuperUser
 
 Firstly, we need to create a sqlite database for development, migrate / create the required tables and create
@@ -28,5 +33,5 @@ python manage.py createsuperuser
 python manage.py runserver
 ```
 
-Then you can access the GUI through localhost:8000.
+You can then access the GUI through localhost:8000.
 
