@@ -1,0 +1,121 @@
+{% load static %}
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Trustpoint</title>
+        <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+        <link rel="stylesheet" href="{% static 'css/trustpoint.css' %}">
+        <link rel="stylesheet" href="{% static 'css/sysconf.css' %}">
+        <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
+
+        <style>
+
+        </style>
+    </head>
+
+    <body>
+
+    <nav class="nav-header navbar bg-dark border-bottom border-body tp-px-2" data-bs-theme="dark">
+        <a class="navbar-brand tp-primary" href="#">TrustPoint</a>
+
+        <form class="d-flex" role="search">
+            <button class="btn btn-mute" type="submit">Logout</button>
+        </form>
+    </nav>
+    
+    
+    <div class="container-fluid p-0 m-0 d-flex">
+        <aside class="d-flex flex-nowrap">
+            <div class="flex-shrink-0 py-3 tp-px-2 bg-tp-dark">
+    
+                <ul class="list-unstyled ps-0">
+                    <li class="mb-1">
+                        <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'home' %}tp-primary{% endif %}"
+                                data-bs-toggle="collapse" data-bs-target="#home-collapse" aria-expanded="{% if page_category == 'home' %}true{% else %}false{% endif %}">
+                            Home
+                        </button>
+                        <div class="collapse {% if page_category == 'home' %}show{% endif %}" id="home-collapse">
+                            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                                <li><a href="{% url 'home-dashboard' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'home' and page_name == 'dashboard' %}tp-primary{% endif %}">Dashboard</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+    
+                    <li class="mb-1">
+                        <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'devices' %}tp-primary{% endif %}"
+                                data-bs-toggle="collapse" data-bs-target="#devices-collapse" aria-expanded="{% if page_category == 'devices' %}true{% else %}false{% endif %}">
+                            Devices
+                        </button>
+                        <div class="collapse {% if page_category == 'devices' %}show{% endif %}" id="devices-collapse">
+                            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                                <li><a href="{% url 'devices-devices' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'devices' and page_name == 'devices' %}tp-primary{% endif %}">Devices</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+                    <li class="mb-1">
+                        <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'onboarding' %}tp-primary{% endif %}"
+                                data-bs-toggle="collapse" data-bs-target="#onboarding-collapse" aria-expanded="{% if page_category == 'onboarding' %}true{% else %}false{% endif %}">
+                            Onboarding
+                        </button>
+                        <div class="collapse {% if page_category == 'onboarding' %}show{% endif %}" id="onboarding-collapse">
+                            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                                <li><a href="{% url 'onboarding-manual' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'onboarding' and page_name == 'manual' %}tp-primary{% endif %}">Manual Onboarding</a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+
+    
+                    <li class="mb-1">
+                        <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'pki' %}tp-primary{% endif %}"
+                                data-bs-toggle="collapse" data-bs-target="#pki-collapse" aria-expanded="{% if page_category == 'pki' %}true{% else %}false{% endif %}">
+                            PKI
+                        </button>
+                        <div class="collapse {% if page_category == 'pki' %}show{% endif %}" id="pki-collapse">
+                            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                                <li><a href="{% url 'pki-ep' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'pki' and page_name == 'endpoint_profiles' %}tp-primary{% endif %}">Endpoint
+                                    Profiles</a></li>
+                                <li><a href="{% url 'pki-ca' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'pki' and page_name == 'certificate_authorities' %}tp-primary{% endif %}">Certificate
+                                    Authorities</a></li>
+                            </ul>
+                        </div>
+                    </li>
+    
+                    <li class="mb-1">
+                        <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'sysconf' %}tp-primary{% endif %}"
+                                data-bs-toggle="collapse" data-bs-target="#sysconf-collapse" aria-expanded="{% if page_category == 'sysconf' %}true{% else %}false{% endif %}">
+                            SysConf
+                        </button>
+                        <div class="collapse {% if page_category == 'sysconf' %}show{% endif %}" id="sysconf-collapse">
+                            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
+                                <li><a href="{% url 'sysconf-logging' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'logging' %}tp-primary{% endif %}">Logging</a>
+                                </li>
+                                <li><a href="{% url 'sysconf-network' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'network' %}tp-primary{% endif %}">Network</a>
+                                </li>
+                                <li><a href="{% url 'sysconf-ntp' %}"
+                                       class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'ntp' %}tp-primary{% endif %}">NTP</a></li>
+                                <li><a href="{% url 'sysconf-ssh' %}"
+                                       class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'ssh' %}tp-primary{% endif %}">SSH</a></li>
+                            </ul>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+    
+        <main class="p-5 flex-grow-1">
+            {% block content %}{% endblock content %}
+        </main>
+    </div>
+        <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+        <script src="{% static 'js/trustpoint.js' %}"></script>
+        <script src="{% static 'js/sysconf.js' %}"></script>
+        <script src="{% static 'js/onboarding.js' %}"></script>
+    </body>
+
+</html>
