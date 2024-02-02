@@ -16,7 +16,7 @@ in the top directory of our trustpoint project. To leave it use **deactivate**.
 
 (.venv) should be displayed in the beginning of the cli prompt to indicate that you are indeed within the virtual env.
 
-### Setting up the DB and SuperUser
+## Setting up the DB and SuperUser
 
 Firstly, we need to create a sqlite database for development, migrate / create the required tables and create
 a superuser.  The superuser credentials can later be used to access the admin page: localhost:8000/admin/.
@@ -27,7 +27,7 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
-#### Running the development server
+## Running the development server
 
 ```bash
 python manage.py runserver
