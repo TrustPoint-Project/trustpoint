@@ -78,6 +78,7 @@ def add_ca_local_file(request):
                 )
 
                 local_issuing_ca = LocalIssuingCa(p12=p12_memory_uploaded_file)
+                # TODO: map key_type and curve correctly
                 issuing_ca = IssuingCa(
                     unique_name=unique_name,
                     subject=normalized_p12.subject,
