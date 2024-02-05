@@ -1,6 +1,9 @@
 asgiref==3.7.2
+cffi==1.16.0
 crispy-bootstrap5==2023.10
+cryptography==42.0.2
 Django==5.0.1
 django-crispy-forms==2.1
 django-tables2==2.7.0
+pycparser==2.21
 sqlparse==0.4.4

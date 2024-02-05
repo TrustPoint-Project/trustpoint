@@ -29,7 +29,7 @@
 
             </div>
 
-            <form method="POST" class="tp-main-form" enctype="multipart/form-data" id="p12-file-form">
+            <form method="POST" class="tp-main-form text-start" enctype="multipart/form-data" id="p12-file-form">
                 {% csrf_token %}
                 <fieldset class="form-group tp-form-group">
 
@@ -39,7 +39,7 @@
                 </fieldset>
                 <hr>
                 <div class="form-group pt-2">
-                    <button class="btn btn-primary w-100 mt-1" type="submit">Upload Issuing CA</button>
+                    <button class="btn btn-primary w-100 mt-1" type="submit" name="p12-file-form">Upload Issuing CA</button>
                 </div>
             </form>
 
@@ -53,7 +53,7 @@
                 </fieldset>
                 <hr>
                 <div class="form-group pt-2">
-                    <button class="btn btn-primary w-100 mt-1" type="submit">Upload Issuing CA</button>
+                    <button class="btn btn-primary w-100 mt-1" type="submit" name="pem-file-form">Upload Issuing CA</button>
                 </div>
             </form>
 
