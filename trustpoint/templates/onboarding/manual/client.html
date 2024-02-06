@@ -1,0 +1,23 @@
+{% extends 'base/base.html' %}
+{% load crispy_forms_filters %}
+{% block content %}
+    <div class="card card-main text-center">
+        <div class="card-header d-flex">
+            <h1>Onboarding with Trustpoint Client</h1>
+        </div>
+        <div class="card-body tp-main-centered pt-3 pb-4">
+            <h2>Trustpoint Client Download</h2>
+            todo
+            <hr>
+            <h2>Trustpoint Client Provisioning command</h2>
+            <pre> 
+                <code> 
+trustpoint-client provision --otp {{ otp }} --salt {{ salt }} --url {{ url }} --tpurl {{ tpurl }}
+                </code> 
+            </pre> 
+        </div>
+        <div class="card-footer text-body-secondary">
+
+        </div>
+    </div>
+{% endblock content %}
