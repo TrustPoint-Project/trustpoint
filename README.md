@@ -22,6 +22,7 @@ Firstly, we need to create a sqlite database for development, migrate / create t
 a superuser.  The superuser credentials can later be used to access the admin page: localhost:8000/admin/.
 
 ```bash
+cd trustpoint
 python manage.py makemigrations
 python manage.py migrate
 python manage.py createsuperuser
