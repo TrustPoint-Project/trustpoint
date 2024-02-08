@@ -18,10 +18,12 @@ from django.urls import reverse_lazy
 from django.views.generic.edit import DeleteView
 from django.views.generic.detail import DetailView
 from django.core.files.storage import default_storage
+from django.views.generic.base import RedirectView
 
 
-def pki(request):
-    return redirect('pki-endpoint-profiles')
+class IndexView(RedirectView):
+    permanent = True
+    pattern_name = 'pki:endpoint_profiles'
 
 
 # Create your views here.
@@ -35,8 +37,8 @@ def endpoint_profiles(request):
 
 class IssuingCaDeleteView(SuccessMessageMixin, DeleteView):
     model = IssuingCa
-    success_url = reverse_lazy('pki-issuing_ca')
-    template_name = 'pki/issuing_ca/confirm_delete.html'
+    success_url = reverse_lazy('pki-issuing_cas')
+    template_name = 'pki/issuing_cas/confirm_delete.html'
 
     def get_success_message(self, cleaned_data):
         return f'Success! Issuing CA - {self.object.unique_name} - deleted successfully!.'
@@ -44,7 +46,7 @@ class IssuingCaDeleteView(SuccessMessageMixin, DeleteView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_category'] = 'pki'
-        context['page_name'] = 'issuing_ca'
+        context['page_name'] = 'issuing_cas'
         return context
 
 
@@ -64,7 +66,7 @@ def bulk_delete_issuing_cas(request, issuing_cas):
         objects = IssuingCa.objects.filter(pk__in=pks)
         context['objects'] = objects
 
-        return render(request, 'pki/issuing_ca/confirm_delete.html', context=context)
+        return render(request, 'pki/issuing_cas/confirm_delete.html', context=context)
 
     if request.method == 'POST':
         objects = IssuingCa.objects.filter(pk__in=pks)
@@ -74,9 +76,9 @@ def bulk_delete_issuing_cas(request, issuing_cas):
             msg = 'Success! All selected Issuing CAs deleted!.'
         objects.delete()
         messages.add_message(request, messages.SUCCESS, msg)
-        return redirect('pki-issuing_ca')
+        return redirect('pki:issuing_cas')
 
-    return render(request, 'pki/issuing_ca/confirm_delete.html', context=context)
+    return render(request, 'pki/issuing_cas/confirm_delete.html', context=context)
 
 
 class IssuingCaDetailView(DetailView):
@@ -86,38 +88,38 @@ class IssuingCaDetailView(DetailView):
 class IssuingCaListView(SingleTableView):
     model = IssuingCa
     table_class = IssuingCaTable
-    template_name = 'pki/issuing_ca/issuing_ca.html'
+    template_name = 'pki/issuing_cas/issuing_cas.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['page_category'] = 'pki'
-        context['page_name'] = 'issuing_ca'
+        context['page_name'] = 'issuing_cas'
         return context
 
 
 def issuing_ca_detail(request, pk):
     object_ = IssuingCa.objects.filter(pk=pk).first()
     if not object_:
-        return redirect('pki-issuing_ca')
+        return redirect('pki:issuing_cas')
 
     with default_storage.open(object_.local_issuing_ca.p12.name, 'rb') as f:
         certs_json = CredentialUploadHandler.parse_and_normalize_p12(f.read()).full_cert_chain_as_json()
 
     context = {
         'page_category': 'pki',
-        'page_name': 'issuing_ca',
+        'page_name': 'issuing_cas',
         'unique_name': object_.unique_name,
         'certs': certs_json
     }
 
-    return render(request, 'pki/issuing_ca/details.html', context=context)
+    return render(request, 'pki/issuing_cas/details.html', context=context)
 
 
 # TODO: create decorator for unexpected exception handling
 def add_issuing_ca_local_file(request):
     context = {
         'page_category': 'pki',
-        'page_name': 'issuing_ca',
+        'page_name': 'issuing_cas',
     }
 
     if request.method == 'POST':
@@ -139,7 +141,7 @@ def add_issuing_ca_local_file(request):
                         'Failed to parse P12 file. Invalid password or PKCS#12 data.')
                     context['p12_file_form'] = p12_file_form
                     context['pem_file_form'] = IssuingCaLocalPemFileForm()
-                    return render(request, 'pki/issuing_ca/add/local_file.html', context=context)
+                    return render(request, 'pki/issuing_cas/add/local_file.html', context=context)
 
                 unique_name = p12_file_form.cleaned_data.get('unique_name')
                 if IssuingCa.objects.filter(unique_name=unique_name).exists():
@@ -147,7 +149,7 @@ def add_issuing_ca_local_file(request):
                         'Unique name is already taken. Try another one.')
                     context['p12_file_form'] = p12_file_form
                     context['pem_file_form'] = IssuingCaLocalPemFileForm()
-                    return render(request, 'pki/issuing_ca/add/local_file.html', context=context)
+                    return render(request, 'pki/issuing_cas/add/local_file.html', context=context)
 
                 p12_bytes_io = io.BytesIO(normalized_p12.public_bytes)
                 p12_memory_uploaded_file = InMemoryUploadedFile(
@@ -180,7 +182,7 @@ def add_issuing_ca_local_file(request):
                 msg = f'Success! Issuing CA - {unique_name} - is now available.'
                 messages.add_message(request, messages.SUCCESS, msg)
 
-                return redirect('pki-issuing_ca')
+                return redirect('pki:issuing_cas')
 
             # TODO: PEM import
             # TODO: Error handling
@@ -188,28 +190,28 @@ def add_issuing_ca_local_file(request):
     context['p12_file_form'] = IssuingCaLocalP12FileForm()
     context['pem_file_form'] = IssuingCaLocalPemFileForm()
 
-    return render(request, 'pki/issuing_ca/add/local_file.html', context=context)
+    return render(request, 'pki/issuing_cas/add/local_file.html', context=context)
 
 
 def add_issuing_ca_local_request(request):
     context = {
         'page_category': 'pki',
-        'page_name': 'issuing_ca'
+        'page_name': 'issuing_cas'
     }
-    return render(request, 'pki/issuing_ca/add/local_request.html', context=context)
+    return render(request, 'pki/issuing_cas/add/local_request.html', context=context)
 
 
 def add_issuing_ca_remote_est(request):
     context = {
         'page_category': 'pki',
-        'page_name': 'issuing_ca'
+        'page_name': 'issuing_cas'
     }
-    return render(request, 'pki/issuing_ca/add/remote_est.html', context=context)
+    return render(request, 'pki/issuing_cas/add/remote_est.html', context=context)
 
 
 def add_issuing_ca_remote_cmp(request):
     context = {
         'page_category': 'pki',
-        'page_name': 'issuing_ca'
+        'page_name': 'issuing_cas'
     }
-    return render(request, 'pki/issuing_ca/add/remote_cmp.html', context=context)
+    return render(request, 'pki/issuing_cas/add/remote_cmp.html', context=context)

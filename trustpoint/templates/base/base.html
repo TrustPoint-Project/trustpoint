@@ -38,7 +38,7 @@
                         </button>
                         <div class="collapse {% if page_category == 'home' %}show{% endif %}" id="home-collapse">
                             <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                                <li><a href="{% url 'home-dashboard' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'home' and page_name == 'dashboard' %}tp-primary{% endif %}">Dashboard</a>
+                                <li><a href="{% url 'home:dashboard' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'home' and page_name == 'dashboard' %}tp-primary{% endif %}">Dashboard</a>
                                 </li>
                             </ul>
                         </div>
@@ -51,7 +51,7 @@
                         </button>
                         <div class="collapse {% if page_category == 'devices' %}show{% endif %}" id="devices-collapse">
                             <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                                <li><a href="{% url 'devices-devices' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'devices' and page_name == 'devices' %}tp-primary{% endif %}">Devices</a>
+                                <li><a href="{% url 'devices:devices' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'devices' and page_name == 'devices' %}tp-primary{% endif %}">Devices</a>
                                 </li>
                             </ul>
                         </div>
@@ -78,9 +78,9 @@
                         </button>
                         <div class="collapse {% if page_category == 'pki' %}show{% endif %}" id="pki-collapse">
                             <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                                <li><a href="{% url 'pki-ep' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'pki' and page_name == 'endpoint_profiles' %}tp-primary{% endif %}">Endpoint
+                                <li><a href="{% url 'pki:endpoint_profiles' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'pki' and page_name == 'endpoint_profiles' %}tp-primary{% endif %}">Endpoint
                                     Profiles</a></li>
-                                <li><a href="{% url 'pki-issuing_ca' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'pki' and page_name == 'issuing_ca' %}tp-primary{% endif %}">Issuing CAs</a></li>
+                                <li><a href="{% url 'pki:issuing_cas' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'pki' and page_name == 'issuing_cas' %}tp-primary{% endif %}">Issuing CAs</a></li>
                             </ul>
                         </div>
                     </li>
@@ -92,13 +92,13 @@
                         </button>
                         <div class="collapse {% if page_category == 'sysconf' %}show{% endif %}" id="sysconf-collapse">
                             <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                                <li><a href="{% url 'sysconf-logging' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'logging' %}tp-primary{% endif %}">Logging</a>
+                                <li><a href="{% url 'sysconf:logging' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'logging' %}tp-primary{% endif %}">Logging</a>
                                 </li>
-                                <li><a href="{% url 'sysconf-network' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'network' %}tp-primary{% endif %}">Network</a>
+                                <li><a href="{% url 'sysconf:network' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'network' %}tp-primary{% endif %}">Network</a>
                                 </li>
-                                <li><a href="{% url 'sysconf-ntp' %}"
+                                <li><a href="{% url 'sysconf:ntp' %}"
                                        class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'ntp' %}tp-primary{% endif %}">NTP</a></li>
-                                <li><a href="{% url 'sysconf-ssh' %}"
+                                <li><a href="{% url 'sysconf:ssh' %}"
                                        class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'ssh' %}tp-primary{% endif %}">SSH</a></li>
                             </ul>
                         </div>

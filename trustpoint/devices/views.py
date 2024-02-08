@@ -1,11 +1,13 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
+from django.views.generic.base import RedirectView
+
+
+class IndexView(RedirectView):
+    permanent = True
+    pattern_name = 'devices:devices'
 
 
 def devices(request):
-    return redirect('devices-devices')
-
-
-def devices_devices(request):
     context = {
         'page_category': 'devices',
         'page_name': 'devices'

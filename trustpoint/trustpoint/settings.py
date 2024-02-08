@@ -31,7 +31,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'dashboard.apps.DashboardConfig',
+    'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
     'onboarding.apps.OnboardingConfig',
     'pki.apps.CasConfig',

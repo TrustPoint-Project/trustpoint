@@ -56,14 +56,14 @@
                                         <h2>Choose PKI Protocol</h2>
                                         <hr class="local-issuing-ca">
 
-                                        <input class="form-check-input cursor remote-issuing-ca" type="radio" name="remote-issuing-ca" id="remote-issuing-ca-est" value="{% url 'pki-issuing_ca-add-remote-est' %}" checked>
+                                        <input class="form-check-input cursor remote-issuing-ca" type="radio" name="remote-issuing-ca" id="remote-issuing-ca-est" value="{% url 'pki:issuing_cas-add_remote_est' %}" checked>
                                         <label class="form-check-label cursor remote-issuing-ca" for="remote-issuing-ca-est" data-bs-toggle="tooltip"
                                                data-bs-placement="right"
                                                title="Allows to import the Issuing CA from file, e.g. from PKCS#12 or PEM files.">
                                             EST - Enrollment over Secure Transport
                                         </label>
 
-                                        <input class="form-check-input cursor remote-issuing-ca" type="radio" name="remote-issuing-ca" id="remote-issuing-ca-cmp" value="{% url 'pki-issuing_ca-add-remote-cmp' %}">
+                                        <input class="form-check-input cursor remote-issuing-ca" type="radio" name="remote-issuing-ca" id="remote-issuing-ca-cmp" value="{% url 'pki:issuing_cas-add_remote_cmp' %}">
                                         <label class="form-check-label cursor remote-issuing-ca" for="remote-issuing-ca-cmp" data-bs-toggle="tooltip"
                                                data-bs-placement="right"
                                                title="Generates a key-pair and requests an Issuing CA Certificate, e.g. using EST or CMP.">
@@ -78,14 +78,14 @@
                                         <h2>Choose Import Method</h2>
                                         <hr class="local-issuing-ca">
 
-                                        <input class="form-check-input cursor local-issuing-ca" type="radio" name="local-issuing-ca" id="local-issuing-ca-import-files" value="{% url 'pki-issuing_ca-add-local-file' %}" checked>
+                                        <input class="form-check-input cursor local-issuing-ca" type="radio" name="local-issuing-ca" id="local-issuing-ca-import-files" value="{% url 'pki:issuing_cas-add_local_file' %}" checked>
                                         <label class="form-check-label cursor local-issuing-ca" for="local-issuing-ca-import-files" data-bs-toggle="tooltip"
                                                data-bs-placement="right"
                                                title="Allows to import the Issuing CA from file, e.g. from PKCS#12 or PEM files.">
                                             Import Issuing CA from file
                                         </label>
 
-                                        <input class="form-check-input cursor local-issuing-ca" type="radio" name="local-issuing-ca" id="local-issuing-ca-request" value="{% url 'pki-issuing_ca-add-local-request' %}">
+                                        <input class="form-check-input cursor local-issuing-ca" type="radio" name="local-issuing-ca" id="local-issuing-ca-request" value="{% url 'pki:issuing_cas-add_local_request' %}">
                                         <label class="form-check-label cursor local-issuing-ca" for="local-issuing-ca-request" data-bs-toggle="tooltip"
                                                data-bs-placement="right"
                                                title="Generates a key-pair and requests an Issuing CA Certificate, e.g. using EST or CMP.">

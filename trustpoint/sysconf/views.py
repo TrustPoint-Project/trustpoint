@@ -1,8 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
+from django.views.generic.base import RedirectView
 
 
-def index(request):
-    return redirect('sysconf-logging')
+class IndexView(RedirectView):
+    permanent = True
+    pattern_name = 'sysconf:logging'
 
 
 # Create your views here.
