@@ -42,8 +42,8 @@ class IssuingCa(models.Model):
     key_type = models.CharField(max_length=3, choices=KeyType)
     key_size = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(65536)])
     curve = models.CharField(max_length=10, choices=Curves, null=True, blank=True, default=None)
-    localization = models.CharField(max_length=1, choices=Localization, verbose_name='Localization')
-    config_type = models.CharField(max_length=10, choices=ConfigType, verbose_name='Configuration Type')
+    localization = models.CharField(max_length=1, choices=Localization)
+    config_type = models.CharField('Configuration Type', max_length=10, choices=ConfigType)
 
     created_at = models.DateTimeField(default=timezone.now)
 

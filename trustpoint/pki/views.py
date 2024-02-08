@@ -113,8 +113,6 @@ def issuing_ca_detail(request, pk):
     return render(request, 'pki/issuing_ca/details.html', context=context)
 
 
-
-
 # TODO: create decorator for unexpected exception handling
 def add_issuing_ca_local_file(request):
     context = {
