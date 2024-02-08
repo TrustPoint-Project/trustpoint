@@ -1,0 +1,35 @@
+{% extends 'base/base.html' %}
+
+{% block content %}
+
+    <form method="POST">
+        {% csrf_token %}
+        <div class="card card-main text-center">
+            <div class="card-header d-flex">
+                <h1>Details - Issuing CA - {{ unique_name }}</h1>
+            </div>
+            <div class="card-body tp-main-centered pt-3 pb-4">
+
+                {% for cert in certs %}
+
+                    <h2 class="{% if not forloop.first %}pt-5{% endif %} text-start">{{ cert.heading }}</h2>
+                    <hr>
+                    <ul class="list-group list-group-flush text-start tp-form-grid-2-2">
+                        {% for key, val in cert.items %}
+                            {% if key != 'heading' %}
+                                <li class="list-group-item"><span><strong>{{ key }}:</strong></span><span>{{ val }}</span></li>
+                            {% endif %}
+                        {% endfor %}
+                    </ul>
+                {% endfor %}
+
+                <div class="tp-form-btn-group tp-form-btn-group mt-5">
+                    <a href="{% url 'pki-issuing_ca' %}" class="btn btn-secondary">Cancel</a>
+                    <input type="submit" class="btn btn-primary" value="Export">
+                </div>
+
+            </div>
+        </div>
+    </form>
+
+{% endblock content %}

@@ -7,7 +7,7 @@ const localIssuingCaOptions = document.getElementById('tp-form-local-issuing-ca'
 const localIssuingCaRadio = document.getElementById('local-issuing-ca-radio');
 const localIssuingCaImportFilesRadio = document.getElementById('local-issuing-ca-import-files');
 const localIssuingCaRequestRadio = document.getElementById('local-issuing-ca-request');
-if (localIssuingCaOptions != null) {
+if (localIssuingCaOptions) {
     localIssuingCaRadio.addEventListener('change', certAuthRadioFormChange);
 }
 
@@ -15,7 +15,7 @@ const remoteIssuingCaOptions = document.getElementById('tp-form-remote-issuing-c
 const remoteIssuingCaRadio = document.getElementById('remote-issuing-ca-radio');
 const remoteIssuingCaEstRadio = document.getElementById('remote-issuing-ca-est');
 const remoteIssuingCaCmpRadio = document.getElementById('remote-issuing-ca-cmp');
-if (remoteIssuingCaRadio != null) {
+if (remoteIssuingCaRadio) {
     remoteIssuingCaRadio.addEventListener('change', certAuthRadioFormChange);
 }
 
@@ -37,7 +37,7 @@ function certAuthRadioFormChange() {
 }
 
 const modal = document.getElementById('addCaModal');
-if (modal != null) {
+if (modal) {
     modal.addEventListener('hidden.bs.modal', resetIssuingCaRadios);
 }
 
@@ -64,13 +64,13 @@ function redirectAddIssuingCa() {
 
 const p12FileForm = document.getElementById('p12-file-form');
 const p12FileRadio = document.getElementById('p12-file-radio');
-if (p12FileRadio != null) {
+if (p12FileRadio) {
     p12FileRadio.addEventListener('change', chooseFileFormatForm);
 }
 
 const pemFileForm = document.getElementById('pem-file-form');
 const pemFileRadio = document.getElementById('pem-file-radio');
-if (pemFileRadio != null) {
+if (pemFileRadio) {
     pemFileRadio.addEventListener('change', chooseFileFormatForm);
 }
 
@@ -81,5 +81,57 @@ function chooseFileFormatForm() {
     } else if (pemFileRadio.checked) {
         p12FileForm.hidden = true;
         pemFileForm.hidden = false;
+    }
+}
+// ---------------------------------------- Table Checkbox Column ----------------------------------------
+
+const checkboxColumn = document.querySelector('#checkbox-column > input');
+const checkboxes = document.querySelectorAll('.row_checkbox > input');
+const deleteSelectedBtn = document.getElementById('tp-table-delete-selected');
+const exportSelectedBtn = document.getElementById('tp-table-export-selected');
+
+if (checkboxColumn && deleteSelectedBtn && exportSelectedBtn) {
+    checkboxColumn.addEventListener('change', toggleAllCheckboxes);
+    deleteSelectedBtn.addEventListener('click', deleteSelected);
+    exportSelectedBtn.addEventListener('click', exportSelected);
+}
+
+function toggleAllCheckboxes() {
+    if (checkboxColumn.checked) {
+        checkboxes.forEach(function(el) {
+            el.checked = true;
+        });
+    } else {
+        checkboxes.forEach(function(el) {
+            el.checked = false;
+        });
+    }
+}
+
+function deleteSelected() {
+    let url_path = 'delete/'
+    let at_least_one_checked = false;
+    checkboxes.forEach(function(el) {
+        if (el.checked) {
+            url_path += el.value + '/'
+            at_least_one_checked = true;
+        }
+    });
+    if (at_least_one_checked === true) {
+        window.location.href = url_path;
+    }
+}
+
+function exportSelected() {
+    let url_path = 'export/'
+    let at_least_one_checked = false;
+    checkboxes.forEach(function(el) {
+        if (el.checked) {
+            url_path += el.value + '/'
+            at_least_one_checked = true;
+        }
+    });
+    if (at_least_one_checked === true) {
+        window.location.href = url_path;
     }
 }

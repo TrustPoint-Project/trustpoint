@@ -23,28 +23,41 @@ class IssuingCa(models.Model):
         SECP256R1 = 'SECP256R1', _('SECP256R1')
         SECP384R1 = 'SECP384R1', _('SECP384R1')
 
+    class Localization(models.TextChoices):
+        L = 'L', _('Local')
+        R = 'R', _('Remote')
+
+    class ConfigType(models.TextChoices):
+        F_P12 = 'F_P12', _('File Import - PKCS#12')
+        F_PEM = 'F_PEM', _('File Import - PEM')
+
     unique_name = models.CharField(
         max_length=100, validators=[MinLengthValidator(6), validate_isidentifer], unique=True)
 
-    # since the certificate is not an EE but an CA certificate, the subject must not be None
-    subject = models.CharField(max_length=1024)
-    issuer = models.CharField(max_length=1024)
+    common_name = models.CharField(max_length=65536, null=True, blank=True)
+    root_common_name = models.CharField(max_length=65536, null=True, blank=True)
     not_valid_before = models.DateTimeField()
     not_valid_after = models.DateTimeField()
-
-    root_subject = models.CharField(max_length=1024)
-    chain_not_valid_before = models.DateTimeField()
-    chain_not_valid_after = models.DateTimeField()
 
     key_type = models.CharField(max_length=3, choices=KeyType)
     key_size = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(65536)])
     curve = models.CharField(max_length=10, choices=Curves, null=True, blank=True, default=None)
+    localization = models.CharField(max_length=1, choices=Localization, verbose_name='Localization')
+    config_type = models.CharField(max_length=10, choices=ConfigType, verbose_name='Configuration Type')
+
+    created_at = models.DateTimeField(default=timezone.now)
 
     local_issuing_ca = models.OneToOneField(
         LocalIssuingCa,
         on_delete=models.CASCADE,
         primary_key=True
     )
+
+    def get_delete_url(self):
+        return f'delete/{self.pk}/'
+
+    def get_details_url(self):
+        return f'details/{self.pk}/'
 
     def __str__(self) -> str:
         return f'IssuingCa({self.unique_name}, {self.local_issuing_ca})'

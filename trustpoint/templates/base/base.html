@@ -9,7 +9,7 @@
         <link rel="stylesheet" href="{% static 'css/trustpoint.css' %}">
         <link rel="stylesheet" href="{% static 'css/sysconf.css' %}">
         <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
-        <link rel="icon" href="{% static 'img/favicon-32.png' %}">
+
         <style>
 
         </style>
@@ -24,12 +24,12 @@
             <button class="btn btn-mute" type="submit">Logout</button>
         </form>
     </nav>
-    
-    
+
+
     <div class="container-fluid p-0 m-0 d-flex">
         <aside class="d-flex flex-nowrap">
             <div class="flex-shrink-0 py-3 tp-px-2 bg-tp-dark">
-    
+
                 <ul class="list-unstyled ps-0">
                     <li class="mb-1">
                         <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'home' %}tp-primary{% endif %}"
@@ -43,7 +43,7 @@
                             </ul>
                         </div>
                     </li>
-    
+
                     <li class="mb-1">
                         <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'devices' %}tp-primary{% endif %}"
                                 data-bs-toggle="collapse" data-bs-target="#devices-collapse" aria-expanded="{% if page_category == 'devices' %}true{% else %}false{% endif %}">
@@ -70,7 +70,7 @@
                         </div>
                     </li>
 
-    
+
                     <li class="mb-1">
                         <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'pki' %}tp-primary{% endif %}"
                                 data-bs-toggle="collapse" data-bs-target="#pki-collapse" aria-expanded="{% if page_category == 'pki' %}true{% else %}false{% endif %}">
@@ -80,12 +80,11 @@
                             <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
                                 <li><a href="{% url 'pki-ep' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'pki' and page_name == 'endpoint_profiles' %}tp-primary{% endif %}">Endpoint
                                     Profiles</a></li>
-                                <li><a href="{% url 'pki-ca' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'pki' and page_name == 'certificate_authorities' %}tp-primary{% endif %}">Certificate
-                                    Authorities</a></li>
+                                <li><a href="{% url 'pki-issuing_ca' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'pki' and page_name == 'issuing_ca' %}tp-primary{% endif %}">Issuing CAs</a></li>
                             </ul>
                         </div>
                     </li>
-    
+
                     <li class="mb-1">
                         <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'sysconf' %}tp-primary{% endif %}"
                                 data-bs-toggle="collapse" data-bs-target="#sysconf-collapse" aria-expanded="{% if page_category == 'sysconf' %}true{% else %}false{% endif %}">
@@ -107,8 +106,15 @@
                 </ul>
             </div>
         </aside>
-    
+
         <main class="p-5 flex-grow-1">
+            {% if messages %}
+                <div class="messages tp-messages text-center">
+                    {% for message in messages %}
+                        <div{% if message.tags %} class="tp-message text-white bg-{{ message.tags }}"{% endif %}>{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
             {% block content %}{% endblock content %}
         </main>
     </div>

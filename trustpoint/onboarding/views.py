@@ -34,7 +34,7 @@ def onboarding_manual(request):
 
             # else:
                 context['onboarding_start_form'] = OnboardingStartForm()
-                return render(request, 'pki/certificate_authorities/add/local_file.html', context=context)
+                return render(request, 'pki/issuing_ca/add/local_file.html', context=context)
 
     # else:
 
