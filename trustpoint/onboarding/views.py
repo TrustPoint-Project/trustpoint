@@ -3,9 +3,12 @@ from .forms import OnboardingStartForm
 from devices.models import Device
 from django.http import HttpResponse
 from .cryptoBackend import CryptoBackend as crypt
+from django.views.generic.base import RedirectView
 
-def onboarding(request):
-    return redirect(request, 'onboarding-manual')
+
+class IndexView(RedirectView):
+    permanent = True
+    pattern_name = 'onboarding:manual'
 
 
 def onboarding_manual(request):
@@ -30,7 +33,7 @@ def onboarding_manual(request):
 
                 # TODO: error handling
                 onboardingDevice.save()
-                return redirect(request, 'onboarding-manual-client')
+                return redirect('onboarding:onboarding-manual-client')
 
             # else:
                 context['onboarding_start_form'] = OnboardingStartForm()
