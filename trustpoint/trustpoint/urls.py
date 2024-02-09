@@ -27,7 +27,8 @@ urlpatterns = [
     path('devices/', include('devices.urls')),
     path('onboarding/', include('onboarding.urls')),
     path('pki/', include('pki.urls')),
-    path('sysconf/', include('sysconf.urls'))
+    path('sysconf/', include('sysconf.urls')),
+    path('rest/provision/', include('onboarding.urls')) # TODO: consider a rest app, however makes it harder to keep onboarding references
 ]
 
 if settings.DEBUG:

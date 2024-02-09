@@ -4,7 +4,7 @@ from devices.models import Device
 from django.http import HttpResponse
 from .cryptoBackend import CryptoBackend as crypt
 from django.views.generic.base import RedirectView
-
+from .models import OnboardingProcess, onboardingProcesses
 
 class IndexView(RedirectView):
     permanent = True
@@ -31,9 +31,13 @@ def onboarding_manual(request):
                     name=name,
                 )
 
+                #p = OnboardingProcess(onboardingDevice)
+                #onboardingProcesses.append(p)
+
                 # TODO: error handling
-                onboardingDevice.save()
-                return redirect('onboarding:onboarding-manual-client')
+                #onboardingDevice.save()
+
+                return redirect('onboarding:onboarding-manual-client')#, p.id)
 
             # else:
                 context['onboarding_start_form'] = OnboardingStartForm()
@@ -55,3 +59,14 @@ def onboarding_manual_client(request):
         'url': crypt.random_character_string(6)
     }
     return render(request, 'onboarding/manual/client.html', context=context)
+
+def trust_store(request):
+    context = {
+        'page_category': 'onboarding',
+        'page_name': 'trust-store'
+    }
+    # get URL extension
+    uri_extension = request.path.split('/')[-1]
+    if (uri_extension == 'abcdef'):
+        return HttpResponse('It\'s a truststore baby.', status=200)
+    return HttpResponse('Invalid URI extension.', status=404)
