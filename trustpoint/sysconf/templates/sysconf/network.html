@@ -1,14 +1,24 @@
 {% extends 'base/base.html' %}
+{% load crispy_forms_filters %}
 {% block content %}
-    <div class="card card-main text-center">
-        <div class="card-header">
-            Network
-        </div>
-        <div class="card-body">
-
-        </div>
-        <div class="card-footer text-body-secondary">
-
-        </div>
+<div class="card card-main text-center">
+    <div class="card-header d-flex">
+        <h1>Network Configuration</h1>
     </div>
+    <div class="card-body tp-main-centered pt-3 pb-4">
+
+        <form method="POST" class="tp-main-form text-start" enctype="multipart/form-data" id="network_configuration">
+            {% csrf_token %}
+            <fieldset class="form-group tp-form-group">
+            <hr>
+                    {{ network_config_form|crispy }}
+            </fieldset>
+            <hr>
+            <button class="btn btn-primary col ms-3 me-1" type="submit" name="network_configuration">Save Configuration</button>
+        </form>
+    </div>
+    <div class="card-footer text-body-secondary">
+
+    </div>
+</div>
 {% endblock content %}

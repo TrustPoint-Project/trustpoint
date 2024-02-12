@@ -1,7 +1,9 @@
+from django import forms
 from django.shortcuts import render
 from django.views.generic.base import RedirectView
-
-
+from django.core.exceptions import ObjectDoesNotExist
+from .forms import NetworkConfigForm,NTPConfigForm
+from .models import NetworkConfig, NTPConfig
 class IndexView(RedirectView):
     permanent = True
     pattern_name = 'sysconf:logging'
@@ -21,7 +23,27 @@ def network(request):
         'page_category': 'sysconf',
         'page_name': 'network'
     }
-    return render(request, 'sysconf/network.html', context=context)
+    # Try to read the configuration
+    try:
+        network_config=NetworkConfig.objects.get(id=1)
+    except ObjectDoesNotExist:
+    # create an empty configuration
+        network_config=NetworkConfig()
+        
+    if request.method == 'POST':
+        network_configuration_form = NetworkConfigForm(request.POST,instance=network_config)
+        if network_configuration_form.is_valid():
+                
+            network_configuration_form.save()
+            
+        context['network_config_form'] = network_configuration_form
+        return render(request, 'sysconf/network.html', context=context)
+            
+    else:
+        
+        context['network_config_form'] = NetworkConfigForm(instance=network_config)
+        
+        return render(request, 'sysconf/network.html', context=context)
 
 
 def ntp(request):
@@ -29,7 +51,27 @@ def ntp(request):
         'page_category': 'sysconf',
         'page_name': 'ntp'
     }
-    return render(request, 'sysconf/ntp.html', context=context)
+    # Try to read the configuration
+    try:
+        ntp_config=NTPConfig.objects.get(id=1)
+    except ObjectDoesNotExist:
+    # create an empty configuration
+        ntp_config=NTPConfig()
+        
+    if request.method == 'POST':
+        ntp_configuration_form = NTPConfigForm(request.POST,instance=ntp_config)
+        if ntp_configuration_form.is_valid():
+                
+            ntp_configuration_form.save()
+            
+        context['ntp_config_form'] = ntp_configuration_form
+        return render(request, 'sysconf/ntp.html', context=context)
+            
+    else:
+        
+        context['ntp_config_form'] = NTPConfigForm(instance=ntp_config)
+        
+        return render(request, 'sysconf/ntp.html', context=context)
 
 
 def ssh(request):
