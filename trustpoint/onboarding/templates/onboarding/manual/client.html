@@ -3,7 +3,7 @@
 {% block content %}
     <div class="card card-main text-center">
         <div class="card-header d-flex">
-            <h1>Onboarding with Trustpoint Client</h1>
+            <h1>Onboarding device {{ device_name }} with Trustpoint Client</h1>
         </div>
         <div class="card-body tp-main-centered pt-3 pb-4">
             <h2>Trustpoint Client Download</h2>
@@ -11,13 +11,15 @@
             <hr>
             <h2>Trustpoint Client Provisioning command</h2>
             <pre> 
-                <code> 
-trustpoint-client provision --otp {{ otp }} --salt {{ salt }} --url {{ url }} --tpurl {{ tpurl }}
-                </code> 
+                <code id="code-provisioning-0"> 
+trustpoint-client provision --otp {{ otp }} --salt {{ salt }} --url {{ url }} --tpurl {{ tpurl }}</code>
             </pre> 
+            <div>
+                <button class="btn btn-primary float-end" onclick="navigator.clipboard.writeText(document.querySelector('#code-provisioning-0').textContent)">Copy to clipboard</button>
+            </div>
         </div>
         <div class="card-footer text-body-secondary">
-
+            <a href="{% url 'onboarding:onboarding-manual' %}" class="btn btn-secondary">Cancel</a>
         </div>
     </div>
 {% endblock content %}

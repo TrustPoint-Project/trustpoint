@@ -2,8 +2,8 @@ from django.shortcuts import render, redirect
 from .forms import OnboardingStartForm
 from devices.models import Device
 from django.http import HttpResponse
-from .cryptoBackend import CryptoBackend as crypt
 from django.views.generic.base import RedirectView
+from django.contrib import messages
 from .models import OnboardingProcess, onboardingProcesses
 
 class IndexView(RedirectView):
@@ -17,6 +17,14 @@ def onboarding_manual(request):
         'page_name': 'manual'
     }
 
+    # remove any existing onboarding process from session
+    ob_process = None
+    if 'onboarding_process_id' in request.session:
+        ob_process = OnboardingProcess.get_by_id(request.session['onboarding_process_id'])
+        if ob_process:
+            onboardingProcesses.remove(ob_process)
+        del request.session['onboarding_process_id']
+
     # TODO: create decorator for unexpected exception handling
     if request.method == 'POST':
 
@@ -24,7 +32,6 @@ def onboarding_manual(request):
             onboarding_start_form = OnboardingStartForm(request.POST, request.FILES)
 
             if onboarding_start_form.is_valid():
-                pass
                 name = onboarding_start_form.cleaned_data.get('name')
 
                 onboardingDevice = Device(
@@ -51,25 +58,27 @@ def onboarding_manual(request):
 
 def onboarding_manual_client(request):
     processId = None
-    #ob_process = None
+    ob_process = None
     if 'onboarding_process_id' in request.session:
         processId = request.session['onboarding_process_id']
         #del request.session['onboarding_process_id']
     else:
-        return HttpResponse('No onboarding process found in session.', status=400)
-    for process in onboardingProcesses:
-        if process.id == processId:
-            ob_process = process
-            break
-        else:
-            return HttpResponse('Onboarding process with ID {} not found.'.format(processId), status=404)
+        messages.error(request, "No onboarding process found in session.")
+        return redirect('onboarding:onboarding-manual')
+    print(onboardingProcesses)
+    ob_process = OnboardingProcess.get_by_id(processId)
+    if not ob_process:
+        messages.error(request, 'Onboarding process with ID {} not found.'.format(processId))
+        return redirect('onboarding:onboarding-manual')
+    print(ob_process)
     context = {
         'page_category': 'onboarding',
         'page_name': 'manual',
-        'otp' : crypt.random_hex_string(8),
-        'salt': crypt.random_hex_string(8),
+        'otp' : ob_process.otp,
+        'salt': ob_process.salt,
         'tpurl': '10.10.10.10',
-        'url': ob_process.url
+        'url': ob_process.url,
+        'device_name': ob_process.device.name
     }
     return render(request, 'onboarding/manual/client.html', context=context)
 

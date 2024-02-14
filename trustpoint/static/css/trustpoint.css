@@ -229,9 +229,7 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
     border-radius: 0.3rem;
     display: grid;
     grid-template-columns: 1fr;
-    justify-content: center;
 }
-
 
 .tp-message-success {
     background-color: #5fc40c;

@@ -1,6 +1,6 @@
 from django.db import models
 from devices.models import Device
-from .cryptoBackend import CryptoBackend as crypt
+import secrets
 
 # NOT a database-backed model
 class OnboardingProcess:
@@ -9,8 +9,22 @@ class OnboardingProcess:
     def __init__(self, dev):
         self.device = dev
         self.id = OnboardingProcess.id_counter
-        self.url = crypt.random_character_string(6)
+        self.url = secrets.token_urlsafe(4)
+        self.otp = secrets.token_hex(8)
+        self.salt = secrets.token_hex(8)
         OnboardingProcess.id_counter += 1
+
+    def __str__(self):
+        return 'OnboardingProcess {} for device {}'.format(self.id, self.device.name)
+    
+    def __repr__(self):
+        return self.__str__()
+    
+    def get_by_id(id):
+        for process in onboardingProcesses:
+            if process.id == id:
+                return process
+        return None
 
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     datetime_started = models.DateTimeField(auto_now_add=True)

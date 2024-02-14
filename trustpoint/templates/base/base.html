@@ -18,8 +18,8 @@
     <body>
 
     <nav class="nav-header navbar bg-dark border-bottom border-body tp-px-2" data-bs-theme="dark">
-        <a class="navbar-brand tp-primary" href="#">TrustPoint</a>
-
+        <!-- <a class="navbar-brand tp-primary" href="#"><img src="{% static 'img/tplogo-128.png' %}" width="64" height="45" alt="Trustpoint"></a> -->
+        <a class="navbar-brand tp-primary" href="#"><img src="{% static 'img/tplogo-test-horizontal-180.png' %}" alt="Trustpoint"></a>
         <form class="d-flex" role="search">
             <button class="btn btn-mute" type="submit">Logout</button>
         </form>
@@ -111,7 +111,21 @@
             {% if messages %}
                 <div class="messages tp-messages text-center">
                     {% for message in messages %}
-                        <div{% if message.tags %} class="tp-message text-white bg-{{ message.tags }}"{% endif %}>{{ message }}</div>
+                        <!-- <div{% if message.tags %} class="tp-message text-white bg-{{ message.tags }}"{% endif %}>{{ message }}</div> -->
+                        <div class="tp-message alert
+                            {% if message.tags %}
+                                {% if message.tags == "error" %}
+                                    alert-danger
+                                {% else %}
+                                    alert-{{ message.tags }}
+                                {% endif %}
+                            {% endif %} d-flex align-items-center" role="alert">
+                            
+                            <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="{{ message.tags }}:"><use xlink:href="{% static 'img/icons.svg' %}#icon-{{ message.tags }}"/></svg>
+                            <div><!-- class="text-white"> -->
+                              {{ message }}
+                            </div>                
+                        </div>
                     {% endfor %}
                 </div>
             {% endif %}
