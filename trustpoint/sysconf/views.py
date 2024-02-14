@@ -2,8 +2,8 @@ from django import forms
 from django.shortcuts import render
 from django.views.generic.base import RedirectView
 from django.core.exceptions import ObjectDoesNotExist
-from .forms import NetworkConfigForm,NTPConfigForm
-from .models import NetworkConfig, NTPConfig
+from .forms import NetworkConfigForm,NTPConfigForm, LoggingConfigForm
+from .models import NetworkConfig, NTPConfig, LoggingConfig
 class IndexView(RedirectView):
     permanent = True
     pattern_name = 'sysconf:logging'
@@ -15,7 +15,26 @@ def logging(request):
         'page_category': 'sysconf',
         'page_name': 'logging'
     }
-    return render(request, 'sysconf/logging.html', context=context)
+    try:
+        logging_config=LoggingConfig.objects.get(id=1)
+    except ObjectDoesNotExist:
+    # create an empty configuration
+        logging_config=NTPConfig()
+        
+    if request.method == 'POST':
+        loggging_config_form = LoggingConfigForm(request.POST,instance=logging_config)
+        if loggging_config_form.is_valid():
+                
+            loggging_config_form.save()
+            
+        context['logging_config_form'] = loggging_config_form
+        return render(request, 'sysconf/logging.html', context=context)
+            
+    else:
+        
+        context['logging_config_form'] = LoggingConfigForm(instance=logging_config)
+        
+        return render(request, 'sysconf/logging.html', context=context)
 
 
 def network(request):

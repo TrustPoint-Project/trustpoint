@@ -1,5 +1,5 @@
 from django import forms
-from .models import NetworkConfig, NTPConfig
+from .models import NetworkConfig, NTPConfig, LoggingConfig
 from django.utils.translation import gettext_lazy as _
 
 class NTPConfigForm(forms.ModelForm):
@@ -21,3 +21,9 @@ class NetworkConfigForm(forms.ModelForm):
             "netmask": _("Netmask"),
             "gateway": _("Gateway")
         }
+        
+class LoggingConfigForm(forms.ModelForm):
+    class Meta:
+        model = LoggingConfig
+        fields = '__all__'
+        
