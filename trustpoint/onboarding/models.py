@@ -1,6 +1,7 @@
 from django.db import models
 from devices.models import Device
 import secrets
+from  .cryptoBackend import CryptoBackend as Crypt
 
 # NOT a database-backed model
 class OnboardingProcess:
@@ -12,6 +13,7 @@ class OnboardingProcess:
         self.url = secrets.token_urlsafe(4)
         self.otp = secrets.token_hex(8)
         self.salt = secrets.token_hex(8)
+        self.hmac = None
         OnboardingProcess.id_counter += 1
 
     def __str__(self):
@@ -25,6 +27,19 @@ class OnboardingProcess:
             if process.id == id:
                 return process
         return None
+    
+    def get_by_url_ext(url):
+        for process in onboardingProcesses:
+            if process.url == url:
+                return process
+        return None
+    
+    def calc_hmac(self):
+        self.hmac = Crypt.pbkdf2_hmac_sha256(self.otp, self.salt, Crypt.get_trust_store().encode('utf-8'))
+    
+    def get_hmac(self):
+        if not self.hmac: self.calc_hmac()
+        return self.hmac
 
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     datetime_started = models.DateTimeField(auto_now_add=True)

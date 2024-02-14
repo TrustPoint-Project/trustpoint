@@ -17,6 +17,30 @@ trustpoint-client provision --otp {{ otp }} --salt {{ salt }} --url {{ url }} --
             <div>
                 <button class="btn btn-primary float-end" onclick="navigator.clipboard.writeText(document.querySelector('#code-provisioning-0').textContent)">Copy to clipboard</button>
             </div>
+            <hr>
+            <h2>Onboarding progress</h2>
+            <div class="container">
+                <div class="row">
+                    <div class="col">
+                        <span class="badge bg-primary mt-2">Waiting for client to connect</span>
+                    </div>
+                    <div class="col">
+                        <span class="badge bg-secondary mt-2">Send trust-store to client</span>
+                    </div>
+                    <div class="col">
+                        <span class="badge bg-secondary mt-2">Validate client identity</span>
+                    </div>
+                    <div class="col">
+                        <span class="badge bg-secondary mt-2">Send LDevID to client</span>
+                    </div>
+                    <div class="col">
+                        <span class="badge bg-secondary mt-2">Send chain of trust to client</span>
+                    </div>
+                    <div class="col">
+                        <span class="badge bg-secondary mt-2">Onboarding completetion</span>
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="card-footer text-body-secondary">
             <a href="{% url 'onboarding:onboarding-manual' %}" class="btn btn-secondary">Cancel</a>

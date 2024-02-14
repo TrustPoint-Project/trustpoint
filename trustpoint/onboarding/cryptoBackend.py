@@ -1,16 +1,13 @@
 # Just a placeholder, this should be moved to a more appropriate location and contents adapted
 
-import os
-import base64
+import hashlib
+import hmac
 
 class CryptoBackend:
-    def random_hex_string(length):
-        return os.urandom(length).hex()
+    def pbkdf2_hmac_sha256(hexpass, hexsalt, message=b'', iterations=1000000, dklen=32):
+        pkey = hashlib.pbkdf2_hmac('sha256', bytes(hexpass,'utf-8'), bytes(hexsalt,'utf-8'), iterations, dklen)
+        h = hmac.new(pkey, message, hashlib.sha256)
+        return h.hexdigest()
     
-
-    def random_character_string(length):
-        # generate a random string of length length with characters A-Z, a-z, 0-9, -, and _
-        random_bytes = os.urandom(length) # generates a few bytes more than needed
-        # Note: A and a are statistically twice as likely as the other characters
-        random_str = base64.b64encode(random_bytes, bytes('-_','utf-8')).decode('utf-8')[:length]
-        return random_str
+    def get_trust_store():
+        return "It's a Truststore baby."
