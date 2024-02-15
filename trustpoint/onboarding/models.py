@@ -2,6 +2,18 @@ from django.db import models
 from devices.models import Device
 import secrets
 from  .cryptoBackend import CryptoBackend as Crypt
+from enum import IntEnum
+
+class OnboardingProcessState(IntEnum):
+    FAILED = -1
+    STARTED = 0
+    HMAC_GENERATED = 1
+    TRUST_STORE_SENT = 2
+    CSR_RECEIVED = 3
+    DEVICE_VALIDATED = 4
+    LDEVID_SENT = 5
+    CERT_CHAIN_SENT = 6
+    DEVICE_SAVED_TO_DB = 7
 
 # NOT a database-backed model
 class OnboardingProcess:
@@ -14,6 +26,7 @@ class OnboardingProcess:
         self.otp = secrets.token_hex(8)
         self.salt = secrets.token_hex(8)
         self.hmac = None
+        self.state = OnboardingProcessState.STARTED
         OnboardingProcess.id_counter += 1
 
     def __str__(self):
@@ -36,6 +49,7 @@ class OnboardingProcess:
     
     def calc_hmac(self):
         self.hmac = Crypt.pbkdf2_hmac_sha256(self.otp, self.salt, Crypt.get_trust_store().encode('utf-8'))
+        if (self.state == OnboardingProcessState.STARTED): self.state = OnboardingProcessState.HMAC_GENERATED
     
     def get_hmac(self):
         if not self.hmac: self.calc_hmac()

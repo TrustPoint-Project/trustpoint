@@ -10,4 +10,7 @@ class CryptoBackend:
         return h.hexdigest()
     
     def get_trust_store():
+        # TODO: server certificate location must be configurable
+        with open('../tests/data/x509/https_server.crt', 'r') as certfile:
+            return certfile.read()
         return "It's a Truststore baby."

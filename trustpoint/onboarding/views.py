@@ -4,7 +4,7 @@ from devices.models import Device
 from django.http import HttpResponse
 from django.views.generic.base import RedirectView
 from django.contrib import messages
-from .models import OnboardingProcess, onboardingProcesses
+from .models import OnboardingProcess, onboardingProcesses, OnboardingProcessState
 from .cryptoBackend import CryptoBackend as Crypt
 
 class IndexView(RedirectView):
@@ -86,10 +86,6 @@ def onboarding_manual_client(request):
     return render(request, 'onboarding/manual/client.html', context=context)
 
 def trust_store(request):
-    context = {
-        'page_category': 'onboarding',
-        'page_name': 'trust-store'
-    }
     # get URL extension
     url_extension = request.path.split('/')[-1]
     ob_process = OnboardingProcess.get_by_url_ext(url_extension)
@@ -98,5 +94,16 @@ def trust_store(request):
     
     response = HttpResponse(Crypt.get_trust_store(), status=200)
     response["hmac-signature"] = ob_process.get_hmac()
+    if (ob_process.state == OnboardingProcessState.HMAC_GENERATED): ob_process.state = OnboardingProcessState.TRUST_STORE_SENT
+    return response
+
+def state(request):
+    # get URL extension
+    url_extension = request.path.split('/')[-1]
+    ob_process = OnboardingProcess.get_by_url_ext(url_extension)
+    if not ob_process:
+        return HttpResponse("-2", status=404)
+    
+    response = HttpResponse(str(int(ob_process.state)), status=200)
 
     return response

@@ -1,0 +1,9 @@
+.onboarding-state {
+  animation: breathing 1.5s 0s infinite ease;
+}
+
+@keyframes breathing {
+  0% {filter: saturate(100%);}
+  50% {filter: saturate(30%);}
+  0% {filter: saturate(100%);}
+}

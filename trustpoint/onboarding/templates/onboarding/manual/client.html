@@ -1,5 +1,6 @@
 {% extends 'base/base.html' %}
 {% load crispy_forms_filters %}
+{% load static %}
 {% block content %}
     <div class="card card-main text-center">
         <div class="card-header d-flex">
@@ -19,6 +20,12 @@ trustpoint-client provision --otp {{ otp }} --salt {{ salt }} --url {{ url }} --
             </div>
             <hr>
             <h2>Onboarding progress</h2>
+            <div class="alert alert-info d-flex align-items-center mt-3 onboarding-state" role="alert">  
+                <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
+                <div><!-- class="text-white"> -->
+                    Waiting for client to connect...
+                </div>                
+            </div>
             <div class="container">
                 <div class="row">
                     <div class="col">
@@ -46,4 +53,5 @@ trustpoint-client provision --otp {{ otp }} --salt {{ salt }} --url {{ url }} --
             <a href="{% url 'onboarding:onboarding-manual' %}" class="btn btn-secondary">Cancel</a>
         </div>
     </div>
+    <script>getOnboardingState("{{ url }}")</script>
 {% endblock content %}
