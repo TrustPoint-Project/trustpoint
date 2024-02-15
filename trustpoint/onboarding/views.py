@@ -23,7 +23,9 @@ def onboarding_manual(request):
     if 'onboarding_process_id' in request.session:
         ob_process = OnboardingProcess.get_by_id(request.session['onboarding_process_id'])
         if ob_process:
+            device = ob_process.device.name
             onboardingProcesses.remove(ob_process)
+            messages.warning(request, f'Onboarding process for device {device} canceled.')
         del request.session['onboarding_process_id']
 
     # TODO: create decorator for unexpected exception handling
@@ -77,7 +79,7 @@ def onboarding_manual_client(request):
         'page_name': 'manual',
         'otp' : ob_process.otp,
         'salt': ob_process.salt,
-        'tpurl': '10.10.10.10',
+        'tpurl': request.get_host,
         'url': ob_process.url,
         'device_name': ob_process.device.name
     }

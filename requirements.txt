@@ -32,3 +32,9 @@ sphinxcontrib-qthelp==1.0.7
 sphinxcontrib-serializinghtml==1.1.10
 sqlparse==0.4.4
 urllib3==2.2.0
+# TODO Required only for HTTPS testing with Django runserver_plus, remove for production and deploy behind Nginx or something
+Django_extensions==3.2.3
+Werkzeug==3.0.1
+pyOpenSSL==24.0.0
+watchdog==4.0.0
+# end of packages required for HTTPS testing only
