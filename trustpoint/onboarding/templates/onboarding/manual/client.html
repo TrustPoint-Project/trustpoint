@@ -17,7 +17,7 @@
             <hr>
             <h2>Trustpoint Client Provisioning command</h2>
             <pre class="mt-2"><code id="code-provisioning-0"> 
-trustpoint-client provision --tsotp {{ tsotp }} --tssalt {{ tssalt }} --otp {{ otp }} --salt {{ salt }} --url {{ url }} --tpurl {{ tpurl }}</code>
+python -m trustpoint_client provision --tsotp {{ tsotp }} --tssalt {{ tssalt }} --otp {{ otp }} --salt {{ salt }} --url {{ url }} --tpurl {{ tpurl }}</code>
             </pre>
             <div>
                 <button class="btn btn-primary float-end" onclick="navigator.clipboard.writeText(document.querySelector('#code-provisioning-0').textContent)">Copy to clipboard</button>

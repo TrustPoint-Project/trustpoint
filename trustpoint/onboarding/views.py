@@ -3,6 +3,7 @@ from .forms import OnboardingStartForm
 from devices.models import Device
 from django.http import HttpResponse
 from django.views.generic.base import RedirectView
+from django.views.decorators.csrf import csrf_exempt
 from django.contrib import messages
 from .models import OnboardingProcess, onboardingProcesses, OnboardingProcessState
 from .cryptoBackend import CryptoBackend as Crypt
@@ -32,6 +33,8 @@ def onboarding_manual(request):
                 messages.error(request, f'Onboarding process for device {device} failed.')
             elif ob_process.state == OnboardingProcessState.INCORRECT_OTP:
                 messages.error(request, f'Client provided an incorrect credential. Onboarding for device {device} failed.')
+            elif ob_process.state == OnboardingProcessState.TIMED_OUT: # TODO: what to do if timeout occurs after valid LDevID is issued? Should that be considered a successful onboarding?
+                messages.error(request, f'Onboarding process for device {device} timed out.')
             else:
                 messages.warning(request, f'Onboarding process for device {device} canceled.')
         del request.session['onboarding_process_id']
@@ -107,11 +110,14 @@ def trust_store(request):
     if (ob_process.state == OnboardingProcessState.HMAC_GENERATED): ob_process.state = OnboardingProcessState.TRUST_STORE_SENT
     return response
 
+@csrf_exempt
 def ldevid(request):
     # get URL extension
     url_extension = request.path.split('/')[-1]
     ob_process = OnboardingProcess.get_by_url_ext(url_extension)
-    if not ob_process or not ob_process.active or ob_process.state >= OnboardingProcessState.DEVICE_VALIDATED: # only ever allow one set of credentials to be submitted
+    if (not ob_process or not ob_process.active
+        #or ob_process.state >= OnboardingProcessState.DEVICE_VALIDATED # only ever allow one set of credentials to be submitted
+        or request.method != "POST" or not request.FILES):
         return HttpResponse('Invalid URI extension.', status=404)
     
     # get http basic auth header
@@ -121,6 +127,7 @@ def ldevid(request):
             if auth[0].lower() == "basic":
                 uname, passwd = base64.b64decode(auth[1]).decode('us-ascii').split(':')
                 if ob_process.check_ldevid_auth(uname, passwd):
+                    print(request.FILES)
                     return HttpResponse("signing LDevIDs today!", status=200)
                 else:
                     # ob_process canceled itself if the client provides incorrect credentials

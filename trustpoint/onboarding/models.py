@@ -5,7 +5,10 @@ from  .cryptoBackend import CryptoBackend as Crypt
 from enum import IntEnum
 import threading
 
+onboardingTimeout = 1800 # seconds, TODO: add to configuration
+
 class OnboardingProcessState(IntEnum):
+    TIMED_OUT = -4
     INCORRECT_OTP = -3
     NO_SUCH_PROCESS = -2
     FAILED = -1
@@ -34,6 +37,8 @@ class OnboardingProcess:
         self.state = OnboardingProcessState.STARTED
         self.gen_thread = threading.Thread(target=self.calc_hmac)
         self.gen_thread.start()
+        self.timer = threading.Timer(onboardingTimeout, self.timeout)
+        self.timer.start()
         self.active = True
         OnboardingProcess.id_counter += 1
 
@@ -72,6 +77,10 @@ class OnboardingProcess:
             self.state = OnboardingProcessState.INCORRECT_OTP
             self.active = False
         return False
+    
+    def timeout(self):
+        self.state = OnboardingProcessState.TIMED_OUT
+        self.active = False
 
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     datetime_started = models.DateTimeField(auto_now_add=True)

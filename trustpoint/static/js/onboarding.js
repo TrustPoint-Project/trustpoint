@@ -6,7 +6,8 @@ function startPollingOnboardingState(urlExt, iconUrl) {
 
 // Onboarding states, see onboarding/models.py
 const
-CONNECTION_ERROR = -4,
+CONNECTION_ERROR = -5,
+TIMED_OUT = -4,
 INCORRECT_OTP = -3
 NO_SUCH_PROCESS = -2,
 FAILED = -1,
@@ -95,6 +96,12 @@ function setOnboardingStateUI(state, iconUrl) {
       type = 'danger';
       message = 'Client provided an incorrect credential. Onboarding failed.';
       icon = 'error';
+      navBack = true;
+      break;
+    case TIMED_OUT:
+      type = 'danger';
+      message = 'Onboarding process timed out.';
+      icon = 'danger';
       navBack = true;
       break;
     default:
