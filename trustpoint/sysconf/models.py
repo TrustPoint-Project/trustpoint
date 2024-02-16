@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.validators import MaxValueValidator, MinValueValidator
 
 #class SystemConfig(models.Model):
 class NTPConfig(models.Model):
@@ -9,17 +10,25 @@ class NTPConfig(models.Model):
     
 class LoggingConfig(models.Model):
     logging_server_address = models.GenericIPAddressField(protocol='both')
-    logging_server_port = models.IntegerField(max_length=5)
+    logging_server_port = models.IntegerField(validators=[MinValueValidator(0),MaxValueValidator(65536)])
     class LogTypes(models.TextChoices):
         SYSLOG = "1", "Syslog"
         GRAYLOG = "2", "Graylog"
         SPLUNK = "3", "Splunk"
     
+    class NetworkTypes(models.TextChoices):
+        TCP = "1", "TCP"
+        UDP = "2", "UDP"
     
     logging_type = models.CharField(
         max_length=3,
         choices=LogTypes.choices,
         default=LogTypes.SYSLOG
+    )
+    network_type = models.CharField(
+        max_length=2,
+        choices=NetworkTypes.choices,
+        default=NetworkTypes.TCP
     )
     
     def __str__(self) -> str:

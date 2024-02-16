@@ -19,7 +19,7 @@ def logging(request):
         logging_config=LoggingConfig.objects.get(id=1)
     except ObjectDoesNotExist:
     # create an empty configuration
-        logging_config=NTPConfig()
+        logging_config=LoggingConfig()
         
     if request.method == 'POST':
         loggging_config_form = LoggingConfigForm(request.POST,instance=logging_config)

@@ -26,4 +26,9 @@ class LoggingConfigForm(forms.ModelForm):
     class Meta:
         model = LoggingConfig
         fields = '__all__'
-        
+        labels = {
+            "logging_server_address": _("Logging Server Address"),
+            "logging_server_port": _("Logging Server Port"),
+            "logging_type": _("Logging Protocol"),
+            "network_type": _("Network Protocol")
+        }
