@@ -6,6 +6,7 @@ from django.views.generic.base import RedirectView
 from django.contrib import messages
 from .models import OnboardingProcess, onboardingProcesses, OnboardingProcessState
 from .cryptoBackend import CryptoBackend as Crypt
+import base64
 
 class IndexView(RedirectView):
     permanent = True
@@ -25,7 +26,14 @@ def onboarding_manual(request):
         if ob_process:
             device = ob_process.device.name
             onboardingProcesses.remove(ob_process)
-            messages.warning(request, f'Onboarding process for device {device} canceled.')
+            if ob_process.state == OnboardingProcessState.DEVICE_SAVED_TO_DB:
+                messages.success(request, f'Device {device} onboarded successfully.')
+            elif ob_process.state == OnboardingProcessState.FAILED:
+                messages.error(request, f'Onboarding process for device {device} failed.')
+            elif ob_process.state == OnboardingProcessState.INCORRECT_OTP:
+                messages.error(request, f'Client provided an incorrect credential. Onboarding for device {device} failed.')
+            else:
+                messages.warning(request, f'Onboarding process for device {device} canceled.')
         del request.session['onboarding_process_id']
 
     # TODO: create decorator for unexpected exception handling
@@ -79,6 +87,8 @@ def onboarding_manual_client(request):
         'page_name': 'manual',
         'otp' : ob_process.otp,
         'salt': ob_process.salt,
+        'tsotp': ob_process.tsotp,
+        'tssalt': ob_process.tssalt,
         'tpurl': request.get_host,
         'url': ob_process.url,
         'device_name': ob_process.device.name
@@ -89,7 +99,7 @@ def trust_store(request):
     # get URL extension
     url_extension = request.path.split('/')[-1]
     ob_process = OnboardingProcess.get_by_url_ext(url_extension)
-    if not ob_process:
+    if not ob_process or not ob_process.active:
         return HttpResponse('Invalid URI extension.', status=404)
     
     response = HttpResponse(Crypt.get_trust_store(), status=200)
@@ -97,13 +107,41 @@ def trust_store(request):
     if (ob_process.state == OnboardingProcessState.HMAC_GENERATED): ob_process.state = OnboardingProcessState.TRUST_STORE_SENT
     return response
 
+def ldevid(request):
+    # get URL extension
+    url_extension = request.path.split('/')[-1]
+    ob_process = OnboardingProcess.get_by_url_ext(url_extension)
+    if not ob_process or not ob_process.active or ob_process.state >= OnboardingProcessState.DEVICE_VALIDATED: # only ever allow one set of credentials to be submitted
+        return HttpResponse('Invalid URI extension.', status=404)
+    
+    # get http basic auth header
+    if 'HTTP_AUTHORIZATION' in request.META:
+        auth = request.META['HTTP_AUTHORIZATION'].split()
+        if len(auth) == 2: # only basic auth is supported
+            if auth[0].lower() == "basic":
+                uname, passwd = base64.b64decode(auth[1]).decode('us-ascii').split(':')
+                if ob_process.check_ldevid_auth(uname, passwd):
+                    return HttpResponse("signing LDevIDs today!", status=200)
+                else:
+                    # ob_process canceled itself if the client provides incorrect credentials
+                    return HttpResponse('Invalid URI extension.', status=404)
+
+
+    response = HttpResponse(status=401)
+    response['WWW-Authenticate'] = 'Basic realm="%s"' % url_extension
+    return response
+    
+    response = HttpResponse(ob_process.device.ldevid, status=200)
+    if (ob_process.state == OnboardingProcessState.DEVICE_VALIDATED): ob_process.state = OnboardingProcessState.LDEVID_SENT
+    return response
+
 def state(request):
     # get URL extension
     url_extension = request.path.split('/')[-1]
     ob_process = OnboardingProcess.get_by_url_ext(url_extension)
     if not ob_process:
-        return HttpResponse("-2", status=404)
+        return HttpResponse(str(OnboardingProcessState.NO_SUCH_PROCESS), status=404)
     
-    response = HttpResponse(str(int(ob_process.state)), status=200)
+    response = HttpResponse(str(ob_process.state), status=200)
 
     return response

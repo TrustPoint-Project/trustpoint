@@ -8,11 +8,8 @@
         <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
         <link rel="stylesheet" href="{% static 'css/trustpoint.css' %}">
         <link rel="stylesheet" href="{% static 'css/sysconf.css' %}">
-        <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
         <link rel="icon" href="{% static 'img/favicon-32.png' %}">
-        <style>
-
-        </style>
+        {% block head %}{% endblock head %}
     </head>
 
     <body>
@@ -135,7 +132,6 @@
         <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
         <script src="{% static 'js/trustpoint.js' %}"></script>
         <script src="{% static 'js/sysconf.js' %}"></script>
-        <script src="{% static 'js/onboarding.js' %}"></script>
     </body>
 
 </html>

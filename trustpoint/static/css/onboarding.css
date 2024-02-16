@@ -1,5 +1,9 @@
-.onboarding-state {
-  animation: breathing 1.5s 0s infinite ease;
+pre {
+  background-color: #333;
+}
+
+.breathing-anim {
+  animation: breathing 1.8s 0s infinite ease;
 }
 
 @keyframes breathing {

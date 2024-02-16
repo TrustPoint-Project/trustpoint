@@ -1,6 +1,11 @@
 {% extends 'base/base.html' %}
 {% load crispy_forms_filters %}
 {% load static %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
+    <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:onboarding-manual' %}"</script>
+    <script src="{% static 'js/onboarding.js' %}"></script>
+{% endblock head %}
 {% block content %}
     <div class="card card-main text-center">
         <div class="card-header d-flex">
@@ -11,47 +16,23 @@
             todo
             <hr>
             <h2>Trustpoint Client Provisioning command</h2>
-            <pre> 
-                <code id="code-provisioning-0"> 
-trustpoint-client provision --otp {{ otp }} --salt {{ salt }} --url {{ url }} --tpurl {{ tpurl }}</code>
-            </pre> 
+            <pre class="mt-2"><code id="code-provisioning-0"> 
+trustpoint-client provision --tsotp {{ tsotp }} --tssalt {{ tssalt }} --otp {{ otp }} --salt {{ salt }} --url {{ url }} --tpurl {{ tpurl }}</code>
+            </pre>
             <div>
                 <button class="btn btn-primary float-end" onclick="navigator.clipboard.writeText(document.querySelector('#code-provisioning-0').textContent)">Copy to clipboard</button>
             </div>
             <hr>
             <h2>Onboarding progress</h2>
-            <div class="alert alert-info d-flex align-items-center mt-3 onboarding-state" role="alert">  
+            <div id="onboarding-state" class="alert alert-info d-flex align-items-center mt-3 breathing-anim" role="alert">  
                 <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
                 <div><!-- class="text-white"> -->
-                    Waiting for client to connect...
+                    Fetching state from server...
                 </div>                
-            </div>
-            <div class="container">
-                <div class="row">
-                    <div class="col">
-                        <span class="badge bg-primary mt-2">Waiting for client to connect</span>
-                    </div>
-                    <div class="col">
-                        <span class="badge bg-secondary mt-2">Send trust-store to client</span>
-                    </div>
-                    <div class="col">
-                        <span class="badge bg-secondary mt-2">Validate client identity</span>
-                    </div>
-                    <div class="col">
-                        <span class="badge bg-secondary mt-2">Send LDevID to client</span>
-                    </div>
-                    <div class="col">
-                        <span class="badge bg-secondary mt-2">Send chain of trust to client</span>
-                    </div>
-                    <div class="col">
-                        <span class="badge bg-secondary mt-2">Onboarding completetion</span>
-                    </div>
-                </div>
             </div>
         </div>
         <div class="card-footer text-body-secondary">
             <a href="{% url 'onboarding:onboarding-manual' %}" class="btn btn-secondary">Cancel</a>
         </div>
     </div>
-    <script>getOnboardingState("{{ url }}")</script>
 {% endblock content %}
