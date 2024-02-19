@@ -67,7 +67,7 @@ ROOT_URLCONF = 'trustpoint.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / Path('templates')],
+        'DIRS': [BASE_DIR / Path('trustpoint/templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
