@@ -78,6 +78,18 @@ class OnboardingProcess:
             self.active = False
         return False
     
+    def sign_ldevid(self, csr):
+        if not self.active: return None
+        if (self.state != OnboardingProcessState.DEVICE_VALIDATED):
+            return None
+        ldevid = Crypt.sign_ldevid(csr, self.device)
+        if ldevid:
+            self.state = OnboardingProcessState.LDEVID_SENT
+        else:
+            self.state = OnboardingProcessState.FAILED
+            self.active = False
+        return ldevid
+    
     def timeout(self):
         self.state = OnboardingProcessState.TIMED_OUT
         self.active = False

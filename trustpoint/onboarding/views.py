@@ -110,14 +110,14 @@ def trust_store(request):
     if (ob_process.state == OnboardingProcessState.HMAC_GENERATED): ob_process.state = OnboardingProcessState.TRUST_STORE_SENT
     return response
 
-@csrf_exempt
+@csrf_exempt # should be safe because we are using a OTP
 def ldevid(request):
     # get URL extension
     url_extension = request.path.split('/')[-1]
     ob_process = OnboardingProcess.get_by_url_ext(url_extension)
     if (not ob_process or not ob_process.active
         #or ob_process.state >= OnboardingProcessState.DEVICE_VALIDATED # only ever allow one set of credentials to be submitted
-        or request.method != "POST" or not request.FILES):
+        or request.method != "POST" or not request.FILES or not request.FILES['ldevid.csr']):
         return HttpResponse('Invalid URI extension.', status=404)
     
     # get http basic auth header
@@ -127,11 +127,18 @@ def ldevid(request):
             if auth[0].lower() == "basic":
                 uname, passwd = base64.b64decode(auth[1]).decode('us-ascii').split(':')
                 if ob_process.check_ldevid_auth(uname, passwd):
-                    print(request.FILES)
-                    return HttpResponse("signing LDevIDs today!", status=200)
-                else:
-                    # ob_process canceled itself if the client provides incorrect credentials
-                    return HttpResponse('Invalid URI extension.', status=404)
+                    csr_file = request.FILES['ldevid.csr']
+                    if not csr_file or csr_file.multiple_chunks(): # stop client providing a huge file
+                        return HttpResponse('Invalid CSR.', status=400)	
+                    csr = csr_file.read()
+                    ldevid = ob_process.sign_ldevid(csr)
+                    if ldevid:
+                        return HttpResponse(ldevid, status=200)
+                    else:
+                        return HttpResponse('Error during certificate creation.', status=500)
+                    
+                # ob_process canceled itself if the client provides incorrect credentials
+                return HttpResponse('Invalid URI extension.', status=404)
 
 
     response = HttpResponse(status=401)
