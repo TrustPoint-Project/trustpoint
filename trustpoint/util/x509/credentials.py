@@ -7,7 +7,6 @@ from datetime import datetime
 
 # TODO: use enums for key types and curves
 class X509PathBuilder:
-
     @staticmethod
     def get_x509_cert_chain(certificate: Certificate, certificates: list[Certificate]) -> list[Certificate]:
         result = [certificate]
@@ -39,10 +38,7 @@ class X509PathBuilder:
 # TODO: check signatures
 # TODO: check x509 extensions
 class P12:
-
-    _attr_name_overrides: dict[ObjectIdentifier, str] = {
-        ObjectIdentifier('2.5.4.5'): 'serialNumber'
-    }
+    _attr_name_overrides: dict[ObjectIdentifier, str] = {ObjectIdentifier('2.5.4.5'): 'serialNumber'}
 
     def __init__(self, p12: pkcs12.PKCS12KeyAndCertificates) -> None:
         self._p12 = p12
@@ -54,22 +50,18 @@ class P12:
         for crypto_cert in self._p12.additional_certs:
             cert = crypto_cert.certificate
             cert_json = {
-                    'Version': cert.version.name,
-                    'Serial Number': '0x' + hex(cert.serial_number).upper()[2:],
-                    'Subject': cert.subject.rfc4514_string(
-                        attr_name_overrides=self._attr_name_overrides
-                    ),
-                    'Issuer': cert.issuer.rfc4514_string(
-                        attr_name_overrides=self._attr_name_overrides
-                    ),
-                    'Not Valid Before': cert.not_valid_before_utc,
-                    'Not Valid After': cert.not_valid_after_utc,
-                    'Public Key Type': None,
-                    'Public Key Size': str(cert.public_key().key_size) + ' bits',
-                    # TODO: names are not standardized, use own OID Enums in the future
-                    # noinspection PyProtectedMember
-                    'Signature Algorithm': str(cert.signature_algorithm_oid._name)
-                }
+                'Version': cert.version.name,
+                'Serial Number': '0x' + hex(cert.serial_number).upper()[2:],
+                'Subject': cert.subject.rfc4514_string(attr_name_overrides=self._attr_name_overrides),
+                'Issuer': cert.issuer.rfc4514_string(attr_name_overrides=self._attr_name_overrides),
+                'Not Valid Before': cert.not_valid_before_utc,
+                'Not Valid After': cert.not_valid_after_utc,
+                'Public Key Type': None,
+                'Public Key Size': str(cert.public_key().key_size) + ' bits',
+                # TODO: names are not standardized, use own OID Enums in the future
+                # noinspection PyProtectedMember
+                'Signature Algorithm': str(cert.signature_algorithm_oid._name),
+            }
 
             if isinstance(self._p12.key, RSAPrivateKey):
                 cert_json['Public Key Type'] = 'RSA'
@@ -114,14 +106,11 @@ class P12:
 
     @property
     def subject(self) -> str | None:
-
-        return self._p12.cert.certificate.subject.rfc4514_string(
-            attr_name_overrides=self._attr_name_overrides)
+        return self._p12.cert.certificate.subject.rfc4514_string(attr_name_overrides=self._attr_name_overrides)
 
     @property
     def issuer(self) -> str | None:
-        return self._p12.cert.certificate.issuer.rfc4514_string(
-            attr_name_overrides=self._attr_name_overrides)
+        return self._p12.cert.certificate.issuer.rfc4514_string(attr_name_overrides=self._attr_name_overrides)
 
     @property
     def public_bytes(self) -> bytes:
@@ -130,7 +119,8 @@ class P12:
             self._p12.key,
             self._p12.cert.certificate,
             self._p12.additional_certs,
-            NoEncryption())
+            NoEncryption(),
+        )
 
     @property
     def not_valid_before(self) -> datetime:
@@ -152,7 +142,8 @@ class P12:
     @property
     def root_subject(self) -> str:
         return self._p12.additional_certs[-1].certificate.issuer.rfc4514_string(
-            attr_name_overrides=self._attr_name_overrides)
+            attr_name_overrides=self._attr_name_overrides
+        )
 
     @property
     def common_name(self) -> str:
@@ -187,17 +178,18 @@ class P12:
 
 
 class CredentialUploadHandler:
-
     @staticmethod
     def parse_and_normalize_p12(data: bytes, password: bytes = b'') -> P12:
         p12 = pkcs12.load_pkcs12(data, password)
         cert = p12.cert.certificate
         key = p12.key
         cert_chain = X509PathBuilder.get_x509_cert_chain(
-            p12.cert.certificate, [cert.certificate for cert in p12.additional_certs])
+            p12.cert.certificate, [cert.certificate for cert in p12.additional_certs]
+        )
         friendly_name = b''
         return P12.from_bytes(
-            pkcs12.serialize_key_and_certificates(friendly_name, key, cert, cert_chain, NoEncryption()))
+            pkcs12.serialize_key_and_certificates(friendly_name, key, cert, cert_chain, NoEncryption())
+        )
 
     @staticmethod
     def parse_and_normalize_pem(cert: bytes, cert_chain: bytes, key: bytes, password: bytes) -> P12:

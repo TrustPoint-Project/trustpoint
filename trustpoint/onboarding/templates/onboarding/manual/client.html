@@ -3,7 +3,7 @@
 {% load static %}
 {% block head %}
     <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
-    <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:onboarding-manual' %}"</script>
+    <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:manual' %}"</script>
     <script src="{% static 'js/onboarding.js' %}"></script>
 {% endblock head %}
 {% block content %}
@@ -32,7 +32,7 @@ python -m trustpoint_client provision --tsotp {{ tsotp }} --tssalt {{ tssalt }} 
             </div>
         </div>
         <div class="card-footer text-body-secondary">
-            <a href="{% url 'onboarding:onboarding-manual' %}" class="btn btn-secondary">Cancel</a>
+            <a href="{% url 'onboarding:manual' %}" class="btn btn-secondary">Cancel</a>
         </div>
     </div>
 {% endblock content %}

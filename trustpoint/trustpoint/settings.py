@@ -45,8 +45,10 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'django_tables2',
-    'django_extensions', # TODO Required only for HTTPS testing with Django runserver_plus, remove for production
-    # use "python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server.crt --key-file ../tests/data/x509/https_server.pem" to run with HTTPS
+    # TODO Required only for HTTPS testing with Django runserver_plus, remove for production
+    'django_extensions',
+    # use "python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server.crt
+    # --key-file ../tests/data/x509/https_server.pem" to run with HTTPS
     # note: replaces default exception debug page with worse one
 ]
 
@@ -141,6 +143,6 @@ STATICFILES_DIRS = [BASE_DIR / Path('static')]
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
-CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
+CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
 
-CRISPY_TEMPLATE_PACK = "bootstrap5"
+CRISPY_TEMPLATE_PACK = 'bootstrap5'

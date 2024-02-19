@@ -14,6 +14,5 @@ class IssuingCaLocalPemFileForm(forms.Form):
     issuing_ca_certificate_chain = forms.FileField(label='Issuing CA Certificate Chain', required=True)
     issuing_ca_private_key = forms.FileField(label='Issuing CA Private Key', required=True)
     issuing_ca_private_key_password = forms.CharField(
-        widget=forms.PasswordInput(),
-        label='Issuing CA Private Key Password',
-        required=False)
+        widget=forms.PasswordInput(), label='Issuing CA Private Key Password', required=False
+    )

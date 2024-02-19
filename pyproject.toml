@@ -1,0 +1,38 @@
+[tool.poetry]
+name = "trustpoint"
+version = "0.0.1"
+description = "Trustpoint Server Software"
+authors = ["TrustPoint-Project"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+django = "^5.0.2"
+django-tables2 = "^2.7.0"
+cryptography = "^42.0.3"
+django-crispy-forms = "^2.1"
+crispy-bootstrap5 = "^2023.10"
+
+[tool.poetry.group.dev.dependencies]
+sphinx = "^7.2.6"
+django-extensions = "^3.2.3"
+pyopenssl = "^24.0.0"
+werkzeug = "^3.0.1"
+furo = "^2024.1.29"
+ruff = "^0.2.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.ruff]
+line-length = 120
+indent-width = 4
+
+[tool.ruff.lint]
+extend-select = ["E501"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+docstring-code-format = true

@@ -8,8 +8,5 @@ class IndexView(RedirectView):
 
 
 def dashboard(request):
-    context = {
-        'page_category': 'home',
-        'page_name': 'dashboard'
-    }
+    context = {'page_category': 'home', 'page_name': 'dashboard'}
     return render(request, 'home/dashboard.html', context=context)
