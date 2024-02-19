@@ -57,7 +57,7 @@ class IssuingCa(models.Model):
 def auto_delete_file_on_delete(sender, instance, **kwargs):
     """
     Deletes file from filesystem
-    when corresponding `MediaFile` object is deleted.
+    when corresponding `IssuingCa` object is deleted.
     """
     if instance.p12:
         path = Path(instance.p12.path)
@@ -69,7 +69,7 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
 def auto_delete_file_on_change(sender, instance, **kwargs):
     """
     Deletes old file from filesystem
-    when corresponding `MediaFile` object is updated
+    when corresponding `IssuingCa` object is updated
     with new file.
     """
     if not instance.pk:
