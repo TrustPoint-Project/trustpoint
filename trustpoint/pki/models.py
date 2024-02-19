@@ -55,10 +55,7 @@ class IssuingCa(models.Model):
 
 @receiver(models.signals.post_delete, sender=IssuingCa)
 def auto_delete_file_on_delete(sender, instance, **kwargs):
-    """
-    Deletes file from filesystem
-    when corresponding `IssuingCa` object is deleted.
-    """
+    """ Deletes file from filesystem when corresponding `IssuingCa` object is deleted."""
     if instance.p12:
         path = Path(instance.p12.path)
         if path.is_file():
@@ -67,10 +64,6 @@ def auto_delete_file_on_delete(sender, instance, **kwargs):
 
 @receiver(models.signals.pre_save, sender=IssuingCa)
 def auto_delete_file_on_change(sender, instance, **kwargs):
-    """
-    Deletes old file from filesystem
-    when corresponding `IssuingCa` object is updated
-    with new file.
-    """
+    """Deletes old file from filesystem when corresponding `IssuingCa` object is updated with new file."""
     if not instance.pk:
         return False
