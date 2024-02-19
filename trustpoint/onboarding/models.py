@@ -19,7 +19,7 @@ class OnboardingProcessState(IntEnum):
     CSR_RECEIVED = 3
     DEVICE_VALIDATED = 4
     LDEVID_SENT = 5
-    COMPLETED = 6
+    COMPLETED = 6 # aka cert chain was requested
 
 # NOT a database-backed model
 class OnboardingProcess:
@@ -86,7 +86,12 @@ class OnboardingProcess:
         if not self.active: return None
         if (self.state != OnboardingProcessState.DEVICE_VALIDATED):
             return None
-        ldevid = Crypt.sign_ldevid(csr, self.device)
+        try:
+            ldevid = Crypt.sign_ldevid(csr, self.device)
+        except Exception:
+            self.state = OnboardingProcessState.FAILED
+            self.active = False
+            raise
         if ldevid:
             self.state = OnboardingProcessState.LDEVID_SENT
         else:

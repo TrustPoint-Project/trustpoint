@@ -58,3 +58,10 @@ class CryptoBackend:
         device.save() # need to keep track of the device once we send out a cert, even if onboarding fails afterwards, TODO but do it here?
 
         return cert.public_bytes(serialization.Encoding.PEM)
+    
+    def get_cert_chain():
+        with open('../tests/data/x509/rsa-long.p12', 'rb') as cafile:
+            ca_p12 = serialization.pkcs12.load_key_and_certificates(cafile.read(), b'testing321') # obviously TODO (open question: no way to get cert chain without password?)
+            ca_cert = ca_p12[1]
+
+        return ca_cert.public_bytes(serialization.Encoding.PEM)

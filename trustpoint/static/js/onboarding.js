@@ -17,8 +17,7 @@ TRUST_STORE_SENT = 2,
 CSR_RECEIVED = 3,
 DEVICE_VALIDATED = 4,
 LDEVID_SENT = 5,
-CERT_CHAIN_SENT = 6,
-DEVICE_SAVED_TO_DB = 7
+COMPLETED = 6 // aka cert chain sent
 
 function getOnboardingState(urlExt, iconUrl) {
   var state = -3;
@@ -71,11 +70,11 @@ function setOnboardingStateUI(state, iconUrl) {
       break;
     case LDEVID_SENT:
       type = 'info';
-      message = '<strong>Step 2/3</strong> Sent signed certificate to client. Waiting for certificate chain request...';
+      message = '<strong>Step 3/3</strong> Sent signed certificate to client. Waiting for certificate chain request...';
       icon = 'clock';
       extraClasses = 'breathing-anim';
       break;
-    case DEVICE_SAVED_TO_DB:
+    case COMPLETED:
       type = 'success';
       message = 'Onboarding completed successfully. Redirecting...';
       icon = 'success';

@@ -25,7 +25,7 @@ def onboarding_manual(request):
         if ob_process:
             device = ob_process.device.name
             onboardingProcesses.remove(ob_process)
-            if ob_process.state == OnboardingProcessState.DEVICE_SAVED_TO_DB:
+            if ob_process.state == OnboardingProcessState.COMPLETED:
                 messages.success(request, f'Device {device} onboarded successfully.')
             elif ob_process.state == OnboardingProcessState.FAILED:
                 messages.error(request, f'Onboarding process for device {device} failed.')
@@ -148,6 +148,19 @@ def ldevid(request):
     response['WWW-Authenticate'] = 'Basic realm="%s"' % url_extension
     return response
 
+
+def cert_chain(request):
+    # TODO: instead of URL extension, match using the client LDevID certificate
+    # TODO: chain with or without end-entity certificate?
+    # get URL extension
+    url_extension = request.path.split('/')[-1]
+    ob_process = OnboardingProcess.get_by_url_ext(url_extension)
+    if not ob_process or not ob_process.active:
+        return HttpResponse('Invalid URI extension.', status=404)
+    
+    response = HttpResponse(Crypt.get_cert_chain(), status=200)
+    if (ob_process.state == OnboardingProcessState.LDEVID_SENT): ob_process.state = OnboardingProcessState.COMPLETED
+    return response
 
 def state(request):
     # get URL extension
