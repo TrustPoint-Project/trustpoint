@@ -120,12 +120,12 @@ You can also build and run Trustpoint as a Docker image.
 1. Build the Docker image:
    * Open a terminal and navigate to your project's root directory.
    * Run the following command to build the Docker image:
-```
-docker build -t trustpoint .
-```
+   ```
+   docker build -t trustpoint .
+   ```
+
 2. Run the Docker container:
    * Once the image is built, you can run a container based on that image:
-```
-docker run -p 8000:8000 trustpoint
-```
-
+   ```
+   docker run -p 8000:8000 trustpoint
+   ```
