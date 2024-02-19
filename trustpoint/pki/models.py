@@ -14,7 +14,6 @@ class LocalIssuingCa(models.Model):
 
 
 class IssuingCa(models.Model):
-
     class KeyType(models.TextChoices):
         RSA = 'RSA', _('RSA')
         ECC = 'ECC', _('ECC')
@@ -32,7 +31,8 @@ class IssuingCa(models.Model):
         F_PEM = 'F_PEM', _('File Import - PEM')
 
     unique_name = models.CharField(
-        max_length=100, validators=[MinLengthValidator(6), validate_isidentifer], unique=True)
+        max_length=100, validators=[MinLengthValidator(6), validate_isidentifer], unique=True
+    )
 
     common_name = models.CharField(max_length=65536, null=True, blank=True)
     root_common_name = models.CharField(max_length=65536, null=True, blank=True)
@@ -47,11 +47,7 @@ class IssuingCa(models.Model):
 
     created_at = models.DateTimeField(default=timezone.now)
 
-    local_issuing_ca = models.OneToOneField(
-        LocalIssuingCa,
-        on_delete=models.CASCADE,
-        primary_key=True
-    )
+    local_issuing_ca = models.OneToOneField(LocalIssuingCa, on_delete=models.CASCADE, primary_key=True)
 
     def get_delete_url(self):
         return f'delete/{self.pk}/'

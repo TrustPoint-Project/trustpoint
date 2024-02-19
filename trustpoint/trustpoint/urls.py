@@ -20,15 +20,15 @@ from django.conf import settings
 from django.conf.urls.static import static
 from . import views
 
+
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.dashboard, name='index'),
+    path('', views.dashboard),
     path('home/', include('home.urls')),
     path('devices/', include('devices.urls')),
     path('onboarding/', include('onboarding.urls')),
     path('pki/', include('pki.urls')),
     path('sysconf/', include('sysconf.urls')),
-    path('rest/provision/', include('onboarding.urls')) # TODO: consider a rest app, however makes it harder to keep onboarding references
 ]
 
 if settings.DEBUG:

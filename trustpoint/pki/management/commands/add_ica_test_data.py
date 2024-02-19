@@ -8,11 +8,7 @@ import io
 
 
 P12_PATH = Path(__file__).parent.parent.parent.parent.parent / Path('tests/data/x509/')
-P12_FILE_NAMES = [
-    'rsa-long.p12',
-    'secp256r1-long.p12',
-    'secp384r1-long.p12'
-]
+P12_FILE_NAMES = ['rsa-long.p12', 'secp256r1-long.p12', 'secp384r1-long.p12']
 
 
 class Command(BaseCommand):
@@ -25,7 +21,6 @@ class Command(BaseCommand):
         return start_index + 3
 
     def _add_issuing_ca(self, p12_path: Path | str, unique_name: str, p12_password: bytes) -> None:
-
         with open(p12_path, 'rb') as f:
             p12 = f.read()
 
@@ -33,12 +28,7 @@ class Command(BaseCommand):
 
         p12_bytes_io = io.BytesIO(normalized_p12.public_bytes)
         p12_memory_uploaded_file = InMemoryUploadedFile(
-            p12_bytes_io,
-            'p12',
-            f'{unique_name}.p12',
-            'application/x-pkcs12',
-            sys.getsizeof(p12_bytes_io),
-            None
+            p12_bytes_io, 'p12', f'{unique_name}.p12', 'application/x-pkcs12', sys.getsizeof(p12_bytes_io), None
         )
 
         local_issuing_ca = LocalIssuingCa(p12=p12_memory_uploaded_file)
@@ -53,7 +43,8 @@ class Command(BaseCommand):
             curve=normalized_p12.curve,
             localization=normalized_p12.localization,
             config_type=normalized_p12.config_type,
-            local_issuing_ca=local_issuing_ca)
+            local_issuing_ca=local_issuing_ca,
+        )
 
         # TODO: check if this is kind of atomic or could result in issues
         local_issuing_ca.save()
@@ -63,4 +54,3 @@ class Command(BaseCommand):
         i = 1
         for _ in range(0, 5):
             i = self._add_all(i)
-

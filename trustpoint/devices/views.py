@@ -8,8 +8,5 @@ class IndexView(RedirectView):
 
 
 def devices(request):
-    context = {
-        'page_category': 'devices',
-        'page_name': 'devices'
-    }
+    context = {'page_category': 'devices', 'page_name': 'devices'}
     return render(request, 'devices/devices.html', context=context)

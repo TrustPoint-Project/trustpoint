@@ -22,7 +22,7 @@ DEVICE_SAVED_TO_DB = 7
 
 function getOnboardingState(urlExt, iconUrl) {
   var state = -3;
-  fetch('/rest/provision/state/'+ urlExt)
+  fetch('/onboarding/api/state/'+ urlExt)
     .then(response => response.json())
     .then(data => {
       let val = parseInt(data);

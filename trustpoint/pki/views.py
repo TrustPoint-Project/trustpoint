@@ -28,10 +28,7 @@ class IndexView(RedirectView):
 
 # Create your views here.
 def endpoint_profiles(request):
-    context = {
-        'page_category': 'pki',
-        'page_name': 'endpoint_profiles'
-    }
+    context = {'page_category': 'pki', 'page_name': 'endpoint_profiles'}
     return render(request, 'pki/endpoint_profiles.html', context=context)
 
 
@@ -109,7 +106,7 @@ def issuing_ca_detail(request, pk):
         'page_category': 'pki',
         'page_name': 'issuing_cas',
         'unique_name': object_.unique_name,
-        'certs': certs_json
+        'certs': certs_json,
     }
 
     return render(request, 'pki/issuing_cas/details.html', context=context)
@@ -123,7 +120,6 @@ def add_issuing_ca_local_file(request):
     }
 
     if request.method == 'POST':
-
         if 'p12-file-form' in request.POST:
             p12_file_form = IssuingCaLocalP12FileForm(request.POST, request.FILES)
 
@@ -136,9 +132,11 @@ def add_issuing_ca_local_file(request):
                     normalized_p12 = CredentialUploadHandler.parse_and_normalize_p12(p12, p12_password)
                 except Exception:
                     p12_file_form.errors.setdefault('p12', ErrorList()).append(
-                        'Failed to parse P12 file. Invalid password or PKCS#12 data.')
+                        'Failed to parse P12 file. Invalid password or PKCS#12 data.'
+                    )
                     p12_file_form.errors.setdefault('p12_password', ErrorList()).append(
-                        'Failed to parse P12 file. Invalid password or PKCS#12 data.')
+                        'Failed to parse P12 file. Invalid password or PKCS#12 data.'
+                    )
                     context['p12_file_form'] = p12_file_form
                     context['pem_file_form'] = IssuingCaLocalPemFileForm()
                     return render(request, 'pki/issuing_cas/add/local_file.html', context=context)
@@ -146,19 +144,15 @@ def add_issuing_ca_local_file(request):
                 unique_name = p12_file_form.cleaned_data.get('unique_name')
                 if IssuingCa.objects.filter(unique_name=unique_name).exists():
                     p12_file_form.errors.setdefault('unique_name', ErrorList()).append(
-                        'Unique name is already taken. Try another one.')
+                        'Unique name is already taken. Try another one.'
+                    )
                     context['p12_file_form'] = p12_file_form
                     context['pem_file_form'] = IssuingCaLocalPemFileForm()
                     return render(request, 'pki/issuing_cas/add/local_file.html', context=context)
 
                 p12_bytes_io = io.BytesIO(normalized_p12.public_bytes)
                 p12_memory_uploaded_file = InMemoryUploadedFile(
-                    p12_bytes_io,
-                    'p12',
-                    f'{unique_name}.p12',
-                    'application/x-pkcs12',
-                    sys.getsizeof(p12_bytes_io),
-                    None
+                    p12_bytes_io, 'p12', f'{unique_name}.p12', 'application/x-pkcs12', sys.getsizeof(p12_bytes_io), None
                 )
 
                 local_issuing_ca = LocalIssuingCa(p12=p12_memory_uploaded_file)
@@ -173,7 +167,8 @@ def add_issuing_ca_local_file(request):
                     curve=normalized_p12.curve,
                     localization=normalized_p12.localization,
                     config_type=normalized_p12.config_type,
-                    local_issuing_ca=local_issuing_ca)
+                    local_issuing_ca=local_issuing_ca,
+                )
 
                 # TODO: check if this is kind of atomic or could result in issues
                 local_issuing_ca.save()
@@ -194,24 +189,15 @@ def add_issuing_ca_local_file(request):
 
 
 def add_issuing_ca_local_request(request):
-    context = {
-        'page_category': 'pki',
-        'page_name': 'issuing_cas'
-    }
+    context = {'page_category': 'pki', 'page_name': 'issuing_cas'}
     return render(request, 'pki/issuing_cas/add/local_request.html', context=context)
 
 
 def add_issuing_ca_remote_est(request):
-    context = {
-        'page_category': 'pki',
-        'page_name': 'issuing_cas'
-    }
+    context = {'page_category': 'pki', 'page_name': 'issuing_cas'}
     return render(request, 'pki/issuing_cas/add/remote_est.html', context=context)
 
 
 def add_issuing_ca_remote_cmp(request):
-    context = {
-        'page_category': 'pki',
-        'page_name': 'issuing_cas'
-    }
+    context = {'page_category': 'pki', 'page_name': 'issuing_cas'}
     return render(request, 'pki/issuing_cas/add/remote_cmp.html', context=context)
