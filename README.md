@@ -1,8 +1,10 @@
 # Trustpoint
 
+
 ## Installation
 
 We are using pyenv and poetry to manage different python versions and dependencies.
+
 
 ### Pyenv
 
@@ -26,6 +28,7 @@ export PYENV_ROOT="$HOME/.pyenv"
 eval "$(pyenv init -)"
 ```
 
+
 ### Poetry
 
 You should use poetry to create a virtual environment and to manage the dependencies (instead of pip directly).
@@ -33,7 +36,7 @@ The easiest way to install poetry is their offered installer.
 
 https://python-poetry.org/docs/#installing-with-the-official-installer
 
-You can also follow the manual steps, without just executing a downloaded script - security wise the better decision ;).
+You can also follow the manual steps, without just executing a downloaded script (security wise, the better decision).
 
 You can add the following to your .bashrc
 
@@ -50,6 +53,7 @@ If you are using pyenv, make sure to add the following configuration:
 ```shell
 poetry config virtualenvs.prefer-active-python true
 ```
+
 
 ### Install dependencies with poetry.
 
@@ -70,6 +74,7 @@ cd /path/to/trustpoint/
 poetry install
 ```
 
+
 ### Activating the environment
 
 ```shell
@@ -89,6 +94,7 @@ python manage.py makemigrations
 python manage.py migrate
 python manage.py createsuperuser
 ```
+
 
 #### Running the development server
 
@@ -113,6 +119,7 @@ Dependencies that are only required in development, use the following to add in 
 poetry add --group=dev <name-of-package>
 ```
 
+
 #### Using the ruff linter and formatter
 
 For linting everything in the current directory use:
@@ -125,8 +132,6 @@ For active formatting everything in the current directory use:
 ```shell
 ruff format .
 ```
-
-
 
 
 ### Docker
