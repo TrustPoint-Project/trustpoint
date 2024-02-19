@@ -11,7 +11,7 @@ from django.contrib.messages.views import SuccessMessageMixin
 from django_tables2 import SingleTableView
 
 from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm
-from .models import LocalIssuingCa, IssuingCa
+from .models import IssuingCa
 from .tables import IssuingCaTable
 
 from django.urls import reverse_lazy
@@ -99,7 +99,7 @@ def issuing_ca_detail(request, pk):
     if not object_:
         return redirect('pki:issuing_cas')
 
-    with default_storage.open(object_.local_issuing_ca.p12.name, 'rb') as f:
+    with default_storage.open(object_.p12.name, 'rb') as f:
         certs_json = CredentialUploadHandler.parse_and_normalize_p12(f.read()).full_cert_chain_as_json()
 
     context = {
@@ -155,7 +155,6 @@ def add_issuing_ca_local_file(request):
                     p12_bytes_io, 'p12', f'{unique_name}.p12', 'application/x-pkcs12', sys.getsizeof(p12_bytes_io), None
                 )
 
-                local_issuing_ca = LocalIssuingCa(p12=p12_memory_uploaded_file)
                 issuing_ca = IssuingCa(
                     unique_name=unique_name,
                     common_name=normalized_p12.common_name,
@@ -167,11 +166,10 @@ def add_issuing_ca_local_file(request):
                     curve=normalized_p12.curve,
                     localization=normalized_p12.localization,
                     config_type=normalized_p12.config_type,
-                    local_issuing_ca=local_issuing_ca,
+                    p12=p12_memory_uploaded_file
                 )
 
                 # TODO: check if this is kind of atomic or could result in issues
-                local_issuing_ca.save()
                 issuing_ca.save()
 
                 msg = f'Success! Issuing CA - {unique_name} - is now available.'

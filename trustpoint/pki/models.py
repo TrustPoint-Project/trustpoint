@@ -3,14 +3,9 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinLengthValidator, MinValueValidator, MaxValueValidator
 from trustpoint.validators import validate_isidentifer
-
-
-class LocalIssuingCa(models.Model):
-    p12 = models.FileField(verbose_name='PKCS#12 File (.p12, .pfx)')
-    created_at = models.DateTimeField(default=timezone.now)
-
-    def __str__(self) -> str:
-        return f'LocalIssuingCa({self.p12.name})'
+from django.dispatch import receiver
+from pathlib import Path
+import os
 
 
 class IssuingCa(models.Model):
@@ -45,9 +40,8 @@ class IssuingCa(models.Model):
     localization = models.CharField(max_length=1, choices=Localization)
     config_type = models.CharField('Configuration Type', max_length=10, choices=ConfigType)
 
+    p12 = models.FileField(verbose_name='PKCS#12 File (.p12, .pfx)', )
     created_at = models.DateTimeField(default=timezone.now)
-
-    local_issuing_ca = models.OneToOneField(LocalIssuingCa, on_delete=models.CASCADE, primary_key=True)
 
     def get_delete_url(self):
         return f'delete/{self.pk}/'
@@ -56,4 +50,27 @@ class IssuingCa(models.Model):
         return f'details/{self.pk}/'
 
     def __str__(self) -> str:
-        return f'IssuingCa({self.unique_name}, {self.local_issuing_ca})'
+        return f'IssuingCa({self.unique_name}, {self.localization})'
+
+
+@receiver(models.signals.post_delete, sender=IssuingCa)
+def auto_delete_file_on_delete(sender, instance, **kwargs):
+    """
+    Deletes file from filesystem
+    when corresponding `MediaFile` object is deleted.
+    """
+    if instance.p12:
+        path = Path(instance.p12.path)
+        if path.is_file():
+            os.remove(path)
+
+
+@receiver(models.signals.pre_save, sender=IssuingCa)
+def auto_delete_file_on_change(sender, instance, **kwargs):
+    """
+    Deletes old file from filesystem
+    when corresponding `MediaFile` object is updated
+    with new file.
+    """
+    if not instance.pk:
+        return False

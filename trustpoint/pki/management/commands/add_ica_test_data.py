@@ -1,6 +1,6 @@
 from django.core.management import BaseCommand
 from pathlib import Path
-from pki.models import IssuingCa, LocalIssuingCa
+from pki.models import IssuingCa
 from util.x509.credentials import CredentialUploadHandler
 from django.core.files.uploadedfile import InMemoryUploadedFile
 import sys
@@ -31,7 +31,6 @@ class Command(BaseCommand):
             p12_bytes_io, 'p12', f'{unique_name}.p12', 'application/x-pkcs12', sys.getsizeof(p12_bytes_io), None
         )
 
-        local_issuing_ca = LocalIssuingCa(p12=p12_memory_uploaded_file)
         issuing_ca = IssuingCa(
             unique_name=unique_name,
             common_name=normalized_p12.common_name,
@@ -43,11 +42,10 @@ class Command(BaseCommand):
             curve=normalized_p12.curve,
             localization=normalized_p12.localization,
             config_type=normalized_p12.config_type,
-            local_issuing_ca=local_issuing_ca,
+            p12=p12_memory_uploaded_file
         )
 
         # TODO: check if this is kind of atomic or could result in issues
-        local_issuing_ca.save()
         issuing_ca.save()
 
     def handle(self, *args, **kwargs):
