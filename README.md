@@ -113,6 +113,22 @@ Dependencies that are only required in development, use the following to add in 
 poetry add --group=dev <name-of-package>
 ```
 
+#### Using the ruff linter and formatter
+
+For linting everything in the current directory use:
+
+```shell
+ruff check .
+```
+
+For active formatting everything in the current directory use:
+```shell
+ruff format .
+```
+
+
+
+
 ### Docker
 
 You can also build and run Trustpoint as a Docker image. 
