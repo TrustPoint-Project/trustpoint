@@ -54,7 +54,7 @@ class CryptoBackend:
         ).sign(private_ca_key, hashes.SHA256())
 
         device.serial_number = cert.serial_number
-        device.certificate = ContentFile(cert.public_bytes(serialization.Encoding.PEM), name="ldevid.pem")
+        device.certificate = ContentFile(cert.public_bytes(serialization.Encoding.PEM), name='ldevid.pem')
         device.save() # need to keep track of the device once we send out a cert, even if onboarding fails afterwards, TODO but do it here?
 
         return cert.public_bytes(serialization.Encoding.PEM)

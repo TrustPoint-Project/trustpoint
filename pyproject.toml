@@ -29,10 +29,28 @@ build-backend = "poetry.core.masonry.api"
 line-length = 120
 indent-width = 4
 
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
+inline-quotes = "single"
+multiline-quotes = "double"
+
 [tool.ruff.lint]
-extend-select = ["E501"]
+select = ["ALL"]
+ignore = [
+    "ANN101",
+    "D203", "D213", "D415",
+    "TD003",
+    # TODO(Alex): FIX should be added again, after we are departing from the PoC phase
+    "FIX",
+    "COM812",       # Not compatible with the formatter
+    "ISC001"        # Not compatible with the formatter
+]
 
 [tool.ruff.format]
 quote-style = "single"
 indent-style = "space"
 docstring-code-format = true
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"

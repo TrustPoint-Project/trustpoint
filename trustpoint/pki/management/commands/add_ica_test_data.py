@@ -1,11 +1,11 @@
-from django.core.management import BaseCommand
+import io
+import sys
 from pathlib import Path
+
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.core.management import BaseCommand
 from pki.models import IssuingCa
 from util.x509.credentials import CredentialUploadHandler
-from django.core.files.uploadedfile import InMemoryUploadedFile
-import sys
-import io
-
 
 P12_PATH = Path(__file__).parent.parent.parent.parent.parent / Path('tests/data/x509/')
 P12_FILE_NAMES = ['rsa-long.p12', 'secp256r1-long.p12', 'secp384r1-long.p12']
@@ -42,7 +42,7 @@ class Command(BaseCommand):
             curve=normalized_p12.curve,
             localization=normalized_p12.localization,
             config_type=normalized_p12.config_type,
-            p12=p12_memory_uploaded_file
+            p12=p12_memory_uploaded_file,
         )
 
         # TODO: check if this is kind of atomic or could result in issues
@@ -50,5 +50,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         i = 1
-        for _ in range(0, 5):
+        for _ in range(5):
             i = self._add_all(i)

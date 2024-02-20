@@ -121,7 +121,7 @@ def ldevid(request):
     ob_process = OnboardingProcess.get_by_url_ext(url_extension)
     if (not ob_process or not ob_process.active
         or ob_process.state >= OnboardingProcessState.DEVICE_VALIDATED # only ever allow one set of credentials to be submitted
-        or request.method != "POST" or not request.FILES or not request.FILES['ldevid.csr']):
+        or request.method != 'POST' or not request.FILES or not request.FILES['ldevid.csr']):
         return HttpResponse('Invalid URI extension.', status=404)
 
     # get http basic auth header

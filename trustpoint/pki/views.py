@@ -1,24 +1,22 @@
-import sys
 import io
-from util.x509.credentials import CredentialUploadHandler
+import sys
 
-from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.shortcuts import render, redirect
-from django.forms.utils import ErrorList
 from django.contrib import messages
 from django.contrib.messages.views import SuccessMessageMixin
-
+from django.core.files.storage import default_storage
+from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.forms.utils import ErrorList
+from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
+from django.views.generic.base import RedirectView
+from django.views.generic.detail import DetailView
+from django.views.generic.edit import DeleteView
 from django_tables2 import SingleTableView
+from util.x509.credentials import CredentialUploadHandler
 
 from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm
 from .models import IssuingCa
 from .tables import IssuingCaTable
-
-from django.urls import reverse_lazy
-from django.views.generic.edit import DeleteView
-from django.views.generic.detail import DetailView
-from django.core.files.storage import default_storage
-from django.views.generic.base import RedirectView
 
 
 class IndexView(RedirectView):
@@ -166,7 +164,7 @@ def add_issuing_ca_local_file(request):
                     curve=normalized_p12.curve,
                     localization=normalized_p12.localization,
                     config_type=normalized_p12.config_type,
-                    p12=p12_memory_uploaded_file
+                    p12=p12_memory_uploaded_file,
                 )
 
                 # TODO: check if this is kind of atomic or could result in issues
