@@ -17,11 +17,13 @@ class IssuingCa(models.Model):
 
     class KeyType(models.TextChoices):
         """Supported key-types."""
+
         RSA = 'RSA', _('RSA')
         ECC = 'ECC', _('ECC')
 
     class Curves(models.TextChoices):
         """Supported curves."""
+
         SECP256R1 = 'SECP256R1', _('SECP256R1')
         SECP384R1 = 'SECP384R1', _('SECP384R1')
 
@@ -33,11 +35,13 @@ class IssuingCa(models.Model):
             R:  The Issuing CA is external.
                 Certificate request messages are generated and send to the CA to issue certificates.
         """
+
         L = 'L', _('Local')
         R = 'R', _('Remote')
 
     class ConfigType(models.TextChoices):
         """Confing."""
+
         F_P12 = 'F_P12', _('File Import - PKCS#12')
         F_PEM = 'F_PEM', _('File Import - PEM')
 

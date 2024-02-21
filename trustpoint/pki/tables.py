@@ -19,17 +19,11 @@ if TYPE_CHECKING:
 class IssuingCaTable(tables.Table):
     """Table representation of the IssuingCa model."""
 
-    _attrs: ClassVar[dict[str, dict[str, str]]] = {
-        'th': {
-            'id': 'checkbox-column'
-        },
-        'td': {
-            'class': 'row_checkbox'
-        }
-    }
+    _attrs: ClassVar[dict[str, dict[str, str]]] = {'th': {'id': 'checkbox-column'}, 'td': {'class': 'row_checkbox'}}
 
     class Meta:
         """Table meta class configurations."""
+
         model = IssuingCa
         template_name = 'django_tables2/bootstrap5.html'
         order_by = '-created_at'
@@ -66,9 +60,7 @@ class IssuingCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html(
-            '<a href="details/{}/" class="btn btn-primary tp-table-btn"">Details</a>',
-            record.pk)
+        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn"">Details</a>', record.pk)
 
     @staticmethod
     def render_export(record: IssuingCa) -> SafeString:
@@ -80,9 +72,7 @@ class IssuingCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the export-view.
         """
-        return format_html(
-            '<a href="export/{}/" class="btn btn-primary tp-table-btn"">Export</a>',
-            record.pk)
+        return format_html('<a href="export/{}/" class="btn btn-primary tp-table-btn"">Export</a>', record.pk)
 
     @staticmethod
     def render_delete(record: IssuingCa) -> SafeString:
@@ -94,9 +84,7 @@ class IssuingCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html(
-            '<a href="delete/{}/" class="btn btn-secondary tp-table-btn">Delete</a>',
-            record.pk)
+        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">Delete</a>', record.pk)
 
     # TODO(Alex): consider explicitly not supporting multiple CNs
     # TODO(Alex): there were cases in the past in which this was misused due to software not handling this correctly

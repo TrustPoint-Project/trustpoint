@@ -26,6 +26,7 @@ class Command(BaseCommand):
 
         normalized_p12 = CredentialUploadHandler.parse_and_normalize_p12(p12, p12_password)
 
+        # noinspection DuplicatedCode
         p12_bytes_io = io.BytesIO(normalized_p12.public_bytes)
         p12_memory_uploaded_file = InMemoryUploadedFile(
             p12_bytes_io, 'p12', f'{unique_name}.p12', 'application/x-pkcs12', sys.getsizeof(p12_bytes_io), None
