@@ -21,7 +21,7 @@ https://github.com/pyenv/pyenv?tab=readme-ov-file#installation
 You can add the following to your .bashrc:
 
 ```shell
-export PATH="$PATH:/home/alex/.pyenv/bin/"
+export PATH="$PATH:/home/<your-user-name>/.pyenv/bin/"
 
 export PYENV_ROOT="$HOME/.pyenv"
 [[ -d $PYENV_ROOT/bin ]] && export PATH="$PYENV_ROOT/bin:$PATH"
@@ -41,7 +41,7 @@ You can also follow the manual steps, without just executing a downloaded script
 You can add the following to your .bashrc
 
 ```shell
-export PATH="$PATH:/home/alex/.local/bin/"
+export PATH="$PATH:/home/<your-user-name>/.local/bin/"
 ```
 
 To configure the python environment, follow:
