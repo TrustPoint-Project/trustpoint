@@ -1,9 +1,9 @@
 <p align="center">
   <img src="/.github-assets/trustpoint_banner.png">
-  <a href="https://trustpoint.campus-schwarzwald.de/"><img src="https://img.shields.io/badge/Landing_Page_(german)-014BAD?style=flat-square"></a>
-  <a href="https://github.com/orgs/TrustPoint-Project/discussions"><img src="https://img.shields.io/badge/GitHub-Discussions-014BAD?style=flat-square"></a>
-  <img src="https://img.shields.io/badge/License-None-red?style=flat-square">
-  <img src="https://img.shields.io/badge/Status-Early_technology_preview-red?style=flat-square">
+  <a href="https://trustpoint.campus-schwarzwald.de/"><img src="https://img.shields.io/badge/Landing_Page_(german)-014BAD?style=flat"></a>
+  <a href="https://github.com/orgs/TrustPoint-Project/discussions"><img src="https://img.shields.io/badge/GitHub-Discussions-014BAD?style=flat"></a>
+  <img src="https://img.shields.io/badge/License-None-red?style=flat">
+  <img src="https://img.shields.io/badge/Status-Early_technology_preview-red?style=flat">
 </p>
 
 **The open source trust anchor software for machines and factories to manage digital identities.**
