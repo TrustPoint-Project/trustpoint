@@ -1,12 +1,11 @@
 <p align="center">
-  <img src="/.github-assets/trustpoint_banner.png">
+  <img src="/.github-assets/trustpoint_banner.png" alt="Trustpoint"><br/><br/>
+  <strong>The open source trust anchor software for machines and factories to manage digital identities.</strong><br/><br/>
   <a href="https://trustpoint.campus-schwarzwald.de/"><img src="https://img.shields.io/badge/Landing_Page_(german)-014BAD?style=flat"></a>
   <a href="https://github.com/orgs/TrustPoint-Project/discussions"><img src="https://img.shields.io/badge/GitHub-Discussions-014BAD?style=flat"></a>
   <img src="https://img.shields.io/badge/License-None-red?style=flat">
   <img src="https://img.shields.io/badge/Status-Early_technology_preview-red?style=flat">
 </p>
-
-**The open source trust anchor software for machines and factories to manage digital identities.**
 
 ## Why Trustpoint?
 
