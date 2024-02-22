@@ -164,7 +164,15 @@ def cert_chain(request):
     ob_process = OnboardingProcess.get_by_url_ext(url_extension)
     if not ob_process or not ob_process.active:
         return HttpResponse('Invalid URI extension.', status=404)
+    
+    # could use cryptography.x509.verification to verify the chain, it has just been added in cryptography 42.0.0 and is still marked as an unstable API
 
+    # TODO: do we want to verify the LDevID as a TLS client certificate?
+    # This would a) require the LDevID to have extendedKeyUsage=clientAuth and b) require Nginx/Apache to be configured to handle client certificates
+    # This test implementation verifies the LDevID passed as a TLS client certificate (even though it may not be validly used as such) against the trust store
+
+    # print(request.META['HTTP_CLIENT_CERT'])
+    
     response = HttpResponse(Crypt.get_cert_chain(), status=200)
     if ob_process.state == OnboardingProcessState.LDEVID_SENT:
         ob_process.state = OnboardingProcessState.COMPLETED
