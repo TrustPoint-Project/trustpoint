@@ -1,11 +1,19 @@
 <p align="center">
-  <img src="/.github-assets/trustpoint_banner.png" alt="Trustpoint"><br/><br/>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="/.github-assets/trustpoint_banner_dark.png">
+    <source media="(prefers-color-scheme: light)" srcset="/.github-assets/trustpoint_banner.png">
+    <img alt="Trustpoint" src="/.github-assets/trustpoint_banner.png">
+  </picture>
+  <br/>
   <strong>The open source trust anchor software for machines and factories to manage digital identities.</strong><br/><br/>
   <a href="https://trustpoint.campus-schwarzwald.de/"><img src="https://img.shields.io/badge/Landing_Page_(german)-014BAD?style=flat"></a>
   <a href="https://github.com/orgs/TrustPoint-Project/discussions"><img src="https://img.shields.io/badge/GitHub-Discussions-014BAD?style=flat"></a>
   <img src="https://img.shields.io/badge/License-None-red?style=flat">
   <img src="https://img.shields.io/badge/Status-Early_technology_preview-red?style=flat">
 </p>
+
+> [!CAUTION]
+> Trustpoint is currently in an **early technology preview** (alpha) state. Do not use it in production.
 
 ## Why Trustpoint?
 
@@ -24,8 +32,6 @@ As a result, Trustpoint aims to offer a solution tailored to the domain of machi
 - that does not require users to have any prior knowledge of cryptographic mechanisms
 
 - supports concepts for zero-touch onboarding as well as user-driven onboarding
-
-Trustpoint is currently in an **early technology preview** (alpha) state. Do not use it in production.
 
 ## What are the features of this early technology preview?
 
