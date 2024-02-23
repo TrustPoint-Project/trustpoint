@@ -1,10 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="/.github-assets/trustpoint_banner_dark.png">
-    <source media="(prefers-color-scheme: light)" srcset="/.github-assets/trustpoint_banner.png">
-    <img alt="Trustpoint" src="/.github-assets/trustpoint_banner.png">
-  </picture>
-  <br/>
+  <img alt="Trustpoint" src="/.github-assets/trustpoint_banner.png"><br/>
   <strong>The open source trust anchor software for machines and factories to manage digital identities.</strong><br/><br/>
   <a href="https://trustpoint.campus-schwarzwald.de/"><img src="https://img.shields.io/badge/Landing_Page_(german)-014BAD?style=flat"></a>
   <a href="https://github.com/orgs/TrustPoint-Project/discussions"><img src="https://img.shields.io/badge/GitHub-Discussions-014BAD?style=flat"></a>
