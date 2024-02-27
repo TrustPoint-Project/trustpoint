@@ -1,5 +1,8 @@
 """Module that contains all models corresponding to the PKI application."""
 
+
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Any
 
@@ -47,7 +50,7 @@ class IssuingCa(models.Model):
         F_PEM = 'F_PEM', _('File Import - PEM')
 
     unique_name = models.CharField(
-        max_length=100, validators=[MinLengthValidator(6), validate_isidentifer], unique=True
+        max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True
     )
 
     common_name = models.CharField(max_length=65536, default='', blank=True)
@@ -66,7 +69,7 @@ class IssuingCa(models.Model):
     )
     created_at = models.DateTimeField(default=timezone.now)
 
-    def __str__(self) -> str:
+    def __str__(self: IssuingCa) -> str:
         """Human-readable representation of the IssuingCa model instance.
 
         Returns:
@@ -74,7 +77,7 @@ class IssuingCa(models.Model):
         """
         return f'IssuingCa({self.unique_name}, {self.localization})'
 
-    def get_delete_url(self) -> str:
+    def get_delete_url(self: IssuingCa) -> str:
         """Creates the URL for the corresponding delete-view.
 
         Returns:
@@ -82,7 +85,7 @@ class IssuingCa(models.Model):
         """
         return f'delete/{self.pk}/'
 
-    def get_details_url(self) -> str:
+    def get_details_url(self: IssuingCa) -> str:
         """Creates the URL for the corresponding details-view.
 
         Returns:
@@ -91,18 +94,47 @@ class IssuingCa(models.Model):
         return f'details/{self.pk}/'
 
 
+# noinspection PyUnusedLocal
 @receiver(models.signals.post_delete)
-def auto_delete_file_on_delete(instance: IssuingCa, **_: Any) -> None:
+def auto_delete_file_on_delete(sender: models.Model, instance: IssuingCa, **kwargs: Any) -> None:   # noqa: ARG001
     """Deletes the corresponding files from the filesystem when corresponding IssuingCa object is deleted.
 
     Args:
-        instance (IssuingCa):   The instance of the IssuingCa model.
-        _ (Any):                Key word arguments are required for receiver annotated functions and methods.
+        instance (IssuingCa):
+            The instance of the IssuingCa model.
+        sender (Any):
+            The sender of the signal. Must be IssuingCa model to fire.
+        kwargs (Any):
+            Key word arguments are required for receiver annotated functions and methods.
 
     Returns:
         None
     """
-    if instance.p12:
+    if sender == IssuingCa and instance.p12:
         path = Path(instance.p12.path)
         if path.is_file():
             Path.unlink(path)
+
+
+class EndpointProfile(models.Model):
+    """Endpoint Profile model."""
+
+    unique_endpoint = models.CharField(
+        max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True
+    )
+    issuing_ca = models.ForeignKey(IssuingCa, on_delete=models.PROTECT, blank=True, null=True)
+
+    def __str__(self: EndpointProfile) -> str:
+        """Human-readable representation of the EndpointProfile model instance.
+
+        Returns:
+            str:
+                Human-readable representation of the EndpointProfile model instance.
+        """
+        if self.issuing_ca:
+            return f'EndpointProfile({self.unique_endpoint}, {self.issuing_ca.unique_name})'
+        return f'EndpointProfile({self.unique_endpoint}, None)'
+
+    def save(self: EndpointProfile, *args: Any, **kwargs: Any) -> Any:
+        self.unique_endpoint = self.unique_endpoint.lower()
+        return super().save(*args, **kwargs)
