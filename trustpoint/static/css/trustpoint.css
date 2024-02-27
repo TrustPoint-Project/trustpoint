@@ -274,6 +274,6 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
 
 .tp-table-footer-btn-group {
     display: grid;
-    grid-template-columns: 15rem 15rem auto;
+    grid-template-columns: repeat(5, 15rem) auto;
     column-gap: 1rem;
 }

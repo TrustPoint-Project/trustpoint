@@ -5,53 +5,63 @@ from __future__ import annotations
 
 import io
 import sys
+from typing import TYPE_CHECKING
 
 from django.contrib import messages
-from django.contrib.messages.views import SuccessMessageMixin
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.shortcuts import redirect, render
+from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import RedirectView, TemplateView
-from django.views.generic.edit import DeleteView, FormView
+from django.views.generic.detail import DetailView
+from django.views.generic.edit import FormMixin
+from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_tables2 import SingleTableView
 from util.x509.credentials import CredentialUploadHandler
 
-from trustpoint.views import Form, MultiFormView, PageContextDataMixin
+from trustpoint.views import BulkDeletionMixin, ContextDataMixin, Form, MultiFormView
 
 from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm
 from .models import IssuingCa
 from .tables import IssuingCaTable
 
+if TYPE_CHECKING:
+    from typing import Any
 
-class EndpointProfilesExtraContextMixin(PageContextDataMixin):
+    from django.db.models import QuerySet
+    from django.http import HttpRequest, HttpResponse
+
+    from .forms import IssuingCaUploadForm
+
+
+class EndpointProfilesContextMixin(ContextDataMixin):
     """Mixin which adds context_data for the PKI -> Endpoint Profiles pages."""
 
-    page_category = 'pki'
-    page_name = 'endpoint_profiles'
+    context_page_category = 'pki'
+    context_page_name = 'endpoint_profiles'
 
 
-class IssuingCasExtraContextMixin(PageContextDataMixin):
+class IssuingCasContextMixin(ContextDataMixin):
     """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
 
-    page_category = 'pki'
-    page_name = 'issuing_cas'
+    context_page_category = 'pki'
+    context_page_name = 'issuing_cas'
 
 
 class IndexView(RedirectView):
     """View that redirects to the index of the PKI application: Endpoint Profiles."""
 
-    permanent = True
+    permanent = False
     pattern_name = 'pki:endpoint_profiles'
 
 
-class EndpointProfilesTemplateView(EndpointProfilesExtraContextMixin, TemplateView):
+class EndpointProfilesTemplateView(EndpointProfilesContextMixin, TemplateView):
     """Endpoint Profiles Template View."""
 
     template_name = 'pki/endpoint_profiles.html'
 
 
-class IssuingCaListView(IssuingCasExtraContextMixin, SingleTableView):
+class IssuingCaListView(IssuingCasContextMixin, SingleTableView):
     """Index-view of PKI -> Issuing CAs."""
 
     model = IssuingCa
@@ -59,31 +69,43 @@ class IssuingCaListView(IssuingCasExtraContextMixin, SingleTableView):
     template_name = 'pki/issuing_cas/issuing_cas.html'
 
 
-class IssuingCaLocalFile(FormView):
+class IssuingCaLocalFileMultiForms(IssuingCasContextMixin, MultiFormView):
+    """Upload view for issuing CAs as PKCS#12 or PEM files."""
+
     template_name = 'pki/issuing_cas/add/local_file.html'
-    form_class = IssuingCaLocalP12FileForm
-    success_url = reverse_lazy('pki:issuing_cas')
+    forms: dict
 
-    def get_context_data(self, **kwargs):
-        """Insert the form into the context dict."""
-        if 'p12_file_form' not in kwargs:
-            kwargs['p12_file_form'] = self.get_form()
-        return super().get_context_data(**kwargs)
-
-
-class IssuingCaLocalFileMulti(IssuingCasExtraContextMixin, MultiFormView):
-    template_name = 'pki/issuing_cas/add/local_file.html'
-    forms = {
-        'p12_file_form': Form(
-            form_name='p12_file_form', form_class=IssuingCaLocalP12FileForm, success_url=reverse_lazy('pki:issuing_cas')
-        ),
-        'pem_file_form': Form(
-            form_name='pem_file_form', form_class=IssuingCaLocalPemFileForm, success_url=reverse_lazy('pki:issuing_cas')
-        ),
-    }
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initialize the IssuingCaLocalFileMulti class and add the required forms."""
+        self.forms = {
+            'p12_file_form': Form(
+                form_name='p12_file_form',
+                form_class=IssuingCaLocalP12FileForm,
+                success_url=reverse_lazy('pki:issuing_cas'),
+            ),
+            'pem_file_form': Form(
+                form_name='pem_file_form',
+                form_class=IssuingCaLocalPemFileForm,
+                success_url=reverse_lazy('pki:issuing_cas'),
+            ),
+        }
+        super().__init__(*args, **kwargs)
 
     @staticmethod
-    def on_valid_form_p12_file_form(form, request):
+    def _form_valid(form: IssuingCaUploadForm, request: HttpRequest, config_type: IssuingCa.ConfigType) -> None:
+        """Gets the normalized P12 object from the form and saves it to the database.
+
+        Args:
+            form (IssuingCaUploadForm):
+                A form that provides a normalized P12 after cleaning the form.
+            request (HttpRequest):
+                Django's HttpRequest object.
+            config_type (IssuingCa.ConfigType):
+                Enum that specifies the type of the uploaded files.
+
+        Returns:
+            None
+        """
         unique_name = form.cleaned_data.get('unique_name')
         normalized_p12 = form.normalized_p12
 
@@ -103,7 +125,7 @@ class IssuingCaLocalFileMulti(IssuingCasExtraContextMixin, MultiFormView):
             key_size=normalized_p12.key_size,
             curve=normalized_p12.curve,
             localization=normalized_p12.localization,
-            config_type=normalized_p12.config_type,
+            config_type=str(config_type.label),
             p12=p12_memory_uploaded_file,
         )
 
@@ -113,91 +135,172 @@ class IssuingCaLocalFileMulti(IssuingCasExtraContextMixin, MultiFormView):
         msg = f'Success! Issuing CA - {unique_name} - is now available.'
         messages.add_message(request, messages.SUCCESS, msg)
 
-    @staticmethod
-    def on_valid_form_pem_file_form(form_name: str, form):
-        # TODO(Alex)
-        pass
+    @classmethod
+    def form_valid_p12_file_form(
+        cls: type(IssuingCaLocalFileMultiForms), form: IssuingCaUploadForm, request: HttpRequest
+    ) -> None:
+        """Called if the p12_file_form is valid and thus saves the upload in the database.
+
+        Args:
+            form (IssuingCaUploadForm):
+                A form that provides a normalized P12 after cleaning the form.
+            request (HttpRequest):
+                Django's HttpRequest object.
+
+        Returns:
+            None
+        """
+        cls._form_valid(form, request, IssuingCa.ConfigType.F_P12)
+
+    @classmethod
+    def form_valid_pem_file_form(
+        cls: type(IssuingCaUploadForm), form: IssuingCaUploadForm, request: HttpRequest
+    ) -> None:
+        """Called if the pem_file_form is valid and thus saves the upload in the database.
+
+        Args:
+            form (IssuingCaUploadForm):
+                A form that provides a normalized P12 after cleaning the form.
+            request (HttpRequest):
+                Django's HttpRequest object.
+
+        Returns:
+            None
+        """
+        cls._form_valid(form, request, IssuingCa.ConfigType.F_PEM)
 
 
-class IssuingCaDeleteView(SuccessMessageMixin, DeleteView):
-    """Issuing CA Delete View."""
+class IssuingCasRedirectView(RedirectView):
+    """View that redirects to the index of the PKI application: Endpoint Profiles."""
+
+    permanent = False
+    pattern_name = 'pki:issuing_cas'
+
+
+class IssuingCaBulkDeleteView(
+    IssuingCasContextMixin, MultipleObjectTemplateResponseMixin, BulkDeletionMixin, FormMixin, BaseListView
+):
+    """View that allows bulk deletion of Issuing CAs.
+
+    This view expects a path variable pks containing string with all primary keys separated by forward slashes /.
+    It cannot start with a forward slash, however a trailing forward slash is optional.
+    If one or more primary keys do not have a corresponding object in the database, the user will be redirected
+    to the ignore_url.
+    """
 
     model = IssuingCa
-    success_url = reverse_lazy('pki-issuing_cas')
+    success_url = reverse_lazy('pki:issuing_cas')
+    ignore_url = reverse_lazy('pki:issuing_cas')
     template_name = 'pki/issuing_cas/confirm_delete.html'
+    context_object_name = 'objects'
 
-    def get_success_message(self, cleaned_data):
-        return f'Success! Issuing CA - {self.object.unique_name} - deleted successfully!.'
+    def get_ignore_url(self: IssuingCaBulkDeleteView) -> str:
+        """Gets the get the configured ignore_url.
 
-    def get_context_data(self, **kwargs):
+        If no ignore_url is configured, it will return the success_url.
+
+        Returns:
+            str:
+                The ignore_url or success_url.
+
+        """
+        if self.ignore_url is not None:
+            return str(self.ignore_url)
+        return str(self.success_url)
+
+    def get_pks(self: IssuingCaBulkDeleteView) -> list[str]:
+        """Gets the primary keys for the objects to delete.
+
+        Expects a string containing the primary keys delimited by forward slashes.
+        Cannot start with a forward slash.
+        A trailing forward slash is optional.
+
+        Returns:
+            list[str]:
+                A list of the primary keys as strings.
+        """
+        return self.kwargs['pks'].split('/')
+
+    def get_queryset(self: IssuingCaBulkDeleteView) -> QuerySet | None:
+        """Gets the queryset of the objects to be deleted.
+
+        Returns:
+            QuerySet | None:
+                The queryset of the objects to be deleted.
+                None, if one or more primary keys do not have corresponding objects in the database or
+                if the primary key list pks is empty.
+        """
+        pks = self.get_pks()
+        if not pks:
+            return None
+        queryset = self.model.objects.filter(pk__in=pks)
+
+        # if some pk do not correspond to an existing object
+        if len(pks) != len(queryset):
+            queryset = None
+
+        self.queryset = queryset
+        return queryset
+
+    def get(self: IssuingCaBulkDeleteView, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Handles HTTP GET requests.
+
+        Args:
+            *args (list):
+                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
+            **kwargs (dict):
+                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
+
+        Returns:
+            HttpResponse:
+                The response corresponding to the HTTP GET request.
+        """
+        if self.get_queryset() is None:
+            return redirect(self.get_ignore_url())
+
+        return super().get(*args, **kwargs)
+
+
+class IssuingCaDetailView(IssuingCasContextMixin, DetailView):
+    """Detail view for Issuing CAs."""
+
+    model = IssuingCa
+    pk_url_kwarg = 'pk'
+    template_name = 'pki/issuing_cas/details.html'
+
+    def get_context_data(self: IssuingCaDetailView, **kwargs: Any) -> dict:
+        """Adds the certificates and unique_name to the context.
+
+        Args:
+            **kwargs (Any): Keyword arguments. These are passed to super().get_context_data(**kwargs).
+
+        Returns:
+            dict:
+                The context to be used for the view.
+        """
         context = super().get_context_data(**kwargs)
-        context['page_category'] = 'pki'
-        context['page_name'] = 'issuing_cas'
+
+        with default_storage.open(self.get_object().p12.name, 'rb') as f:
+            certs_json = CredentialUploadHandler.parse_and_normalize_p12(f.read()).full_cert_chain_as_dict()
+
+        context['certs'] = certs_json
+        context['unique_name'] = self.get_object().unique_name
         return context
 
 
-def bulk_delete_issuing_cas(request, issuing_cas):
-    pks = issuing_cas.split('/')
-    context = {
-        'page_category': 'pki',
-        'page_name': 'endpoint_profiles',
-    }
-
-    if request.method == 'GET':
-        if len(pks) == 1:
-            context['list_heading'] = 'Are you sure you want to delete this Issuing CA?'
-        else:
-            context['list_heading'] = 'Are you sure you want to delete these Issuing CAs?'
-
-        objects = IssuingCa.objects.filter(pk__in=pks)
-        context['objects'] = objects
-
-        return render(request, 'pki/issuing_cas/confirm_delete.html', context=context)
-
-    if request.method == 'POST':
-        objects = IssuingCa.objects.filter(pk__in=pks)
-        if len(pks) == 1:
-            msg = f'Success! Issuing CA - {objects[0].unique_name} - deleted!.'
-        else:
-            msg = 'Success! All selected Issuing CAs deleted!.'
-        objects.delete()
-        messages.add_message(request, messages.SUCCESS, msg)
-        return redirect('pki:issuing_cas')
-
-    return render(request, 'pki/issuing_cas/confirm_delete.html', context=context)
-
-
-def issuing_ca_detail(request, pk):
-    object_ = IssuingCa.objects.filter(pk=pk).first()
-    if not object_:
-        return redirect('pki:issuing_cas')
-
-    with default_storage.open(object_.p12.name, 'rb') as f:
-        certs_json = CredentialUploadHandler.parse_and_normalize_p12(f.read()).full_cert_chain_as_json()
-
-    context = {
-        'page_category': 'pki',
-        'page_name': 'issuing_cas',
-        'unique_name': object_.unique_name,
-        'certs': certs_json,
-    }
-
-    return render(request, 'pki/issuing_cas/details.html', context=context)
-
-
-class AddIssuingCaLocalRequestTemplateView(IssuingCasExtraContextMixin, TemplateView):
+class AddIssuingCaLocalRequestTemplateView(IssuingCasContextMixin, TemplateView):
     """Add Issuing CA Local Request Template View."""
 
     template_name = 'pki/issuing_cas/add/local_request.html'
 
 
-class AddIssuingCaRemoteEstTemplateView(IssuingCasExtraContextMixin, TemplateView):
+class AddIssuingCaRemoteEstTemplateView(IssuingCasContextMixin, TemplateView):
     """Add Issuing CA Remote EST Template View."""
 
     template_name = 'pki/issuing_cas/add/remote_est.html'
 
 
-class AddIssuingCaRemoteCmpTemplateView(IssuingCasExtraContextMixin, TemplateView):
+class AddIssuingCaRemoteCmpTemplateView(IssuingCasContextMixin, TemplateView):
     """Add Issuing CA Remote CMP Template View."""
 
     template_name = 'pki/issuing_cas/add/remote_cmp.html'

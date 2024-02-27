@@ -11,13 +11,18 @@ urlpatterns = [
     path('endpoint-profiles/', views.EndpointProfilesTemplateView.as_view(), name='endpoint_profiles'),
     path('issuing-certificate-authorities/', views.IssuingCaListView.as_view(), name='issuing_cas'),
     re_path(
-        r'issuing-certificate-authorities/delete/(?P<issuing_cas>[1-9][0-9]*(?:/[1-9][0-9]*)*)',
-        views.bulk_delete_issuing_cas,
+        r'^issuing-certificate-authorities/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
+        views.IssuingCaBulkDeleteView.as_view(),
         name='issuing_cas-delete',
+    ),
+    re_path(
+        r'^issuing-certificate-authorities/delete/',
+        views.IssuingCasRedirectView.as_view(),
+        name='issuing_cas-redirect',
     ),
     path(
         'issuing-certificate-authorities/add/local/file/',
-        views.IssuingCaLocalFileMulti.as_view(),
+        views.IssuingCaLocalFileMultiForms.as_view(),
         name='issuing_cas-add_local_file',
     ),
     path(
@@ -35,5 +40,9 @@ urlpatterns = [
         views.AddIssuingCaRemoteCmpTemplateView.as_view(),
         name='issuing_cas-add_remote_cmp',
     ),
-    path('issuing-certificate-authorities/details/<int:pk>/', views.issuing_ca_detail, name='issuing_cas-details'),
+    path(
+        'issuing-certificate-authorities/details/<int:pk>/',
+        views.IssuingCaDetailView.as_view(),
+        name='issuing_cas-details',
+    ),
 ]

@@ -88,12 +88,10 @@ function chooseFileFormatForm() {
 const checkboxColumn = document.querySelector('#checkbox-column > input');
 const checkboxes = document.querySelectorAll('.row_checkbox > input');
 const deleteSelectedBtn = document.getElementById('tp-table-delete-selected');
-const exportSelectedBtn = document.getElementById('tp-table-export-selected');
 
-if (checkboxColumn && deleteSelectedBtn && exportSelectedBtn) {
+if (checkboxColumn && deleteSelectedBtn) {
     checkboxColumn.addEventListener('change', toggleAllCheckboxes);
     deleteSelectedBtn.addEventListener('click', deleteSelected);
-    exportSelectedBtn.addEventListener('click', exportSelected);
 }
 
 function toggleAllCheckboxes() {
@@ -110,20 +108,6 @@ function toggleAllCheckboxes() {
 
 function deleteSelected() {
     let url_path = 'delete/'
-    let at_least_one_checked = false;
-    checkboxes.forEach(function(el) {
-        if (el.checked) {
-            url_path += el.value + '/'
-            at_least_one_checked = true;
-        }
-    });
-    if (at_least_one_checked === true) {
-        window.location.href = url_path;
-    }
-}
-
-function exportSelected() {
-    let url_path = 'export/'
     let at_least_one_checked = false;
     checkboxes.forEach(function(el) {
         if (el.checked) {

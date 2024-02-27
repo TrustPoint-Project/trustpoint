@@ -38,13 +38,13 @@ multiline-quotes = "double"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "ANN101",
+    "ANN101", "ANN401",
     "D203", "D213", "D415",
     "TD003",
     # TODO(Alex): FIX should be added again, after we are departing from the PoC phase
     "FIX",
-    "COM812",       # Not compatible with the formatter
-    "ISC001"        # Not compatible with the formatter
+    "COM812",               # Not compatible with the formatter
+    "ISC001"                # Not compatible with the formatter
 ]
 
 [tool.ruff.format]

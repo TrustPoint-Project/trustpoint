@@ -31,7 +31,8 @@ class IssuingCa(models.Model):
         """Determines if the Issuing CA is locally or remotely available.
 
         Note:
-            L:  Certificate, certificate chain and key-pair are locally available. Certificates can be issued locally.
+            L:  Certificate, certificate chain and key-pair are locally available.
+                Certificates can be issued locally.
             R:  The Issuing CA is external.
                 Certificate request messages are generated and send to the CA to issue certificates.
         """
@@ -56,7 +57,7 @@ class IssuingCa(models.Model):
 
     key_type = models.CharField(max_length=3, choices=KeyType)
     key_size = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(65536)])
-    curve = models.CharField(max_length=10, choices=Curves, blank=True, default='')
+    curve = models.CharField(max_length=10, choices=Curves, default='', blank=True)
     localization = models.CharField(max_length=1, choices=Localization)
     config_type = models.CharField('Configuration Type', max_length=10, choices=ConfigType)
 
@@ -91,7 +92,7 @@ class IssuingCa(models.Model):
 
 
 @receiver(models.signals.post_delete)
-def auto_delete_file_on_delete(instance: IssuingCa, **_: Any) -> None:  # noqa: ANN401
+def auto_delete_file_on_delete(instance: IssuingCa, **_: Any) -> None:
     """Deletes the corresponding files from the filesystem when corresponding IssuingCa object is deleted.
 
     Args:

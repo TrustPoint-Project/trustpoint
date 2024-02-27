@@ -6,7 +6,7 @@
         {% csrf_token %}
         <div class="card card-main text-center">
             <div class="card-header d-flex">
-                <h1>Details - Issuing CA - {{ unique_name }}</h1>
+                <h1>Details - Issuing CA - {{ object.unique_name }}</h1>
             </div>
             <div class="card-body tp-main-centered pt-3 pb-4">
 
@@ -24,8 +24,7 @@
                 {% endfor %}
 
                 <div class="tp-form-btn-group tp-form-btn-group mt-5">
-                    <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">Cancel</a>
-                    <input type="submit" class="btn btn-primary" value="Export">
+                    <a href="{% url 'pki:issuing_cas' %}" class="btn btn-primary">Back</a>
                 </div>
 
             </div>

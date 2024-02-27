@@ -13,9 +13,6 @@ from django import forms as dj_forms
 from django.views.generic.base import View, TemplateResponseMixin
 from django.http import HttpResponseRedirect, HttpRequest
 
-# from django.utils.functional import Promise
-from django.shortcuts import render
-
 
 class IndexView(RedirectView):
     """View that redirects to the index home page."""
@@ -24,18 +21,43 @@ class IndexView(RedirectView):
     pattern_name: str = 'home:dashboard'
 
 
-class PageContextDataMixin(ContextMixin):
+class ContextDataMixin:
     page_category: str | None = None
     page_name: str | None = None
 
     def get_context_data(self, **kwargs: Any) -> dict:
-        """Adds page_category and page_name for the PKI -> Issuing CAs."""
+        """Adds attributes prefixed with context_ to the context_data if it does not exist.
 
-        if 'page_category' not in kwargs and self.page_category is not None:
-            kwargs['page_category'] = self.page_category
-        if 'page_name' not in kwargs and self.page_name is not None:
-            kwargs['page_name'] = self.page_name
-        return super().get_context_data(**kwargs)
+        Note:
+            If another succeeding class in the MRO has another get_context_data method,
+            this method will be called after setting the attributes to the context_data.
+
+        Example:
+            Lets consider context_page_category.
+            Then the attribute page_category with the value of context_page_category is
+            added to the context_data if page_category does not already exist in the context_data.
+
+        Example:
+            The following Mixin will add 'page_category': 'pki', and 'page_name': 'endpoint_profiles'
+             to the context data.
+
+            class EndpointProfilesExtraContextMixin(ContextDataMixin):
+                \"\"\"Mixin which adds context_data for the PKI -> Endpoint Profiles pages.\"\"\"
+
+                context_page_category = 'pki'
+                context_page_name = 'endpoint_profiles'
+        """
+
+        prefix = 'context_'
+        for attr in dir(self):
+            if attr.startswith(prefix) and len(attr) > len(prefix):
+                kwargs.setdefault(attr[len(prefix):], getattr(self, attr))
+
+        super_get_context_method = getattr(super(), 'get_context_data', None)
+        if super_get_context_method is None:
+            return kwargs
+        else:
+            return super_get_context_method(**kwargs)
 
 
 class Form:
@@ -206,7 +228,7 @@ class MultiFormMixin(ContextMixin):
 
     def form_valid(self, form_name: str, form, request):
         """If the form is valid, redirect to the supplied URL."""
-        form_valid_hook = getattr(self, f'on_valid_form_{form_name}', None)
+        form_valid_hook = getattr(self, f'form_valid_{form_name}', None)
         if form_valid_hook:
             form_valid_hook(form, request)
         return HttpResponseRedirect(self._get_form(form_name).success_url)
@@ -238,7 +260,6 @@ class MultiFormView(TemplateResponseMixin, MultiFormMixin, View):
                 current_form_name = form_name
                 break
         else:
-            # TODO(Alex): msg
             return self.render_to_response(self.get_context_data())
 
         form = self.get_form(current_form_name)
@@ -246,3 +267,28 @@ class MultiFormView(TemplateResponseMixin, MultiFormMixin, View):
             return self.form_valid(current_form_name, form, request)
         else:
             return self.form_invalid(request, form_name, form)
+
+
+class BulkDeletionMixin:
+
+    queryset: Any
+    form_class = dj_forms.Form
+    get_form: Callable
+    get_queryset: Callable
+    kwargs: dict
+    form_invalid: Callable
+    get_success_url: Callable
+
+    def post(self, request, *args, **kwargs):
+        self.queryset = self.get_queryset(self.kwargs['pks'])
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        else:
+            return self.form_invalid(form)
+
+    def form_valid(self, form):
+        success_url = self.get_success_url()
+        self.queryset.delete()
+        return HttpResponseRedirect(success_url)
+

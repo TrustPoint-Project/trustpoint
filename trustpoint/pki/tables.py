@@ -41,13 +41,11 @@ class IssuingCaTable(tables.Table):
             'localization',
             'config_type',
             'details',
-            'export',
             'delete',
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=_attrs)
     details = tables.Column(empty_values=(), orderable=False)
-    export = tables.Column(empty_values=(), orderable=False)
     delete = tables.Column(empty_values=(), orderable=False)
 
     @staticmethod
@@ -61,18 +59,6 @@ class IssuingCaTable(tables.Table):
             SafeString: The html hyperlink for the details-view.
         """
         return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn"">Details</a>', record.pk)
-
-    @staticmethod
-    def render_export(record: IssuingCa) -> SafeString:
-        """Creates the html hyperlink for the export-view.
-
-        Args:
-            record (IssuingCa): The current record of the IssuingCa model.
-
-        Returns:
-            SafeString: The html hyperlink for the export-view.
-        """
-        return format_html('<a href="export/{}/" class="btn btn-primary tp-table-btn"">Export</a>', record.pk)
 
     @staticmethod
     def render_delete(record: IssuingCa) -> SafeString:
