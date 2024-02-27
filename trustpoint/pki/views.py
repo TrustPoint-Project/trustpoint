@@ -241,7 +241,6 @@ class IssuingCaBulkDeleteView(
             return None
         queryset = self.model.objects.filter(pk__in=pks)
 
-        # if some pk do not correspond to an existing object
         if len(pks) != len(queryset):
             queryset = None
 
