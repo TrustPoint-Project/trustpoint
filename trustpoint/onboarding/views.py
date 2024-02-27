@@ -24,19 +24,14 @@ def onboarding_manual(request):
         ob_process = OnboardingProcess.get_by_id(request.session['onboarding_process_id'])
         if ob_process:
             device = ob_process.device.name
+            reason = ob_process.error_reason
             onboardingProcesses.remove(ob_process)
             if ob_process.state == OnboardingProcessState.COMPLETED:
                 messages.success(request, f'Device {device} onboarded successfully.')
             elif ob_process.state == OnboardingProcessState.FAILED:
-                messages.error(request, f'Onboarding process for device {device} failed.')
-            elif ob_process.state == OnboardingProcessState.INCORRECT_OTP:
-                messages.error(
-                    request, f'Client provided an incorrect credential. Onboarding for device {device} failed.'
-                )
+                messages.error(request, f'Onboarding process for device {device} failed. {reason}')
                 # TODO: what to do if timeout occurs after valid LDevID is issued?
-                # TODO: Should that be considered a successful onboarding?
-            elif ob_process.state == OnboardingProcessState.TIMED_OUT:
-                messages.error(request, f'Onboarding process for device {device} timed out.')
+                # TODO: Should that be considered a successful onboarding? Alternatively delete the device and add to CRL.
             else:
                 messages.warning(request, f'Onboarding process for device {device} canceled.')
         del request.session['onboarding_process_id']

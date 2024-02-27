@@ -9,8 +9,6 @@ onboardingTimeout = 1800  # seconds, TODO: add to configuration
 
 
 class OnboardingProcessState(IntEnum):
-    TIMED_OUT = -4
-    INCORRECT_OTP = -3
     NO_SUCH_PROCESS = -2
     FAILED = -1
     STARTED = 0
@@ -38,6 +36,7 @@ class OnboardingProcess:
         self.tssalt = secrets.token_hex(8)
         self.hmac = None
         self.state = OnboardingProcessState.STARTED
+        self.error_reason = ''
         self.gen_thread = threading.Thread(target=self.calc_hmac)
         self.gen_thread.start()
         self.timer = threading.Timer(onboardingTimeout, self.timeout)
@@ -79,8 +78,9 @@ class OnboardingProcess:
             self.state = OnboardingProcessState.DEVICE_VALIDATED
             return True
         else:
-            self.state = OnboardingProcessState.INCORRECT_OTP
+            self.state = OnboardingProcessState.FAILED
             self.active = False
+            self.error_reason = 'Client provided invalid credentials.'
         return False
 
     def sign_ldevid(self, csr):
@@ -90,20 +90,23 @@ class OnboardingProcess:
             return None
         try:
             ldevid = Crypt.sign_ldevid(csr, self.device)
-        except Exception:
+        except Exception as e:
             self.state = OnboardingProcessState.FAILED
             self.active = False
+            self.error_reason = str(e)  # TODO: is it safe to print exception messages to the user UI?
             raise
         if ldevid:
             self.state = OnboardingProcessState.LDEVID_SENT
         else:
             self.state = OnboardingProcessState.FAILED
             self.active = False
+            self.error_reason = 'No LDevID was generated.'
         return ldevid
 
     def timeout(self):
-        self.state = OnboardingProcessState.TIMED_OUT
+        self.state = OnboardingProcessState.FAILED
         self.active = False
+        self.error_reason = 'Process timed out.'
 
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     datetime_started = models.DateTimeField(auto_now_add=True)
