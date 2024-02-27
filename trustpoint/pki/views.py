@@ -221,8 +221,14 @@ class IssuingCaBulkDeleteView(
         """
         return self.kwargs['pks'].split('/')
 
-    def get_queryset(self: IssuingCaBulkDeleteView) -> QuerySet | None:
+    def get_queryset(self: IssuingCaBulkDeleteView, *args: Any, **kwargs: Any) -> QuerySet | None:  # noqa: ARG002
         """Gets the queryset of the objects to be deleted.
+
+        Args:
+            *args (list):
+                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
+            **kwargs (dict):
+                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
 
         Returns:
             QuerySet | None:
