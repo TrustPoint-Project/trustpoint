@@ -6,9 +6,7 @@ function startPollingOnboardingState(urlExt, iconUrl) {
 
 // Onboarding states, see onboarding/models.py
 const
-CONNECTION_ERROR = -5,
-TIMED_OUT = -4,
-INCORRECT_OTP = -3
+CONNECTION_ERROR = -3,
 NO_SUCH_PROCESS = -2,
 FAILED = -1,
 STARTED = 0,
@@ -20,7 +18,6 @@ LDEVID_SENT = 5,
 COMPLETED = 6 // aka cert chain sent
 
 function getOnboardingState(urlExt, iconUrl) {
-  var state = -3;
   fetch('/onboarding/api/state/'+ urlExt)
     .then(response => response.json())
     .then(data => {
@@ -84,24 +81,13 @@ function setOnboardingStateUI(state, iconUrl) {
       type = 'danger';
       message = 'Error: Something went wrong during the onboarding process.';
       icon = 'error';
+      navBack = true;
       break;
     case NO_SUCH_PROCESS:
       type = 'danger';
       message = 'Error: Server did not find the onboarding process. Please reload the page.';
       icon = 'error';
       window.location.reload();
-      break;
-    case INCORRECT_OTP:
-      type = 'danger';
-      message = 'Client provided an incorrect credential. Onboarding failed.';
-      icon = 'error';
-      navBack = true;
-      break;
-    case TIMED_OUT:
-      type = 'danger';
-      message = 'Onboarding process timed out.';
-      icon = 'danger';
-      navBack = true;
       break;
     default:
       type = 'warning';

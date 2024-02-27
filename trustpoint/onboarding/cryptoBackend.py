@@ -13,6 +13,8 @@ from devices.models import Device
 
 from django.core.files.base import ContentFile
 
+from pki.models import IssuingCa
+
 
 class CryptoBackend:
     def pbkdf2_hmac_sha256(hexpass, hexsalt, message=b'', iterations=1000000, dklen=32):
@@ -27,15 +29,22 @@ class CryptoBackend:
 
     def sign_ldevid(csr_str: str, device: Device):
         csr = x509.load_pem_x509_csr(csr_str)
-        # csr_str.read()
 
-        # TODO: get .p12 from DB obviously, pending implementation of Endpoint profiles
+        # TODO: DB query pending implementation of Endpoint profiles
         # TODO TODO TODO
-        # TODO: save LDevID to device object
-        with open('../tests/data/x509/rsa-long.p12', 'rb') as cafile:
+
+        signingCa = IssuingCa.objects.filter(unique_name__contains='onboarding').first() # TODO select CA based on endpoint profile
+
+        if not signingCa:
+            raise Exception('No CA configured for onboarding. For testing, use a CA that has "onboarding" in its name.')
+        
+        if not signingCa.p12 or not signingCa.p12.path:
+            raise Exception('CA is not associated with a .p12 file.')
+        
+        with open(signingCa.p12.path, 'rb') as cafile:
             ca_p12 = serialization.pkcs12.load_key_and_certificates(
-                cafile.read(), b'testing321'
-            )  # obviously TODO (open question: how does trustpoint store the pkcs12 password?)
+                cafile.read(), b''
+            )  # TODO (get password here if .p12 stored in media is password-protected)
             private_ca_key = ca_p12[0]
             ca_cert = ca_p12[1]
 
@@ -63,10 +72,18 @@ class CryptoBackend:
         return cert.public_bytes(serialization.Encoding.PEM)
 
     def get_cert_chain():
-        with open('../tests/data/x509/rsa-long.p12', 'rb') as cafile:
+        signingCa = IssuingCa.objects.filter(unique_name__contains='onboarding').first() # TODO select CA based on endpoint profile
+
+        if not signingCa:
+            raise Exception('No CA configured for onboarding. For testing, use a CA that has "onboarding" in its name.')
+        
+        if not signingCa.p12 or not signingCa.p12.path:
+            raise Exception('CA is not associated with a .p12 file.')
+
+        with open(signingCa.p12.path, 'rb') as cafile:
             ca_p12 = serialization.pkcs12.load_key_and_certificates(
-                cafile.read(), b'testing321'
-            )  # obviously TODO (open question: no way to get cert chain without password?)
+                cafile.read(), b''
+            )  # TODO (get password here if .p12 stored in media is password-protected)
             ca_cert = ca_p12[1]
 
         return ca_cert.public_bytes(serialization.Encoding.PEM)

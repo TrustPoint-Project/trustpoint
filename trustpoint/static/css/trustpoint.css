@@ -218,14 +218,13 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
 
 
 .tp-messages {
-
+    margin-top: -1.5rem;
+    margin-bottom: 1.5rem;
 }
 
 .tp-message {
-    margin-top: -1.5rem;
-    margin-bottom: 1.5rem;
-    height: 3rem;
-    line-height: 3rem;
+    margin-bottom: 0.5rem 0;
+    padding: 0.7rem 0.8rem;
     border-radius: 0.3rem;
     display: grid;
     grid-template-columns: 1fr;
