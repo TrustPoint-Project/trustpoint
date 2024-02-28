@@ -1,5 +1,7 @@
-# Just a placeholder, this should be moved to a more appropriate location and contents adapted
-### TODO TODO TODO sign_ldevid is Dragons with Lasers in central Berlin levels of a security risk TODO TODO TODO
+"""This module provides cryptographic operations for use during the onboarding process.
+
+This implementation is in testing stage and shall not be regarded as secure.
+TODO sign_ldevid is Dragons with Lasers in central Berlin levels of a security risk TODO"""
 
 import hashlib
 import hmac
@@ -17,17 +19,46 @@ from pki.models import IssuingCa
 
 
 class CryptoBackend:
+    """Provides cryptographic operations for use during the onboarding process."""
+
     def pbkdf2_hmac_sha256(hexpass, hexsalt, message=b'', iterations=1000000, dklen=32):
+        """Calculates the HMAC signature of the trust store.
+
+        Returns:
+            HMAC_SHA256(PBKDF2_SHA256(hexpass, hexsalt, iterations, dklen), message)
+        """
         pkey = hashlib.pbkdf2_hmac('sha256', bytes(hexpass, 'utf-8'), bytes(hexsalt, 'utf-8'), iterations, dklen)
         h = hmac.new(pkey, message, hashlib.sha256)
         return h.hexdigest()
 
     def get_trust_store():
-        # TODO: server certificate location must be configurable
-        with open('../tests/data/x509/https_server.crt', 'r') as certfile:
+        """Returns the trust store.
+
+        TODO: Make location and included certificates configurable and verify that they are valid
+
+        Returns:
+            PEM string of the trust store (currently just a single HTTPS server certificate for testing purposes).
+
+        Raises:
+            FileNotFoundError: If the trust store file is not found.
+        """
+
+        with open('../tests/data/x509/https_servedr.crt', 'r') as certfile:
             return certfile.read()
 
     def sign_ldevid(csr_str: str, device: Device):
+        """Signs a certificate signing request (CSR) with the onboarding CA.
+
+        Args:
+            csr_str: The certificate signing request as a string in PEM format.
+            device: The Device to associate the signed certificate with.
+
+        Returns: The signed certificate as a string in PEM format.
+
+        Raises:
+            Exception: If the onboarding CA is not configured or not available.
+        """
+
         csr = x509.load_pem_x509_csr(csr_str)
 
         # TODO: DB query pending implementation of Endpoint profiles
@@ -72,6 +103,14 @@ class CryptoBackend:
         return cert.public_bytes(serialization.Encoding.PEM)
 
     def get_cert_chain():
+        """Returns the certificate chain of the onboarding CA.
+        
+        Returns: The certificate chain as a string in PEM format.
+        
+        Raises:
+            Exception: If the onboarding CA is not configured or not available.
+        """
+
         signingCa = IssuingCa.objects.filter(unique_name__contains='onboarding').first() # TODO select CA based on endpoint profile
 
         if not signingCa:

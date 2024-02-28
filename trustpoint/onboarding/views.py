@@ -1,3 +1,6 @@
+"""Module that implements all views corresponding to the Onboarding application."""
+
+
 from django.shortcuts import render, redirect
 from .forms import OnboardingStartForm
 from devices.models import Device
@@ -11,11 +14,15 @@ import base64
 
 
 class IndexView(RedirectView):
-    permanent = True
+    """Redirects requests to /index to the manual onboarding page."""
+
+    permanent = True  # Permanent redirects require clearing browser cache to change, so only use if we are sure the redirect will never change
     pattern_name = 'onboarding:manual'
 
 
 def onboarding_manual(request):
+    """View for the manual onboarding page."""
+
     context = {'page_category': 'onboarding', 'page_name': 'manual'}
 
     # remove any existing onboarding process from session
@@ -68,6 +75,8 @@ def onboarding_manual(request):
 
 
 def onboarding_manual_client(request):
+    """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
+
     processId = None
     ob_process = None
     if 'onboarding_process_id' in request.session:
@@ -97,13 +106,32 @@ def onboarding_manual_client(request):
 
 
 def trust_store(request):
+    """View for the trust store API endpoint.
+    
+    Request type: GET
+
+    Inputs: Onbarding process URL extension (in request path)
+
+    Returns:
+        Trust store (in response body)
+        HMAC signature of trust store (in response header)
+    """
+
     # get URL extension
     url_extension = request.path.split('/')[-1]
     ob_process = OnboardingProcess.get_by_url_ext(url_extension)
     if not ob_process or not ob_process.active:
         return HttpResponse('Invalid URI extension.', status=404)
+    
+    try:
+        trust_store = Crypt.get_trust_store()
+    except FileNotFoundError:
+        ob_process.state = OnboardingProcessState.FAILED
+        ob_process.active = False
+        ob_process.error_reason = 'Trust store file not found.'
+        return HttpResponse('Trust store file not found.', status=500)
 
-    response = HttpResponse(Crypt.get_trust_store(), status=200)
+    response = HttpResponse(trust_store, status=200)
     response['hmac-signature'] = ob_process.get_hmac()
     if ob_process.state == OnboardingProcessState.HMAC_GENERATED:
         ob_process.state = OnboardingProcessState.TRUST_STORE_SENT
@@ -112,14 +140,25 @@ def trust_store(request):
 
 @csrf_exempt  # should be safe because we are using a OTP
 def ldevid(request):
+    """View for the LDevID API endpoint.
+
+    Request type: POST
+    
+    Inputs:
+        Onbarding process URL extension (in request path)
+        Certificate signing request (as POST file ldevid.csr)
+    
+    Returns: LDevID certificate chain (in response body)
+    """
+
     # get URL extension
     url_extension = request.path.split('/')[-1]
     ob_process = OnboardingProcess.get_by_url_ext(url_extension)
     if (
         not ob_process
         or not ob_process.active
-        or ob_process.state
-        >= OnboardingProcessState.DEVICE_VALIDATED  # only ever allow one set of credentials to be submitted
+        # only ever allow one set of credentials to be submitted
+        or ob_process.state >= OnboardingProcessState.DEVICE_VALIDATED
         or request.method != 'POST'
         or not request.FILES
         or not request.FILES['ldevid.csr']
@@ -152,8 +191,18 @@ def ldevid(request):
 
 
 def cert_chain(request):
-    # TODO: instead of URL extension, match using the client LDevID certificate
-    # TODO: chain with or without end-entity certificate?
+    """View for the LDevID certificate chain API endpoint.
+
+    Request type: GET
+
+    Inputs: Onbarding process URL extension (in request path)
+    
+    Returns: LDevID certificate chain (in response body)
+    
+    TODO: instead of URL extension, match using the client LDevID certificate
+    TODO: chain with or without end-entity certificate?
+    """
+
     # get URL extension
     url_extension = request.path.split('/')[-1]
     ob_process = OnboardingProcess.get_by_url_ext(url_extension)
@@ -164,9 +213,7 @@ def cert_chain(request):
 
     # TODO: do we want to verify the LDevID as a TLS client certificate?
     # This would a) require the LDevID to have extendedKeyUsage=clientAuth and b) require Nginx/Apache to be configured to handle client certificates
-    # This test implementation verifies the LDevID passed as a TLS client certificate (even though it may not be validly used as such) against the trust store
-
-    # print(request.META['HTTP_CLIENT_CERT'])
+    # Verifying client certificates in Django requires a custom middleware, e.g. django-ssl-auth, which is unmaintained
     
     response = HttpResponse(Crypt.get_cert_chain(), status=200)
     if ob_process.state == OnboardingProcessState.LDEVID_SENT:
@@ -175,6 +222,15 @@ def cert_chain(request):
 
 
 def state(request):
+    """View for the onboarding process state API endpoint.
+
+    Request type: GET
+    
+    Inputs: Onbarding process URL extension (in request path)
+    
+    Returns: Onboarding process state as an integer (representing OnboardingProcessState enum, in response body)
+    """
+
     # get URL extension
     url_extension = request.path.split('/')[-1]
     ob_process = OnboardingProcess.get_by_url_ext(url_extension)

@@ -1,3 +1,5 @@
+"""This module contains models for the Onboarding app."""
+
 from django.db import models
 from devices.models import Device
 import secrets
@@ -9,6 +11,10 @@ onboardingTimeout = 1800  # seconds, TODO: add to configuration
 
 
 class OnboardingProcessState(IntEnum):
+    """Enum representing the state of an onboarding process.
+    
+    Negative values indicate an error state.
+    """
     NO_SUCH_PROCESS = -2
     FAILED = -1
     STARTED = 0
@@ -22,11 +28,19 @@ class OnboardingProcessState(IntEnum):
 
 # NOT a database-backed model
 class OnboardingProcess:
-    # not stored in DB, so it doesn't matter that it resets on restart.
-    # However, we might consider storing OnboardingProcesses in DB anyways for logging purposes
-    id_counter = 1
+    """Represents an onboarding process for a device.
+    
+    This model is not written to the database.
+    We may consider restructuring this in the future to write some of the values, e.g. for logging purposes.
+    """
+
+    id_counter = 1  # only unique within the current server runtime
 
     def __init__(self, dev):
+        """ Initializes a new onboarding process for a device. 
+        
+        Generates secrets, starts two threads for trust store HMAC generation and a timer for timeout.
+        """
         self.device = dev
         self.id = OnboardingProcess.id_counter
         self.url = secrets.token_urlsafe(4)
@@ -63,11 +77,16 @@ class OnboardingProcess:
         return None
 
     def calc_hmac(self):
+        """Calculates the HMAC signature of the trust store.
+        
+        Runs in separate gen_thread thread started by __init__ as it typically takes about a second.
+        """	
         self.hmac = Crypt.pbkdf2_hmac_sha256(self.tsotp, self.tssalt, Crypt.get_trust_store().encode('utf-8'))
         if self.state == OnboardingProcessState.STARTED:
             self.state = OnboardingProcessState.HMAC_GENERATED
 
     def get_hmac(self):
+        """Returns the HMAC signature of the trust store and the PBKDF2 of the trust store OTP and salt."""
         self.gen_thread.join()
         return self.hmac
 

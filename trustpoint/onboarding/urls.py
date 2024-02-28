@@ -1,3 +1,8 @@
+"""URL patterns for the onboarding app.
+
+TODO Contains API endpoints as well, this should be moved to a separate API app managed by e.g. Django Ninja.
+"""
+
 from django.urls import path, re_path
 from . import views
 
