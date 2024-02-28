@@ -8,7 +8,24 @@ from . import views
 app_name = 'pki'
 urlpatterns = [
     path('', views.IndexView.as_view(), name='index'),
-    path('endpoint-profiles/', views.EndpointProfilesTemplateView.as_view(), name='endpoint_profiles'),
+    path('endpoint-profiles/', views.EndpointProfilesListView.as_view(), name='endpoint_profiles'),
+    re_path(
+        r'^endpoint-profiles/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
+        views.EndpointProfilesBulkDeleteView.as_view(),
+        name='issuing_cas-delete',
+    ),
+    re_path(
+        r'^endpoint-profiles/delete/',
+        views.EndpointProfilesRedirectView.as_view(),
+        name='issuing_cas-redirect',
+    ),
+    path('endpoint-profiles/add/', views.CreateEndpointProfileView.as_view(), name='endpoint_profiles-add'),
+    path('endpoint-profiles/update/<int:pk>/', views.UpdateEndpointProfileView.as_view(), name='endpoint_profiles-update'),
+    path(
+        'endpoint-profiles/details/<int:pk>/',
+        views.EndpointProfilesDetailView.as_view(),
+        name='endpoint_profiles-details',
+    ),
     path('issuing-certificate-authorities/', views.IssuingCaListView.as_view(), name='issuing_cas'),
     re_path(
         r'^issuing-certificate-authorities/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',

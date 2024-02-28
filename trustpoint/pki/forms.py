@@ -21,7 +21,7 @@ if TYPE_CHECKING:
 class UniqueNameValidationError(ValidationError):
     """Raised when the unique name is already present in the database."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self: UniqueNameValidationError, *args: Any, **kwargs: Any) -> None:
         """Add the error message by passing it to constructor of the parent class."""
         exc_msg = 'Unique name is already taken. Try another one.'
         super().__init__(exc_msg, *args, **kwargs)
@@ -30,7 +30,7 @@ class UniqueNameValidationError(ValidationError):
 class UploadError(ValidationError):
     """Raised the upload failed."""
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
+    def __init__(self: UploadError, *args: Any, **kwargs: Any) -> None:
         """Add the error message by passing it to constructor of the parent class."""
         exc_msg = 'Upload failed!'
         super().__init__(exc_msg, *args, **kwargs)
@@ -41,7 +41,7 @@ class CleanUniqueNameMixin:
 
     cleaned_data: dict
 
-    def clean_unique_name(self) -> str:
+    def clean_unique_name(self: CleanUniqueNameMixin) -> str:
         """Checks that the unique name is not already present in the database.
 
         Raises:
@@ -72,7 +72,7 @@ class IssuingCaLocalP12FileForm(CleanUniqueNameMixin, IssuingCaUploadForm):
     p12 = forms.FileField(label='PKCS#12 File', required=True)
     p12_password = forms.CharField(widget=forms.PasswordInput(), label='PKCS#12 Password', required=False)
 
-    def clean(self) -> dict:
+    def clean(self: IssuingCaLocalP12FileForm) -> dict:
         """Tries to normalize the P12 file.
 
         Returns:
@@ -103,7 +103,7 @@ class IssuingCaLocalP12FileForm(CleanUniqueNameMixin, IssuingCaUploadForm):
 class IssuingCaLocalPemFileForm(CleanUniqueNameMixin, IssuingCaUploadForm):
     """Issuing CA file upload form that accepts PEM files."""
 
-    unique_name = forms.CharField(max_length=20, required=True, validators=[MinLengthValidator(6)])
+    unique_name = forms.CharField(max_length=20, required=True, validators=[MinLengthValidator(3)])
     issuing_ca_certificate = forms.FileField(label='Issuing CA Certificate', required=True)
     issuing_ca_certificate_chain = forms.FileField(label='Issuing CA Certificate Chain', required=True)
     issuing_ca_private_key = forms.FileField(label='Issuing CA Private Key', required=True)
@@ -111,7 +111,7 @@ class IssuingCaLocalPemFileForm(CleanUniqueNameMixin, IssuingCaUploadForm):
         widget=forms.PasswordInput(), label='Issuing CA Private Key Password', required=False
     )
 
-    def clean(self) -> dict:
+    def clean(self: IssuingCaLocalPemFileForm) -> dict:
         """Tries to normalize the PEM files into a P12 file.
 
         Returns:

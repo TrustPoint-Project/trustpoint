@@ -237,6 +237,7 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
 
 .tp-table-btn {
     padding: 0.2rem 0.4rem;
+    min-width: 5rem;
 }
 
 .tp-form-btn-group {

@@ -12,6 +12,7 @@ django-tables2 = "^2.7.0"
 cryptography = "^42.0.3"
 django-crispy-forms = "^2.1"
 crispy-bootstrap5 = "^2023.10"
+django-ninja = "^1.1.0"
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^7.2.6"

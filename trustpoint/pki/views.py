@@ -14,7 +14,7 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import RedirectView, TemplateView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import FormMixin
+from django.views.generic.edit import FormMixin, CreateView, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_tables2 import SingleTableView
 from util.x509.credentials import CredentialUploadHandler
@@ -22,8 +22,8 @@ from util.x509.credentials import CredentialUploadHandler
 from trustpoint.views import BulkDeletionMixin, ContextDataMixin, Form, MultiFormView
 
 from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm
-from .models import IssuingCa
-from .tables import IssuingCaTable
+from .models import IssuingCa, EndpointProfile
+from .tables import IssuingCaTable, EndpointProfileTable
 
 if TYPE_CHECKING:
     from typing import Any
@@ -34,18 +34,7 @@ if TYPE_CHECKING:
     from .forms import IssuingCaUploadForm
 
 
-class EndpointProfilesContextMixin(ContextDataMixin):
-    """Mixin which adds context_data for the PKI -> Endpoint Profiles pages."""
-
-    context_page_category = 'pki'
-    context_page_name = 'endpoint_profiles'
-
-
-class IssuingCasContextMixin(ContextDataMixin):
-    """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
-
-    context_page_category = 'pki'
-    context_page_name = 'issuing_cas'
+# -------------------------------------------------- EndpointProfiles --------------------------------------------------
 
 
 class IndexView(RedirectView):
@@ -55,18 +44,216 @@ class IndexView(RedirectView):
     pattern_name = 'pki:endpoint_profiles'
 
 
-class EndpointProfilesTemplateView(EndpointProfilesContextMixin, TemplateView):
-    """Endpoint Profiles Template View."""
+class EndpointProfilesRedirectView(RedirectView):
+    """View that redirects to the index of the PKI Endpoint Profiles application: Endpoint Profiles."""
 
-    template_name = 'pki/endpoint_profiles.html'
+    permanent = False
+    pattern_name = 'pki:endpoint_profiles'
+
+
+class EndpointProfilesContextMixin(ContextDataMixin):
+    """Mixin which adds context_data for the PKI -> Endpoint Profiles pages."""
+
+    context_page_category = 'pki'
+    context_page_name = 'endpoint_profiles'
+
+
+class EndpointProfilesListView(EndpointProfilesContextMixin, SingleTableView):
+    """Endpoint Profiles List View."""
+
+    model = EndpointProfile
+    table_class = EndpointProfileTable
+    template_name = 'pki/endpoint_profiles/endpoint_profiles.html'
+
+
+class EndpointProfilesDetailView(EndpointProfilesContextMixin, DetailView):
+    """Detail view for Endpoint Profiles."""
+
+    model = EndpointProfile
+    pk_url_kwarg = 'pk'
+    template_name = 'pki/endpoint_profiles/details.html'
+
+    def get_context_data(self: IssuingCaDetailView, **kwargs: Any) -> dict:
+        """Adds the certificates and unique_name of the CA to the context if available.
+
+        Args:
+            **kwargs (Any): Keyword arguments. These are passed to super().get_context_data(**kwargs).
+
+        Returns:
+            dict:
+                The context to be used for the view.
+        """
+        context = super().get_context_data(**kwargs)
+        obj = self.get_object()
+        if obj.issuing_ca is None:
+            context['no_issuing_ca'] = '—'
+            return context
+
+        with default_storage.open(obj.issuing_ca.p12.name, 'rb') as f:
+            certs_json = CredentialUploadHandler.parse_and_normalize_p12(f.read()).full_cert_chain_as_dict()
+
+        context['certs'] = certs_json
+        context['unique_name'] = obj.issuing_ca.unique_name
+        return context
+
+
+class EndpointProfilesBulkDeleteView(
+    EndpointProfilesContextMixin, MultipleObjectTemplateResponseMixin, BulkDeletionMixin, FormMixin, BaseListView
+):
+    """View that allows bulk deletion of Endpoint Profiles.
+
+    This view expects a path variable pks containing string with all primary keys separated by forward slashes /.
+    It cannot start with a forward slash, however a trailing forward slash is optional.
+    If one or more primary keys do not have a corresponding object in the database, the user will be redirected
+    to the ignore_url.
+    """
+
+    model = EndpointProfile
+    success_url = reverse_lazy('pki:endpoint_profiles')
+    ignore_url = reverse_lazy('pki:endpoint_profiles')
+    template_name = 'pki/endpoint_profiles/confirm_delete.html'
+    context_object_name = 'objects'
+
+    def get_ignore_url(self: EndpointProfilesBulkDeleteView) -> str:
+        """Gets the get the configured ignore_url.
+
+        If no ignore_url is configured, it will return the success_url.
+
+        Returns:
+            str:
+                The ignore_url or success_url.
+
+        """
+        if self.ignore_url is not None:
+            return str(self.ignore_url)
+        return str(self.success_url)
+
+    def get_pks(self: EndpointProfilesBulkDeleteView) -> list[str]:
+        """Gets the primary keys for the objects to delete.
+
+        Expects a string containing the primary keys delimited by forward slashes.
+        Cannot start with a forward slash.
+        A trailing forward slash is optional.
+
+        Returns:
+            list[str]:
+                A list of the primary keys as strings.
+        """
+        return self.kwargs['pks'].split('/')
+
+    def get_queryset(self: EndpointProfilesBulkDeleteView, *args: Any, **kwargs: Any) -> QuerySet | None:  # noqa: ARG002
+        """Gets the queryset of the objects to be deleted.
+
+        Args:
+            *args (list):
+                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
+            **kwargs (dict):
+                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
+
+        Returns:
+            QuerySet | None:
+                The queryset of the objects to be deleted.
+                None, if one or more primary keys do not have corresponding objects in the database or
+                if the primary key list pks is empty.
+        """
+        pks = self.get_pks()
+        if not pks:
+            return None
+        queryset = self.model.objects.filter(pk__in=pks)
+
+        if len(pks) != len(queryset):
+            queryset = None
+
+        self.queryset = queryset
+        return queryset
+
+    def get(self: EndpointProfilesBulkDeleteView, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Handles HTTP GET requests.
+
+        Args:
+            *args (list):
+                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
+            **kwargs (dict):
+                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
+
+        Returns:
+            HttpResponse:
+                The response corresponding to the HTTP GET request.
+        """
+        if self.get_queryset() is None:
+            return redirect(self.get_ignore_url())
+
+        return super().get(*args, **kwargs)
+
+
+class CreateEndpointProfileView(EndpointProfilesContextMixin, CreateView):
+    """Endpoint Profile Create View."""
+
+    model = EndpointProfile
+    fields = ['unique_endpoint', 'issuing_ca']
+    template_name = 'pki/endpoint_profiles/add.html'
+    success_url = reverse_lazy('pki:endpoint_profiles')
+
+
+class UpdateEndpointProfileView(EndpointProfilesContextMixin, UpdateView):
+    """Endpoint Profile Update View."""
+
+    model = EndpointProfile
+    fields = ['unique_endpoint', 'issuing_ca']
+    template_name = 'pki/endpoint_profiles/update.html'
+    success_url = reverse_lazy('pki:endpoint_profiles')
+
+
+# ----------------------------------------------------- IssuingCas -----------------------------------------------------
+
+
+class IssuingCasContextMixin(ContextDataMixin):
+    """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
+
+    context_page_category = 'pki'
+    context_page_name = 'issuing_cas'
+
+
+class IssuingCasRedirectView(RedirectView):
+    """View that redirects to the index of the PKI Issuing CA application: Issuing CAs."""
+
+    permanent = False
+    pattern_name = 'pki:issuing_cas'
 
 
 class IssuingCaListView(IssuingCasContextMixin, SingleTableView):
-    """Index-view of PKI -> Issuing CAs."""
+    """Issuing CAs List View."""
 
     model = IssuingCa
     table_class = IssuingCaTable
     template_name = 'pki/issuing_cas/issuing_cas.html'
+
+
+class IssuingCaDetailView(IssuingCasContextMixin, DetailView):
+    """Detail view for Issuing CAs."""
+
+    model = IssuingCa
+    pk_url_kwarg = 'pk'
+    template_name = 'pki/issuing_cas/details.html'
+
+    def get_context_data(self: IssuingCaDetailView, **kwargs: Any) -> dict:
+        """Adds the certificates and unique_name to the context.
+
+        Args:
+            **kwargs (Any): Keyword arguments. These are passed to super().get_context_data(**kwargs).
+
+        Returns:
+            dict:
+                The context to be used for the view.
+        """
+        context = super().get_context_data(**kwargs)
+
+        with default_storage.open(self.get_object().p12.name, 'rb') as f:
+            certs_json = CredentialUploadHandler.parse_and_normalize_p12(f.read()).full_cert_chain_as_dict()
+
+        context['certs'] = certs_json
+        context['unique_name'] = self.get_object().unique_name
+        return context
 
 
 class IssuingCaLocalFileMultiForms(IssuingCasContextMixin, MultiFormView):
@@ -170,13 +357,6 @@ class IssuingCaLocalFileMultiForms(IssuingCasContextMixin, MultiFormView):
         cls._form_valid(form, request, IssuingCa.ConfigType.F_PEM)
 
 
-class IssuingCasRedirectView(RedirectView):
-    """View that redirects to the index of the PKI application: Endpoint Profiles."""
-
-    permanent = False
-    pattern_name = 'pki:issuing_cas'
-
-
 class IssuingCaBulkDeleteView(
     IssuingCasContextMixin, MultipleObjectTemplateResponseMixin, BulkDeletionMixin, FormMixin, BaseListView
 ):
@@ -264,33 +444,6 @@ class IssuingCaBulkDeleteView(
             return redirect(self.get_ignore_url())
 
         return super().get(*args, **kwargs)
-
-
-class IssuingCaDetailView(IssuingCasContextMixin, DetailView):
-    """Detail view for Issuing CAs."""
-
-    model = IssuingCa
-    pk_url_kwarg = 'pk'
-    template_name = 'pki/issuing_cas/details.html'
-
-    def get_context_data(self: IssuingCaDetailView, **kwargs: Any) -> dict:
-        """Adds the certificates and unique_name to the context.
-
-        Args:
-            **kwargs (Any): Keyword arguments. These are passed to super().get_context_data(**kwargs).
-
-        Returns:
-            dict:
-                The context to be used for the view.
-        """
-        context = super().get_context_data(**kwargs)
-
-        with default_storage.open(self.get_object().p12.name, 'rb') as f:
-            certs_json = CredentialUploadHandler.parse_and_normalize_p12(f.read()).full_cert_chain_as_dict()
-
-        context['certs'] = certs_json
-        context['unique_name'] = self.get_object().unique_name
-        return context
 
 
 class AddIssuingCaLocalRequestTemplateView(IssuingCasContextMixin, TemplateView):

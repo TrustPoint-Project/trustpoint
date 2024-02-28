@@ -122,7 +122,7 @@ class EndpointProfile(models.Model):
     unique_endpoint = models.CharField(
         max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True
     )
-    issuing_ca = models.ForeignKey(IssuingCa, on_delete=models.PROTECT, blank=True, null=True)
+    issuing_ca = models.ForeignKey(IssuingCa, on_delete=models.SET_NULL, blank=True, null=True)
 
     def __str__(self: EndpointProfile) -> str:
         """Human-readable representation of the EndpointProfile model instance.

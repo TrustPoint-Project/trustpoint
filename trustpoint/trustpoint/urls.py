@@ -26,10 +26,10 @@ from . import views
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.IndexView.as_view()),
+    path('pki/', include('pki.urls')),
     path('home/', include('home.urls')),
     path('devices/', include('devices.urls')),
     path('onboarding/', include('onboarding.urls')),
-    path('pki/', include('pki.urls')),
     path('sysconf/', include('sysconf.urls')),
 ]
 
