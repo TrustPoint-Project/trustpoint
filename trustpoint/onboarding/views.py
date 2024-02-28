@@ -126,9 +126,7 @@ def trust_store(request):
     try:
         trust_store = Crypt.get_trust_store()
     except FileNotFoundError:
-        ob_process.state = OnboardingProcessState.FAILED
-        ob_process.active = False
-        ob_process.error_reason = 'Trust store file not found.'
+        ob_process.fail('Trust store file not found.')
         return HttpResponse('Trust store file not found.', status=500)
 
     response = HttpResponse(trust_store, status=200)

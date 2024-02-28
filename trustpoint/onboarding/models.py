@@ -75,13 +75,26 @@ class OnboardingProcess:
             if process.url == url:
                 return process
         return None
+    
+    def fail(self, reason=''):
+        """Cancels the onboarding process with a given reason."""
+
+        self.state = OnboardingProcessState.FAILED
+        self.active = False
+        self.error_reason = reason
 
     def calc_hmac(self):
         """Calculates the HMAC signature of the trust store.
         
         Runs in separate gen_thread thread started by __init__ as it typically takes about a second.
         """	
-        self.hmac = Crypt.pbkdf2_hmac_sha256(self.tsotp, self.tssalt, Crypt.get_trust_store().encode('utf-8'))
+
+        try:
+            self.hmac = Crypt.pbkdf2_hmac_sha256(self.tsotp, self.tssalt, Crypt.get_trust_store().encode('utf-8'))
+        except Exception as e:
+            self.fail('Error generating trust store HMAC.')
+            raise Exception('Error generating trust store HMAC.') from e
+
         if self.state == OnboardingProcessState.STARTED:
             self.state = OnboardingProcessState.HMAC_GENERATED
 
@@ -97,9 +110,7 @@ class OnboardingProcess:
             self.state = OnboardingProcessState.DEVICE_VALIDATED
             return True
         else:
-            self.state = OnboardingProcessState.FAILED
-            self.active = False
-            self.error_reason = 'Client provided invalid credentials.'
+            self.fail('Client provided invalid credentials.')
         return False
 
     def sign_ldevid(self, csr):
@@ -110,22 +121,16 @@ class OnboardingProcess:
         try:
             ldevid = Crypt.sign_ldevid(csr, self.device)
         except Exception as e:
-            self.state = OnboardingProcessState.FAILED
-            self.active = False
-            self.error_reason = str(e)  # TODO: is it safe to print exception messages to the user UI?
+            self.fail(str(e))  # TODO: is it safe to print exception messages to the user UI?
             raise
         if ldevid:
             self.state = OnboardingProcessState.LDEVID_SENT
         else:
-            self.state = OnboardingProcessState.FAILED
-            self.active = False
-            self.error_reason = 'No LDevID was generated.'
+            self.fail('No LDevID was generated.')
         return ldevid
 
     def timeout(self):
-        self.state = OnboardingProcessState.FAILED
-        self.active = False
-        self.error_reason = 'Process timed out.'
+        self.fail('Process timed out.')
 
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     datetime_started = models.DateTimeField(auto_now_add=True)

@@ -43,7 +43,7 @@ class CryptoBackend:
             FileNotFoundError: If the trust store file is not found.
         """
 
-        with open('../tests/data/x509/https_servedr.crt', 'r') as certfile:
+        with open('../tests/data/x509/https_server.crt', 'r') as certfile:
             return certfile.read()
 
     def sign_ldevid(csr_str: str, device: Device):
