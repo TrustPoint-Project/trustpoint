@@ -12,9 +12,10 @@ onboardingTimeout = 1800  # seconds, TODO: add to configuration
 
 class OnboardingProcessState(IntEnum):
     """Enum representing the state of an onboarding process.
-    
+
     Negative values indicate an error state.
     """
+
     NO_SUCH_PROCESS = -2
     FAILED = -1
     STARTED = 0
@@ -29,7 +30,7 @@ class OnboardingProcessState(IntEnum):
 # NOT a database-backed model
 class OnboardingProcess:
     """Represents an onboarding process for a device.
-    
+
     This model is not written to the database.
     We may consider restructuring this in the future to write some of the values, e.g. for logging purposes.
     """
@@ -37,8 +38,8 @@ class OnboardingProcess:
     id_counter = 1  # only unique within the current server runtime
 
     def __init__(self, dev):
-        """ Initializes a new onboarding process for a device. 
-        
+        """Initializes a new onboarding process for a device.
+
         Generates secrets, starts two threads for trust store HMAC generation and a timer for timeout.
         """
         self.device = dev
@@ -75,7 +76,7 @@ class OnboardingProcess:
             if process.url == url:
                 return process
         return None
-    
+
     def fail(self, reason=''):
         """Cancels the onboarding process with a given reason."""
 
@@ -85,9 +86,9 @@ class OnboardingProcess:
 
     def calc_hmac(self):
         """Calculates the HMAC signature of the trust store.
-        
+
         Runs in separate gen_thread thread started by __init__ as it typically takes about a second.
-        """	
+        """
 
         try:
             self.hmac = Crypt.pbkdf2_hmac_sha256(self.tsotp, self.tssalt, Crypt.get_trust_store().encode('utf-8'))

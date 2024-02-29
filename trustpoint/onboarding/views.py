@@ -107,7 +107,7 @@ def onboarding_manual_client(request):
 
 def trust_store(request):
     """View for the trust store API endpoint.
-    
+
     Request type: GET
 
     Inputs: Onbarding process URL extension (in request path)
@@ -122,7 +122,7 @@ def trust_store(request):
     ob_process = OnboardingProcess.get_by_url_ext(url_extension)
     if not ob_process or not ob_process.active:
         return HttpResponse('Invalid URI extension.', status=404)
-    
+
     try:
         trust_store = Crypt.get_trust_store()
     except FileNotFoundError:
@@ -141,11 +141,11 @@ def ldevid(request):
     """View for the LDevID API endpoint.
 
     Request type: POST
-    
+
     Inputs:
         Onbarding process URL extension (in request path)
         Certificate signing request (as POST file ldevid.csr)
-    
+
     Returns: LDevID certificate chain (in response body)
     """
 
@@ -194,9 +194,9 @@ def cert_chain(request):
     Request type: GET
 
     Inputs: Onbarding process URL extension (in request path)
-    
+
     Returns: LDevID certificate chain (in response body)
-    
+
     TODO: instead of URL extension, match using the client LDevID certificate
     TODO: chain with or without end-entity certificate?
     """
@@ -206,13 +206,13 @@ def cert_chain(request):
     ob_process = OnboardingProcess.get_by_url_ext(url_extension)
     if not ob_process or not ob_process.active:
         return HttpResponse('Invalid URI extension.', status=404)
-    
+
     # could use cryptography.x509.verification to verify the chain, it has just been added in cryptography 42.0.0 and is still marked as an unstable API
 
     # TODO: do we want to verify the LDevID as a TLS client certificate?
     # This would a) require the LDevID to have extendedKeyUsage=clientAuth and b) require Nginx/Apache to be configured to handle client certificates
     # Verifying client certificates in Django requires a custom middleware, e.g. django-ssl-auth, which is unmaintained
-    
+
     response = HttpResponse(Crypt.get_cert_chain(), status=200)
     if ob_process.state == OnboardingProcessState.LDEVID_SENT:
         ob_process.state = OnboardingProcessState.COMPLETED
@@ -223,9 +223,9 @@ def state(request):
     """View for the onboarding process state API endpoint.
 
     Request type: GET
-    
+
     Inputs: Onbarding process URL extension (in request path)
-    
+
     Returns: Onboarding process state as an integer (representing OnboardingProcessState enum, in response body)
     """
 

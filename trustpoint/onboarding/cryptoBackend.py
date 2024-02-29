@@ -64,14 +64,16 @@ class CryptoBackend:
         # TODO: DB query pending implementation of Endpoint profiles
         # TODO TODO TODO
 
-        signingCa = IssuingCa.objects.filter(unique_name__contains='onboarding').first() # TODO select CA based on endpoint profile
+        signingCa = IssuingCa.objects.filter(
+            unique_name__contains='onboarding'
+        ).first()  # TODO select CA based on endpoint profile
 
         if not signingCa:
             raise Exception('No CA configured for onboarding. For testing, use a CA that has "onboarding" in its name.')
-        
+
         if not signingCa.p12 or not signingCa.p12.path:
             raise Exception('CA is not associated with a .p12 file.')
-        
+
         with open(signingCa.p12.path, 'rb') as cafile:
             ca_p12 = serialization.pkcs12.load_key_and_certificates(
                 cafile.read(), b''
@@ -104,18 +106,20 @@ class CryptoBackend:
 
     def get_cert_chain():
         """Returns the certificate chain of the onboarding CA.
-        
+
         Returns: The certificate chain as a string in PEM format.
-        
+
         Raises:
             Exception: If the onboarding CA is not configured or not available.
         """
 
-        signingCa = IssuingCa.objects.filter(unique_name__contains='onboarding').first() # TODO select CA based on endpoint profile
+        signingCa = IssuingCa.objects.filter(
+            unique_name__contains='onboarding'
+        ).first()  # TODO select CA based on endpoint profile
 
         if not signingCa:
             raise Exception('No CA configured for onboarding. For testing, use a CA that has "onboarding" in its name.')
-        
+
         if not signingCa.p12 or not signingCa.p12.path:
             raise Exception('CA is not associated with a .p12 file.')
 
