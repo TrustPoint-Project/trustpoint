@@ -22,8 +22,6 @@ class IndexView(RedirectView):
 
 
 class ContextDataMixin:
-    page_category: str | None = None
-    page_name: str | None = None
 
     def get_context_data(self, **kwargs: Any) -> dict:
         """Adds attributes prefixed with context_ to the context_data if it does not exist.

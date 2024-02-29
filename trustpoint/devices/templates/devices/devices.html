@@ -1,14 +1,24 @@
 {% extends 'trustpoint/base.html' %}
+{% load render_table from django_tables2 %}
 {% block content %}
+
     <div class="card card-main text-center">
-        <div class="card-header">
-            Devices
+        <div class="card-header tp-card-header">
+            <h1>Devices</h1>
+            <div></div>
+            <a id="tp-table-add-device" type="button" class="btn btn-primary" href="{% url 'devices:devices-add' %}">
+                Add New Device
+            </a>
         </div>
-        <div class="card-body">
+        <div class="card-body text-start">
+
+            {% render_table table %}
 
         </div>
-        <div class="card-footer text-body-secondary">
-
+        <div class="card-footer tp-table-footer-btn-group">
+            <button id="tp-table-delete-selected" type="button" class="btn btn-secondary">Delete Selected</button>
         </div>
+
+
     </div>
 {% endblock content %}

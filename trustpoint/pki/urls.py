@@ -32,11 +32,11 @@ urlpatterns = [
         views.IssuingCaBulkDeleteView.as_view(),
         name='issuing_cas-delete',
     ),
-    re_path(
-        r'^issuing-certificate-authorities/delete/',
-        views.IssuingCasRedirectView.as_view(),
-        name='issuing_cas-redirect',
-    ),
+    # re_path(
+    #     r'^issuing-certificate-authorities/delete/',
+    #     views.IssuingCasRedirectView.as_view(),
+    #     name='issuing_cas-redirect',
+    # ),
     path(
         'issuing-certificate-authorities/add/local/file/',
         views.IssuingCaLocalFileMultiForms.as_view(),
