@@ -1,27 +1,35 @@
 """This module provides cryptographic operations for use during the onboarding process.
 
 This implementation is in testing stage and shall not be regarded as secure.
-TODO sign_ldevid is Dragons with Lasers in central Berlin levels of a security risk TODO"""
+TODO sign_ldevid is Dragons with Lasers in central Berlin levels of a security risk TODO
+"""
 
 import hashlib
 import hmac
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+
 from cryptography import x509
-from datetime import datetime, timezone, timedelta
-
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives import hashes
-
+from cryptography.hazmat.primitives import hashes, serialization
 from devices.models import Device
-
 from django.core.files.base import ContentFile
-
 from pki.models import IssuingCa
+
+
+class OnboardingError(Exception):
+    """Exception raised for errors in the onboarding process."""
+
+    def __init__(self, message: str = 'An error occured during onboarding.') -> None:
+        """Initializes a new OnboardingError with a given message."""
+        self.message = message
+        super().__init__(self.message)
 
 
 class CryptoBackend:
     """Provides cryptographic operations for use during the onboarding process."""
 
-    def pbkdf2_hmac_sha256(hexpass, hexsalt, message=b'', iterations=1000000, dklen=32):
+    @staticmethod
+    def pbkdf2_hmac_sha256(hexpass: str, hexsalt: str, message: bytes = b'', iterations: int = 1000000, dklen: int = 32) -> str:
         """Calculates the HMAC signature of the trust store.
 
         Returns:
@@ -31,7 +39,8 @@ class CryptoBackend:
         h = hmac.new(pkey, message, hashlib.sha256)
         return h.hexdigest()
 
-    def get_trust_store():
+    @staticmethod
+    def get_trust_store() -> str:
         """Returns the trust store.
 
         TODO: Make location and included certificates configurable and verify that they are valid
@@ -42,11 +51,11 @@ class CryptoBackend:
         Raises:
             FileNotFoundError: If the trust store file is not found.
         """
-
-        with open('../tests/data/x509/https_server.crt', 'r') as certfile:
+        with Path.open('../tests/data/x509/https_server.crt') as certfile:
             return certfile.read()
 
-    def sign_ldevid(csr_str: str, device: Device):
+    @staticmethod
+    def sign_ldevid(csr_str: str, device: Device) -> bytes:
         """Signs a certificate signing request (CSR) with the onboarding CA.
 
         Args:
@@ -56,28 +65,28 @@ class CryptoBackend:
         Returns: The signed certificate as a string in PEM format.
 
         Raises:
-            Exception: If the onboarding CA is not configured or not available.
+            OnboardingError: If the onboarding CA is not configured or not available.
         """
-
         csr = x509.load_pem_x509_csr(csr_str)
 
-        # TODO: DB query pending implementation of Endpoint profiles
-        # TODO TODO TODO
+        # TODO(Air): DB query pending implementation of Endpoint profiles
 
-        signingCa = IssuingCa.objects.filter(
+        signing_ca = IssuingCa.objects.filter(
             unique_name__contains='onboarding'
-        ).first()  # TODO select CA based on endpoint profile
+        ).first()  # TODO(Air): select CA based on endpoint profile
 
-        if not signingCa:
-            raise Exception('No CA configured for onboarding. For testing, use a CA that has "onboarding" in its name.')
+        if not signing_ca:
+            msg = 'No CA configured for onboarding. For testing, use a CA that has "onboarding" in its name.'
+            raise OnboardingError(msg)
 
-        if not signingCa.p12 or not signingCa.p12.path:
-            raise Exception('CA is not associated with a .p12 file.')
+        if not signing_ca.p12 or not signing_ca.p12.path:
+            msg = 'CA is not associated with a .p12 file.'
+            raise OnboardingError(msg)
 
-        with open(signingCa.p12.path, 'rb') as cafile:
+        with Path.open(signing_ca.p12.path, 'rb') as cafile:
             ca_p12 = serialization.pkcs12.load_key_and_certificates(
                 cafile.read(), b''
-            )  # TODO (get password here if .p12 stored in media is password-protected)
+            )  # TODO(Air): (get password here if .p12 stored in media is password-protected)
             private_ca_key = ca_p12[0]
             ca_cert = ca_p12[1]
 
@@ -91,7 +100,7 @@ class CryptoBackend:
                 datetime.now(timezone.utc) - timedelta(hours=1)  # backdate a bit in case of client clock skew
             )
             .not_valid_after(
-                # TODO configurable validity period
+                # TODO(Air): configurable validity period
                 datetime.now(timezone.utc) + timedelta(days=365)
                 # Sign our certificate with our private key
             )
@@ -100,33 +109,37 @@ class CryptoBackend:
 
         device.serial_number = cert.serial_number
         device.certificate = ContentFile(cert.public_bytes(serialization.Encoding.PEM), name='ldevid.pem')
-        device.save()  # need to keep track of the device once we send out a cert, even if onboarding fails afterwards, TODO but do it here?
+        # need to keep track of the device once we send out a cert, even if onboarding fails afterwards
+        # TODO(Air): but do it here?
+        device.save()
 
         return cert.public_bytes(serialization.Encoding.PEM)
 
-    def get_cert_chain():
+    @staticmethod
+    def get_cert_chain() -> bytes:
         """Returns the certificate chain of the onboarding CA.
 
-        Returns: The certificate chain as a string in PEM format.
+        Returns: The certificate chain as bytes in PEM format.
 
         Raises:
-            Exception: If the onboarding CA is not configured or not available.
+            OnboardingError: If the onboarding CA is not configured or not available.
         """
-
-        signingCa = IssuingCa.objects.filter(
+        signing_ca = IssuingCa.objects.filter(
             unique_name__contains='onboarding'
-        ).first()  # TODO select CA based on endpoint profile
+        ).first()  # TODO(Air): select CA based on endpoint profile
 
-        if not signingCa:
-            raise Exception('No CA configured for onboarding. For testing, use a CA that has "onboarding" in its name.')
+        if not signing_ca:
+            msg = 'No CA configured for onboarding. For testing, use a CA that has "onboarding" in its name.'
+            raise OnboardingError(msg)
 
-        if not signingCa.p12 or not signingCa.p12.path:
-            raise Exception('CA is not associated with a .p12 file.')
+        if not signing_ca.p12 or not signing_ca.p12.path:
+            msg = 'CA is not associated with a .p12 file.'
+            raise OnboardingError(msg)
 
-        with open(signingCa.p12.path, 'rb') as cafile:
+        with Path.open(signing_ca.p12.path, 'rb') as cafile:
             ca_p12 = serialization.pkcs12.load_key_and_certificates(
                 cafile.read(), b''
-            )  # TODO (get password here if .p12 stored in media is password-protected)
+            )  # TODO(Air): (get password here if .p12 stored in media is password-protected)
             ca_cert = ca_p12[1]
 
         return ca_cert.public_bytes(serialization.Encoding.PEM)

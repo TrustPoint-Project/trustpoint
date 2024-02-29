@@ -4,8 +4,8 @@ TODO Contains API endpoints as well, this should be moved to a separate API app 
 """
 
 from django.urls import path, re_path
-from . import views
 
+from . import views
 
 app_name = 'onboarding'
 urlpatterns = [
