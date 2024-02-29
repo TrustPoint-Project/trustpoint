@@ -11,6 +11,7 @@ from pathlib import Path
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.serialization import pkcs12
 from devices.models import Device
 from django.core.files.base import ContentFile
 from pki.models import IssuingCa
@@ -19,7 +20,7 @@ from pki.models import IssuingCa
 class OnboardingError(Exception):
     """Exception raised for errors in the onboarding process."""
 
-    def __init__(self, message: str = 'An error occured during onboarding.') -> None:
+    def __init__(self, message: str = 'An error occurred during onboarding.') -> None:
         """Initializes a new OnboardingError with a given message."""
         self.message = message
         super().__init__(self.message)
@@ -29,13 +30,18 @@ class CryptoBackend:
     """Provides cryptographic operations for use during the onboarding process."""
 
     @staticmethod
-    def pbkdf2_hmac_sha256(hexpass: str, hexsalt: str, message: bytes = b'', iterations: int = 1000000, dklen: int = 32) -> str:
+    def pbkdf2_hmac_sha256(
+            hexpass: str,
+            hexsalt: str,
+            message: bytes = b'',
+            iterations: int = 1000000,
+            dklen: int = 32) -> str:
         """Calculates the HMAC signature of the trust store.
 
         Returns:
             HMAC_SHA256(PBKDF2_SHA256(hexpass, hexsalt, iterations, dklen), message)
         """
-        pkey = hashlib.pbkdf2_hmac('sha256', bytes(hexpass, 'utf-8'), bytes(hexsalt, 'utf-8'), iterations, dklen)
+        pkey = hashlib.pbkdf2_hmac('sha256', hexpass.encode(), hexsalt.encode(), iterations, dklen)
         h = hmac.new(pkey, message, hashlib.sha256)
         return h.hexdigest()
 
@@ -51,16 +57,18 @@ class CryptoBackend:
         Raises:
             FileNotFoundError: If the trust store file is not found.
         """
-        with Path.open('../tests/data/x509/https_server.crt') as certfile:
+        with Path('../tests/data/x509/https_server.crt').open() as certfile:
             return certfile.read()
 
     @staticmethod
-    def sign_ldevid(csr_str: str, device: Device) -> bytes:
+    def sign_ldevid(csr_str: bytes, device: Device) -> bytes:
         """Signs a certificate signing request (CSR) with the onboarding CA.
 
         Args:
-            csr_str: The certificate signing request as a string in PEM format.
-            device: The Device to associate the signed certificate with.
+            csr_str (bytes):
+                The certificate signing request as a string in PEM format.
+            device (Device):
+                The Device to associate the signed certificate with.
 
         Returns: The signed certificate as a string in PEM format.
 
@@ -83,9 +91,9 @@ class CryptoBackend:
             msg = 'CA is not associated with a .p12 file.'
             raise OnboardingError(msg)
 
-        with Path.open(signing_ca.p12.path, 'rb') as cafile:
-            ca_p12 = serialization.pkcs12.load_key_and_certificates(
-                cafile.read(), b''
+        with Path.open(signing_ca.p12.path, 'rb') as ca_file:
+            ca_p12 = pkcs12.load_key_and_certificates(
+                ca_file.read(), b''
             )  # TODO(Air): (get password here if .p12 stored in media is password-protected)
             private_ca_key = ca_p12[0]
             ca_cert = ca_p12[1]
@@ -136,9 +144,9 @@ class CryptoBackend:
             msg = 'CA is not associated with a .p12 file.'
             raise OnboardingError(msg)
 
-        with Path.open(signing_ca.p12.path, 'rb') as cafile:
-            ca_p12 = serialization.pkcs12.load_key_and_certificates(
-                cafile.read(), b''
+        with Path.open(signing_ca.p12.path, 'rb') as ca_file:
+            ca_p12 = pkcs12.load_key_and_certificates(
+                ca_file.read(), b''
             )  # TODO(Air): (get password here if .p12 stored in media is password-protected)
             ca_cert = ca_p12[1]
 

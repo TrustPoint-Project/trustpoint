@@ -316,7 +316,6 @@ class IssuingCaLocalFileMultiForms(IssuingCasContextMixin, MultiFormView):
             p12=p12_memory_uploaded_file,
         )
 
-        # TODO(Alex): check if this is kind of atomic or could result in issues
         issuing_ca.save()
 
         msg = f'Success! Issuing CA - {unique_name} - is now available.'
