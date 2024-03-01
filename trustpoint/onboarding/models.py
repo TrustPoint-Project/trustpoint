@@ -1,5 +1,6 @@
 """This module contains models for the Onboarding app."""
 
+from __future__ import annotations
 import secrets
 import threading
 from enum import IntEnum
@@ -55,49 +56,70 @@ class OnboardingProcess:
         self.hmac = None
         self.state = OnboardingProcessState.STARTED
         self.error_reason = ''
-        self.gen_thread = threading.Thread(target=self.calc_hmac)
+        self.gen_thread = threading.Thread(target=self._calc_hmac)
         self.gen_thread.start()
-        self.timer = threading.Timer(onboarding_timeout, self.timeout)
+        self.timer = threading.Timer(onboarding_timeout, self._timeout)
         self.timer.start()
         self.active = True
         OnboardingProcess.id_counter += 1
 
     def __str__(self) -> str:
-        return f'OnboardingProcess {self.id} for device {self.device.name}'
+        return f'OnboardingProcess {self.id} for device {self.device.device_name}'
 
     def __repr__(self) -> str:
         return self.__str__()
 
     @classmethod
-    def get_by_id(cls, process_id: int) -> 'OnboardingProcess':
+    def get_by_id(cls, process_id: int) -> OnboardingProcess | None:
+        """Returns the onboarding process with a given ID."""
         for process in onboarding_processes:
             if process.id == process_id:
                 return process
         return None
 
     @classmethod
-    def get_by_url_ext(cls, url: str) -> 'OnboardingProcess':
+    def get_by_url_ext(cls, url: str) -> OnboardingProcess | None:
+        """Returns the onboarding process with a given URL extension."""
         for process in onboarding_processes:
             if process.url == url:
                 return process
         return None
+    
+    @classmethod
+    def get_by_device(cls, device: Device) -> OnboardingProcess | None:
+        """Returns the onboarding process for a given device."""
+        for process in onboarding_processes:
+            if process.device == device:
+                return process
+        return None
 
-    def fail(self, reason: str = '') -> None:
+    def _fail(self, reason: str = '') -> None:
         """Cancels the onboarding process with a given reason."""
         self.state = OnboardingProcessState.FAILED
         self.active = False
         self.error_reason = reason
+        self.timer.cancel()
+        self.device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_FAILED
+        self.device.save()
 
-    def calc_hmac(self) -> None:
+    def _success(self) -> None:
+        """Completes the onboarding process."""
+        self.state = OnboardingProcessState.COMPLETED
+        self.active = False
+        self.timer.cancel()
+        self.device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDED
+        self.device.save()
+
+    def _calc_hmac(self) -> None:
         """Calculates the HMAC signature of the trust store.
 
         Runs in separate gen_thread thread started by __init__ as it typically takes about a second.
         """
         try:
-            self.hmac = Crypt.pbkdf2_hmac_sha256(self.tsotp, self.tssalt, Crypt.get_trust_store().encode('utf-8'))
+            self.hmac = Crypt.pbkdf2_hmac_sha256(self.tsotp, self.tssalt, Crypt.get_trust_store().encode())
         except Exception as e:
             msg = 'Error generating trust store HMAC.'
-            self.fail(msg)
+            self._fail(msg)
             raise OnboardingError(msg) from e
 
         if self.state == OnboardingProcessState.STARTED:
@@ -116,11 +138,11 @@ class OnboardingProcess:
             self.state = OnboardingProcessState.DEVICE_VALIDATED
             return True
 
-        self.fail('Client provided invalid credentials.')
+        self._fail('Client provided invalid credentials.')
         return False
 
-    def sign_ldevid(self, csr: str) -> bytes:
-        """Signs a certificate signing request (CSR) with the onboarding CA."""
+    def sign_ldevid(self, csr: bytes) -> bytes | None:
+        """Issues LDevID certificate with the onboarding CA based on provided CSR."""
         if not self.active:
             return None
         if self.state != OnboardingProcessState.DEVICE_VALIDATED:
@@ -128,17 +150,32 @@ class OnboardingProcess:
         try:
             ldevid = Crypt.sign_ldevid(csr, self.device)
         except Exception as e:
-            self.fail(str(e))  # TODO(Air): is it safe to print exception messages to the user UI?
+            self._fail(str(e))  # TODO(Air): is it safe to print exception messages to the user UI?
             raise
         if ldevid:
             self.state = OnboardingProcessState.LDEVID_SENT
         else:
-            self.fail('No LDevID was generated.')
+            self._fail('No LDevID was generated.')
         return ldevid
+    
+    def get_cert_chain(self) -> bytes | None:
+        """Returns the certificate chain of the LDevID certificate."""
+        if not self.active:
+            return None
+        if self.state != OnboardingProcessState.LDEVID_SENT:
+            return None
+        try:
+            chain = Crypt.get_cert_chain(self.device)
+        except Exception as e:
+            self._fail(str(e))
+            raise
 
-    def timeout(self) -> None:
+        self._success()
+        return chain
+
+    def _timeout(self) -> None:
         """Cancels the onboarding process due to timeout, called by timer thread."""
-        self.fail('Process timed out.')
+        self._fail('Process timed out.')
 
     device = models.ForeignKey(Device, on_delete=models.CASCADE)
     datetime_started = models.DateTimeField(auto_now_add=True)

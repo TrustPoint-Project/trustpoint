@@ -45,3 +45,11 @@ class Device(models.Model):
     def __str__(self: Device) -> str:
         """Returns a Device object in human-readable format."""
         return f'Device({self.device_name}, {self.serial_number})'
+    
+    @classmethod
+    def get_by_id(cls, device_id: int) -> Device | None:
+        """Returns the device with a given ID."""
+        try:
+            return cls.objects.get(pk=device_id)
+        except cls.DoesNotExist:
+            return None

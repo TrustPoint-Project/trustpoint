@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import django_tables2 as tables
 from django.utils.html import format_html
+from django.urls import reverse
 
 from .models import Device
 
@@ -71,20 +72,20 @@ class DeviceTable(tables.Table):
             return ''
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
             return format_html(
-                '<a href="onboarding/start/{}/" class="btn btn-primary tp-table-btn"">Start Onboarding</a>',
-                record.pk)
+                '<a href="{}" class="btn btn-primary tp-table-btn"">Start Onboarding</a>',
+                reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
         elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
             return format_html(
-                '<a href="onboarding/retry/{}/" class="btn btn-warning tp-table-btn"">Retry Onboarding</a>',
-                record.pk)
+                '<a href="{}" class="btn btn-warning tp-table-btn"">Retry Onboarding</a>',
+                reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
         elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
             return format_html(
-                '<a href="onboarding/revoke/{}/" class="btn btn-warning tp-table-btn"">Revoke Onboarding</a>',
+                '<a href="onboarding/revoke/{}/" class="btn btn-warning tp-table-btn"">Revoke Certificate</a>',
                 record.pk)
         elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
             return format_html(
-                '<a href="onboarding/cancel/{}/" class="btn btn-secondary tp-table-btn"">Cancel Onboarding</a>',
-                record.pk)
+                '<a href="{}" class="btn btn-primary tp-table-btn"">Go to Onboarding</a>',
+                reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
 
     @staticmethod
     def render_details(record: Device) -> SafeString:
