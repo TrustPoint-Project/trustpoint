@@ -7,6 +7,7 @@ from typing import TYPE_CHECKING
 
 import django_tables2 as tables
 from django.utils.html import format_html
+from django.urls import reverse
 
 from .models import Device
 
@@ -119,13 +120,13 @@ class DeviceTable(tables.Table):
         """
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
             return format_html(
-                '<a href="onboarding/start/{}/" class="btn btn-success tp-onboarding-btn">Start Onboarding</a>',
-                record.pk,
+                '<a href="{}" class="btn btn-success tp-onboarding-btn">Start Onboarding</a>',
+                reverse("onboarding:manual-client", kwargs={'device_id': record.pk})
             )
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
             return format_html(
-                '<a href="onboarding/retry/{}/" class="btn btn-warning tp-onboarding-btn">Retry Onboarding</a>',
-                record.pk,
+                '<a href="{}" class="btn btn-warning tp-onboarding-btn">Retry Onboarding</a>',
+                reverse("onboarding:manual-client", kwargs={'device_id': record.pk})
             )
         raise UnknownOnboardingStatusError
 
@@ -178,8 +179,8 @@ class DeviceTable(tables.Table):
             )
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
             return format_html(
-                '<a href="onboarding/cancel/{}/" class="btn btn-danger tp-onboarding-btn">Cancel Onboarding</a>',
-                record.pk,
+                '<a href="{}" class="btn btn-danger tp-onboarding-btn">Cancel Onboarding</a>',
+                reverse("onboarding:exit", kwargs={'device_id': record.pk})
             )
 
         is_manual = record.onboarding_protocol == Device.OnboardingProtocol.MANUAL

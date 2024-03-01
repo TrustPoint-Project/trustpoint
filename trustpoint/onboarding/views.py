@@ -63,6 +63,12 @@ def onboarding_manual_client(request: HttpRequest, device_id: int) -> HttpRespon
     
     # choose the onboarding method for this device
     if device.onboarding_protocol != Device.OnboardingProtocol.CLIENT:
+        try:
+            label = Device.OnboardingProtocol(device.onboarding_protocol).label
+        except ValueError:
+            messages.error(request, f'Onboarding: Please select a valid onboarding protocol.')
+            return redirect('devices:devices')
+        
         label = Device.OnboardingProtocol(device.onboarding_protocol).label
         messages.error(request, f'Onboarding protocol {label} is not implemented.')
         return redirect('devices:devices')

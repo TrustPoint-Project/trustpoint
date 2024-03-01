@@ -134,6 +134,14 @@ h3 {
     padding: 0.75rem;
 }
 
+.v-middle {
+    vertical-align: middle;
+}
+
+.row_checkbox {
+    vertical-align: middle;
+}
+
 /* Dev Utils */
 
 .b-green {
