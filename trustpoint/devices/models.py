@@ -13,10 +13,23 @@ class Device(models.Model):
     class DeviceOnboardingStatus(models.TextChoices):
         """Device Onboarding Status."""
 
-        NOT_ONBOARDED = 'NO', _('Not onboarded')
-        ONBOARDING_RUNNING = 'OR', _('Onboarding running')
-        ONBOARDED = 'OD', _('Onboarded')
-        ONBOARDING_FAILED = 'OF', _('Onboarding failed')
+        NOT_ONBOARDED = 'P', _('Pending')
+        ONBOARDING_RUNNING = 'R', _('Running')
+        ONBOARDED = 'O', _('OK')
+        ONBOARDING_FAILED = 'F', _('Failed')
+
+        @classmethod
+        def get_color(cls: Device.DeviceOnboardingStatus, choice: Device.DeviceOnboardingStatus | str) -> str:
+            """Gets the bootstrap 5.3 color name."""
+            if isinstance(choice, str):
+                choice = Device.DeviceOnboardingStatus(choice)
+            if choice == cls.NOT_ONBOARDED or choice == cls.ONBOARDING_RUNNING:
+                return 'warning'
+            if choice == cls.ONBOARDED:
+                return 'success'
+            if choice == cls.ONBOARDED:
+                return 'danger'
+            raise ValueError('Unknown device onboarding status.')
 
     class OnboardingProtocol(models.TextChoices):
         """Supported Onboarding Protocols."""
@@ -35,7 +48,7 @@ class Device(models.Model):
         default=OnboardingProtocol.MANUAL,
         blank=True)
     device_onboarding_status = models.CharField(
-        max_length=2,
+        max_length=1,
         choices=DeviceOnboardingStatus,
         default=DeviceOnboardingStatus.NOT_ONBOARDED,
         blank=True)
