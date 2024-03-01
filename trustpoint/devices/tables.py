@@ -10,41 +10,13 @@ from django.utils.html import format_html
 from django.urls import reverse
 
 from .models import Device
+from .exceptions import UnknownOnboardingProtocolError, UnknownOnboardingStatusError
 
 if TYPE_CHECKING:
-    from typing import Any
-
     from django.utils.safestring import SafeString
 
 
 CHECKBOX_ATTRS: dict[str, dict[str, str]] = {'th': {'id': 'checkbox-column'}, 'td': {'class': 'row_checkbox'}}
-
-
-class DisplayError(ValueError):
-    """Raised when some entry in the table cannot be rendered appropriately."""
-
-    def __init__(self: DisplayError, *args: Any) -> None:
-        """Add the error message by passing it to constructor of the parent class."""
-        exc_msg = 'Unique name is already taken. Try another one.'
-        super().__init__(exc_msg, *args)
-
-
-class UnknownOnboardingStatusError(DisplayError):
-    """Raised when an unknown onboarding status was found and thus cannot be rendered appropriately."""
-
-    def __init__(self: UnknownOnboardingStatusError, *args: Any) -> None:
-        """Add the error message by passing it to constructor of the parent class."""
-        exc_msg = 'Unknown onboarding status. Failed to render entry in table.'
-        super().__init__(exc_msg, *args)
-
-
-class UnknownOnboardingProtocolError(DisplayError):
-    """Raised when an unknown onboarding protocol was found and thus cannot be rendered appropriately."""
-
-    def __init__(self: UnknownOnboardingProtocolError, *args: Any) -> None:
-        """Add the error message by passing it to constructor of the parent class."""
-        exc_msg = 'Unknown onboarding protocol. Failed to render entry in table.'
-        super().__init__(exc_msg, *args)
 
 
 class DeviceTable(tables.Table):
@@ -174,7 +146,7 @@ class DeviceTable(tables.Table):
 
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
             return format_html(
-                '<a href="onboarding/revoke/{}/" class="btn btn-danger tp-onboarding-btn">Revoke Onboarding</a>',
+                '<a href="onboarding/revoke/{}/" class="btn btn-danger tp-onboarding-btn">Revoke Certificates</a>',
                 record.pk,
             )
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:

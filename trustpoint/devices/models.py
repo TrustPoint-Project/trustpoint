@@ -6,6 +6,8 @@ from django.utils import timezone
 from pki.models import EndpointProfile
 from django.utils.translation import gettext_lazy as _
 
+from .exceptions import UnknownOnboardingStatusError
+
 
 class Device(models.Model):
     """Device Model."""
@@ -30,7 +32,7 @@ class Device(models.Model):
                 return 'success'
             if choice == cls.ONBOARDING_FAILED.value:
                 return 'danger'
-            raise ValueError('Unknown device onboarding status.')
+            raise UnknownOnboardingStatusError
 
     class OnboardingProtocol(models.TextChoices):
         """Supported Onboarding Protocols."""
