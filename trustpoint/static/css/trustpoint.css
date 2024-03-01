@@ -240,6 +240,11 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
     min-width: 5rem;
 }
 
+.tp-onboarding-btn {
+    padding: 0.2rem 0.4rem;
+    width: 12rem;
+}
+
 .tp-form-btn-group {
     display: flex;
     column-gap: 1rem;

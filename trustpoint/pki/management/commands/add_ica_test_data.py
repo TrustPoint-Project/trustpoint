@@ -17,6 +17,9 @@ P12_PATH = Path(__file__).parent.parent.parent.parent.parent / Path('tests/data/
 P12_FILE_NAMES = ['rsa-long.p12', 'secp256r1-long.p12', 'secp384r1-long.p12']
 
 
+# TODO(Alex): Modify to add demo data: Issuing CAs, Endpoint Profiles & Devices
+
+
 class Command(BaseCommand):
     """Django management command for adding issuing CA test data."""
 

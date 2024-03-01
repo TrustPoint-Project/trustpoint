@@ -59,6 +59,24 @@ class DeviceTable(tables.Table):
     delete = tables.Column(empty_values=(), orderable=False)
 
     @staticmethod
+    def render_device_onboarding_status(record: Device) -> str:
+        """Creates the html hyperlink for the details-view.
+
+        Args:
+            record (Device): The current record of the Device model.
+
+        Returns:
+            str: The html hyperlink for the details-view.
+        """
+        if not record.endpoint_profile:
+            return format_html('<span class="text-danger">Select Endpoint Profile</span>')
+        return format_html(
+            f'<span class="text-{Device.DeviceOnboardingStatus.get_color(record.device_onboarding_status)}">'
+            f'{record.get_device_onboarding_status_display()}'
+            '</span>'
+        )
+
+    @staticmethod
     def render_onboarding_action(record: Device) -> str:
         """Creates the html hyperlink for the details-view.
 
@@ -66,26 +84,50 @@ class DeviceTable(tables.Table):
             record (Device): The current record of the Device model.
 
         Returns:
-            SafeString: The html hyperlink for the details-view.
+            str: The html hyperlink for the details-view.
         """
         if not record.endpoint_profile:
             return ''
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
-            return format_html(
-                '<a href="{}" class="btn btn-primary tp-table-btn"">Start Onboarding</a>',
-                reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
-        elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
-            return format_html(
-                '<a href="{}" class="btn btn-warning tp-table-btn"">Retry Onboarding</a>',
-                reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
-        elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
-            return format_html(
-                '<a href="onboarding/revoke/{}/" class="btn btn-warning tp-table-btn"">Revoke Certificate</a>',
-                record.pk)
-        elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
-            return format_html(
-                '<a href="{}" class="btn btn-primary tp-table-btn"">Go to Onboarding</a>',
-                reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
+
+        is_manual = (record.onboarding_protocol == Device.OnboardingProtocol.MANUAL)
+        is_client = (record.onboarding_protocol == Device.OnboardingProtocol.CLIENT)
+        if is_manual or is_client:
+            if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
+                return format_html(
+                    '<a href="{}" class="btn btn-success tp-onboarding-btn">Start Onboarding</a>',
+                    reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
+            elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
+                return format_html(
+                    '<a href="{}" class="btn btn-warning tp-onboarding-btn">Retry Onboarding</a>',
+                    reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
+            elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+                return format_html(
+                    '<a href="onboarding/revoke/{}/" class="btn btn-danger tp-onboarding-btn">Revoke Onboarding</a>',
+                    reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
+            elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+                return format_html(
+                    '<a href="{}" class="btn btn-danger tp-onboarding-btn">Cancel Onboarding</a>',
+                    reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
+
+        is_brski = (record.onboarding_protocol == Device.OnboardingProtocol.BRSKI)
+        is_fido = (record.onboarding_protocol == Device.OnboardingProtocol.FIDO)
+        if is_brski or is_fido:
+            if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
+                return format_html(
+                    '<button class="btn btn-secondary tp-onboarding-btn" disabled>Zero-Touch Onboarding</a>',
+                    record.pk)
+            elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
+                return format_html(
+                    '<a href="onboarding/retry/{}/" class="btn btn-warning tp-onboarding-btn">Retry Onboarding</a>',
+                    record.pk)
+            elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+                return format_html(
+                    '<a href="onboarding/revoke/{}/" class="btn btn-danger tp-onboarding-btn">Revoke Onboarding</a>',
+                    record.pk)
+            elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+                return format_html(
+                    '<a href="onboarding/cancel/{}/" class="btn btn-danger tp-onboarding-btn">Cancel Onboarding</a>',
+                    record.pk)
 
     @staticmethod
     def render_details(record: Device) -> SafeString:
