@@ -21,13 +21,14 @@ class Device(models.Model):
         @classmethod
         def get_color(cls: Device.DeviceOnboardingStatus, choice: Device.DeviceOnboardingStatus | str) -> str:
             """Gets the bootstrap 5.3 color name."""
-            if isinstance(choice, str):
-                choice = Device.DeviceOnboardingStatus(choice)
-            if choice == cls.NOT_ONBOARDED or choice == cls.ONBOARDING_RUNNING:
+            choice = str(choice)
+            if choice == cls.ONBOARDING_RUNNING:
+                return 'warning-emphasis'
+            if choice == cls.NOT_ONBOARDED.value:
                 return 'warning'
-            if choice == cls.ONBOARDED:
+            if choice == cls.ONBOARDED.value:
                 return 'success'
-            if choice == cls.ONBOARDING_FAILED:
+            if choice == cls.ONBOARDING_FAILED.value:
                 return 'danger'
             raise ValueError('Unknown device onboarding status.')
 
@@ -58,11 +59,3 @@ class Device(models.Model):
     def __str__(self: Device) -> str:
         """Returns a Device object in human-readable format."""
         return f'Device({self.device_name}, {self.serial_number})'
-    
-    @classmethod
-    def get_by_id(cls, device_id: int) -> Device | None:
-        """Returns the device with a given ID."""
-        try:
-            return cls.objects.get(pk=device_id)
-        except cls.DoesNotExist:
-            return None

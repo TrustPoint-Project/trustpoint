@@ -7,15 +7,43 @@ from typing import TYPE_CHECKING
 
 import django_tables2 as tables
 from django.utils.html import format_html
-from django.urls import reverse
 
 from .models import Device
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from django.utils.safestring import SafeString
 
 
 CHECKBOX_ATTRS: dict[str, dict[str, str]] = {'th': {'id': 'checkbox-column'}, 'td': {'class': 'row_checkbox'}}
+
+
+class DisplayError(ValueError):
+    """Raised when some entry in the table cannot be rendered appropriately."""
+
+    def __init__(self: DisplayError, *args: Any) -> None:
+        """Add the error message by passing it to constructor of the parent class."""
+        exc_msg = 'Unique name is already taken. Try another one.'
+        super().__init__(exc_msg, *args)
+
+
+class UnknownOnboardingStatusError(DisplayError):
+    """Raised when an unknown onboarding status was found and thus cannot be rendered appropriately."""
+
+    def __init__(self: UnknownOnboardingStatusError, *args: Any) -> None:
+        """Add the error message by passing it to constructor of the parent class."""
+        exc_msg = 'Unknown onboarding status. Failed to render entry in table.'
+        super().__init__(exc_msg, *args)
+
+
+class UnknownOnboardingProtocolError(DisplayError):
+    """Raised when an unknown onboarding protocol was found and thus cannot be rendered appropriately."""
+
+    def __init__(self: UnknownOnboardingProtocolError, *args: Any) -> None:
+        """Add the error message by passing it to constructor of the parent class."""
+        exc_msg = 'Unknown onboarding protocol. Failed to render entry in table.'
+        super().__init__(exc_msg, *args)
 
 
 class DeviceTable(tables.Table):
@@ -40,20 +68,17 @@ class DeviceTable(tables.Table):
             'onboarding_action',
             'details',
             'update',
-            'delete'
+            'delete',
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
     endpoint_profile = tables.Column(
-        empty_values=(None, '',),
+        empty_values=(None, ''),
         orderable=True,
         accessor='endpoint_profile.unique_endpoint',
-        verbose_name='Endpoint Profile')
-    onboarding_action = tables.Column(
-        empty_values=(),
-        orderable=False,
-        verbose_name='Onboarding'
+        verbose_name='Endpoint Profile',
     )
+    onboarding_action = tables.Column(empty_values=(), orderable=False, verbose_name='Onboarding')
     details = tables.Column(empty_values=(), orderable=False)
     update = tables.Column(empty_values=(), orderable=False)
     delete = tables.Column(empty_values=(), orderable=False)
@@ -77,7 +102,60 @@ class DeviceTable(tables.Table):
         )
 
     @staticmethod
-    def render_onboarding_action(record: Device) -> str:
+    def _render_manual_onboarding_action(record: Device) -> str:
+        """Renders the device onboarding section for the manual onboarding cases.
+
+        Args:
+            record (Device):
+                Record / instance of the device model.
+
+        Returns:
+            str:
+                The html hyperlink for the details-view.
+
+        Raises:
+            UnknownOnboardingStatusError:
+                Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
+        """
+        if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
+            return format_html(
+                '<a href="onboarding/start/{}/" class="btn btn-success tp-onboarding-btn">Start Onboarding</a>',
+                record.pk,
+            )
+        if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
+            return format_html(
+                '<a href="onboarding/retry/{}/" class="btn btn-warning tp-onboarding-btn">Retry Onboarding</a>',
+                record.pk,
+            )
+        raise UnknownOnboardingStatusError
+
+    @staticmethod
+    def _render_zero_touch_onboarding_action(record: Device) -> str:
+        """Renders the device onboarding section for the manual onboarding cases.
+
+        Args:
+            record (Device):
+                Record / instance of the device model.
+
+        Returns:
+            str: The html hyperlink for the details-view.
+
+        Raises:
+            UnknownOnboardingStatusError:
+                Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
+        """
+        if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
+            return format_html(
+                '<button class="btn btn-secondary tp-onboarding-btn" disabled>Zero-Touch Onboarding</a>', record.pk
+            )
+        if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
+            return format_html(
+                '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn">Reset Context</a>',
+                record.pk,
+            )
+        raise UnknownOnboardingStatusError
+
+    def render_onboarding_action(self: DeviceTable, record: Device) -> str:
         """Creates the html hyperlink for the details-view.
 
         Args:
@@ -85,49 +163,36 @@ class DeviceTable(tables.Table):
 
         Returns:
             str: The html hyperlink for the details-view.
+
+        Raises:
+            UnknownOnboardingProtocolError:
+                Raised when an unknown onboarding protocol was found and thus cannot be rendered appropriately.
         """
         if not record.endpoint_profile:
             return ''
 
-        is_manual = (record.onboarding_protocol == Device.OnboardingProtocol.MANUAL)
-        is_client = (record.onboarding_protocol == Device.OnboardingProtocol.CLIENT)
-        if is_manual or is_client:
-            if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
-                return format_html(
-                    '<a href="{}" class="btn btn-success tp-onboarding-btn">Start Onboarding</a>',
-                    reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
-            elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
-                return format_html(
-                    '<a href="{}" class="btn btn-warning tp-onboarding-btn">Retry Onboarding</a>',
-                    reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
-            elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
-                return format_html(
-                    '<a href="onboarding/revoke/{}/" class="btn btn-danger tp-onboarding-btn">Revoke Onboarding</a>',
-                    reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
-            elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
-                return format_html(
-                    '<a href="{}" class="btn btn-danger tp-onboarding-btn">Cancel Onboarding</a>',
-                    reverse("onboarding:manual-client", kwargs={'device_id': record.pk}))
+        if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+            return format_html(
+                '<a href="onboarding/revoke/{}/" class="btn btn-danger tp-onboarding-btn">Revoke Onboarding</a>',
+                record.pk,
+            )
+        if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+            return format_html(
+                '<a href="onboarding/cancel/{}/" class="btn btn-danger tp-onboarding-btn">Cancel Onboarding</a>',
+                record.pk,
+            )
 
-        is_brski = (record.onboarding_protocol == Device.OnboardingProtocol.BRSKI)
-        is_fido = (record.onboarding_protocol == Device.OnboardingProtocol.FIDO)
+        is_manual = record.onboarding_protocol == Device.OnboardingProtocol.MANUAL
+        is_client = record.onboarding_protocol == Device.OnboardingProtocol.CLIENT
+        if is_manual or is_client:
+            return self._render_manual_onboarding_action(record)
+
+        is_brski = record.onboarding_protocol == Device.OnboardingProtocol.BRSKI
+        is_fido = record.onboarding_protocol == Device.OnboardingProtocol.FIDO
         if is_brski or is_fido:
-            if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
-                return format_html(
-                    '<button class="btn btn-secondary tp-onboarding-btn" disabled>Zero-Touch Onboarding</a>',
-                    record.pk)
-            elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
-                return format_html(
-                    '<a href="onboarding/retry/{}/" class="btn btn-warning tp-onboarding-btn">Retry Onboarding</a>',
-                    record.pk)
-            elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
-                return format_html(
-                    '<a href="onboarding/revoke/{}/" class="btn btn-danger tp-onboarding-btn">Revoke Onboarding</a>',
-                    record.pk)
-            elif record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
-                return format_html(
-                    '<a href="onboarding/cancel/{}/" class="btn btn-danger tp-onboarding-btn">Cancel Onboarding</a>',
-                    record.pk)
+            return self._render_zero_touch_onboarding_action(record)
+
+        raise UnknownOnboardingProtocolError
 
     @staticmethod
     def render_details(record: Device) -> SafeString:
