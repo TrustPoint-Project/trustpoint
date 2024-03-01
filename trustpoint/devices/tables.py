@@ -146,8 +146,8 @@ class DeviceTable(tables.Table):
 
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
             return format_html(
-                '<a href="onboarding/revoke/{}/" class="btn btn-danger tp-onboarding-btn">Revoke Certificates</a>',
-                record.pk,
+                '<a href="{}" class="btn btn-danger tp-onboarding-btn">Revoke Certificates</a>',
+                reverse("onboarding:revoke", kwargs={'device_id': record.pk})
             )
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
             return format_html(

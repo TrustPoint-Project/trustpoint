@@ -33,7 +33,7 @@ python -m trustpoint_client provision --tsotp {{ tsotp }} --tssalt {{ tssalt }} 
         </div>
         <div class="card-footer text-body-secondary">
             <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Back</a>
-            <a href="{% url 'onboarding:exit' device_id %}" class="btn btn-secondary">Cancel</a>
+            <a href="{% url 'onboarding:exit' device_id %}" class="btn btn-danger">Cancel</a>
         </div>
     </div>
 {% endblock content %}

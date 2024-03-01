@@ -107,6 +107,31 @@ def onboarding_exit(request: HttpRequest, device_id: int) -> HttpResponse:
     return redirect('devices:devices')
 
 
+def onboarding_revoke(request: HttpRequest, device_id: int) -> HttpResponse:
+    """Revokes the LDevID certificate for a device."""
+    device = Device.get_by_id(device_id)
+    if not device:
+        messages.error(request, f'Revocation: Device with ID {device_id} not found.')
+        return redirect('devices:devices')
+
+    if request.method == 'POST':
+        if device.ldevid:
+            if device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+                # TODO(Air): Perhaps extra status for revoked devices?
+                device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+            device.ldevid.delete()
+            device.ldevid = None
+            device.save()
+            messages.success(request, f'LDevID certificate for device {device.device_name} revoked.')
+        else:
+            messages.warning(request, f'Device {device.device_name} has no LDevID certificate to revoke.')
+        return redirect('devices:devices')
+    
+    messages.warning(request, 'CRL/OCSP not implemented yet.')
+    
+    return render(request, 'onboarding/revoke.html', context={'objects': [device]})
+
+
 def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:  # noqa: ARG001
     """View for the trust store API endpoint.
 
