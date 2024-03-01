@@ -1,21 +1,27 @@
+"""Forms definition"""
 from django import forms
-from .models import NetworkConfig, NTPConfig, LoggingConfig
 from django.utils.translation import gettext_lazy as _
+
+from .models import LoggingConfig, NetworkConfig, NTPConfig
 
 
 class NTPConfigForm(forms.ModelForm):
+    """NTP configuration form"""
     class Meta:
+        """Meta class"""
         model = NTPConfig
-        fields = '__all__'
+        fields = ['ntp_server_address']
         labels = {
             'ntp_server_address': _('NTP Server Address'),
         }
 
 
 class NetworkConfigForm(forms.ModelForm):
+    """Network configuration model form"""
     class Meta:
+        """Meta class"""
         model = NetworkConfig
-        fields = '__all__'
+        fields = ['static_ip_address','gateway','netmask','dhcp']
         labels = {
             'static_ip_address': _('Static IP Address'),
             'dhcp': _('DHCP'),
@@ -25,9 +31,12 @@ class NetworkConfigForm(forms.ModelForm):
 
 
 class LoggingConfigForm(forms.ModelForm):
+    """Logging configuration model form"""
+
     class Meta:
+        """Meta class"""
         model = LoggingConfig
-        fields = '__all__'
+        fields = ['logging_server_address','logging_server_port','logging_type','network_type']
         labels = {
             'logging_server_address': _('Logging Server Address'),
             'logging_server_port': _('Logging Server Port'),

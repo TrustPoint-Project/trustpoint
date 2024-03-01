@@ -42,7 +42,7 @@ class Device(models.Model):
         BRSKI = 'BR', _('BRSKI')
         FIDO = 'FI', _('FIDO FDO')
 
-    device_name = models.CharField(max_length=100, unique=True)
+    device_name = models.CharField(max_length=100, unique=True, default='test')
     serial_number = models.CharField(max_length=100, blank=True)
     ldevid = models.FileField(blank=True, null=True)
     onboarding_protocol = models.CharField(

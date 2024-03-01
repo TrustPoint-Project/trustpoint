@@ -1,17 +1,31 @@
+"""Django Views"""
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from django.views.generic.base import RedirectView
-from django.core.exceptions import ObjectDoesNotExist
-from .forms import NetworkConfigForm, NTPConfigForm, LoggingConfigForm
-from .models import NetworkConfig, NTPConfig, LoggingConfig
+
+if TYPE_CHECKING:
+    from django.http import HttpRequest, HttpResponse
+
+from .forms import LoggingConfigForm, NetworkConfigForm, NTPConfigForm
+from .models import LoggingConfig, NetworkConfig, NTPConfig
 
 
 class IndexView(RedirectView):
+    """Index view"""
     permanent = True
     pattern_name = 'sysconf:logging'
 
 
 # Create your views here.
-def logging(request):
+def logging(request: HttpRequest) -> HttpResponse:
+    """Handle logging Configuration
+
+    Returns: HTTPResponse
+    """
     context = {'page_category': 'sysconf', 'page_name': 'logging'}
     try:
         logging_config = LoggingConfig.objects.get(id=1)
@@ -20,11 +34,11 @@ def logging(request):
         logging_config = LoggingConfig()
 
     if request.method == 'POST':
-        loggging_config_form = LoggingConfigForm(request.POST, instance=logging_config)
-        if loggging_config_form.is_valid():
-            loggging_config_form.save()
+        logging_config_form = LoggingConfigForm(request.POST, instance=logging_config)
+        if logging_config_form.is_valid():
+            logging_config_form.save()
 
-        context['logging_config_form'] = loggging_config_form
+        context['logging_config_form'] = logging_config_form
         return render(request, 'sysconf/logging.html', context=context)
 
     else:
@@ -33,7 +47,11 @@ def logging(request):
         return render(request, 'sysconf/logging.html', context=context)
 
 
-def network(request):
+def network(request: HttpRequest) -> HttpResponse:
+    """Handle network Configuration
+
+    Returns: HTTPResponse
+    """
     context = {'page_category': 'sysconf', 'page_name': 'network'}
     # Try to read the configuration
     try:
@@ -56,7 +74,11 @@ def network(request):
         return render(request, 'sysconf/network.html', context=context)
 
 
-def ntp(request):
+def ntp(request: HttpRequest) -> HttpResponse:
+    """Handle ntp Configuration
+
+    Returns: HTTPResponse
+    """
     context = {'page_category': 'sysconf', 'page_name': 'ntp'}
     # Try to read the configuration
     try:
@@ -79,6 +101,10 @@ def ntp(request):
         return render(request, 'sysconf/ntp.html', context=context)
 
 
-def ssh(request):
+def ssh(request: HttpRequest) -> HttpResponse:
+    """Handle ssh Configuration
+
+    Returns: HTTPResponse
+    """
     context = {'page_category': 'sysconf', 'page_name': 'ssh'}
     return render(request, 'sysconf/ssh.html', context=context)
