@@ -1,6 +1,7 @@
 """This module contains models for the Onboarding app."""
 
 from __future__ import annotations
+
 import secrets
 import threading
 from enum import IntEnum
@@ -64,13 +65,15 @@ class OnboardingProcess:
         OnboardingProcess.id_counter += 1
 
     def __str__(self) -> str:
+        """Returns the onboarding process in human-readable format."""
         return f'OnboardingProcess {self.id} for device {self.device.device_name}'
 
     def __repr__(self) -> str:
+        """Returns the onboarding process in human-readable format."""
         return self.__str__()
 
     @classmethod
-    def get_by_id(cls, process_id: int) -> OnboardingProcess | None:
+    def get_by_id(cls: OnboardingProcess, process_id: int) -> OnboardingProcess | None:
         """Returns the onboarding process with a given ID."""
         for process in onboarding_processes:
             if process.id == process_id:
@@ -78,15 +81,15 @@ class OnboardingProcess:
         return None
 
     @classmethod
-    def get_by_url_ext(cls, url: str) -> OnboardingProcess | None:
+    def get_by_url_ext(cls: OnboardingProcess, url: str) -> OnboardingProcess | None:
         """Returns the onboarding process with a given URL extension."""
         for process in onboarding_processes:
             if process.url == url:
                 return process
         return None
-    
+
     @classmethod
-    def get_by_device(cls, device: Device) -> OnboardingProcess | None:
+    def get_by_device(cls: OnboardingProcess, device: Device) -> OnboardingProcess | None:
         """Returns the onboarding process for a given device."""
         for process in onboarding_processes:
             if process.device == device:
@@ -117,7 +120,7 @@ class OnboardingProcess:
         """
         try:
             self.hmac = Crypt.pbkdf2_hmac_sha256(self.tsotp, self.tssalt, Crypt.get_trust_store().encode())
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             msg = 'Error generating trust store HMAC.'
             self._fail(msg)
             raise OnboardingError(msg) from e
@@ -157,7 +160,7 @@ class OnboardingProcess:
         else:
             self._fail('No LDevID was generated.')
         return ldevid
-    
+
     def get_cert_chain(self) -> bytes | None:
         """Returns the certificate chain of the LDevID certificate."""
         if not self.active:

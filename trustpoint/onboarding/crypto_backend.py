@@ -4,23 +4,22 @@ This implementation is in testing stage and shall not be regarded as secure.
 TODO sign_ldevid is Dragons with Lasers in central Berlin levels of a security risk TODO
 """
 from __future__ import annotations
-from typing import TYPE_CHECKING
 
 import hashlib
 import hmac
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from typing import TYPE_CHECKING
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
-from devices.models import Device
 from django.core.files.base import ContentFile
-from pki.models import IssuingCa
 
 if TYPE_CHECKING:
     from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
     from cryptography.x509 import Certificate
+    from devices.models import Device
 
 class OnboardingError(Exception):
     """Exception raised for errors in the onboarding process."""
@@ -64,7 +63,7 @@ class CryptoBackend:
         """
         with Path('../tests/data/x509/https_server4.crt').open() as certfile:
             return certfile.read()
-        
+
     @staticmethod
     def _get_ca_p12(device: Device) -> tuple[PrivateKeyTypes | None, Certificate | None, list[Certificate]]:
         """Returns the CA private key, certificate and the CA certificate chain for a given device.
@@ -79,9 +78,9 @@ class CryptoBackend:
         """
         try:
             signing_ca = device.endpoint_profile.issuing_ca
-        except AttributeError:
+        except AttributeError as e:
             msg = 'Could not obtain issuing CA from endpoint profile.'
-            raise OnboardingError(msg)
+            raise OnboardingError(msg) from e
 
         if not signing_ca:
             msg = 'No CA configured in endpoint profile.'
