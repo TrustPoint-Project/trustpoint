@@ -27,7 +27,7 @@ class Device(models.Model):
                 return 'warning'
             if choice == cls.ONBOARDED:
                 return 'success'
-            if choice == cls.ONBOARDED:
+            if choice == cls.ONBOARDING_FAILED:
                 return 'danger'
             raise ValueError('Unknown device onboarding status.')
 
