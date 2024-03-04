@@ -66,8 +66,9 @@ def onboarding_manual(request: HttpRequest, device_id: int) -> HttpResponse:
         'tssalt':onboarding_process.tssalt,
         'tpurl': request.get_host,
         'url':onboarding_process.url,
-        'device_name':onboarding_process.device.device_name,
-        'device_id':onboarding_process.device.id,
+        'sn':device.serial_number,
+        'device_name':device.device_name,
+        'device_id':device.id,
     }
 
     if device.onboarding_protocol == Device.OnboardingProtocol.CLIENT:

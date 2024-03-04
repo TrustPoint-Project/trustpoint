@@ -16,6 +16,8 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
 from django.core.files.base import ContentFile
 
+from util.strings import StringValidator
+
 if TYPE_CHECKING:
     from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
     from cryptography.x509 import Certificate
@@ -117,16 +119,32 @@ class CryptoBackend:
         """
         csr = x509.load_pem_x509_csr(csr_str)
 
-        # TODO(Air): Only sign if a serial number was provided either in device or in the CSR
+        try:
+            csr_serial = csr.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value
+        except x509.ExtensionNotFound:
+            csr_serial = None
+
+        if not device.serial_number and not csr_serial:
+            raise OnboardingError('No serial number provided.')
+        if csr_serial and not StringValidator.is_urlsafe(csr_serial):
+            raise OnboardingError('Invalid serial number in CSR.')
+        if device.serial_number and csr_serial and device.serial_number != csr_serial:
+            raise OnboardingError('CSR serial number does not match device serial number.')
+        serial_no = device.serial_number or csr_serial
+
+        subject = csr.subject
+        # add serial number to subject
+        if not csr_serial:
+            subject = subject + ([x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, serial_no)])
 
         private_ca_key, ca_cert, _ = CryptoBackend._get_ca_p12(device)
 
         cert = (
             x509.CertificateBuilder()
-            .subject_name(csr.subject)
+            .subject_name(subject)
             .issuer_name(ca_cert.subject)
             .public_key(csr.public_key())
-            .serial_number(x509.random_serial_number())
+            .serial_number(x509.random_serial_number())  # This is NOT the device serial number
             .not_valid_before(
                 datetime.now(timezone.utc) - timedelta(hours=1)  # backdate a bit in case of client clock skew
             )
@@ -139,6 +157,7 @@ class CryptoBackend:
         )
 
         device.ldevid = ContentFile(cert.public_bytes(serialization.Encoding.PEM), name='ldevid.pem')
+        device.serial_number = serial_no
         # need to keep track of the device once we send out a cert, even if onboarding fails afterwards
         # TODO(Air): but do it here?
         device.save()
