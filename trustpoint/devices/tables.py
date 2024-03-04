@@ -51,7 +51,7 @@ class DeviceTable(tables.Table):
         accessor='endpoint_profile.unique_endpoint',
         verbose_name='Endpoint Profile',
     )
-    onboarding_action = tables.Column(empty_values=(), orderable=False, verbose_name='Onboarding')
+    onboarding_action = tables.Column(empty_values=(), orderable=False, verbose_name='Onboarding Action')
     details = tables.Column(empty_values=(), orderable=False)
     update = tables.Column(empty_values=(), orderable=False)
     delete = tables.Column(empty_values=(), orderable=False)
@@ -119,7 +119,7 @@ class DeviceTable(tables.Table):
         """
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
             return format_html(
-                '<button class="btn btn-secondary tp-onboarding-btn" disabled>Zero-Touch Onboarding</a>', record.pk
+                '<button class="btn btn-success tp-onboarding-btn" disabled>Zero-Touch Pending</a>', record.pk
             )
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
             return format_html(

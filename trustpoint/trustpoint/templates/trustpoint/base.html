@@ -14,101 +14,44 @@
 
     <body>
 
-    <nav class="nav-header navbar bg-dark border-bottom border-body tp-px-2" data-bs-theme="dark">
-        <!-- <a class="navbar-brand tp-primary" href="#"><img src="{% static 'img/tplogo-128.png' %}" width="64" height="45" alt="Trustpoint"></a> -->
-        <a class="navbar-brand tp-primary" href="#"><img src="{% static 'img/tplogo-test-horizontal-180.png' %}" alt="Trustpoint"></a>
-        <form class="d-flex" role="search">
-            <button class="btn btn-mute" type="submit">Logout</button>
-        </form>
-    </nav>
+        <div class="tp-content-wrapper">
+            <nav class="nav-header navbar bg-dark border-bottom border-body tp-nav" data-bs-theme="dark">
+                <!-- <a class="navbar-brand tp-primary" href="#"><img src="{% static 'img/tplogo-128.png' %}" width="64" height="45" alt="Trustpoint"></a> -->
+                <a class="navbar-brand tp-primary" href="#"><img src="{% static 'img/tplogo-test-horizontal-180.png' %}" alt="Trustpoint"></a>
+                <form class="d-flex" role="search">
+                    <button class="btn btn-mute" type="submit">Logout</button>
+                </form>
+            </nav>
 
 
-    <div class="container-fluid p-0 m-0 d-flex">
-        <aside class="d-flex flex-nowrap">
-            <div class="flex-shrink-0 py-3 tp-px-2 bg-tp-dark">
-
-                <ul class="list-unstyled ps-0">
-                    <li class="mb-1">
-                        <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'home' %}tp-primary{% endif %}"
-                                data-bs-toggle="collapse" data-bs-target="#home-collapse" aria-expanded="{% if page_category == 'home' %}true{% else %}false{% endif %}">
-                            Home
-                        </button>
-                        <div class="collapse {% if page_category == 'home' %}show{% endif %}" id="home-collapse">
-                            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                                <li><a href="{% url 'home:dashboard' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'home' and page_name == 'dashboard' %}tp-primary{% endif %}">Dashboard</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-
-                    <li class="mb-1">
-                        <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'devices' %}tp-primary{% endif %}"
-                                data-bs-toggle="collapse" data-bs-target="#devices-collapse" aria-expanded="{% if page_category == 'devices' %}true{% else %}false{% endif %}">
-                            Devices
-                        </button>
-                        <div class="collapse {% if page_category == 'devices' %}show{% endif %}" id="devices-collapse">
-                            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                                <li><a href="{% url 'devices:devices' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'devices' and page_name == 'devices' %}tp-primary{% endif %}">Devices</a>
-                                </li>
-                            </ul>
-                        </div>
-                    </li>
-
-{#                    <li class="mb-1">#}
-{#                        <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'onboarding' %}tp-primary{% endif %}"#}
-{#                                data-bs-toggle="collapse" data-bs-target="#onboarding-collapse" aria-expanded="{% if page_category == 'onboarding' %}true{% else %}false{% endif %}">#}
-{#                            Onboarding#}
-{#                        </button>#}
-{#                        <div class="collapse {% if page_category == 'onboarding' %}show{% endif %}" id="onboarding-collapse">#}
-{#                            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">#}
-{#                                <li><a href="{% url 'onboarding:manual' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'onboarding' and page_name == 'manual' %}tp-primary{% endif %}">Manual Onboarding</a>#}
-{#                                </li>#}
-{#                            </ul>#}
-{#                        </div>#}
-{#                    </li>#}
-
-
-                    <li class="mb-1">
-                        <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'pki' %}tp-primary{% endif %}"
-                                data-bs-toggle="collapse" data-bs-target="#pki-collapse" aria-expanded="{% if page_category == 'pki' %}true{% else %}false{% endif %}">
-                            PKI
-                        </button>
-                        <div class="collapse {% if page_category == 'pki' %}show{% endif %}" id="pki-collapse">
-                            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                                <li><a href="{% url 'pki:endpoint_profiles' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'pki' and page_name == 'endpoint_profiles' %}tp-primary{% endif %}">Endpoint
-                                    Profiles</a></li>
-                                <li><a href="{% url 'pki:issuing_cas' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'pki' and page_name == 'issuing_cas' %}tp-primary{% endif %}">Issuing CAs</a></li>
-                            </ul>
-                        </div>
-                    </li>
-
-                    <li class="mb-1">
-                        <button class="btn btn-toggle fw-normal ps-0 d-inline-flex align-items-center rounded border-0 collapsed {% if page_category == 'sysconf' %}tp-primary{% endif %}"
-                                data-bs-toggle="collapse" data-bs-target="#sysconf-collapse" aria-expanded="{% if page_category == 'sysconf' %}true{% else %}false{% endif %}">
-                            SysConf
-                        </button>
-                        <div class="collapse {% if page_category == 'sysconf' %}show{% endif %}" id="sysconf-collapse">
-                            <ul class="btn-toggle-nav list-unstyled fw-normal pb-1 small">
-                                <li><a href="{% url 'sysconf:logging' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'logging' %}tp-primary{% endif %}">Logging</a>
-                                </li>
-                                <li><a href="{% url 'sysconf:network' %}" class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'network' %}tp-primary{% endif %}">Network</a>
-                                </li>
-                                <li><a href="{% url 'sysconf:ntp' %}"
-                                       class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'ntp' %}tp-primary{% endif %}">NTP</a></li>
-                                <li><a href="{% url 'sysconf:ssh' %}"
-                                       class="link-body-emphasis d-inline-flex text-decoration-none rounded {% if page_category == 'sysconf' and page_name == 'ssh' %}tp-primary{% endif %}">SSH</a></li>
-                            </ul>
-                        </div>
-                    </li>
-                </ul>
+{#    <div class="container-fluid p-0 m-0 d-flex">#}
+        <aside class="tp-aside bg-tp-dark">
+            <div class="tp-menu-group">
+                <div class="tp-heading {% if page_category == 'home' %}tp-menu-active{% endif %}">Home</div>
+                <a href="{% url 'home:dashboard' %}" class="tp-entry {% if page_name == 'dashboard' %}tp-menu-active{% endif %}">Dashboard</a>
+            </div>
+            <div class="tp-menu-group">
+                <div class="tp-heading {% if page_category == 'devices' %}tp-menu-active{% endif %}">Devices</div>
+                <a href="{% url 'devices:devices' %}" class="tp-entry {% if page_name == 'devices' %}tp-menu-active{% endif %}">Devices</a>
+            </div>
+            <div class="tp-menu-group">
+                <div class="tp-heading {% if page_category == 'pki' %}tp-menu-active{% endif %}">PKI</div>
+                <a href="{% url 'pki:endpoint_profiles' %}" class="tp-entry {% if page_name == 'endpoint_profiles' %}tp-menu-active{% endif %}">Endpoint Profiles</a>
+                <a href="{% url 'pki:issuing_cas' %}" class="tp-entry {% if page_name == 'issuing_cas' %}tp-menu-active{% endif %}">Issuing CAs</a>
+            </div>
+            <div class="tp-menu-group">
+                <div class="tp-heading {% if page_category == 'sysconf' %}tp-menu-active{% endif %}">SysConf</div>
+                <a href="{% url 'sysconf:logging' %}" class="tp-entry {% if page_name == 'logging' %}tp-menu-active{% endif %}">Logging</a>
+                <a href="{% url 'sysconf:network' %}" class="tp-entry {% if page_name == 'network' %}tp-menu-active{% endif %}">Network</a>
+                <a href="{% url 'sysconf:ntp' %}" class="tp-entry {% if page_name == 'ntp' %}tp-menu-active{% endif %}">NTP</a>
+                <a href="{% url 'sysconf:ssh' %}" class="tp-entry {% if page_name == 'ssh' %}tp-menu-active{% endif %}">SSH</a>
             </div>
         </aside>
 
-        <main class="p-5 flex-grow-1">
+        <main class="tp-main">
             {% if messages %}
                 <div class="messages tp-messages text-center">
                     {% for message in messages %}
-                        <!-- <div{% if message.tags %} class="tp-message text-white bg-{{ message.tags }}"{% endif %}>{{ message }}</div> -->
                         <div class="tp-message alert
                             {% if message.tags %}
                                 {% if message.tags == "error" %}
@@ -117,18 +60,21 @@
                                     alert-{{ message.tags }}
                                 {% endif %}
                             {% endif %} d-flex align-items-center" role="alert">
-                            
-                            <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="{{ message.tags }}:"><use xlink:href="{% static 'img/icons.svg' %}#icon-{{ message.tags }}"/></svg>
+
+                            <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="{{ message.tags }}:">
+                                <use xlink:href="{% static 'img/icons.svg' %}#icon-{{ message.tags }}"/></svg>
                             <div><!-- class="text-white"> -->
                               {{ message }}
-                            </div>                
+                            </div>
                         </div>
                     {% endfor %}
                 </div>
             {% endif %}
             {% block content %}{% endblock content %}
         </main>
+
     </div>
+
         <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
         <script src="{% static 'js/trustpoint.js' %}"></script>
         <script src="{% static 'js/sysconf.js' %}"></script>
