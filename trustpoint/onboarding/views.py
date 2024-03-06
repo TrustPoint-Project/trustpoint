@@ -13,6 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 
 from .crypto_backend import CryptoBackend as Crypt
 from .models import OnboardingProcess, OnboardingProcessState, onboarding_processes
+from .cli_builder import CliCommandBuilder
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -64,7 +65,7 @@ def onboarding_manual(request: HttpRequest, device_id: int) -> HttpResponse:
         'salt':onboarding_process.salt,
         'tsotp':onboarding_process.tsotp,
         'tssalt':onboarding_process.tssalt,
-        'tpurl': request.get_host,
+        'host': request.get_host(),
         'url':onboarding_process.url,
         'sn':device.serial_number,
         'device_name':device.device_name,
@@ -72,10 +73,11 @@ def onboarding_manual(request: HttpRequest, device_id: int) -> HttpResponse:
     }
 
     if device.onboarding_protocol == Device.OnboardingProtocol.CLIENT:
+        context['cmd_0'] = CliCommandBuilder.trustpoint_client_provision(context)
         return render(request, 'onboarding/manual/client.html', context=context)
 
-    messages.warning(request, 'The template for CLI onboarding is not implemented yet.')
-    return render(request, 'onboarding/manual/client.html', context=context)
+    context['cmd_1_0'] = CliCommandBuilder.cli_get_trust_store(context)
+    return render(request, 'onboarding/manual/cli.html', context=context)
 
 
 def onboarding_exit(request: HttpRequest, device_id: int) -> HttpResponse:

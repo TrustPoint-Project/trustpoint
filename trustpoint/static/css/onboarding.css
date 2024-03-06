@@ -1,5 +1,10 @@
 pre {
   background-color: #333;
+  padding: 10px 0px;
+}
+
+code {
+  padding: 10px;
 }
 
 .breathing-anim {

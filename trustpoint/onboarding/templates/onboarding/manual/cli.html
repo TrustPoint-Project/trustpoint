@@ -1,0 +1,49 @@
+{% extends 'trustpoint/base.html' %}
+{% load crispy_forms_filters %}
+{% load static %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
+    <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:exit' device_id %}"</script>
+    <script src="{% static 'js/onboarding.js' %}"></script>
+{% endblock head %}
+{% block content %}
+    <div class="card card-main text-center">
+        <div class="card-header d-flex">
+            <h1>Onboarding device {{ device_name }} manually via CLI</h1>
+        </div>
+        <div class="card-body tp-main-centered pt-3 pb-4">
+            <h2>Overall onboarding progress</h2>
+            <div id="onboarding-state" class="alert alert-info d-flex align-items-center mt-3 breathing-anim" role="alert">  
+                <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
+                <div>Fetching state from server...</div>                
+            </div>
+            <hr>
+            <h2>Device onboarding commands</h2>
+            <h3 class="mt-2">Step 1: Download and verify TLS trust store<h3>
+            <pre class="mt-2"><code id="code-provisioning-1-0">{{ cmd_1_0 }}</code></pre>
+            <div><button class="btn btn-primary float-end" onclick="copyToClipboard(this,'#code-provisioning-1-0')">Copy to clipboard</button></div>
+            <div id="onboarding-state-1" class="alert alert-secondary d-flex align-items-center mt-3" role="alert">  
+              <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
+              <div>Trust store not requested yet.</div>                
+            </div>
+            <h3>Step 2: Create LDevID certificate</h3>
+            <pre class="mt-2"><code id="code-provisioning-2-0">{{ cmd_2_0 }}</code></pre>
+            <div><button class="btn btn-primary float-end" onclick="copyToClipboard(this,'#code-provisioning-2-0')">Copy to clipboard</button></div>
+            <div id="onboarding-state-2" class="alert alert-secondary d-flex align-items-center mt-3" role="alert">  
+              <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
+              <div>LDevID not requested yet.</div>                
+            </div>
+            <h3>Step 3: Dowload LDevID certificate chain</h3>
+            <pre class="mt-2"><code id="code-provisioning-3-0">{{ cmd_3_0 }}</code></pre>
+            <div><button class="btn btn-primary float-end" onclick="copyToClipboard(this,'#code-provisioning-3-0')">Copy to clipboard</button></div>
+            <div id="onboarding-state-3" class="alert alert-secondary d-flex align-items-center mt-3" role="alert">  
+              <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
+              <div>Request LDevID first.</div>                
+            </div>
+        </div>
+        <div class="card-footer text-body-secondary">
+            <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Back</a>
+            <a href="{% url 'onboarding:exit' device_id %}" class="btn btn-danger">Cancel</a>
+        </div>
+    </div>
+{% endblock content %}

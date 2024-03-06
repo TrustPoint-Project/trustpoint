@@ -106,4 +106,24 @@ function setOnboardingStateUI(state, iconUrl) {
     <div>${message}</div>`;
 }
 
+function resetButton(caller) {
+  caller.classList.remove('btn-success');
+  caller.classList.remove('btn-danger');
+  caller.classList.add('btn-primary');
+  caller.textContent = 'Copy to clipboard';
+}
+
+async function copyToClipboard(caller, el) {
+  caller.classList.remove('btn-primary');
+  try {
+    await navigator.clipboard.writeText(document.querySelector(el).textContent);
+    caller.classList.add('btn-success');
+    caller.textContent = 'Copied!';
+  } catch (error) {
+    caller.classList.add('btn-danger');
+    caller.textContent = 'Couldn\'t copy';
+  }
+  setTimeout(resetButton, 1200, caller);
+}
+
 if (url) startPollingOnboardingState(url, icons);

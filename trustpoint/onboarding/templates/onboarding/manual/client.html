@@ -16,19 +16,13 @@
             todo
             <hr>
             <h2>Trustpoint Client Provisioning command</h2>
-            <pre class="mt-2"><code id="code-provisioning-0"> 
-python -m trustpoint_client provision --tsotp {{ tsotp }} --tssalt {{ tssalt }} --otp {{ otp }} --salt {{ salt }} --url {{ url }} --tpurl {{ tpurl }} {% if sn %}--sn {{ sn }}{% endif %}</code>
-            </pre>
-            <div>
-                <button class="btn btn-primary float-end" onclick="navigator.clipboard.writeText(document.querySelector('#code-provisioning-0').textContent)">Copy to clipboard</button>
-            </div>
+            <pre class="mt-2"><code id="code-provisioning-0">{{ cmd_0 }}</code></pre>
+            <div><button class="btn btn-primary float-end" onclick="copyToClipboard(this,'#code-provisioning-0')">Copy to clipboard</button></div>
             <hr>
             <h2>Onboarding progress</h2>
             <div id="onboarding-state" class="alert alert-info d-flex align-items-center mt-3 breathing-anim" role="alert">  
                 <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
-                <div><!-- class="text-white"> -->
-                    Fetching state from server...
-                </div>                
+                <div>Fetching state from server...</div>                
             </div>
         </div>
         <div class="card-footer text-body-secondary">
