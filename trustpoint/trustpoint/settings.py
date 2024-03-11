@@ -26,12 +26,13 @@ with (Path(__file__).resolve().parent / Path('dev_secret_key.txt')).open('r') as
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ["10.10.0.4","localhost"]
+ALLOWED_HOSTS = ['10.10.0.4', 'localhost']
 
 
 # Application definition
 
 INSTALLED_APPS = [
+    'users.apps.UsersConfig',
     'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
     'onboarding.apps.OnboardingConfig',
@@ -148,9 +149,7 @@ CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
 # Default django-tables2 template
 DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5.html'
-DJANGO_TABLES2_TABLE_ATTRS = {
-    'class': 'table',
-    'td': {
-        'class': 'v-middle'
-    }
-}
+DJANGO_TABLES2_TABLE_ATTRS = {'class': 'table', 'td': {'class': 'v-middle'}}
+
+LOGIN_REDIRECT_URL = 'home:dashboard'
+LOGIN_URL = 'users:login'

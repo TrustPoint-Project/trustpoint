@@ -1,0 +1,19 @@
+{% extends 'users/base.html' %}
+{% block content %}
+    <div class="card card-main text-center">
+        <div class="card-header">
+            <h1>Trustpoint - Logout</h1>
+        </div>
+        <div class="card-body tp-main-centered pt-4">
+
+            <p>You have been logged out.</p>
+            <p><a href="{% url 'users:login' %}" >Login again.</a></p>
+
+        </div>
+        <div class="card-footer tp-main-centered tp-form-btn-group tp-form-btn-group">
+            {# TODO: Back button as soon as we have a landing page. #}
+            <a href="#" class="btn btn-secondary">Back to Home</a>
+        </div>
+    </div>
+
+{% endblock content %}

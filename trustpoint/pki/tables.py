@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 import django_tables2 as tables
 from django.utils.html import format_html
 
-from .models import IssuingCa, EndpointProfile
+from .models import EndpointProfile, IssuingCa
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
@@ -114,30 +114,46 @@ class EndpointProfileTable(tables.Table):
             'curve',
             'details',
             'update',
-            'delete'
+            'delete',
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
     unique_name = tables.Column(
-        empty_values=(None, '',),
+        empty_values=(
+            None,
+            '',
+        ),
         orderable=True,
         accessor='issuing_ca.unique_name',
-        verbose_name='Issuing CA')
+        verbose_name='Issuing CA',
+    )
     algorithm = tables.Column(
-        empty_values=(None, '',),
+        empty_values=(
+            None,
+            '',
+        ),
         orderable=True,
         accessor='issuing_ca.key_type',
-        verbose_name='Issuing CA Algorithm')
+        verbose_name='Issuing CA Algorithm',
+    )
     key_size = tables.Column(
-        empty_values=(None, '',),
+        empty_values=(
+            None,
+            '',
+        ),
         orderable=True,
         accessor='issuing_ca.key_size',
-        verbose_name='Issuing CA Key Size')
+        verbose_name='Issuing CA Key Size',
+    )
     curve = tables.Column(
-        empty_values=(None, '',),
+        empty_values=(
+            None,
+            '',
+        ),
         orderable=True,
         accessor='issuing_ca.curve',
-        verbose_name='Issuing CA Curve')
+        verbose_name='Issuing CA Curve',
+    )
     details = tables.Column(empty_values=(), orderable=False)
     update = tables.Column(empty_values=(), orderable=False)
     delete = tables.Column(empty_values=(), orderable=False)
@@ -177,6 +193,3 @@ class EndpointProfileTable(tables.Table):
             SafeString: The html hyperlink for the delete-view.
         """
         return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">Delete</a>', record.pk)
-
-
-

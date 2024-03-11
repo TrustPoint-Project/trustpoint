@@ -6,12 +6,11 @@ which can be used within the apps.
 
 from typing import Any, Callable
 
-from django.views.generic.base import RedirectView, ContextMixin
-
-
 from django import forms as dj_forms
-from django.views.generic.base import View, TemplateResponseMixin
-from django.http import HttpResponseRedirect, HttpRequest
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpRequest, HttpResponseRedirect
+from django.views.generic.base import ContextMixin, RedirectView, TemplateResponseMixin, View
 
 
 class IndexView(RedirectView):
@@ -22,7 +21,6 @@ class IndexView(RedirectView):
 
 
 class ContextDataMixin:
-
     def get_context_data(self, **kwargs: Any) -> dict:
         """Adds attributes prefixed with context_ to the context_data if it does not exist.
 
@@ -45,11 +43,10 @@ class ContextDataMixin:
                 context_page_category = 'pki'
                 context_page_name = 'endpoint_profiles'
         """
-
         prefix = 'context_'
         for attr in dir(self):
             if attr.startswith(prefix) and len(attr) > len(prefix):
-                kwargs.setdefault(attr[len(prefix):], getattr(self, attr))
+                kwargs.setdefault(attr[len(prefix) :], getattr(self, attr))
 
         super_get_context_method = getattr(super(), 'get_context_data', None)
         if super_get_context_method is None:
@@ -110,7 +107,7 @@ class Form:
     @form_class.setter
     def form_class(self, form_class: type) -> None:
         if not issubclass(form_class, dj_forms.Form):
-            raise TypeError(f'form_class must be a subclass of django.forms.Forms.')
+            raise TypeError('form_class must be a subclass of django.forms.Forms.')
         self._form_class = form_class
 
     @property
@@ -268,7 +265,6 @@ class MultiFormView(TemplateResponseMixin, MultiFormMixin, View):
 
 
 class BulkDeletionMixin:
-
     queryset: Any
     form_class = dj_forms.Form
     get_form: Callable
@@ -290,3 +286,10 @@ class BulkDeletionMixin:
         self.queryset.delete()
         return HttpResponseRedirect(success_url)
 
+
+class TpLoginRequiredMixin(LoginRequiredMixin):
+    request: HttpRequest
+
+    def handle_no_permission(self) -> str:
+        messages.add_message(self.request, messages.WARNING, message='Login required!')
+        return super().handle_no_permission()

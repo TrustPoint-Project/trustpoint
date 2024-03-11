@@ -3,19 +3,17 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import io
 import sys
 import uuid
 from pathlib import Path
+from typing import TYPE_CHECKING
 
+from devices.models import Device
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.core.management import BaseCommand
-from pki.models import IssuingCa, EndpointProfile
-from devices.models import Device
+from pki.models import EndpointProfile, IssuingCa
 from util.x509.credentials import CredentialUploadHandler
-
 
 if TYPE_CHECKING:
     from typing import Any
@@ -31,7 +29,12 @@ class Command(BaseCommand):
     help = 'Fills the Issuing CA DB with test data.'
 
     @staticmethod
-    def _add_devices():
+    def _add_devices() -> None:
+        """Adds the demo devices to the db.
+
+        Returns:
+            None
+        """
         default_endpoint_profile = EndpointProfile.objects.filter(unique_endpoint='default').first()
         sensors_endpoint_profile = EndpointProfile.objects.filter(unique_endpoint='sensors').first()
         plc_endpoint_profile = EndpointProfile.objects.filter(unique_endpoint='plc').first()
@@ -43,41 +46,33 @@ class Command(BaseCommand):
             else:
                 endpoint_profile = plc_endpoint_profile
             for j, status in enumerate(Device.DeviceOnboardingStatus):
-                if status == Device.DeviceOnboardingStatus.ONBOARDED:
-                    serial_number = str(uuid.uuid4())
-                else:
-                    serial_number = ''
+                serial_number = str(uuid.uuid4()) if status == Device.DeviceOnboardingStatus.ONBOARDED else ''
                 dev = Device(
                     device_name=f'Device {protocol[0]}{j + 1}',
                     serial_number=serial_number,
                     endpoint_profile=endpoint_profile,
                     onboarding_protocol=protocol,
-                    device_onboarding_status=status
+                    device_onboarding_status=status,
                 )
                 dev.save()
 
     def _add_issuing_cas(self) -> None:
         for i, file_name in enumerate(P12_FILE_NAMES):
             self._add_issuing_ca(
-                P12_PATH / file_name,
-                f'My Issuing CA {i+1}',
-                b'testing321',
-                IssuingCa.ConfigType.F_P12
+                P12_PATH / file_name, f'My Issuing CA {i+1}', b'testing321', IssuingCa.ConfigType.F_P12
             )
         for i, file_name in enumerate(P12_FILE_NAMES):
             self._add_issuing_ca(
                 P12_PATH / file_name,
                 f'My Issuing CA {i+len(P12_FILE_NAMES)+1}',
                 b'testing321',
-                IssuingCa.ConfigType.F_PEM
+                IssuingCa.ConfigType.F_PEM,
             )
 
     @staticmethod
     def _add_issuing_ca(
-            p12_path: Path | str,
-            unique_name: str,
-            p12_password: bytes,
-            config_type: IssuingCa.ConfigType) -> None:
+        p12_path: Path | str, unique_name: str, p12_password: bytes, config_type: IssuingCa.ConfigType
+    ) -> None:
         with Path(p12_path).open('rb') as p12_file:
             p12 = p12_file.read()
 
@@ -117,4 +112,3 @@ class Command(BaseCommand):
         self._add_issuing_cas()
         self._add_endpoint_profiles()
         self._add_devices()
-

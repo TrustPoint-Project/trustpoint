@@ -1,17 +1,21 @@
+"""Contains views specific to the devices application."""
+
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from django.views.generic.edit import CreateView, UpdateView, FormMixin
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
+from django.views.generic.edit import CreateView, FormMixin, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
-from trustpoint.views import ContextDataMixin, BulkDeletionMixin
+from django_tables2 import SingleTableView
+
+from trustpoint.views import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
+
 from .models import Device
 from .tables import DeviceTable
-from django_tables2 import SingleTableView
-from django.urls import reverse_lazy
-from django.shortcuts import redirect
-
 
 if TYPE_CHECKING:
     from typing import Any
@@ -20,14 +24,14 @@ if TYPE_CHECKING:
     from django.http import HttpResponse
 
 
-class DeviceContextMixin(ContextDataMixin):
+class DeviceContextMixin(TpLoginRequiredMixin, ContextDataMixin):
     """Mixin which adds context_data for the Devices -> Devices pages."""
 
     context_page_category = 'devices'
     context_page_name = 'devices'
 
 
-class DeviceListView(DeviceContextMixin, SingleTableView):
+class DeviceListView(DeviceContextMixin, TpLoginRequiredMixin, SingleTableView):
     """Endpoint Profiles List View."""
 
     model = Device
@@ -35,25 +39,25 @@ class DeviceListView(DeviceContextMixin, SingleTableView):
     template_name = 'devices/devices.html'
 
 
-class CreateDeviceView(DeviceContextMixin, CreateView):
+class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
     """Device Create View."""
 
     model = Device
-    fields = ['device_name', 'onboarding_protocol', 'endpoint_profile']
+    fields = ['device_name', 'onboarding_protocol', 'endpoint_profile']  # noqa: RUF012
     template_name = 'devices/add.html'
     success_url = reverse_lazy('devices:devices')
 
 
-class UpdateDeviceView(DeviceContextMixin, UpdateView):
+class UpdateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
     """Device Update View."""
 
     model = Device
-    fields = ['device_name', 'onboarding_protocol', 'endpoint_profile']
+    fields = ['device_name', 'onboarding_protocol', 'endpoint_profile']  # noqa: RUF012
     template_name = 'devices/update.html'
     success_url = reverse_lazy('devices:devices')
 
 
-class DeviceDetailView(DeviceContextMixin, DetailView):
+class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
     """Detail view for Devices."""
 
     model = Device
@@ -62,7 +66,12 @@ class DeviceDetailView(DeviceContextMixin, DetailView):
 
 
 class DevicesBulkDeleteView(
-    DeviceContextMixin, MultipleObjectTemplateResponseMixin, BulkDeletionMixin, FormMixin, BaseListView
+    DeviceContextMixin,
+    MultipleObjectTemplateResponseMixin,
+    BulkDeletionMixin,
+    FormMixin,
+    TpLoginRequiredMixin,
+    BaseListView,
 ):
     """View that allows bulk deletion of Endpoint Profiles.
 
@@ -105,8 +114,7 @@ class DevicesBulkDeleteView(
         """
         return self.kwargs['pks'].split('/')
 
-    def get_queryset(self: DevicesBulkDeleteView, *args: Any,
-                     **kwargs: Any) -> QuerySet | None:  # noqa: ARG002
+    def get_queryset(self: DevicesBulkDeleteView, *args: Any, **kwargs: Any) -> QuerySet | None:  # noqa: ARG002
         """Gets the queryset of the objects to be deleted.
 
         Args:
@@ -149,4 +157,3 @@ class DevicesBulkDeleteView(
             return redirect(self.get_ignore_url())
 
         return super().get(*args, **kwargs)
-

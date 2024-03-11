@@ -20,7 +20,9 @@ urlpatterns = [
         name='issuing_cas-redirect',
     ),
     path('endpoint-profiles/add/', views.CreateEndpointProfileView.as_view(), name='endpoint_profiles-add'),
-    path('endpoint-profiles/update/<int:pk>/', views.UpdateEndpointProfileView.as_view(), name='endpoint_profiles-update'),
+    path(
+        'endpoint-profiles/update/<int:pk>/', views.UpdateEndpointProfileView.as_view(), name='endpoint_profiles-update'
+    ),
     path(
         'endpoint-profiles/details/<int:pk>/',
         views.EndpointProfilesDetailView.as_view(),
@@ -32,11 +34,6 @@ urlpatterns = [
         views.IssuingCaBulkDeleteView.as_view(),
         name='issuing_cas-delete',
     ),
-    # re_path(
-    #     r'^issuing-certificate-authorities/delete/',
-    #     views.IssuingCasRedirectView.as_view(),
-    #     name='issuing_cas-redirect',
-    # ),
     path(
         'issuing-certificate-authorities/add/local/file/',
         views.IssuingCaLocalFileMultiForms.as_view(),

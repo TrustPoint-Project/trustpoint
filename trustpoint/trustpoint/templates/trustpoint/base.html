@@ -18,8 +18,9 @@
             <nav class="nav-header navbar bg-dark border-bottom border-body tp-nav" data-bs-theme="dark">
                 <!-- <a class="navbar-brand tp-primary" href="#"><img src="{% static 'img/tplogo-128.png' %}" width="64" height="45" alt="Trustpoint"></a> -->
                 <a class="navbar-brand tp-primary" href="#"><img src="{% static 'img/tplogo-test-horizontal-180.png' %}" alt="Trustpoint"></a>
-                <form class="d-flex" role="search">
-                    <button class="btn btn-mute" type="submit">Logout</button>
+                <form class="d-flex" role="search" method="POST" action="{% url 'users:logout' %}">
+                    {% csrf_token %}
+                    <button class="btn btn-mute btn-link tp-btn-link" type="submit">Logout</button>
                 </form>
             </nav>
 

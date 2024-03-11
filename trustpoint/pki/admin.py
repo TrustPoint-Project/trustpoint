@@ -3,7 +3,7 @@
 
 from django.contrib import admin
 
-from .models import IssuingCa, EndpointProfile
+from .models import EndpointProfile, IssuingCa
 
 admin.site.register(IssuingCa)
 admin.site.register(EndpointProfile)

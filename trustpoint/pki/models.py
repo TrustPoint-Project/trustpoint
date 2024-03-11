@@ -1,4 +1,4 @@
-"""Module that contains all models corresponding to the PKI application."""
+"""Module that contains all models corresponding to the PKI app."""
 
 
 from __future__ import annotations
@@ -96,7 +96,7 @@ class IssuingCa(models.Model):
 
 # noinspection PyUnusedLocal
 @receiver(models.signals.post_delete)
-def auto_delete_file_on_delete(sender: models.Model, instance: IssuingCa, **kwargs: Any) -> None:   # noqa: ARG001
+def auto_delete_file_on_delete(sender: models.Model, instance: IssuingCa, **kwargs: Any) -> None:  # noqa: ARG001
     """Deletes the corresponding files from the filesystem when corresponding IssuingCa object is deleted.
 
     Args:
@@ -136,5 +136,14 @@ class EndpointProfile(models.Model):
         return f'EndpointProfile({self.unique_endpoint}, None)'
 
     def save(self: EndpointProfile, *args: Any, **kwargs: Any) -> Any:
+        """Save hook - transform unique_endpoint to all lower case letters
+
+        Args:
+            *args (Any): Arguments passed to the super().save() method.
+            **kwargs (Any): Keyword arguments passed to the super().save() method.
+
+        Returns:
+            Any
+        """
         self.unique_endpoint = self.unique_endpoint.lower()
         return super().save(*args, **kwargs)

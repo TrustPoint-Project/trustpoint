@@ -1,0 +1,35 @@
+{% load static %}
+<!doctype html>
+<html lang="en" data-bs-theme="dark">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Trustpoint</title>
+        <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
+        <link rel="stylesheet" href="{% static 'css/trustpoint.css' %}">
+        <link rel="stylesheet" href="{% static 'css/sysconf.css' %}">
+        <link rel="icon" href="{% static 'img/favicon-32.png' %}">
+        {% block head %}{% endblock head %}
+    </head>
+
+    <body>
+
+            <nav class="nav-header navbar bg-dark border-bottom border-body tp-nav" data-bs-theme="dark">
+                <!-- <a class="navbar-brand tp-primary" href="#"><img src="{% static 'img/tplogo-128.png' %}" width="64" height="45" alt="Trustpoint"></a> -->
+                <a class="navbar-brand tp-primary" href="{% url 'users:login' %}"><img src="{% static 'img/tplogo-test-horizontal-180.png' %}" alt="Trustpoint"></a>
+                <form class="d-flex" role="search">
+                    {# TODO: Light / Dark Mode button #}
+                </form>
+            </nav>
+
+            <main class="tp-main-users">
+                <div></div>
+                    {% block content %}
+                    {% endblock content %}
+                <div></div>
+            </main>
+
+        <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+    </body>
+
+</html>

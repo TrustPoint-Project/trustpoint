@@ -231,7 +231,7 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
 }
 
 .tp-message {
-    margin-bottom: 0.5rem 0;
+    margin-bottom: 0.5rem;
     padding: 0.7rem 0.8rem;
     border-radius: 0.3rem;
     display: grid;
@@ -354,4 +354,21 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
 .tp-main {
     grid-area: main;
     padding: 3rem;
+}
+
+.tp-main-users {
+    width: max-content;
+    position: absolute;
+    top: 40%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.tp-btn-link {
+    color: white;
+    text-decoration: none;
+}
+
+.tp-btn-link:hover, .tp-btn-link:focus, .tp-btn-link:active {
+    color: #8BB9FE;
 }

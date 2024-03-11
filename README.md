@@ -153,6 +153,14 @@ python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server
 ```
 
 
+#### Logging in
+
+Browsing to any page should redirect you to the login page.
+The login page can be accessed directly via /users/login/.
+
+Use the username and password which you previously provided through the **createsuperuser** command.
+
+
 #### Adding dependencies to the project.
 
 Dependencies generally required for the project can be added using the following:

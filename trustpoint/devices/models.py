@@ -1,10 +1,12 @@
-from __future__ import annotations
+"""Module that contains all models corresponding to the devices app."""
 
+
+from __future__ import annotations
 
 from django.db import models
 from django.utils import timezone
-from pki.models import EndpointProfile
 from django.utils.translation import gettext_lazy as _
+from pki.models import EndpointProfile
 
 from .exceptions import UnknownOnboardingStatusError
 
@@ -46,24 +48,20 @@ class Device(models.Model):
     serial_number = models.CharField(max_length=100, blank=True)
     ldevid = models.FileField(blank=True, null=True)
     onboarding_protocol = models.CharField(
-        max_length=2,
-        choices=OnboardingProtocol,
-        default=OnboardingProtocol.MANUAL,
-        blank=True)
+        max_length=2, choices=OnboardingProtocol, default=OnboardingProtocol.MANUAL, blank=True
+    )
     device_onboarding_status = models.CharField(
-        max_length=1,
-        choices=DeviceOnboardingStatus,
-        default=DeviceOnboardingStatus.NOT_ONBOARDED,
-        blank=True)
+        max_length=1, choices=DeviceOnboardingStatus, default=DeviceOnboardingStatus.NOT_ONBOARDED, blank=True
+    )
     endpoint_profile = models.ForeignKey(EndpointProfile, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self: Device) -> str:
         """Returns a Device object in human-readable format."""
         return f'Device({self.device_name}, {self.serial_number})'
-    
+
     @classmethod
-    def get_by_id(cls, device_id: int) -> Device | None:
+    def get_by_id(cls: Device, device_id: int) -> Device | None:
         """Returns the device with a given ID."""
         try:
             return cls.objects.get(pk=device_id)

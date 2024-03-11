@@ -1,11 +1,13 @@
+"""Django management command for removing all data in the db."""
+
+
 from __future__ import annotations
 
-
-from django.core.management import BaseCommand
-from devices.models import Device
-from pki.models import IssuingCa, EndpointProfile
 from typing import TYPE_CHECKING
 
+from devices.models import Device
+from django.core.management import BaseCommand
+from pki.models import EndpointProfile, IssuingCa
 
 if TYPE_CHECKING:
     from typing import Any

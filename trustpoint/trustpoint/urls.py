@@ -25,12 +25,13 @@ from . import views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', views.IndexView.as_view()),
+    path('users/', include('users.urls')),
     path('pki/', include('pki.urls')),
     path('home/', include('home.urls')),
     path('devices/', include('devices.urls')),
     path('onboarding/', include('onboarding.urls')),
     path('sysconf/', include('sysconf.urls')),
+    path('', views.IndexView.as_view()),
 ]
 
 if settings.DEBUG:

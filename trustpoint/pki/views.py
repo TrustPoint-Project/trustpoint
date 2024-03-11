@@ -1,4 +1,4 @@
-"""Contains some views specific to the PKI application."""
+"""Contains views specific to the PKI application."""
 
 
 from __future__ import annotations
@@ -14,16 +14,16 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import RedirectView, TemplateView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import FormMixin, CreateView, UpdateView
+from django.views.generic.edit import CreateView, FormMixin, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_tables2 import SingleTableView
 from util.x509.credentials import CredentialUploadHandler
 
-from trustpoint.views import BulkDeletionMixin, ContextDataMixin, Form, MultiFormView
+from trustpoint.views import BulkDeletionMixin, ContextDataMixin, Form, MultiFormView, TpLoginRequiredMixin
 
 from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm
-from .models import IssuingCa, EndpointProfile
-from .tables import IssuingCaTable, EndpointProfileTable
+from .models import EndpointProfile, IssuingCa
+from .tables import EndpointProfileTable, IssuingCaTable
 
 if TYPE_CHECKING:
     from typing import Any
@@ -37,28 +37,28 @@ if TYPE_CHECKING:
 # -------------------------------------------------- EndpointProfiles --------------------------------------------------
 
 
-class IndexView(RedirectView):
+class IndexView(TpLoginRequiredMixin, RedirectView):
     """View that redirects to the index of the PKI application: Endpoint Profiles."""
 
     permanent = False
     pattern_name = 'pki:endpoint_profiles'
 
 
-class EndpointProfilesRedirectView(RedirectView):
+class EndpointProfilesRedirectView(TpLoginRequiredMixin, RedirectView):
     """View that redirects to the index of the PKI Endpoint Profiles application: Endpoint Profiles."""
 
     permanent = False
     pattern_name = 'pki:endpoint_profiles'
 
 
-class EndpointProfilesContextMixin(ContextDataMixin):
+class EndpointProfilesContextMixin(TpLoginRequiredMixin, ContextDataMixin):
     """Mixin which adds context_data for the PKI -> Endpoint Profiles pages."""
 
     context_page_category = 'pki'
     context_page_name = 'endpoint_profiles'
 
 
-class EndpointProfilesListView(EndpointProfilesContextMixin, SingleTableView):
+class EndpointProfilesListView(EndpointProfilesContextMixin, TpLoginRequiredMixin, SingleTableView):
     """Endpoint Profiles List View."""
 
     model = EndpointProfile
@@ -66,7 +66,7 @@ class EndpointProfilesListView(EndpointProfilesContextMixin, SingleTableView):
     template_name = 'pki/endpoint_profiles/endpoint_profiles.html'
 
 
-class EndpointProfilesDetailView(EndpointProfilesContextMixin, DetailView):
+class EndpointProfilesDetailView(EndpointProfilesContextMixin, TpLoginRequiredMixin, DetailView):
     """Detail view for Endpoint Profiles."""
 
     model = EndpointProfile
@@ -98,7 +98,12 @@ class EndpointProfilesDetailView(EndpointProfilesContextMixin, DetailView):
 
 
 class EndpointProfilesBulkDeleteView(
-    EndpointProfilesContextMixin, MultipleObjectTemplateResponseMixin, BulkDeletionMixin, FormMixin, BaseListView
+    EndpointProfilesContextMixin,
+    MultipleObjectTemplateResponseMixin,
+    BulkDeletionMixin,
+    FormMixin,
+    TpLoginRequiredMixin,
+    BaseListView,
 ):
     """View that allows bulk deletion of Endpoint Profiles.
 
@@ -186,20 +191,20 @@ class EndpointProfilesBulkDeleteView(
         return super().get(*args, **kwargs)
 
 
-class CreateEndpointProfileView(EndpointProfilesContextMixin, CreateView):
+class CreateEndpointProfileView(EndpointProfilesContextMixin, TpLoginRequiredMixin, CreateView):
     """Endpoint Profile Create View."""
 
     model = EndpointProfile
-    fields = ['unique_endpoint', 'issuing_ca']
+    fields = ['unique_endpoint', 'issuing_ca']  # noqa: RUF012
     template_name = 'pki/endpoint_profiles/add.html'
     success_url = reverse_lazy('pki:endpoint_profiles')
 
 
-class UpdateEndpointProfileView(EndpointProfilesContextMixin, UpdateView):
+class UpdateEndpointProfileView(EndpointProfilesContextMixin, TpLoginRequiredMixin, UpdateView):
     """Endpoint Profile Update View."""
 
     model = EndpointProfile
-    fields = ['unique_endpoint', 'issuing_ca']
+    fields = ['unique_endpoint', 'issuing_ca']  # noqa: RUF012
     template_name = 'pki/endpoint_profiles/update.html'
     success_url = reverse_lazy('pki:endpoint_profiles')
 
@@ -207,21 +212,21 @@ class UpdateEndpointProfileView(EndpointProfilesContextMixin, UpdateView):
 # ----------------------------------------------------- IssuingCas -----------------------------------------------------
 
 
-class IssuingCasContextMixin(ContextDataMixin):
+class IssuingCasContextMixin(TpLoginRequiredMixin, ContextDataMixin):
     """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
 
     context_page_category = 'pki'
     context_page_name = 'issuing_cas'
 
 
-class IssuingCasRedirectView(RedirectView):
+class IssuingCasRedirectView(TpLoginRequiredMixin, RedirectView):
     """View that redirects to the index of the PKI Issuing CA application: Issuing CAs."""
 
     permanent = False
     pattern_name = 'pki:issuing_cas'
 
 
-class IssuingCaListView(IssuingCasContextMixin, SingleTableView):
+class IssuingCaListView(IssuingCasContextMixin, TpLoginRequiredMixin, SingleTableView):
     """Issuing CAs List View."""
 
     model = IssuingCa
@@ -229,7 +234,7 @@ class IssuingCaListView(IssuingCasContextMixin, SingleTableView):
     template_name = 'pki/issuing_cas/issuing_cas.html'
 
 
-class IssuingCaDetailView(IssuingCasContextMixin, DetailView):
+class IssuingCaDetailView(IssuingCasContextMixin, TpLoginRequiredMixin, DetailView):
     """Detail view for Issuing CAs."""
 
     model = IssuingCa
@@ -256,7 +261,7 @@ class IssuingCaDetailView(IssuingCasContextMixin, DetailView):
         return context
 
 
-class IssuingCaLocalFileMultiForms(IssuingCasContextMixin, MultiFormView):
+class IssuingCaLocalFileMultiForms(IssuingCasContextMixin, TpLoginRequiredMixin, MultiFormView):
     """Upload view for issuing CAs as PKCS#12 or PEM files."""
 
     template_name = 'pki/issuing_cas/add/local_file.html'
@@ -357,7 +362,12 @@ class IssuingCaLocalFileMultiForms(IssuingCasContextMixin, MultiFormView):
 
 
 class IssuingCaBulkDeleteView(
-    IssuingCasContextMixin, MultipleObjectTemplateResponseMixin, BulkDeletionMixin, FormMixin, BaseListView
+    IssuingCasContextMixin,
+    MultipleObjectTemplateResponseMixin,
+    BulkDeletionMixin,
+    FormMixin,
+    TpLoginRequiredMixin,
+    BaseListView,
 ):
     """View that allows bulk deletion of Issuing CAs.
 
@@ -445,19 +455,19 @@ class IssuingCaBulkDeleteView(
         return super().get(*args, **kwargs)
 
 
-class AddIssuingCaLocalRequestTemplateView(IssuingCasContextMixin, TemplateView):
+class AddIssuingCaLocalRequestTemplateView(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView):
     """Add Issuing CA Local Request Template View."""
 
     template_name = 'pki/issuing_cas/add/local_request.html'
 
 
-class AddIssuingCaRemoteEstTemplateView(IssuingCasContextMixin, TemplateView):
+class AddIssuingCaRemoteEstTemplateView(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView):
     """Add Issuing CA Remote EST Template View."""
 
     template_name = 'pki/issuing_cas/add/remote_est.html'
 
 
-class AddIssuingCaRemoteCmpTemplateView(IssuingCasContextMixin, TemplateView):
+class AddIssuingCaRemoteCmpTemplateView(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView):
     """Add Issuing CA Remote CMP Template View."""
 
     template_name = 'pki/issuing_cas/add/remote_cmp.html'
