@@ -210,11 +210,11 @@ You can also build and run Trustpoint as a Docker image.
 
 There is no explicit license yet. All rights reserved.
 
-Currently Trustpoint is in an early technology preview state.  
+Currently, Trustpoint is in an early technology preview state.  
 We are still deciding on the most appropriate open source license, as that is hard or impossible to change down the line. Potential candidates include the EUPL-1.2, a GPL flavor or a more permissive license like MPL or MIT.
 
 You may download, view, and use Trustpoint free of charge for testing and evaluation purposes, however you MUST NOT redistribute Trustpoint or a Derivative Work based on it. Use outside of testing and evaluation is heavily discouraged.  
-You may contribute to the project, however in doing so you accept your contributions to be relicensed under any license of the author's choosing.
+You may contribute to the project, however in doing so you accept your contributions to be re-licensed under any license of the author's choosing.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
