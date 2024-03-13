@@ -23,6 +23,9 @@ if TYPE_CHECKING:
     from cryptography.x509 import Certificate
     from devices.models import Device
 
+PBKDF2_ITERATIONS = 1000000
+PBKDF2_DKLEN = 32
+
 class OnboardingError(Exception):
     """Exception raised for errors in the onboarding process."""
 
@@ -40,8 +43,8 @@ class CryptoBackend:
             hexpass: str,
             hexsalt: str,
             message: bytes = b'',
-            iterations: int = 1000000,
-            dklen: int = 32) -> str:
+            iterations: int = PBKDF2_ITERATIONS,
+            dklen: int = PBKDF2_DKLEN) -> str:
         """Calculates the HMAC signature of the trust store.
 
         Returns:

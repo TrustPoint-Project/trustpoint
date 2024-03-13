@@ -1,10 +1,12 @@
 pre {
   background-color: #333;
   padding: 10px 0px;
+  text-align: left;
 }
 
 code {
   padding: 10px;
+  tab-size: 4;
 }
 
 .breathing-anim {

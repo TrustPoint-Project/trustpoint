@@ -76,7 +76,18 @@ def onboarding_manual(request: HttpRequest, device_id: int) -> HttpResponse:
         context['cmd_0'] = CliCommandBuilder.trustpoint_client_provision(context)
         return render(request, 'onboarding/manual/client.html', context=context)
 
-    context['cmd_1_0'] = CliCommandBuilder.cli_get_trust_store(context)
+    context['cmd_1'] = [CliCommandBuilder.cli_get_trust_store(context)]
+    context['cmd_1'].append(CliCommandBuilder.cli_get_header_hmac())
+    context['cmd_1'].append(CliCommandBuilder.cli_get_kdf(context))
+    context['cmd_1'].append(CliCommandBuilder.cli_calc_hmac())
+    context['cmd_1'].append(CliCommandBuilder.cli_compare_hmac())
+
+    context['cmd_2'] = [CliCommandBuilder.cli_gen_key_and_csr()]
+    context['cmd_2'].append(CliCommandBuilder.cli_get_ldevid(context))
+    context['cmd_2'].append(CliCommandBuilder.cli_rm_csr())
+
+    context['cmd_3'] = [CliCommandBuilder.cli_get_cert_chain(context)]
+
     return render(request, 'onboarding/manual/cli.html', context=context)
 
 
