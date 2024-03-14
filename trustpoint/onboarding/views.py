@@ -11,9 +11,9 @@ from django.http import HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_exempt
 
+from .cli_builder import CliCommandBuilder
 from .crypto_backend import CryptoBackend as Crypt
 from .models import OnboardingProcess, OnboardingProcessState, onboarding_processes
-from .cli_builder import CliCommandBuilder
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -76,7 +76,8 @@ def onboarding_manual(request: HttpRequest, device_id: int) -> HttpResponse:
         context['cmd_0'] = CliCommandBuilder.trustpoint_client_provision(context)
         return render(request, 'onboarding/manual/client.html', context=context)
 
-    context['cmd_1'] = [CliCommandBuilder.cli_get_trust_store(context)]
+    context['cmd_1'] = [CliCommandBuilder.cli_mkdir_trustpoint()]
+    context['cmd_1'].append(CliCommandBuilder.cli_get_trust_store(context))
     context['cmd_1'].append(CliCommandBuilder.cli_get_header_hmac())
     context['cmd_1'].append(CliCommandBuilder.cli_get_kdf(context))
     context['cmd_1'].append(CliCommandBuilder.cli_calc_hmac())
@@ -140,9 +141,9 @@ def onboarding_revoke(request: HttpRequest, device_id: int) -> HttpResponse:
         else:
             messages.warning(request, f'Device {device.device_name} has no LDevID certificate to revoke.')
         return redirect('devices:devices')
-    
+
     messages.warning(request, 'CRL/OCSP not implemented yet.')
-    
+
     return render(request, 'onboarding/revoke.html', context={'objects': [device]})
 
 

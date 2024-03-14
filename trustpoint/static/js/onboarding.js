@@ -12,10 +12,9 @@ FAILED = -1,
 STARTED = 0,
 HMAC_GENERATED = 1,
 TRUST_STORE_SENT = 2,
-CSR_RECEIVED = 3,
-DEVICE_VALIDATED = 4,
-LDEVID_SENT = 5,
-COMPLETED = 6 // aka cert chain sent
+DEVICE_VALIDATED = 3,
+LDEVID_SENT = 4,
+COMPLETED = 5 // aka cert chain sent
 
 function getOnboardingState(urlExt, iconUrl) {
   fetch('/onboarding/api/state/'+ urlExt)
@@ -27,6 +26,14 @@ function getOnboardingState(urlExt, iconUrl) {
   ).catch((error) => {
     setOnboardingStateUI(CONNECTION_ERROR, iconUrl);
   })
+}
+
+function setOnboardingStateUIElement(el, iconUrl, type, message, icon, extraClasses='') {
+  el.className = `alert alert-${type} d-flex align-items-center mt-3 ${extraClasses}`;
+
+  el.innerHTML =
+    `<svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="${iconUrl}#icon-${icon}"/></svg>
+    <div>${message}</div>`;
 }
 
 function setOnboardingStateUI(state, iconUrl) {
@@ -53,11 +60,13 @@ function setOnboardingStateUI(state, iconUrl) {
       message = '<strong>Step 1/3</strong> Sent trust store to client. Waiting for CSR...';
       icon = 'clock';
       extraClasses = 'breathing-anim';
-      break;
-    case CSR_RECEIVED:
-      type = 'info';
-      message = 'CSR received';
-      icon = 'clock';
+
+      var el = document.querySelector('#onboarding-state-1');
+      if (!el) break;
+      type1 = 'info';
+      message1 = 'Trust store requested.';
+      icon1 = 'info';
+      setOnboardingStateUIElement(el, iconUrl, type1, message1, icon1);
       break;
     case DEVICE_VALIDATED:
       type = 'info';
@@ -70,6 +79,18 @@ function setOnboardingStateUI(state, iconUrl) {
       message = '<strong>Step 3/3</strong> Sent signed certificate to client. Waiting for certificate chain request...';
       icon = 'clock';
       extraClasses = 'breathing-anim';
+      var el = document.querySelector('#onboarding-state-2');
+      if (!el) break;
+      var type1 = 'success';
+      var message1 = 'LDevID downloaded successfully.';
+      var icon1 = 'success';
+      setOnboardingStateUIElement(el, iconUrl, type1, message1, icon1);
+      el = document.querySelector('#onboarding-state-3');
+      if (!el) break;
+      var type2 = 'secondary';
+      var message2 = 'Certificate chain not requested yet.';
+      var icon2 = 'clock';
+      setOnboardingStateUIElement(el, iconUrl, type2, message2, icon2);
       break;
     case COMPLETED:
       type = 'success';
@@ -99,11 +120,7 @@ function setOnboardingStateUI(state, iconUrl) {
   if (navBack) { window.location.href = parentUrl; }
 
   var el = document.querySelector('#onboarding-state');
-  el.className = `alert alert-${type} d-flex align-items-center mt-3 ${extraClasses}`;
-
-  el.innerHTML =
-    `<svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="${iconUrl}#icon-${icon}"/></svg>
-    <div>${message}</div>`;
+  setOnboardingStateUIElement(el, iconUrl, type, message, icon, extraClasses);
 }
 
 function resetButton(caller) {

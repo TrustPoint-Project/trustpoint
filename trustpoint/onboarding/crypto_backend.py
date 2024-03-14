@@ -15,7 +15,6 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
 from django.core.files.base import ContentFile
-
 from util.strings import StringValidator
 
 if TYPE_CHECKING:
@@ -124,21 +123,24 @@ class CryptoBackend:
 
         try:
             csr_serial = csr.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value
-        except x509.ExtensionNotFound:
+        except (x509.ExtensionNotFound, IndexError):
             csr_serial = None
 
         if not device.serial_number and not csr_serial:
-            raise OnboardingError('No serial number provided.')
+            exc_msg = 'No serial number provided.'
+            raise OnboardingError(exc_msg)
         if csr_serial and not StringValidator.is_urlsafe(csr_serial):
-            raise OnboardingError('Invalid serial number in CSR.')
+            exc_msg = 'Invalid serial number in CSR.'
+            raise OnboardingError(exc_msg)
         if device.serial_number and csr_serial and device.serial_number != csr_serial:
-            raise OnboardingError('CSR serial number does not match device serial number.')
+            exc_msg = 'CSR serial number does not match device serial number.'
+            raise OnboardingError(exc_msg)
         serial_no = device.serial_number or csr_serial
 
-        subject = csr.subject
-        # add serial number to subject
-        if not csr_serial:
-            subject = subject + ([x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, serial_no)])
+        subject = x509.Name([
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'ldevid.trustpoint.local'),
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, serial_no)
+        ])
 
         private_ca_key, ca_cert, _ = CryptoBackend._get_ca_p12(device)
 

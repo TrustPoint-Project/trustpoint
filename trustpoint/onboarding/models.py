@@ -26,10 +26,9 @@ class OnboardingProcessState(IntEnum):
     STARTED = 0
     HMAC_GENERATED = 1
     TRUST_STORE_SENT = 2
-    CSR_RECEIVED = 3
-    DEVICE_VALIDATED = 4
-    LDEVID_SENT = 5
-    COMPLETED = 6  # aka cert chain was requested
+    DEVICE_VALIDATED = 3
+    LDEVID_SENT = 4
+    COMPLETED = 5  # aka cert chain was requested
 
 
 # NOT a database-backed model
