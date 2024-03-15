@@ -3,13 +3,21 @@
 from __future__ import annotations
 
 import base64
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
+
+from django.http.request import HttpRequest as HttpRequest
 
 from devices.models import Device
 from django.contrib import messages
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.shortcuts import redirect, render
+from django.views.generic import View, TemplateView, DetailView, RedirectView
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+from trustpoint.views import TpLoginRequiredMixin
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.urls import reverse
+from django.utils.decorators import method_decorator
 
 from .cli_builder import CliCommandBuilder
 from .crypto_backend import CryptoBackend as Crypt
@@ -121,15 +129,72 @@ def onboarding_exit(request: HttpRequest, device_id: int) -> HttpResponse:
 
     return redirect('devices:devices')
 
+class Detail404RedirectionMessageView(DetailView):
+    """A detail view that redirects to the devices page on 404 and adds a message."""
 
-def onboarding_revoke(request: HttpRequest, device_id: int) -> HttpResponse:
-    """Revokes the LDevID certificate for a device."""
-    device = Device.get_by_id(device_id)
-    if not device:
-        messages.error(request, f'Revocation: Device with ID {device_id} not found.')
-        return redirect('devices:devices')
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__(**kwargs)
+        if not hasattr(self, 'category'): self.category = 'Error'
 
-    if request.method == 'POST':
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any):
+        try:
+            return super().get(request, *args, **kwargs)
+        except Http404:
+            messages.error(self.request, f'{self.category}: {self.model.__name__} with ID {kwargs["pk"]} not found.')
+            return redirect(self.redirection_view)
+        
+
+class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
+    """View for canceling the onboarding process."""
+
+    category = 'Onboarding'
+
+    def get_redirect_url(self, **kwargs: Any):
+        return reverse('devices:devices')
+    
+    def _cancel(self, request: HttpRequest, device_id: int):
+        device = Device.get_by_id(device_id)
+        if not device:
+            messages.error(request, f'Onboarding: Device with ID {device_id} not found.')
+            return
+
+        if device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+            device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+            device.save()
+            messages.warning(request, f'Onboarding process for device {device.device_name} canceled.')
+
+        onboarding_process = OnboardingProcess.get_by_device(device)
+        if not onboarding_process:
+            messages.error(request, f'No active onboarding process for device {device.device_name} found.')
+            return
+
+        reason = onboarding_process.error_reason
+        # TODO(Air): We also need to remove the onboarding process automatically without calling this view
+        onboarding_processes.remove(onboarding_process)
+        if onboarding_process.state == OnboardingProcessState.COMPLETED:
+            messages.success(request, f'Device {device.device_name} onboarded successfully.')
+        elif onboarding_process.state == OnboardingProcessState.FAILED:
+            messages.error(request, f'Onboarding process for device {device.device_name} failed. {reason}')
+            # TODO(Air): what to do if timeout occurs after valid LDevID is issued?
+            # TODO(Air): Delete device and add to CRL.
+
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        self._cancel(request, kwargs['pk'])
+        return super().dispatch(request, *args, **kwargs)
+
+class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessageView):
+    """View for revoking LDevID certificates."""
+
+    template_name = 'onboarding/revoke.html'
+    model = Device
+    category = 'Revocation'
+    redirection_view = 'devices:devices'
+    context_object_name = 'device'
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any):
+        """Revokes the LDevID certificate for a device."""
+        device = self.get_object() # don't need error handling, will return 404 if missing
+
         if device.ldevid:
             if device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
                 # TODO(Air): Perhaps extra status for revoked devices?
@@ -140,14 +205,20 @@ def onboarding_revoke(request: HttpRequest, device_id: int) -> HttpResponse:
             messages.success(request, f'LDevID certificate for device {device.device_name} revoked.')
         else:
             messages.warning(request, f'Device {device.device_name} has no LDevID certificate to revoke.')
-        return redirect('devices:devices')
+        return redirect(self.redirection_view)
+    
 
-    messages.warning(request, 'CRL/OCSP not implemented yet.')
+class GetOnboardingProcessMixin:
+    """Mixin for getting the onboarding process from the URL extension."""
 
-    return render(request, 'onboarding/revoke.html', context={'objects': [device]})
-
-
-def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:  # noqa: ARG001
+    def get_onboarding_process(self: GetOnboardingProcessMixin) -> OnboardingProcess | None:
+        """Gets the onboarding process from the URL extension."""
+        onboarding_process = OnboardingProcess.get_by_url_ext(self.kwargs['url_ext'])
+        if not onboarding_process or not onboarding_process.active:
+            raise Http404('Invalid URI extension.')
+        return onboarding_process
+    
+class TrustStoreView(GetOnboardingProcessMixin, TpLoginRequiredMixin, View):
     """View for the trust store API endpoint.
 
     Request type: GET
@@ -158,21 +229,47 @@ def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:  # noqa: AR
         Trust store (in response body)
         HMAC signature of trust store (in response header)
     """
-    onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
-    if not onboarding_process or not onboarding_process.active:
-        return HttpResponse('Invalid URI extension.', status=404)
 
-    try:
-        trust_store = Crypt.get_trust_store()
-    except FileNotFoundError:
-        onboarding_process.fail('Trust store file not found.')
-        return HttpResponse('Trust store file not found.', status=500)
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Returns the trust store and HMAC signature."""
+        onboarding_process = self.get_onboarding_process()
+        try:
+            trust_store = Crypt.get_trust_store()
+        except FileNotFoundError:
+            onboarding_process.fail('Trust store file not found.')
+            return HttpResponse('Trust store file not found.', status=500)
 
-    response = HttpResponse(trust_store, status=200)
-    response['hmac-signature'] =onboarding_process.get_hmac()
-    if onboarding_process.state == OnboardingProcessState.HMAC_GENERATED:
-       onboarding_process.state = OnboardingProcessState.TRUST_STORE_SENT
-    return response
+        response = HttpResponse(trust_store, status=200)
+        response['hmac-signature'] = onboarding_process.get_hmac()
+        if onboarding_process.state == OnboardingProcessState.HMAC_GENERATED:
+            onboarding_process.state = OnboardingProcessState.TRUST_STORE_SENT
+        return response
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class LDevIDView(GetOnboardingProcessMixin, TpLoginRequiredMixin, View):
+    """View for the LDevID API endpoint.
+
+    Request type: POST
+
+    Inputs:
+        Onbarding process URL extension (in request path)
+        Certificate signing request (as POST file ldevid.csr)
+
+    Returns: LDevID certificate chain (in response body)
+    """
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Handles the LDevID certificate signing request."""
+        onboarding_process = self.get_onboarding_process()
+        if not request.FILES or not request.FILES['ldevid.csr']:
+            return HttpResponse('Invalid CSR.', status=400)
+
+        csr_file = request.FILES['ldevid.csr']
+        if csr_file.multiple_chunks():
+            pass
+        
+        raise NotImplementedError('todo')
 
 
 @csrf_exempt  # should be safe because we are using a OTP
