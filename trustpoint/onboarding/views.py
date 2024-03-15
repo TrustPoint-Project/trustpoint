@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import base64
+import functools
 from typing import TYPE_CHECKING
 
 from devices.models import Device
@@ -16,9 +17,33 @@ from .crypto_backend import CryptoBackend as Crypt
 from .models import OnboardingProcess, OnboardingProcessState, onboarding_processes
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from django.http import HttpRequest
 
 
+def tp_login_required(view_func):
+    @functools.wraps(view_func)
+    def wrapper(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        if not request.user.is_authenticated:
+            messages.warning(request, 'Login required!')
+            return redirect('users:login')
+        return view_func(request, *args, **kwargs)
+
+    return wrapper
+
+def get_onboarding_process_by_url_ext(view_func):
+    @functools.wraps(view_func)
+    def wrapper(request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        onboarding_process = OnboardingProcess.get_by_url_ext(kwargs['url_ext'])
+        if not onboarding_process or not onboarding_process.active:
+            return HttpResponse('Invalid URI extension.', status=404)
+        return view_func(request, onboarding_process, *args, **kwargs)
+
+    return wrapper
+
+
+@tp_login_required
 def onboarding_manual(request: HttpRequest, device_id: int) -> HttpResponse:
     """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
     device = Device.get_by_id(device_id)
@@ -92,6 +117,7 @@ def onboarding_manual(request: HttpRequest, device_id: int) -> HttpResponse:
     return render(request, 'onboarding/manual/cli.html', context=context)
 
 
+@tp_login_required
 def onboarding_exit(request: HttpRequest, device_id: int) -> HttpResponse:
     """Cancels onboarding if still running, injects a message and redirects to the devices page."""
     device = Device.get_by_id(device_id)
@@ -122,6 +148,7 @@ def onboarding_exit(request: HttpRequest, device_id: int) -> HttpResponse:
     return redirect('devices:devices')
 
 
+@tp_login_required
 def onboarding_revoke(request: HttpRequest, device_id: int) -> HttpResponse:
     """Revokes the LDevID certificate for a device."""
     device = Device.get_by_id(device_id)
@@ -147,21 +174,18 @@ def onboarding_revoke(request: HttpRequest, device_id: int) -> HttpResponse:
     return render(request, 'onboarding/revoke.html', context={'objects': [device]})
 
 
-def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:  # noqa: ARG001
+@get_onboarding_process_by_url_ext
+def trust_store(request: HttpRequest, onboarding_process: OnboardingProcess, url_ext: str) -> HttpResponse:  # noqa: ARG001
     """View for the trust store API endpoint.
 
     Request type: GET
 
-    Inputs: Onbarding process URL extension (in request path)
+    Inputs: Onbarding process URL extension (str, in request path, unused here)
 
     Returns:
         Trust store (in response body)
         HMAC signature of trust store (in response header)
     """
-    onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
-    if not onboarding_process or not onboarding_process.active:
-        return HttpResponse('Invalid URI extension.', status=404)
-
     try:
         trust_store = Crypt.get_trust_store()
     except FileNotFoundError:
@@ -176,7 +200,8 @@ def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:  # noqa: AR
 
 
 @csrf_exempt  # should be safe because we are using a OTP
-def ldevid(request: HttpRequest, url_ext: str) -> HttpResponse:
+@get_onboarding_process_by_url_ext
+def ldevid(request: HttpRequest, onboarding_process: OnboardingProcess, url_ext: str) -> HttpResponse:
     """View for the LDevID API endpoint.
 
     Request type: POST
@@ -187,12 +212,9 @@ def ldevid(request: HttpRequest, url_ext: str) -> HttpResponse:
 
     Returns: LDevID certificate chain (in response body)
     """
-    onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
     if (
-        not onboarding_process
-        or not onboarding_process.active
         # only ever allow one set of credentials to be submitted
-        or onboarding_process.state >= OnboardingProcessState.DEVICE_VALIDATED
+        onboarding_process.state >= OnboardingProcessState.DEVICE_VALIDATED
         or request.method != 'POST'
         or not request.FILES
         or not request.FILES['ldevid.csr']
@@ -223,7 +245,8 @@ def ldevid(request: HttpRequest, url_ext: str) -> HttpResponse:
     return response
 
 
-def cert_chain(request: HttpRequest, url_ext: str) -> HttpResponse:  # noqa: ARG001
+@get_onboarding_process_by_url_ext
+def cert_chain(request: HttpRequest, onboarding_process: OnboardingProcess, url_ext: str) -> HttpResponse:  # noqa: ARG001
     """View for the LDevID certificate chain API endpoint.
 
     Request type: GET
@@ -235,10 +258,6 @@ def cert_chain(request: HttpRequest, url_ext: str) -> HttpResponse:  # noqa: ARG
     TODO: instead of URL extension, match using the client LDevID certificate
     TODO: chain with or without end-entity certificate?
     """
-    onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
-    if not onboarding_process or not onboarding_process.active:
-        return HttpResponse('Invalid URI extension.', status=404)
-
     # could use cryptography.x509.verification to verify the chain,
     # it has just been added in cryptography 42.0.0 and is still marked as an unstable API
 
@@ -252,6 +271,8 @@ def cert_chain(request: HttpRequest, url_ext: str) -> HttpResponse:  # noqa: ARG
         return HttpResponse(chain, status=200)
     return HttpResponse('Invalid URI extension.', status=404)
 
+
+@tp_login_required
 def state(request: HttpRequest, url_ext: str) -> HttpResponse:  # noqa: ARG001
     """View for the onboarding process state API endpoint.
 
