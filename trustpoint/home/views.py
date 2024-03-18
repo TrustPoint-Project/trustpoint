@@ -51,10 +51,68 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
             }
         }
         return config
+    def get_bar_chart_config(self):
+        config = {
+            "type": "bar",
+            "data": {
+                "labels": self.generate_last_week_dates(),
+                "datasets": [{
+                    "label": "Number of keys",
+                    "data": self.get_line_chart_data(),
+                    "borderColor": "rgb(75, 192, 192)",
+                    "backgroundColor": "rgba(75, 192, 192, 0.2)",
+                    "tension": 0.4,
+                    "fill": True
+                }]
+            },
+            "options": {
+                "scales": {
+                    "y": {
+                        "beginAtZero": True
+                    }
+                }
+            }
+        }
+        return config
+    
+    def get_stack_chart_config(self):
+        config = {
+            "type": "bar",
+            "data": {
+                "labels": self.generate_last_week_dates(),
+                "datasets": [{
+                    "label": "Active",
+                    "data": self.get_line_chart_data(),
+                    "borderColor": "rgb(75, 192, 192)",
+                    "backgroundColor": "rgba(75, 192, 192, 0.2)",
+                    "tension": 0.4,
+                    "fill": True,
+                    "stack": "stack"
+                  },
+                  {
+                    "label": 'Inactive',
+                    "data": self.get_line_chart_data(),
+                    "backgroundColor": [
+                      '#D10C15',
+                    ],
+                    "stack": "stack"
+                }]
+            },
+            "options": {
+                "scales": {
+                    "y": {
+                        "beginAtZero": True
+                    }
+                }
+            }
+        }
+        return config
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         line_chart_config = self.get_line_chart_config()
         context['line_chart_config'] = json.dumps(line_chart_config)
+        context['bar_chart_config'] = json.dumps(self.get_bar_chart_config())
+        context['stack_chart_config'] = json.dumps(self.get_stack_chart_config())
         context['number_of_devices'] = self.get_number_of_devices()
         return context
