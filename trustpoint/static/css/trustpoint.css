@@ -161,7 +161,7 @@ h3 {
 }
 
 .bg-navbar {
-    background-color: #272B2F;
+    background-color: var(--bs-body-bg);
 }
 
 .tp-primary, a.tp-primary {
@@ -183,8 +183,8 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
     line-height: 1.2rem;
 }
 
-.bg-tp-dark {
-    background-color: #272B2F;
+.bg-tp-sidenav {
+    background-color: var(--bs-tertiary-bg);
 }
 
 .tp-px-2 {
@@ -236,11 +236,6 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
     border-radius: 0.3rem;
     display: grid;
     grid-template-columns: 1fr;
-}
-
-.tp-message-success {
-    background-color: #5fc40c;
-    color: white;
 }
 
 .tp-table-btn {
@@ -322,7 +317,7 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
 }
 
 .tp-menu-group > a {
-    color: white;
+    color: var(--bs-emphasis-color);
 }
 
 .tp-menu-group > a:hover, .tp-menu-group > a:active, .tp-menu-group > a:focus {
@@ -365,10 +360,29 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
 }
 
 .tp-btn-link {
-    color: white;
+    color: var(--bs-body-color);
     text-decoration: none;
 }
 
-.tp-btn-link:hover, .tp-btn-link:focus, .tp-btn-link:active {
-    color: #8BB9FE;
+.tp-btn-link:hover, .tp-btn-link:focus, .tp-btn-link:active, .theme-toggle:hover {
+    color: rgba(var(--bs-link-hover-color-rgb));
+}
+
+.theme-toggle {
+    padding: 5px;
+    cursor: pointer;
+}
+
+/* Theme-specific */
+svg.theme-icon {
+    display: none;
+    color: var(--bs-body-color);
+}
+
+html[data-bs-theme="dark"] svg.theme-icon-dark {
+    display: inline;
+}
+
+html[data-bs-theme="light"] svg.theme-icon-light {
+    display: inline;
 }

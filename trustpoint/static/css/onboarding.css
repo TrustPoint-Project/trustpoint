@@ -1,5 +1,5 @@
 pre {
-  background-color: #333;
+  background-color: var(--bs-secondary-bg);
   padding: 10px 0px;
   text-align: left;
 }
