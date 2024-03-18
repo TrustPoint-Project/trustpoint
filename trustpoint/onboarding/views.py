@@ -24,6 +24,8 @@ from .crypto_backend import CryptoBackend as Crypt
 from .models import OnboardingProcess, OnboardingProcessState, onboarding_processes
 
 if TYPE_CHECKING:
+    from typing import Any
+
     from django.http import HttpRequest
 
 
@@ -210,7 +212,7 @@ class TrustStoreView(GetOnboardingProcessMixin, View):
 
     Request type: GET
 
-    Inputs: Onbarding process URL extension (in request path)
+    Inputs: Onbarding process URL extension (str, in request path, unused here)
 
     Returns:
         Trust store (in response body)
