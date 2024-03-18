@@ -70,7 +70,18 @@ export PYENV_ROOT="$HOME/.pyenv"
 eval "$(pyenv init -)"
 ```
 
+Restart your shell
 
+```shell
+exec "$SHELL"
+```
+
+You can install the desired python version as follows
+
+```shell
+pyenv install 3.12.2
+pyenv global 3.12.2
+```
 ### Poetry
 
 You should use poetry to create a virtual environment and to manage the dependencies (instead of pip directly).  
