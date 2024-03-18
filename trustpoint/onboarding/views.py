@@ -27,107 +27,90 @@ if TYPE_CHECKING:
     from django.http import HttpRequest
 
 
-def onboarding_manual(request: HttpRequest, device_id: int) -> HttpResponse:
+class ManualOnboardingView(TpLoginRequiredMixin, DetailView):
     """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
-    device = Device.get_by_id(device_id)
-    if not device:
-        messages.error(request, f'Onboarding: Device with ID {device_id} not found.')
-        return redirect('devices:devices')
 
-    # choose the onboarding method for this device
-    if device.onboarding_protocol not in {Device.OnboardingProtocol.CLIENT, Device.OnboardingProtocol.MANUAL}:
-        try:
-            label = Device.OnboardingProtocol(device.onboarding_protocol).label
-        except ValueError:
-            messages.error(request, 'Onboarding: Please select a valid onboarding protocol.')
-            return redirect('devices:devices')
+    template_name = 'onboarding/manual/client.html'
+    model = Device
+    category = 'Onboarding'
+    redirection_view = 'devices:devices'
+    context_object_name = 'device'
+    pk_url_kwarg = 'device_id'
 
-        messages.error(request, f'Onboarding protocol {label} is not implemented.')
-        return redirect('devices:devices')
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
+        device = self.get_object()
 
-    # check that endpoint profile is set
-    if not device.endpoint_profile:
-        messages.error(
-            request,
-            f'Onboarding: Please select an endpoint profile for device {device.device_name} first.')
-        return redirect('devices:devices')
+        if not device:
+            messages.error(request, f'Onboarding: Device with ID {kwargs["device_id"]} not found.')
+            return redirect(self.redirection_view)
 
-    # TODO(Air): check that device is not already onboarded
-    # Re-onboarding might be a valid use case, e.g. to renew a certificate
+        # choose the onboarding method for this device
+        if device.onboarding_protocol not in {Device.OnboardingProtocol.CLIENT, Device.OnboardingProtocol.MANUAL}:
+            try:
+                label = Device.OnboardingProtocol(device.onboarding_protocol).label
+            except ValueError:
+                messages.error(request, 'Onboarding: Please select a valid onboarding protocol.')
+                return redirect(self.redirection_view)
 
-    # check if onboarding process for this device already exists
-    onboarding_process = OnboardingProcess.get_by_device(device)
+            messages.error(request, f'Onboarding protocol {label} is not implemented.')
+            return redirect(self.redirection_view)
 
-    if not onboarding_process:
-        onboarding_process = OnboardingProcess(device)
-        onboarding_processes.append(onboarding_process)
-        device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_RUNNING
-        # TODO(Air): very unnecessary save required to update onboarding status in table
-        # Problem: if server is restarted during onboarding, status is stuck at running
-        device.save()
+        # check that endpoint profile is set
+        if not device.endpoint_profile:
+            messages.error(
+                request,
+                f'Onboarding: Please select an endpoint profile for device {device.device_name} first.')
+            return redirect(self.redirection_view)
 
-    context = {
-        'page_category': 'onboarding',
-        'page_name': 'manual',
-        'otp':onboarding_process.otp,
-        'salt':onboarding_process.salt,
-        'tsotp':onboarding_process.tsotp,
-        'tssalt':onboarding_process.tssalt,
-        'host': request.get_host(),
-        'url':onboarding_process.url,
-        'sn':device.serial_number,
-        'device_name':device.device_name,
-        'device_id':device.id,
-    }
+        # TODO(Air): check that device is not already onboarded
+        # Re-onboarding might be a valid use case, e.g. to renew a certificate
 
-    if device.onboarding_protocol == Device.OnboardingProtocol.CLIENT:
-        context['cmd_0'] = CliCommandBuilder.trustpoint_client_provision(context)
-        return render(request, 'onboarding/manual/client.html', context=context)
+        # check if onboarding process for this device already exists
+        onboarding_process = OnboardingProcess.get_by_device(device)
 
-    context['cmd_1'] = [CliCommandBuilder.cli_mkdir_trustpoint()]
-    context['cmd_1'].append(CliCommandBuilder.cli_get_trust_store(context))
-    context['cmd_1'].append(CliCommandBuilder.cli_get_header_hmac())
-    context['cmd_1'].append(CliCommandBuilder.cli_get_kdf(context))
-    context['cmd_1'].append(CliCommandBuilder.cli_calc_hmac())
-    context['cmd_1'].append(CliCommandBuilder.cli_compare_hmac())
+        if not onboarding_process:
+            onboarding_process = OnboardingProcess(device)
+            onboarding_processes.append(onboarding_process)
+            device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_RUNNING
+            # TODO(Air): very unnecessary save required to update onboarding status in table
+            # Problem: if server is restarted during onboarding, status is stuck at running
+            device.save()
 
-    context['cmd_2'] = [CliCommandBuilder.cli_gen_key_and_csr()]
-    context['cmd_2'].append(CliCommandBuilder.cli_get_ldevid(context))
-    context['cmd_2'].append(CliCommandBuilder.cli_rm_csr())
+        context = {
+            'page_category': 'onboarding',
+            'page_name': 'manual',
+            'otp':onboarding_process.otp,
+            'salt':onboarding_process.salt,
+            'tsotp':onboarding_process.tsotp,
+            'tssalt':onboarding_process.tssalt,
+            'host': request.get_host(),
+            'url':onboarding_process.url,
+            'sn':device.serial_number,
+            'device_name':device.device_name,
+            'device_id':device.id,
+        }
 
-    context['cmd_3'] = [CliCommandBuilder.cli_get_cert_chain(context)]
+        if device.onboarding_protocol == Device.OnboardingProtocol.CLIENT:
+            context['cmd_0'] = CliCommandBuilder.trustpoint_client_provision(context)
+            return render(request, 'onboarding/manual/client.html', context=context)
 
-    return render(request, 'onboarding/manual/cli.html', context=context)
+        if device.onboarding_protocol == Device.OnboardingProtocol.MANUAL:
+            context['cmd_1'] = [CliCommandBuilder.cli_mkdir_trustpoint()]
+            context['cmd_1'].append(CliCommandBuilder.cli_get_trust_store(context))
+            context['cmd_1'].append(CliCommandBuilder.cli_get_header_hmac())
+            context['cmd_1'].append(CliCommandBuilder.cli_get_kdf(context))
+            context['cmd_1'].append(CliCommandBuilder.cli_calc_hmac())
+            context['cmd_1'].append(CliCommandBuilder.cli_compare_hmac())
 
+            context['cmd_2'] = [CliCommandBuilder.cli_gen_key_and_csr()]
+            context['cmd_2'].append(CliCommandBuilder.cli_get_ldevid(context))
+            context['cmd_2'].append(CliCommandBuilder.cli_rm_csr())
 
-def onboarding_exit(request: HttpRequest, device_id: int) -> HttpResponse:
-    """Cancels onboarding if still running, injects a message and redirects to the devices page."""
-    device = Device.get_by_id(device_id)
-    if not device:
-        messages.error(request, f'Onboarding: Device with ID {device_id} not found.')
-        return redirect('devices:devices')
+            context['cmd_3'] = [CliCommandBuilder.cli_get_cert_chain(context)]
 
-    if device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
-        device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
-        device.save()
-        messages.warning(request, f'Onboarding process for device {device.device_name} canceled.')
+        return render(request, 'onboarding/manual/cli.html', context=context)
 
-    onboarding_process = OnboardingProcess.get_by_device(device)
-    if not onboarding_process:
-        messages.error(request, f'No active onboarding process for device {device.device_name} found.')
-        return redirect('devices:devices')
-
-    reason = onboarding_process.error_reason
-    # TODO(Air): We also need to remove the onboarding process automatically without calling this view
-    onboarding_processes.remove(onboarding_process)
-    if onboarding_process.state == OnboardingProcessState.COMPLETED:
-        messages.success(request, f'Device {device.device_name} onboarded successfully.')
-    elif onboarding_process.state == OnboardingProcessState.FAILED:
-        messages.error(request, f'Onboarding process for device {device.device_name} failed. {reason}')
-        # TODO(Air): what to do if timeout occurs after valid LDevID is issued?
-        # TODO(Air): Delete device and add to CRL.
-
-    return redirect('devices:devices')
 
 class Detail404RedirectionMessageView(DetailView):
     """A detail view that redirects to the devices page on 404 and adds a message."""
@@ -140,7 +123,8 @@ class Detail404RedirectionMessageView(DetailView):
         try:
             return super().get(request, *args, **kwargs)
         except Http404:
-            messages.error(self.request, f'{self.category}: {self.model.__name__} with ID {kwargs["pk"]} not found.')
+            messages.error(self.request,
+                           f'{self.category}: {self.model.__name__} with ID {kwargs[self.pk_url_kwarg]} not found.')
             return redirect(self.redirection_view)
         
 
@@ -179,7 +163,7 @@ class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
             # TODO(Air): Delete device and add to CRL.
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        self._cancel(request, kwargs['pk'])
+        self._cancel(request, kwargs['device_id'])
         return super().dispatch(request, *args, **kwargs)
 
 class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessageView):
@@ -190,6 +174,7 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
     category = 'Revocation'
     redirection_view = 'devices:devices'
     context_object_name = 'device'
+    pk_url_kwarg = 'device_id'
 
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any):
         """Revokes the LDevID certificate for a device."""
@@ -211,14 +196,16 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
 class GetOnboardingProcessMixin:
     """Mixin for getting the onboarding process from the URL extension."""
 
-    def get_onboarding_process(self: GetOnboardingProcessMixin) -> OnboardingProcess | None:
+    def get_onboarding_process(self: GetOnboardingProcessMixin, *,
+                               accept_inactive: bool = False) -> OnboardingProcess | None:
         """Gets the onboarding process from the URL extension."""
         onboarding_process = OnboardingProcess.get_by_url_ext(self.kwargs['url_ext'])
-        if not onboarding_process or not onboarding_process.active:
+        if (not onboarding_process
+            or (not onboarding_process.active and not accept_inactive)):
             raise Http404('Invalid URI extension.')
         return onboarding_process
     
-class TrustStoreView(GetOnboardingProcessMixin, TpLoginRequiredMixin, View):
+class TrustStoreView(GetOnboardingProcessMixin, View):
     """View for the trust store API endpoint.
 
     Request type: GET
@@ -247,7 +234,7 @@ class TrustStoreView(GetOnboardingProcessMixin, TpLoginRequiredMixin, View):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class LDevIDView(GetOnboardingProcessMixin, TpLoginRequiredMixin, View):
+class LDevIDView(GetOnboardingProcessMixin, View):
     """View for the LDevID API endpoint.
 
     Request type: POST
@@ -262,65 +249,40 @@ class LDevIDView(GetOnboardingProcessMixin, TpLoginRequiredMixin, View):
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         """Handles the LDevID certificate signing request."""
         onboarding_process = self.get_onboarding_process()
-        if not request.FILES or not request.FILES['ldevid.csr']:
-            return HttpResponse('Invalid CSR.', status=400)
-
-        csr_file = request.FILES['ldevid.csr']
-        if csr_file.multiple_chunks():
-            pass
-        
-        raise NotImplementedError('todo')
-
-
-@csrf_exempt  # should be safe because we are using a OTP
-def ldevid(request: HttpRequest, url_ext: str) -> HttpResponse:
-    """View for the LDevID API endpoint.
-
-    Request type: POST
-
-    Inputs:
-        Onbarding process URL extension (in request path)
-        Certificate signing request (as POST file ldevid.csr)
-
-    Returns: LDevID certificate chain (in response body)
-    """
-    onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
-    if (
-        not onboarding_process
-        or not onboarding_process.active
         # only ever allow one set of credentials to be submitted
-        or onboarding_process.state >= OnboardingProcessState.DEVICE_VALIDATED
-        or request.method != 'POST'
-        or not request.FILES
-        or not request.FILES['ldevid.csr']
-    ):
-        return HttpResponse('Invalid URI extension.', status=404)
-
-    # get http basic auth header
-    if 'HTTP_AUTHORIZATION' in request.META:
-        auth = request.META['HTTP_AUTHORIZATION'].split()
-        if len(auth) == 2 and auth[0].lower() == 'basic':  # only basic auth is supported # noqa: PLR2004
-            uname, passwd = base64.b64decode(auth[1]).decode('us-ascii').split(':')
-            if onboarding_process.check_ldevid_auth(uname, passwd):
-                csr_file = request.FILES['ldevid.csr']
-                if not csr_file or csr_file.multiple_chunks():  # stop client providing a huge file
-                    return HttpResponse('Invalid CSR.', status=400)
-                csr = csr_file.read()
-                ldevid =onboarding_process.sign_ldevid(csr)
-                if ldevid:
-                    return HttpResponse(ldevid, status=200)
-
-                return HttpResponse('Error during certificate creation.', status=500)
-
-            #onboarding_process canceled itself if the client provides incorrect credentials
+        if (
+            onboarding_process.state >= OnboardingProcessState.DEVICE_VALIDATED
+            or request.method != 'POST'
+            or not request.FILES
+            or not request.FILES['ldevid.csr']
+        ):
             return HttpResponse('Invalid URI extension.', status=404)
 
-    response = HttpResponse(status=401)
-    response['WWW-Authenticate'] = 'Basic realm="%s"' % url_ext
-    return response
+         # get http basic auth header
+        if 'HTTP_AUTHORIZATION' in request.META:
+            auth = request.META['HTTP_AUTHORIZATION'].split()
+            if len(auth) == 2 and auth[0].lower() == 'basic':  # only basic auth is supported # noqa: PLR2004
+                uname, passwd = base64.b64decode(auth[1]).decode('us-ascii').split(':')
+                if onboarding_process.check_ldevid_auth(uname, passwd):
+                    csr_file = request.FILES['ldevid.csr']
+                    if not csr_file or csr_file.multiple_chunks():  # stop client providing a huge file
+                        return HttpResponse('Invalid CSR.', status=400)
+                    csr = csr_file.read()
+                    ldevid =onboarding_process.sign_ldevid(csr)
+                    if ldevid:
+                        return HttpResponse(ldevid, status=200)
 
+                    return HttpResponse('Error during certificate creation.', status=500)
 
-def cert_chain(request: HttpRequest, url_ext: str) -> HttpResponse:  # noqa: ARG001
+                #onboarding_process canceled itself if the client provides incorrect credentials
+                return HttpResponse('Invalid URI extension.', status=404)
+
+        response = HttpResponse(status=401)
+        response['WWW-Authenticate'] = 'Basic realm="%s"' % kwargs["url_ext"]
+        return response
+    
+
+class CertChainView(GetOnboardingProcessMixin, View):
     """View for the LDevID certificate chain API endpoint.
 
     Request type: GET
@@ -328,28 +290,27 @@ def cert_chain(request: HttpRequest, url_ext: str) -> HttpResponse:  # noqa: ARG
     Inputs: Onbarding process URL extension (in request path)
 
     Returns: LDevID certificate chain (in response body)
-
-    TODO: instead of URL extension, match using the client LDevID certificate
-    TODO: chain with or without end-entity certificate?
     """
-    onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
-    if not onboarding_process or not onboarding_process.active:
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Returns the LDevID certificate chain."""
+        onboarding_process = self.get_onboarding_process()
+        chain = onboarding_process.get_cert_chain()
+
+        # could use cryptography.x509.verification to verify the chain,
+        # it has just been added in cryptography 42.0.0 and is still marked as an unstable API
+
+        # TODO(Air): do we want to verify the LDevID as a TLS client certificate?
+        # This would a) require the LDevID to have extendedKeyUsage=clientAuth and
+        #            b) require Nginx/Apache to be configured to handle client certificates
+        # Verifying client certificates in Django requires a custom middleware, e.g. django-ssl-auth (unmaintained!)
+
+        if chain:
+            return HttpResponse(chain, status=200)
         return HttpResponse('Invalid URI extension.', status=404)
 
-    # could use cryptography.x509.verification to verify the chain,
-    # it has just been added in cryptography 42.0.0 and is still marked as an unstable API
 
-    # TODO(Air): do we want to verify the LDevID as a TLS client certificate?
-    # This would a) require the LDevID to have extendedKeyUsage=clientAuth and
-    #            b) require Nginx/Apache to be configured to handle client certificates
-    # Verifying client certificates in Django requires a custom middleware, e.g. django-ssl-auth, which is unmaintained
-
-    chain = onboarding_process.get_cert_chain()
-    if chain:
-        return HttpResponse(chain, status=200)
-    return HttpResponse('Invalid URI extension.', status=404)
-
-def state(request: HttpRequest, url_ext: str) -> HttpResponse:  # noqa: ARG001
+class StateView(GetOnboardingProcessMixin, TpLoginRequiredMixin, View):
     """View for the onboarding process state API endpoint.
 
     Request type: GET
@@ -358,8 +319,12 @@ def state(request: HttpRequest, url_ext: str) -> HttpResponse:  # noqa: ARG001
 
     Returns: Onboarding process state as an integer (representing OnboardingProcessState enum, in response body)
     """
-    onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
-    if not onboarding_process:
-        return HttpResponse(str(OnboardingProcessState.NO_SUCH_PROCESS), status=404)
 
-    return HttpResponse(str(onboarding_process.state), status=200)
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Returns the onboarding process state."""
+        try:
+            onboarding_process = self.get_onboarding_process(accept_inactive=True)
+        except Http404:
+            return HttpResponse(str(OnboardingProcessState.NO_SUCH_PROCESS), status=404)
+        return HttpResponse(str(onboarding_process.state), status=200)
+

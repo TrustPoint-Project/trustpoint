@@ -152,7 +152,7 @@ class DeviceTable(tables.Table):
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
             return format_html(
                 '<a href="{}" class="btn btn-danger tp-onboarding-btn">Cancel Onboarding</a>',
-                reverse('onboarding:exit', kwargs={'pk': record.pk}),
+                reverse('onboarding:exit', kwargs={'device_id': record.pk}),
             )
 
         is_manual = record.onboarding_protocol == Device.OnboardingProtocol.MANUAL
