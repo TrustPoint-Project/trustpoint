@@ -9,16 +9,14 @@
             </div>
             <div class="card-body tp-main-centered pt-3 pb-4">
 
-            {% for object in objects %}
 
                 <h2 class="pt-5 text-start">Device</h2>
                 <hr>
                 <ul class="list-group list-group-flush text-start tp-form-grid-2-2">
-                    <li class="list-group-item"><span><strong>Device Name:</strong></span><span>{{ object.device_name }}</span></li>
-                    <li class="list-group-item"><span><strong>Serial Number:</strong></span><span>{{ object.serial_number }}</span></li>
+                    <li class="list-group-item"><span><strong>Device Name:</strong></span><span>{{ device.device_name }}</span></li>
+                    <li class="list-group-item"><span><strong>Serial Number:</strong></span><span>{{ device.serial_number }}</span></li>
                 </ul>
 
-            {% endfor %}
 
                 <hr>
                 <div class="tp-form-btn-group tp-form-btn-group pt-5">
