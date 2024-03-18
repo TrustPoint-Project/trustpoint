@@ -5,7 +5,7 @@
   <div class="card-footer text-body-secondary"></div>
 </div>
 <!-- Chart.js library -->
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
 <div class="row p-3">
   <div class="col-4">
     <canvas id="lineChart" width="400" height="200"></canvas>
@@ -20,13 +20,13 @@
 <div class="row p-3">
   <div class="col-3">
     <div class="card bg-secondary text-white">
-      <p class="text-center">Current Number of Devices</p>
-      <h5 class="text-center">{{number_of_devices}}</h5>
+      <h2 class="text-center pb-4"><i class="bi bi-cpu"></i></h2>
+      <h2 class="text-center pb-4">{{number_of_devices}}</h2>
       <div class="row p-0">
         <div class="col-5 small">Active: 13</div>
         <div class="col-5 offset-2 small p-0">Inactive: 13</div>
       </div>
-      <div class="row pt-0 pb-0">
+      <div class="row pt-0 pb-1">
         <div class="progress col-5 p-0">
           <div
             class="progress-bar bg-progress progress-bar-striped w-25"
@@ -50,13 +50,13 @@
   </div>
   <div class="col-3">
     <div class="card bg-secondary text-white">
-      <p class="text-center">Current Number of Keys</p>
-      <h5 class="text-center">{{number_of_devices}}</h5>
+      <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2>
+      <h2 class="text-center pb-4">{{number_of_devices}}</h2>
       <div class="row p-0">
         <div class="col-5 small">Active: 13</div>
         <div class="col-5 offset-2 small p-0">Inactive: 13</div>
       </div>
-      <div class="row pt-0 pb-0">
+      <div class="row pt-0 pb-1">
         <div class="progress col-5 p-0">
           <div
             class="progress-bar bg-progress progress-bar-striped w-25"
@@ -80,13 +80,43 @@
   </div>
   <div class="col-3">
     <div class="card bg-secondary text-white">
-      <p class="text-center">Current Number of Keys</p>
-      <h5 class="text-center">{{number_of_devices}}</h5>
+      <h2 class="text-center pb-4">Current Number of Keys</h2>
+      <h2 class="text-center pb-4">{{number_of_devices}}</h2>
       <div class="row p-0">
         <div class="col-5 small">Active: 13</div>
         <div class="col-5 offset-2 small p-0">Inactive: 13</div>
       </div>
-      <div class="row pt-0 pb-0">
+      <div class="row pt-0 pb-1">
+        <div class="progress col-5 p-0">
+          <div
+            class="progress-bar bg-progress progress-bar-striped w-25"
+            role="progressbar "
+            aria-valuenow="50"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          ></div>
+        </div>
+        <div class="progress col-5 p-0 offset-2">
+          <div
+            class="progress-bar bg-warning progress-bar-striped w-50"
+            role="progressbar"
+            aria-valuenow="50"
+            aria-valuemin="0"
+            aria-valuemax="100"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-3">
+    <div class="card bg-secondary text-white">
+      <h2 class="text-center pb-4"><i class="bi bi-shield-lock"></i></h2>
+      <h2 class="text-center pb-4">{{number_of_devices}}</h2>
+      <div class="row p-0">
+        <div class="col-5 small">Active: 13</div>
+        <div class="col-5 offset-2 small p-0">Inactive: 13</div>
+      </div>
+      <div class="row pt-0 pb-1">
         <div class="progress col-5 p-0">
           <div
             class="progress-bar bg-progress progress-bar-striped w-25"
