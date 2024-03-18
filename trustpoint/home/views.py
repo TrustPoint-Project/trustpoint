@@ -75,6 +75,24 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         }
         return config
     
+    def get_donut_chart_config(self):
+        config = {
+      "type": "doughnut",
+      "data": {
+        "labels": ["active", "inactive"],
+        "datasets": [{
+          "data": [22, 38],
+          "borderWidth": 1,
+          "backgroundColor": [
+            '#D10C15',
+            '#F19100'
+          ],
+          "hoverOffset": 4
+        }]
+      }
+    }
+        return config
+    
     def get_stack_chart_config(self):
         config = {
             "type": "bar",
@@ -114,5 +132,6 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         context['line_chart_config'] = json.dumps(line_chart_config)
         context['bar_chart_config'] = json.dumps(self.get_bar_chart_config())
         context['stack_chart_config'] = json.dumps(self.get_stack_chart_config())
+        context['donut_chart_config'] = json.dumps(self.get_donut_chart_config())
         context['number_of_devices'] = self.get_number_of_devices()
         return context

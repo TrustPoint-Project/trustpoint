@@ -4,17 +4,18 @@
   <div class="card-body">Hello world!</div>
   <div class="card-footer text-body-secondary"></div>
 </div>
-<!-- Chart.js library -->
-<!-- <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> -->
 <div class="row p-3">
-  <div class="col-4">
+  <div class="col-6">
     <canvas id="lineChart" width="400" height="200"></canvas>
   </div>
-  <div class="col-4">
+  <div class="col-6">
     <canvas id="barChart" width="400" height="200"></canvas>
   </div>
-  <div class="col-4">
+  <div class="col-8">
     <canvas id="stackChart" width="400" height="200"></canvas>
+  </div>
+  <div class="col-4">
+    <canvas id="donutChart" width="200" height="200"></canvas>
   </div>
 </div>
 <div class="row p-3">
@@ -153,8 +154,13 @@
   });
   document.addEventListener("DOMContentLoaded", function () {
     var ctx = document.getElementById("stackChart").getContext("2d");
-    var barChartConfig = JSON.parse("{{ stack_chart_config|escapejs }}");
-    var lineChart = new Chart(ctx, barChartConfig);
+    var stackChartConfig = JSON.parse("{{ stack_chart_config|escapejs }}");
+    var lineChart = new Chart(ctx, stackChartConfig);
+  });
+  document.addEventListener("DOMContentLoaded", function () {
+    var ctx = document.getElementById("donutChart").getContext("2d");
+    var donutChartConfig = JSON.parse("{{ donut_chart_config|escapejs }}");
+    var lineChart = new Chart(ctx, donutChartConfig);
   });
 </script>
 
