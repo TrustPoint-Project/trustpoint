@@ -135,5 +135,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         context['stack_chart_config'] = json.dumps(self.get_stack_chart_config())
         context['donut_chart_config'] = json.dumps(self.get_donut_chart_config())
         context['number_of_devices'] = self.get_number_of_devices()
+        context['page_category'] = 'home'
+        context['page_name'] = 'dashboard'
         return context
 
