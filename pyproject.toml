@@ -13,6 +13,7 @@ cryptography = "^42.0.3"
 django-crispy-forms = "^2.1"
 crispy-bootstrap5 = "^2023.10"
 django-ninja = "^1.1.0"
+devtools = "^0.12.2"
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^7.2.6"
@@ -21,6 +22,7 @@ pyopenssl = "^24.0.0"
 werkzeug = "^3.0.1"
 furo = "^2024.1.29"
 ruff = "^0.2.2"
+python-devtools = "^2"
 
 [build-system]
 requires = ["poetry-core"]

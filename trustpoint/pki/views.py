@@ -204,7 +204,7 @@ class UpdateEndpointProfileView(EndpointProfilesContextMixin, TpLoginRequiredMix
     """Endpoint Profile Update View."""
 
     model = EndpointProfile
-    fields = ['unique_endpoint', 'issuing_ca']  # noqa: RUF012
+    fields = ['unique_endpoint', 'issuing_ca']                                                  # noqa: RUF012
     template_name = 'pki/endpoint_profiles/update.html'
     success_url = reverse_lazy('pki:endpoint_profiles')
 

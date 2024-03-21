@@ -9,7 +9,9 @@ from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric.ec import EllipticCurvePrivateKey
 from cryptography.hazmat.primitives.asymmetric.rsa import RSAPrivateKey
 from cryptography.hazmat.primitives.serialization import NoEncryption, load_pem_private_key, pkcs12
-from cryptography.x509 import Certificate, ObjectIdentifier
+from cryptography.x509 import Certificate, ObjectIdentifier, ExtensionNotFound
+from cryptography.x509.oid import ExtensionOID
+
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -159,11 +161,11 @@ class P12:
 
     # TODO(Alex): this expects the chain to contain the Issuing CA cert
     # TODO(Alex): properly refactor this
-    def full_cert_chain_as_dict(self) -> list[dict[str, [str, str | None]]]:
+    def full_cert_chain_as_dict(self) -> list[dict]:
         """Converts the PKCS#12 object to a list of certificates in a python native form.
 
         Returns:
-            list[dict[str, [str, str | None]]]:
+            list[dict]:
                 List of certificates in a python native form.
 
         Raises:
@@ -186,6 +188,7 @@ class P12:
                     'Public Key Size': str(cert.public_key().key_size) + ' bits',
                     # TODO(Alex): names are not standardized, use own OID Enums in the future
                     'Signature Algorithm': str(cert.signature_algorithm_oid._name),  # noqa: SLF001
+                    'Extensions': []
                 }
 
                 if isinstance(self._p12.key, RSAPrivateKey):
@@ -195,6 +198,27 @@ class P12:
                 else:
                     cert_dict['Public Key Type'] = 'Unknown'
                 certs.append(cert_dict)
+
+                try:
+                    basic_constraints = cert.extensions.get_extension_for_oid(ExtensionOID.BASIC_CONSTRAINTS)
+                    bc_values = {
+                        '__name': 'Basic Constraints',
+                        'OID': basic_constraints.oid.dotted_string,
+                        'Critical': basic_constraints.critical,
+                        'CA': getattr(basic_constraints.value, 'ca', None),
+                        'Path Length': getattr(basic_constraints.value, 'path_length', None)
+                    }
+                    cert_dict['Extensions'].append(bc_values)
+                except ExtensionNotFound:
+                    pass
+
+                # KeyUsage
+                # ExtendedKeyUsage
+
+                # AuthorityKeyIdentifier
+                # SubjectKeyIdentifier
+
+                # SubjectAlternativeName
 
             certs[0]['heading'] = 'Issuing CA Certificate'
             if len(certs) >= 2:  # noqa: PLR2004

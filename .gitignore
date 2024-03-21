@@ -162,3 +162,5 @@ cython_debug/
 media/
 
 migrations/
+
+.python-version

@@ -5,6 +5,8 @@ from __future__ import annotations
 
 from pathlib import Path
 from typing import Any
+from cryptography.x509 import Certificate as CryptoCert
+from cryptography.hazmat.primitives.serialization import pkcs12
 
 from django.core.validators import MaxValueValidator, MinLengthValidator, MinValueValidator
 from django.db import models
@@ -13,6 +15,18 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from trustpoint.validators import validate_isidentifer
+
+
+class Certificate(models.Model):
+    """X509 Certificate Model"""
+
+    class Version(models.IntegerChoices):
+        v1 = 0, _('Version 1')
+        v2 = 1, _('Version 2')
+        v3 = 2, _('Version 3')
+
+    version = models.PositiveSmallIntegerField(choices=Version)
+
 
 
 class IssuingCa(models.Model):
@@ -54,7 +68,6 @@ class IssuingCa(models.Model):
     )
 
     common_name = models.CharField(max_length=65536, default='', blank=True)
-    root_common_name = models.CharField(max_length=65536, default='', blank=True)
     not_valid_before = models.DateTimeField()
     not_valid_after = models.DateTimeField()
 
@@ -92,6 +105,16 @@ class IssuingCa(models.Model):
             str:    URL for the details-view.
         """
         return f'details/{self.pk}/'
+
+    def as_django_ninja_schema(self):
+        pass
+
+    def get_crypto_cert_chain(self: IssuingCa) -> list[CryptoCert]:
+        with Path(self.p12.path).open('rb') as f:
+            pkcs12_bytes = f.read()
+
+        p12 = pkcs12.load_pkcs12(pkcs12_bytes, b'')
+        return [cert.certificate for cert in p12.additional_certs]
 
 
 # noinspection PyUnusedLocal
@@ -147,3 +170,18 @@ class EndpointProfile(models.Model):
         """
         self.unique_endpoint = self.unique_endpoint.lower()
         return super().save(*args, **kwargs)
+
+
+class TestA(models.Model):
+    a = models.CharField(max_length=10, default='')
+
+    def __str__(self):
+        return f'TestA({self.a})'
+
+
+class TestB(models.Model):
+    b = models.CharField(max_length=10, default='')
+    test_a = models.ForeignKey(TestA, on_delete=models.CASCADE, blank=True, null=True)
+
+    def __str__(self):
+        return f'TestB({self.b})'

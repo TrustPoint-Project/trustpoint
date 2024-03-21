@@ -16,7 +16,7 @@ from django.views.generic.base import ContextMixin, RedirectView, TemplateRespon
 class IndexView(RedirectView):
     """View that redirects to the index home page."""
 
-    permanent: bool = True
+    permanent: bool = False
     pattern_name: str = 'home:dashboard'
 
 

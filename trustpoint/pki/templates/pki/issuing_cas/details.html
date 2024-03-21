@@ -16,11 +16,21 @@
                     <hr>
                     <ul class="list-group list-group-flush text-start tp-form-grid-2-2">
                         {% for key, val in cert.items %}
-                            {% if key != 'heading' %}
+                            {% if key != 'heading' and key != 'Extensions' %}
                                 <li class="list-group-item"><span><strong>{{ key }}:</strong></span><span>{{ val }}</span></li>
                             {% endif %}
                         {% endfor %}
+
+
+                    {% if cert.Extensions %}
+                        <li class="list-group-item"></li>
+                        {% for key, val in cert.Extensions.items %}
+                            <li class="list-group-item"><span><strong>{{ key }}:</strong></span><span>{{ val }}</span></li>
+                        {% endfor %}
+                    {% endif %}
+                    {{ cert.Extensions }}
                     </ul>
+
                 {% endfor %}
 
                 <div class="tp-form-btn-group tp-form-btn-group mt-5">

@@ -7,7 +7,8 @@ from trustpoint.views import TpLoginRequiredMixin
 
 
 class IndexView(TpLoginRequiredMixin, RedirectView):
-    permanent = True
+
+    permanent = False
     pattern_name = 'home:dashboard'
 
 
@@ -135,3 +136,4 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         context['donut_chart_config'] = json.dumps(self.get_donut_chart_config())
         context['number_of_devices'] = self.get_number_of_devices()
         return context
+
