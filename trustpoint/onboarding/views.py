@@ -24,7 +24,7 @@ from .crypto_backend import CryptoBackend as Crypt
 from .models import OnboardingProcess, DownloadOnboardingProcess, ManualOnboardingProcess, OnboardingProcessState, onboarding_processes
 
 if TYPE_CHECKING:
-    from typing import List, Any
+    from typing import List, Any, Type, TypeVar
 
     from django.http import HttpRequest
 
@@ -79,6 +79,23 @@ class OnboardingUtilMixin:
         # Re-onboarding might be a valid use case, e.g. to renew a certificate
 
         return True
+    
+    if TYPE_CHECKING:
+        O = TypeVar('O', bound=OnboardingProcess)
+    def make_onboarding_process(self, process_type: Type[O]) -> O:
+
+        # check if onboarding process for this device already exists
+        onboarding_process = OnboardingProcess.get_by_device(self.device)
+
+        if not onboarding_process:
+            onboarding_process = process_type(self.device)
+            onboarding_processes.append(onboarding_process)
+            self.device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_RUNNING
+            # TODO(Air): very unnecessary save required to update onboarding status in table
+            # Problem: if server is restarted during onboarding, status is stuck at running
+            self.device.save()
+
+        return onboarding_process
 
 
 class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView):
@@ -97,16 +114,7 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
         
         device = self.device
 
-        # check if onboarding process for this device already exists
-        onboarding_process = OnboardingProcess.get_by_device(device)
-
-        if not onboarding_process:
-            onboarding_process = DownloadOnboardingProcess(device)
-            onboarding_processes.append(onboarding_process)
-            device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_RUNNING
-            # TODO(Air): very unnecessary save required to update onboarding status in table
-            # Problem: if server is restarted during onboarding, status is stuck at running
-            device.save()
+        onboarding_process = self.make_onboarding_process(DownloadOnboardingProcess)
 
         messages.warning(request, 'Keep the PKCS12 file secure! It contains the private key of the device.')
         
@@ -156,16 +164,7 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
         if device.onboarding_protocol == Device.OnboardingProtocol.MANUAL:
             return ManualDownloadView.as_view()(request, *args, **kwargs)
 
-        # check if onboarding process for this device already exists
-        onboarding_process = OnboardingProcess.get_by_device(device)
-
-        if not onboarding_process:
-            onboarding_process = ManualOnboardingProcess(device)
-            onboarding_processes.append(onboarding_process)
-            device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_RUNNING
-            # TODO(Air): very unnecessary save required to update onboarding status in table
-            # Problem: if server is restarted during onboarding, status is stuck at running
-            device.save()
+        onboarding_process = self.make_onboarding_process(ManualOnboardingProcess)
 
         context = {
             'page_category': 'onboarding',
