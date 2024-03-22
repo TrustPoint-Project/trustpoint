@@ -14,22 +14,33 @@
 
     <body id="bs-override">
 
-            <nav class="nav-header navbar bg-dark border-bottom border-body tp-nav" data-bs-theme="dark">
-                <!-- <a class="navbar-brand tp-primary" href="#"><img src="{% static 'img/tplogo-128.png' %}" width="64" height="45" alt="Trustpoint"></a> -->
-                <a class="navbar-brand tp-primary" href="{% url 'users:login' %}"><img src="{% static 'img/tplogo-test-horizontal-180.png' %}" alt="Trustpoint"></a>
-                <form class="d-flex" role="search">
-                    {# TODO: Light / Dark Mode button #}
-                </form>
-            </nav>
+        {# TODO: As this is C/P from base template sans the logout button, consider making nav template #}
+        <nav class="nav-header navbar border-bottom border-body tp-nav">
+            <a class="navbar-brand tp-primary" href="#">
+                <!--<img src="{% static 'img/tplogo-128.png' %}" width="64" height="45" alt="Trustpoint"></a> -->
+                <img src="{% static 'img/tplogo-horizontal-512.png' %}" alt="Trustpoint" id="tp-logo" class="light-only">
+                <img src="{% static 'img/tplogo-horizontal-whitepoint.png' %}" alt="Trustpoint" id="tp-logo" class="dark-only">
+                <!-- <img src="{% static 'img/tplogo-horizontal-0A74FF.png' %}" alt="Trustpoint" id="tp-logo" class="dark-only"> -->
+            </a>
+            <div class="d-flex">
+                <div class="theme-toggle">
+                    <svg class="bi theme-icon dark-only" width="20" height="20" fill="#ffffff" role="img" aria-label="Change theme">
+                        <use href="{% static 'img/icons.svg' %}#icon-night"/></svg>
+                    <svg class="bi theme-icon light-only" width="20" height="20" fill="#000000" role="img" aria-label="Change theme">
+                        <use href="{% static 'img/icons.svg' %}#icon-sun"/></svg>
+                </div>
+            </div>
+        </nav>
 
-            <main class="tp-main tp-main-users">
-                <div></div>
-                    {% block content %}
-                    {% endblock content %}
-                <div></div>
-            </main>
+        <main class="tp-main tp-main-users">
+            <div></div>
+                {% block content %}
+                {% endblock content %}
+            <div></div>
+        </main>
 
         <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
+        <script src="{% static 'js/theme.js' %}"></script>
     </body>
 
 </html>

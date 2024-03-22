@@ -17,17 +17,21 @@
     <body id="bs-override">
         <div class="tp-content-wrapper">
             <nav class="nav-header navbar border-bottom border-body tp-nav">
-                <!-- <a class="navbar-brand tp-primary" href="#"><img src="{% static 'img/tplogo-128.png' %}" width="64" height="45" alt="Trustpoint"></a> -->
-                <a class="navbar-brand tp-primary" href="#"><img src="{% static 'img/tplogo-test-horizontal-180.png' %}" alt="Trustpoint"></a>
+                <a class="navbar-brand tp-primary" href="#">
+                    <!--<img src="{% static 'img/tplogo-128.png' %}" width="64" height="45" alt="Trustpoint"></a> -->
+                    <img src="{% static 'img/tplogo-horizontal-512.png' %}" alt="Trustpoint" id="tp-logo" class="light-only">
+                    <img src="{% static 'img/tplogo-horizontal-whitepoint.png' %}" alt="Trustpoint" id="tp-logo" class="dark-only">
+                    <!-- <img src="{% static 'img/tplogo-horizontal-0A74FF.png' %}" alt="Trustpoint" id="tp-logo" class="dark-only"> -->
+                </a>
                 <div class="d-flex">
                     <form class="d-flex" role="search" method="POST" action="{% url 'users:logout' %}">
                         {% csrf_token %}
                         <button class="btn btn-mute btn-link tp-btn-link" type="submit">Logout</button>
                     </form>
                     <div class="theme-toggle">
-                        <svg class="bi theme-icon theme-icon-dark" width="20" height="20" fill="#ffffff" role="img" aria-label="Change theme">
+                        <svg class="bi theme-icon dark-only" width="20" height="20" fill="#ffffff" role="img" aria-label="Change theme">
                             <use href="{% static 'img/icons.svg' %}#icon-night"/></svg>
-                        <svg class="bi theme-icon theme-icon-light" width="20" height="20" fill="#000000" role="img" aria-label="Change theme">
+                        <svg class="bi theme-icon light-only" width="20" height="20" fill="#000000" role="img" aria-label="Change theme">
                             <use href="{% static 'img/icons.svg' %}#icon-sun"/></svg>
                     </div>
                 </div>
