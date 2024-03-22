@@ -50,6 +50,7 @@ class OnboardingProcess:
         self.id = OnboardingProcess.id_counter
         self.state = OnboardingProcessState.STARTED
         self.error_reason = ''
+        self.url = secrets.token_urlsafe(4)
         self.timer = threading.Timer(onboarding_timeout, self._timeout)
         self.timer.start()
         self.active = True
@@ -118,7 +119,6 @@ class ManualOnboardingProcess(OnboardingProcess):
     def __init__(self, dev: Device) -> None:
         """Initializes a new manual onboarding process for a device."""
         super().__init__(dev)
-        self.url = secrets.token_urlsafe(4)
         self.otp = secrets.token_hex(8)
         self.tsotp = secrets.token_hex(8)
         self.salt = secrets.token_hex(8)
@@ -165,7 +165,7 @@ class ManualOnboardingProcess(OnboardingProcess):
         if self.state != OnboardingProcessState.DEVICE_VALIDATED:
             return None
         try:
-            ldevid = Crypt.sign_ldevid(csr, self.device)
+            ldevid = Crypt.sign_ldevid_from_csr(csr, self.device)
         except Exception as e:
             self._fail(str(e))  # TODO(Air): is it safe to print exception messages to the user UI?
             raise
@@ -189,6 +189,33 @@ class ManualOnboardingProcess(OnboardingProcess):
 
         self._success()
         return chain
+    
 
+class DownloadOnboardingProcess(OnboardingProcess):
+    """Onboarding process for a device using the download onboarding method."""
+
+    def __init__(self, dev: Device) -> None:
+        """Initializes a new download onboarding process for a device."""
+        super().__init__(dev)
+        self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
+        self.gen_thread.start()
+        self.pkcs12 = None
+
+    def _gen_keypair_and_ldevid(self) -> None:
+        """Generates a keypair and LDevID certificate for the device."""
+        try:
+            if not self.device.serial_number:
+                self.device.serial_number = 'tpdl_' + secrets.token_urlsafe(12)
+            self.pkcs12 = Crypt.gen_keypair_and_ldevid(self.device)
+            self.state = OnboardingProcessState.LDEVID_SENT
+        except Exception as e:
+            msg = 'Error generating device key or LDevID.'
+            self._fail(msg)
+            raise OnboardingError(msg) from e
+
+    def get_pkcs12(self) -> bytes | None:
+        """Returns the keypair and LDevID certificate as PKCS12 serialized bytes."""
+        self.gen_thread.join()
+        return self.pkcs12
 
 onboarding_processes = []

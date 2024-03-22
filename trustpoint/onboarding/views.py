@@ -21,7 +21,7 @@ from django.utils.decorators import method_decorator
 
 from .cli_builder import CliCommandBuilder
 from .crypto_backend import CryptoBackend as Crypt
-from .models import OnboardingProcess, ManualOnboardingProcess, OnboardingProcessState, onboarding_processes
+from .models import OnboardingProcess, DownloadOnboardingProcess, ManualOnboardingProcess, OnboardingProcessState, onboarding_processes
 
 if TYPE_CHECKING:
     from typing import List, Any
@@ -95,7 +95,48 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
            ):
             return redirect(self.redirection_view)
         
-        return render(request, self.template_name, context={})
+        device = self.device
+
+        # check if onboarding process for this device already exists
+        onboarding_process = OnboardingProcess.get_by_device(device)
+
+        if not onboarding_process:
+            onboarding_process = DownloadOnboardingProcess(device)
+            onboarding_processes.append(onboarding_process)
+            device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_RUNNING
+            # TODO(Air): very unnecessary save required to update onboarding status in table
+            # Problem: if server is restarted during onboarding, status is stuck at running
+            device.save()
+
+        messages.warning(request, 'Keep the PKCS12 file secure! It contains the private key of the device.')
+        
+        context = {
+            'page_category': 'onboarding',
+            'page_name': 'download',
+            'url': onboarding_process.url,
+            'sn': device.serial_number,
+            'device_name': device.device_name,
+            'device_id': device.id,
+        }
+        
+        return render(request, self.template_name, context)
+    
+class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
+    """View for downloading the PKCS12 file of a device."""
+
+    redirection_view = 'devices:devices'
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """View for downloading the PKCS12 file of a device."""
+        if not self.get_device(request) or self.device.onboarding_protocol != Device.OnboardingProtocol.MANUAL:
+            return HttpResponse('Not found.', status=404)
+        
+        device = self.device
+        onboarding_process = OnboardingProcess.get_by_device(device)
+        if not onboarding_process or not onboarding_process.pkcs12:
+            return HttpResponse('Not found.', status=404)
+
+        return HttpResponse(onboarding_process.get_pkcs12(), content_type='application/x-pkcs12')
 
 class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
     """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
@@ -105,10 +146,15 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
         if (not self.get_device(request) or not self.check_onboarding_prerequisites(request,
-                [Device.OnboardingProtocol.CLI, Device.OnboardingProtocol.TP_CLIENT])
+                [Device.OnboardingProtocol.CLI,
+                 Device.OnboardingProtocol.TP_CLIENT,
+                 Device.OnboardingProtocol.MANUAL])
            ):
             return redirect(self.redirection_view)
         device = self.device
+
+        if device.onboarding_protocol == Device.OnboardingProtocol.MANUAL:
+            return ManualDownloadView.as_view()(request, *args, **kwargs)
 
         # check if onboarding process for this device already exists
         onboarding_process = OnboardingProcess.get_by_device(device)
@@ -243,7 +289,13 @@ class GetOnboardingProcessMixin:
     def get_onboarding_process(self: GetOnboardingProcessMixin, *,
                                accept_inactive: bool = False) -> OnboardingProcess | None:
         """Gets the onboarding process from the URL extension."""
-        onboarding_process = OnboardingProcess.get_by_url_ext(self.kwargs['url_ext'])
+        onboarding_process = None
+        if 'url_ext' in self.kwargs:
+            onboarding_process = OnboardingProcess.get_by_url_ext(self.kwargs['url_ext'])
+        if 'device_id' in self.kwargs:
+            device = Device.get_by_id(self.kwargs['device_id'])
+            if device:
+                onboarding_process = OnboardingProcess.get_by_device(device)
         if (not onboarding_process
             or (not onboarding_process.active and not accept_inactive)):
             raise Http404('Invalid URI extension.')

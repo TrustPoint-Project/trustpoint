@@ -22,4 +22,5 @@ urlpatterns = [
     path('api/ldevid/<str:url_ext>', views.LDevIDView.as_view(), name='api-ldevid-noslash'),
     path('api/state/<str:url_ext>/', views.StateView.as_view(), name='api-state'),
     path('api/state/<str:url_ext>', views.StateView.as_view(), name='api-state-noslash'),
+    path('api/download/p12/<int:device_id>/', views.P12DownloadView.as_view(), name='api-p12-download'),
 ]

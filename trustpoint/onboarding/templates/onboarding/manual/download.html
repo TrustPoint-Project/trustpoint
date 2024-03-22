@@ -12,7 +12,19 @@
             <h1>Download certificate for device {{ device_name }}</h1>
         </div>
         <div class="card-body tp-main-centered pt-3 pb-4">
-            <h2>Download</h2>
+            <div id="onboarding-state-dl" class="alert alert-info d-flex align-items-center mt-3 breathing-anim dl" role="alert">  
+                <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
+                <div>Fetching state from server...</div>                
+            </div>
+            <h2>Download PKCS12 key and certificate</h2>
+            <div class="text-center">
+              <a href="{% url 'onboarding:api-p12-download' device_id %}" download="{{ device_name }}.p12" class="btn btn-primary mt-2 w-50">Download PKCS12</a>
+            </div>
+            <hr>
+            <h2>Keypair in PEM format</h2>
+            <hr>
+            <h2>LDevID certificate</h2>
+            
         </div>
         <div class="card-footer text-body-secondary">
             <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Back</a>

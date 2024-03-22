@@ -13,7 +13,8 @@ from typing import TYPE_CHECKING
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.serialization import pkcs12
+from cryptography.hazmat.primitives.serialization import pkcs12, NoEncryption
+from cryptography.hazmat.primitives.asymmetric import ec
 from django.core.files.base import ContentFile
 from util.strings import StringValidator
 
@@ -103,23 +104,61 @@ class CryptoBackend:
             ca_chain = ca_p12[2:]
 
         return private_ca_key, ca_cert, ca_chain
+    
+    @staticmethod
+    def _sign_ldevid(pub_key: CertificatePublicKeyTypes, device: Device) -> Certificate:
+        if not device.serial_number:
+            exc_msg = 'No serial number provided.'
+            raise OnboardingError(exc_msg)
+
+        subject = x509.Name([
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'ldevid.trustpoint.local'),
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.serial_number)
+        ])
+
+        private_ca_key, ca_cert, _ = CryptoBackend._get_ca_p12(device)
+
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(subject)
+            .issuer_name(ca_cert.subject)
+            .public_key(pub_key)
+            .serial_number(x509.random_serial_number())  # This is NOT the device serial number
+            .not_valid_before(
+                datetime.now(timezone.utc) - timedelta(hours=1)  # backdate a bit in case of client clock skew
+            )
+            .not_valid_after(
+                # TODO(Air): configurable validity period
+                datetime.now(timezone.utc) + timedelta(days=365)
+                # Sign our certificate with our private key
+            )
+            .sign(private_ca_key, hashes.SHA256())
+        )
+
+        device.ldevid = ContentFile(cert.public_bytes(serialization.Encoding.PEM), name='ldevid.pem')
+        # need to keep track of the device once we send out a cert, even if onboarding fails afterwards
+        # TODO(Air): but do it here?
+        device.save()
+
+        return cert
+
 
     @staticmethod
-    def sign_ldevid(csr_str: bytes, device: Device) -> bytes:
+    def sign_ldevid_from_csr(csr_pem: bytes, device: Device) -> bytes:
         """Signs a certificate signing request (CSR) with the onboarding CA.
 
         Args:
             csr_str (bytes):
-                The certificate signing request as a string in PEM format.
+                The certificate signing request as bytes in PEM format.
             device (Device):
                 The Device to associate the signed certificate with.
 
-        Returns: The signed certificate as a string in PEM format.
+        Returns: The signed certificate as bytes in PEM format.
 
         Raises:
             OnboardingError: If the onboarding CA is not configured or not available.
         """
-        csr = x509.load_pem_x509_csr(csr_str)
+        csr = x509.load_pem_x509_csr(csr_pem)
 
         try:
             csr_serial = csr.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value
@@ -136,38 +175,9 @@ class CryptoBackend:
             exc_msg = 'CSR serial number does not match device serial number.'
             raise OnboardingError(exc_msg)
         serial_no = device.serial_number or csr_serial
-
-        subject = x509.Name([
-            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'ldevid.trustpoint.local'),
-            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, serial_no)
-        ])
-
-        private_ca_key, ca_cert, _ = CryptoBackend._get_ca_p12(device)
-
-        cert = (
-            x509.CertificateBuilder()
-            .subject_name(subject)
-            .issuer_name(ca_cert.subject)
-            .public_key(csr.public_key())
-            .serial_number(x509.random_serial_number())  # This is NOT the device serial number
-            .not_valid_before(
-                datetime.now(timezone.utc) - timedelta(hours=1)  # backdate a bit in case of client clock skew
-            )
-            .not_valid_after(
-                # TODO(Air): configurable validity period
-                datetime.now(timezone.utc) + timedelta(days=365)
-                # Sign our certificate with our private key
-            )
-            .sign(private_ca_key, hashes.SHA256())
-        )
-
-        device.ldevid = ContentFile(cert.public_bytes(serialization.Encoding.PEM), name='ldevid.pem')
         device.serial_number = serial_no
-        # need to keep track of the device once we send out a cert, even if onboarding fails afterwards
-        # TODO(Air): but do it here?
-        device.save()
 
-        return cert.public_bytes(serialization.Encoding.PEM)
+        return CryptoBackend._sign_ldevid(csr.public_key(), device).public_bytes(serialization.Encoding.PEM)
 
     @staticmethod
     def get_cert_chain(device: Device) -> bytes:
@@ -181,3 +191,40 @@ class CryptoBackend:
         _, ca_cert, _ = CryptoBackend._get_ca_p12(device)
 
         return ca_cert.public_bytes(serialization.Encoding.PEM)
+    
+    @staticmethod
+    def _gen_private_key() -> PrivateKeyTypes:
+        """Generates a keypair for the device.
+
+        Returns: The keypair as PrivateKeyType.
+        """
+        # TODO (Air): Need to add configurable key type and size here
+        private_key = ec.generate_private_key(
+            ec.SECP256R1()
+        )
+        return private_key
+    
+    @staticmethod
+    def gen_keypair_and_ldevid(device: Device) -> bytes:
+        """Generates a keypair and LDevID certificate for the device.
+
+        Returns: The keypair and LDevID certificate as bytes in PEM format.
+
+        Raises:
+            OnboardingError: If the keypair generation or LDevID signing fails.
+        """
+        private_key = CryptoBackend._gen_private_key()
+
+        ldevid = CryptoBackend._sign_ldevid(private_key.public_key(), device)
+
+        _, ca_cert, _ = CryptoBackend._get_ca_p12(device)
+
+        pkcs12 = serialization.pkcs12.serialize_key_and_certificates(
+            name=device.serial_number.encode(),
+            key=private_key,
+            cert=ldevid,
+            cas=[ca_cert],
+            encryption_algorithm=NoEncryption()
+        )
+
+        return pkcs12
