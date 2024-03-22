@@ -391,7 +391,7 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
 }
 
 .theme-toggle {
-    padding: 5px;
+    padding: 6px 0 0 6px;
     cursor: pointer;
 }
 

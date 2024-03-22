@@ -10,6 +10,7 @@ from . import views
 app_name = 'onboarding'
 urlpatterns = [
     path('<int:device_id>/', views.ManualOnboardingView.as_view(), name='manual-client'),
+    path('download/<int:device_id>/', views.ManualDownloadView.as_view(), name='manual-download'),
     path('exit/<int:device_id>/', views.OnboardingExitView.as_view(), name='exit'),
     path('revoke/<int:device_id>/', views.OnboardingRevocationView.as_view(), name='revoke'),
     # duplicate required due to trailing slash not being added automatically for POST and cURL requests

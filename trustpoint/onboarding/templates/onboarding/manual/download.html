@@ -1,0 +1,22 @@
+{% extends 'trustpoint/base.html' %}
+{% load crispy_forms_filters %}
+{% load static %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
+    <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:exit' device_id %}"</script>
+    <script src="{% static 'js/onboarding.js' %}"></script>
+{% endblock head %}
+{% block content %}
+    <div class="card card-main text-center">
+        <div class="card-header d-flex">
+            <h1>Download certificate for device {{ device_name }}</h1>
+        </div>
+        <div class="card-body tp-main-centered pt-3 pb-4">
+            <h2>Download</h2>
+        </div>
+        <div class="card-footer text-body-secondary">
+            <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Back</a>
+            <a href="{% url 'onboarding:exit' device_id %}" class="btn btn-danger">Cancel</a>
+        </div>
+    </div>
+{% endblock content %}

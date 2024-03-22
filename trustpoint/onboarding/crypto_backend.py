@@ -65,7 +65,7 @@ class CryptoBackend:
         Raises:
             FileNotFoundError: If the trust store file is not found.
         """
-        with Path('../tests/data/x509/https_server.crt').open() as certfile:
+        with Path('../tests/data/x509/https_server4.crt').open() as certfile:
             return certfile.read()
 
     @staticmethod

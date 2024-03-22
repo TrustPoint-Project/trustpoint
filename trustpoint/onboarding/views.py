@@ -21,58 +21,100 @@ from django.utils.decorators import method_decorator
 
 from .cli_builder import CliCommandBuilder
 from .crypto_backend import CryptoBackend as Crypt
-from .models import OnboardingProcess, OnboardingProcessState, onboarding_processes
+from .models import OnboardingProcess, ManualOnboardingProcess, OnboardingProcessState, onboarding_processes
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import List, Any
 
     from django.http import HttpRequest
 
+class OnboardingUtilMixin:
+    """Mixin for checking onboarding prerequisits."""
 
-class ManualOnboardingView(TpLoginRequiredMixin, DetailView):
-    """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
+    def get_device(self, request: HttpRequest) -> bool:
+        """Adds the device attribute to self, adds an error message if it does not exist."""
 
-    template_name = 'onboarding/manual/client.html'
-    model = Device
-    category = 'Onboarding'
-    redirection_view = 'devices:devices'
-    context_object_name = 'device'
-    pk_url_kwarg = 'device_id'
+        try:
+            device_id = self.kwargs['device_id']
+        except KeyError:
+            messages.error(request, 'Onboarding: device_id kwarg not provided.')
+            return False
+        
+        self.device = Device.get_by_id(device_id)
+        if not self.device:
+            messages.error(request, f'Onboarding: Device with ID {device_id} not found.')
+            return False
+        return True
+    
+    def check_onboarding_prerequisites(self, request: HttpRequest,
+                                       allowed_onboarding_protocols: List[Device.OnboardingProtocol]) -> bool:
+        """Checks if criteria for starting the onboarding process are met."""
 
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
-        device = self.get_object()
+        device = self.device
 
         if not device:
-            messages.error(request, f'Onboarding: Device with ID {kwargs["device_id"]} not found.')
-            return redirect(self.redirection_view)
+            messages.error(request, f'Onboarding: Device with ID {self.kwargs['device_id']} not found.')
+            return False
 
-        # choose the onboarding method for this device
-        if device.onboarding_protocol not in {Device.OnboardingProtocol.CLIENT, Device.OnboardingProtocol.MANUAL}:
+        if not device.endpoint_profile:
+            messages.error(request,
+                f'Onboarding: Please select an endpoint profile for device {device.device_name} first.')
+            return False
+        if not device.endpoint_profile.issuing_ca:
+            messages.error(request,
+                f'Onboarding: Endpoint profile {device.endpoint_profile.unique_name} has no issuing CA set.')
+            return False
+        
+        if device.onboarding_protocol not in allowed_onboarding_protocols:
             try:
                 label = Device.OnboardingProtocol(device.onboarding_protocol).label
             except ValueError:
                 messages.error(request, 'Onboarding: Please select a valid onboarding protocol.')
-                return redirect(self.redirection_view)
+                return False
 
             messages.error(request, f'Onboarding protocol {label} is not implemented.')
-            return redirect(self.redirection_view)
-
-        # check that endpoint profile is set
-        if not device.endpoint_profile:
-            messages.error(
-                request,
-                f'Onboarding: Please select an endpoint profile for device {device.device_name} first.')
-            return redirect(self.redirection_view)
-
+            return False
+        
         # TODO(Air): check that device is not already onboarded
         # Re-onboarding might be a valid use case, e.g. to renew a certificate
+
+        return True
+
+
+class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView):
+    """View for downloading the certificate, and if applicable, the private key of a device."""
+    
+    template_name = 'onboarding/manual/download.html'
+    redirection_view = 'devices:devices'
+    context_object_name = 'device'
+    
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """View for downloading the certificate, and if applicable, the private key of a device."""
+        if (not self.get_device(request)
+            or not self.check_onboarding_prerequisites(request, [Device.OnboardingProtocol.MANUAL])
+           ):
+            return redirect(self.redirection_view)
+        
+        return render(request, self.template_name, context={})
+
+class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
+    """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
+
+    redirection_view = 'devices:devices'
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
+        if (not self.get_device(request) or not self.check_onboarding_prerequisites(request,
+                [Device.OnboardingProtocol.CLI, Device.OnboardingProtocol.TP_CLIENT])
+           ):
+            return redirect(self.redirection_view)
+        device = self.device
 
         # check if onboarding process for this device already exists
         onboarding_process = OnboardingProcess.get_by_device(device)
 
         if not onboarding_process:
-            onboarding_process = OnboardingProcess(device)
+            onboarding_process = ManualOnboardingProcess(device)
             onboarding_processes.append(onboarding_process)
             device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_RUNNING
             # TODO(Air): very unnecessary save required to update onboarding status in table
@@ -82,22 +124,22 @@ class ManualOnboardingView(TpLoginRequiredMixin, DetailView):
         context = {
             'page_category': 'onboarding',
             'page_name': 'manual',
-            'otp':onboarding_process.otp,
-            'salt':onboarding_process.salt,
-            'tsotp':onboarding_process.tsotp,
-            'tssalt':onboarding_process.tssalt,
+            'otp': onboarding_process.otp,
+            'salt': onboarding_process.salt,
+            'tsotp': onboarding_process.tsotp,
+            'tssalt': onboarding_process.tssalt,
             'host': request.get_host(),
-            'url':onboarding_process.url,
-            'sn':device.serial_number,
-            'device_name':device.device_name,
-            'device_id':device.id,
+            'url': onboarding_process.url,
+            'sn': device.serial_number,
+            'device_name': device.device_name,
+            'device_id': device.id,
         }
 
-        if device.onboarding_protocol == Device.OnboardingProtocol.CLIENT:
+        if device.onboarding_protocol == Device.OnboardingProtocol.TP_CLIENT:
             context['cmd_0'] = CliCommandBuilder.trustpoint_client_provision(context)
             return render(request, 'onboarding/manual/client.html', context=context)
 
-        if device.onboarding_protocol == Device.OnboardingProtocol.MANUAL:
+        if device.onboarding_protocol == Device.OnboardingProtocol.CLI:
             context['cmd_1'] = [CliCommandBuilder.cli_mkdir_trustpoint()]
             context['cmd_1'].append(CliCommandBuilder.cli_get_trust_store(context))
             context['cmd_1'].append(CliCommandBuilder.cli_get_header_hmac())

@@ -48,16 +48,8 @@ class OnboardingProcess:
         """
         self.device = dev
         self.id = OnboardingProcess.id_counter
-        self.url = secrets.token_urlsafe(4)
-        self.otp = secrets.token_hex(8)
-        self.tsotp = secrets.token_hex(8)
-        self.salt = secrets.token_hex(8)
-        self.tssalt = secrets.token_hex(8)
-        self.hmac = None
         self.state = OnboardingProcessState.STARTED
         self.error_reason = ''
-        self.gen_thread = threading.Thread(target=self._calc_hmac)
-        self.gen_thread.start()
         self.timer = threading.Timer(onboarding_timeout, self._timeout)
         self.timer.start()
         self.active = True
@@ -112,6 +104,29 @@ class OnboardingProcess:
         self.device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDED
         self.device.save()
 
+    def _timeout(self) -> None:
+        """Cancels the onboarding process due to timeout, called by timer thread."""
+        self._fail('Process timed out.')
+
+    device = models.ForeignKey(Device, on_delete=models.CASCADE)
+    datetime_started = models.DateTimeField(auto_now_add=True)
+
+
+class ManualOnboardingProcess(OnboardingProcess):
+    """Onboarding process for a device using the full manual onboarding with OTP and HMAC trust store verification."""
+
+    def __init__(self, dev: Device) -> None:
+        """Initializes a new manual onboarding process for a device."""
+        super().__init__(dev)
+        self.url = secrets.token_urlsafe(4)
+        self.otp = secrets.token_hex(8)
+        self.tsotp = secrets.token_hex(8)
+        self.salt = secrets.token_hex(8)
+        self.tssalt = secrets.token_hex(8)
+        self.gen_thread = threading.Thread(target=self._calc_hmac)
+        self.gen_thread.start()
+        self.hmac = None
+        
     def _calc_hmac(self) -> None:
         """Calculates the HMAC signature of the trust store.
 
@@ -174,13 +189,6 @@ class OnboardingProcess:
 
         self._success()
         return chain
-
-    def _timeout(self) -> None:
-        """Cancels the onboarding process due to timeout, called by timer thread."""
-        self._fail('Process timed out.')
-
-    device = models.ForeignKey(Device, on_delete=models.CASCADE)
-    datetime_started = models.DateTimeField(auto_now_add=True)
 
 
 onboarding_processes = []
