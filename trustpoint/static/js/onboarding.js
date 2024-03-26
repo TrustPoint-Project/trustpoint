@@ -42,6 +42,7 @@ function setOnboardingStateUI(state, iconUrl) {
   let icon = 'info-circle';
   let extraClasses = '';
   let navBack = false;
+  let isDL = document.querySelector('#onboarding-state-dl');
   switch (state) {
     case STARTED:
       type = 'info';
@@ -75,10 +76,16 @@ function setOnboardingStateUI(state, iconUrl) {
       extraClasses = 'breathing-anim';
       break;
     case LDEVID_SENT:
-      type = 'info';
-      message = '<strong>Step 3/3</strong> Sent signed certificate to client. Waiting for certificate chain request...';
-      icon = 'clock';
-      extraClasses = 'breathing-anim';
+      if (isDL) {
+        type = 'success';
+        message = 'PKCS12 ready for download.';
+        icon = 'success';
+      } else {
+        type = 'info';
+        message = '<strong>Step 3/3</strong> Sent signed certificate to client. Waiting for certificate chain request...';
+        icon = 'clock';
+        extraClasses = 'breathing-anim';
+      }
       var el = document.querySelector('#onboarding-state-2');
       if (!el) break;
       var type1 = 'success';
@@ -90,7 +97,6 @@ function setOnboardingStateUI(state, iconUrl) {
       var type2 = 'secondary';
       var message2 = 'Certificate chain not requested yet.';
       var icon2 = 'clock';
-      setOnboardingStateUIElement(el, iconUrl, type2, message2, icon2);
       break;
     case COMPLETED:
       type = 'success';
@@ -120,6 +126,7 @@ function setOnboardingStateUI(state, iconUrl) {
   if (navBack) { window.location.href = parentUrl; }
 
   var el = document.querySelector('#onboarding-state');
+  if (!el) el = document.querySelector('#onboarding-state-dl');
   setOnboardingStateUIElement(el, iconUrl, type, message, icon, extraClasses);
 }
 

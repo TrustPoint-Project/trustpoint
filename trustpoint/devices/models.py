@@ -39,8 +39,9 @@ class Device(models.Model):
     class OnboardingProtocol(models.TextChoices):
         """Supported Onboarding Protocols."""
 
-        MANUAL = 'MA', _('Manual (CLI)')
-        CLIENT = 'CL', _('Trustpoint Client')
+        MANUAL = 'MA', _('Manual download')
+        CLI = 'CI', _('Device CLI')
+        TP_CLIENT = 'TP', _('Trustpoint Client')
         BRSKI = 'BR', _('BRSKI')
         FIDO = 'FI', _('FIDO FDO')
 

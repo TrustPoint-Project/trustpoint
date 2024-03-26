@@ -48,16 +48,9 @@ class OnboardingProcess:
         """
         self.device = dev
         self.id = OnboardingProcess.id_counter
-        self.url = secrets.token_urlsafe(4)
-        self.otp = secrets.token_hex(8)
-        self.tsotp = secrets.token_hex(8)
-        self.salt = secrets.token_hex(8)
-        self.tssalt = secrets.token_hex(8)
-        self.hmac = None
         self.state = OnboardingProcessState.STARTED
         self.error_reason = ''
-        self.gen_thread = threading.Thread(target=self._calc_hmac)
-        self.gen_thread.start()
+        self.url = secrets.token_urlsafe(4)
         self.timer = threading.Timer(onboarding_timeout, self._timeout)
         self.timer.start()
         self.active = True
@@ -112,6 +105,28 @@ class OnboardingProcess:
         self.device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDED
         self.device.save()
 
+    def _timeout(self) -> None:
+        """Cancels the onboarding process due to timeout, called by timer thread."""
+        self._fail('Process timed out.')
+
+    device = models.ForeignKey(Device, on_delete=models.CASCADE)
+    datetime_started = models.DateTimeField(auto_now_add=True)
+
+
+class ManualOnboardingProcess(OnboardingProcess):
+    """Onboarding process for a device using the full manual onboarding with OTP and HMAC trust store verification."""
+
+    def __init__(self, dev: Device) -> None:
+        """Initializes a new manual onboarding process for a device."""
+        super().__init__(dev)
+        self.otp = secrets.token_hex(8)
+        self.tsotp = secrets.token_hex(8)
+        self.salt = secrets.token_hex(8)
+        self.tssalt = secrets.token_hex(8)
+        self.gen_thread = threading.Thread(target=self._calc_hmac)
+        self.gen_thread.start()
+        self.hmac = None
+
     def _calc_hmac(self) -> None:
         """Calculates the HMAC signature of the trust store.
 
@@ -150,7 +165,7 @@ class OnboardingProcess:
         if self.state != OnboardingProcessState.DEVICE_VALIDATED:
             return None
         try:
-            ldevid = Crypt.sign_ldevid(csr, self.device)
+            ldevid = Crypt.sign_ldevid_from_csr(csr, self.device)
         except Exception as e:
             self._fail(str(e))  # TODO(Air): is it safe to print exception messages to the user UI?
             raise
@@ -175,12 +190,33 @@ class OnboardingProcess:
         self._success()
         return chain
 
-    def _timeout(self) -> None:
-        """Cancels the onboarding process due to timeout, called by timer thread."""
-        self._fail('Process timed out.')
 
-    device = models.ForeignKey(Device, on_delete=models.CASCADE)
-    datetime_started = models.DateTimeField(auto_now_add=True)
+class DownloadOnboardingProcess(OnboardingProcess):
+    """Onboarding process for a device using the download onboarding method."""
 
+    def __init__(self, dev: Device) -> None:
+        """Initializes a new download onboarding process for a device."""
+        super().__init__(dev)
+        self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
+        self.gen_thread.start()
+        self.pkcs12 = None
+
+    def _gen_keypair_and_ldevid(self) -> None:
+        """Generates a keypair and LDevID certificate for the device."""
+        try:
+            if not self.device.serial_number:
+                self.device.serial_number = 'tpdl_' + secrets.token_urlsafe(12)
+            self.pkcs12 = Crypt.gen_keypair_and_ldevid(self.device)
+            self.state = OnboardingProcessState.LDEVID_SENT
+        except Exception as e:  # noqa: BLE001
+            msg = 'Error generating device key or LDevID.'
+            self._fail(msg)
+            raise OnboardingError(msg) from e
+
+    def get_pkcs12(self) -> bytes | None:
+        """Returns the keypair and LDevID certificate as PKCS12 serialized bytes and ends the onboarding process."""
+        self.gen_thread.join()
+        self._success()
+        return self.pkcs12
 
 onboarding_processes = []
