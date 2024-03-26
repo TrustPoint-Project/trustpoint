@@ -18,16 +18,19 @@
 
 :root {
     --trustpoint-ci: #014bad;
+    --trustpoint-dark-test: #0a74ff;
+    --tp-font-weight: 550;
+    --tp-font-weight-h: 600; /* Used for headers and buttons */
 }
 
 body {
     font-family: 'tpQuicksand', sans-serif;
-    font-weight: 500;
+    font-weight: var(--tp-font-weight);
 }
 
 .btn-toggle {
     padding: .25rem .5rem;
-    font-weight: 600;
+    font-weight: var(--tp-font-weight-h);
     color: var(--bs-emphasis-color);
     background-color: transparent;
 }
@@ -76,14 +79,22 @@ body {
     width: 16rem;
 }
 
+#tp-logo {
+    width: 180px;
+}
+
 #bs-override .btn
 {
-    font-weight: 550;
+    font-weight: var(--tp-font-weight-h);
+}
+
+#bs-override .form-select, #bs-override .form-control {
+    font-weight: var(--tp-font-weight);
 }
 
 #bs-override .btn-primary {
-    background-color: var(--trustpoint-ci);
-    border-color: var(--trustpoint-ci);
+    /* background-color: var(--trustpoint-ci);
+    border-color: var(--trustpoint-ci); */
 }       
 
 a {
@@ -106,25 +117,22 @@ a {
     color: #6c757d;
 }
 
-h1 {
-    font-size: 1.3rem;
-    font-weight: normal;
+h1, h2, h3 {
+    font-weight: var(--tp-font-weight-h);
     padding: 0;
     margin: 0;
+}
+
+h1 {
+    font-size: 1.3rem;
 }
 
 h2 {
     font-size: 1.2rem;
-    font-weight: normal;
-    padding: 0;
-    margin: 0;
 }
 
 h3 {
     font-size: 1.1rem;
-    font-weight: normal;
-    padding: 0;
-    margin: 0;
 }
 
 .tp-grid {
@@ -391,20 +399,22 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
 }
 
 .theme-toggle {
-    padding: 6px 0 0 6px;
+    display: flex;
+    align-items: center;
+    padding-left: 6px;
     cursor: pointer;
 }
 
 /* Theme-specific */
-svg.theme-icon {
+html[data-bs-theme="dark"] .light-only {
     display: none;
+}
+
+html[data-bs-theme="light"] .dark-only {
+    display: none;
+}
+
+svg.theme-icon {
+    display: inline;
     color: var(--bs-body-color);
-}
-
-html[data-bs-theme="dark"] svg.theme-icon-dark {
-    display: inline;
-}
-
-html[data-bs-theme="light"] svg.theme-icon-light {
-    display: inline;
 }
