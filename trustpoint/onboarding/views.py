@@ -5,26 +5,30 @@ from __future__ import annotations
 import base64
 from typing import TYPE_CHECKING, Any
 
-from django.http.request import HttpRequest as HttpRequest
-
 from devices.models import Device
 from django.contrib import messages
-from django.http import HttpResponse, Http404
+from django.http import Http404, HttpResponse
+from django.http.request import HttpRequest
 from django.shortcuts import redirect, render
-from django.views.generic import View, TemplateView, DetailView, RedirectView
-from django.views.decorators.csrf import csrf_exempt
-from django.contrib.auth.decorators import login_required
-from trustpoint.views import TpLoginRequiredMixin
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.urls import reverse
 from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from django.views.generic import DetailView, RedirectView, TemplateView, View
+
+from trustpoint.views import TpLoginRequiredMixin
 
 from .cli_builder import CliCommandBuilder
 from .crypto_backend import CryptoBackend as Crypt
-from .models import OnboardingProcess, DownloadOnboardingProcess, ManualOnboardingProcess, OnboardingProcessState, onboarding_processes
+from .models import (
+    DownloadOnboardingProcess,
+    ManualOnboardingProcess,
+    OnboardingProcess,
+    OnboardingProcessState,
+    onboarding_processes,
+)
 
 if TYPE_CHECKING:
-    from typing import List, Any, Type, TypeVar
+    from typing import Any, TypeVar
 
     from django.http import HttpRequest
 
@@ -33,23 +37,21 @@ class OnboardingUtilMixin:
 
     def get_device(self, request: HttpRequest) -> bool:
         """Adds the device attribute to self, adds an error message if it does not exist."""
-
         try:
             device_id = self.kwargs['device_id']
         except KeyError:
             messages.error(request, 'Onboarding: device_id kwarg not provided.')
             return False
-        
+
         self.device = Device.get_by_id(device_id)
         if not self.device:
             messages.error(request, f'Onboarding: Device with ID {device_id} not found.')
             return False
         return True
-    
-    def check_onboarding_prerequisites(self, request: HttpRequest,
-                                       allowed_onboarding_protocols: List[Device.OnboardingProtocol]) -> bool:
-        """Checks if criteria for starting the onboarding process are met."""
 
+    def check_onboarding_prerequisites(self, request: HttpRequest,
+                                       allowed_onboarding_protocols: list[Device.OnboardingProtocol]) -> bool:
+        """Checks if criteria for starting the onboarding process are met."""
         device = self.device
 
         if not device:
@@ -64,7 +66,7 @@ class OnboardingUtilMixin:
             messages.error(request,
                 f'Onboarding: Endpoint profile {device.endpoint_profile.unique_name} has no issuing CA set.')
             return False
-        
+
         if device.onboarding_protocol not in allowed_onboarding_protocols:
             try:
                 label = Device.OnboardingProtocol(device.onboarding_protocol).label
@@ -74,16 +76,23 @@ class OnboardingUtilMixin:
 
             messages.error(request, f'Onboarding protocol {label} is not implemented.')
             return False
-        
+
         # TODO(Air): check that device is not already onboarded
         # Re-onboarding might be a valid use case, e.g. to renew a certificate
 
         return True
-    
-    if TYPE_CHECKING:
-        O = TypeVar('O', bound=OnboardingProcess)
-    def make_onboarding_process(self, process_type: Type[O]) -> O:
 
+    if TYPE_CHECKING:
+        OnboardingProcessTypes = TypeVar('OnboardingProcessTypes', bound=OnboardingProcess)
+    def make_onboarding_process(self, process_type: type[OnboardingProcessTypes]) -> OnboardingProcessTypes:
+        """Returns the onboarding process for the device, creates a new one if it does not exist.
+
+        Args:
+            process_type (classname): The (class) type of the onboarding process to create.
+
+        Returns:
+            OnboardingProcessTypes: The onboarding process instance for the device.
+        """
         # check if onboarding process for this device already exists
         onboarding_process = OnboardingProcess.get_by_device(self.device)
 
@@ -100,24 +109,24 @@ class OnboardingUtilMixin:
 
 class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView):
     """View for downloading the certificate, and if applicable, the private key of a device."""
-    
+
     template_name = 'onboarding/manual/download.html'
     redirection_view = 'devices:devices'
     context_object_name = 'device'
-    
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        """View for downloading the certificate, and if applicable, the private key of a device."""
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+        """Renders a template view for downloading certificate data."""
         if (not self.get_device(request)
             or not self.check_onboarding_prerequisites(request, [Device.OnboardingProtocol.MANUAL])
            ):
             return redirect(self.redirection_view)
-        
+
         device = self.device
 
         onboarding_process = self.make_onboarding_process(DownloadOnboardingProcess)
 
         messages.warning(request, 'Keep the PKCS12 file secure! It contains the private key of the device.')
-        
+
         context = {
             'page_category': 'onboarding',
             'page_name': 'download',
@@ -126,19 +135,19 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
             'device_name': device.device_name,
             'device_id': device.id,
         }
-        
+
         return render(request, self.template_name, context)
-    
+
 class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
     """View for downloading the PKCS12 file of a device."""
 
     redirection_view = 'devices:devices'
 
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        """View for downloading the PKCS12 file of a device."""
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+        """GET method that returns the PKCS12 file of a device."""
         if not self.get_device(request) or self.device.onboarding_protocol != Device.OnboardingProtocol.MANUAL:
             return HttpResponse('Not found.', status=404)
-        
+
         device = self.device
         onboarding_process = OnboardingProcess.get_by_device(device)
         if not onboarding_process or not onboarding_process.pkcs12:
@@ -152,7 +161,12 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
     redirection_view = 'devices:devices'
 
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
+        """GET method that selects the appropriate view based on the onboarding protocol.
+
+        Args: device_id (int kwarg): The ID of the device to onboard.
+
+        Returns: The rendered view for the onboarding process.
+        """
         if (not self.get_device(request) or not self.check_onboarding_prerequisites(request,
                 [Device.OnboardingProtocol.CLI,
                  Device.OnboardingProtocol.TP_CLIENT,
@@ -202,30 +216,31 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
 
 
 class Detail404RedirectionMessageView(DetailView):
-    """A detail view that redirects to the devices page on 404 and adds a message."""
+    """A detail view that redirects to self.redirection_view on 404 and adds a message."""
 
-    def __init__(self, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        if not hasattr(self, 'category'): self.category = 'Error'
-
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any):
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Overrides the get method to add a message and redirect to self.redirection_view on 404."""
         try:
             return super().get(request, *args, **kwargs)
         except Http404:
+            if not hasattr(self, 'category'):
+                self.category = 'Error'
             messages.error(self.request,
                            f'{self.category}: {self.model.__name__} with ID {kwargs[self.pk_url_kwarg]} not found.')
             return redirect(self.redirection_view)
-        
+
 
 class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
     """View for canceling the onboarding process."""
 
     category = 'Onboarding'
 
-    def get_redirect_url(self, **kwargs: Any):
+    def get_redirect_url(self, **kwargs: Any) -> str: # noqa: ARG002
+        """Redirects to the devices page after canceling the onboarding process."""
         return reverse('devices:devices')
-    
-    def _cancel(self, request: HttpRequest, device_id: int):
+
+    def _cancel(self, request: HttpRequest, device_id: int) -> None:
+        """Cancels the onboarding process for a device."""
         device = Device.get_by_id(device_id)
         if not device:
             messages.error(request, f'Onboarding: Device with ID {device_id} not found.')
@@ -252,6 +267,7 @@ class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
             # TODO(Air): Delete device and add to CRL.
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Overrides the dispatch method to additionally call the _cancel method."""
         self._cancel(request, kwargs['device_id'])
         return super().dispatch(request, *args, **kwargs)
 
@@ -265,8 +281,13 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
     context_object_name = 'device'
     pk_url_kwarg = 'device_id'
 
-    def post(self, request: HttpRequest, *args: Any, **kwargs: Any):
-        """Revokes the LDevID certificate for a device."""
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+        """Revokes the LDevID certificate for a device.
+
+        Input: device_id (int kwarg, optional): The ID of the device whose certificate to revoke.
+
+        Redirects to the device details view.
+        """
         device = self.get_object() # don't need error handling, will return 404 if missing
 
         if device.ldevid:
@@ -280,14 +301,22 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
         else:
             messages.warning(request, f'Device {device.device_name} has no LDevID certificate to revoke.')
         return redirect(self.redirection_view)
-    
+
 
 class GetOnboardingProcessMixin:
-    """Mixin for getting the onboarding process from the URL extension."""
+    """Mixin for getting the onboarding process from request URL arguments."""
 
     def get_onboarding_process(self: GetOnboardingProcessMixin, *,
                                accept_inactive: bool = False) -> OnboardingProcess | None:
-        """Gets the onboarding process from the URL extension."""
+        """Gets the onboarding process from either the URL extension or device ID.
+
+        Args:
+            accept_inactive (bool kwarg): Whether to also return an inactive onboarding process (e.g. for status).
+            url_ext (str kwarg, optional): The URL extension of the onboarding process.
+            device_id (int kwarg, optional): The ID of the device the onboarding process is associated with.
+
+        Returns: The onboarding process or None if not found.
+        """
         onboarding_process = None
         if 'url_ext' in self.kwargs:
             onboarding_process = OnboardingProcess.get_by_url_ext(self.kwargs['url_ext'])
@@ -297,23 +326,22 @@ class GetOnboardingProcessMixin:
                 onboarding_process = OnboardingProcess.get_by_device(device)
         if (not onboarding_process
             or (not onboarding_process.active and not accept_inactive)):
-            raise Http404('Invalid URI extension.')
+            exc_msg = 'Invalid URI extension.'
+            raise Http404(exc_msg)
         return onboarding_process
-    
+
 class TrustStoreView(GetOnboardingProcessMixin, View):
-    """View for the trust store API endpoint.
+    """View for the trust store API endpoint."""
 
-    Request type: GET
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+        """Returns the trust store and HMAC signature.
 
-    Inputs: Onbarding process URL extension (str, in request path, unused here)
+        Inputs: Onbarding process URL extension (in request path) as kwarg 'url_ext': str
 
-    Returns:
-        Trust store (in response body)
-        HMAC signature of trust store (in response header)
-    """
-
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        """Returns the trust store and HMAC signature."""
+        Returns:
+            HttpResponse with the TLS Trust Store as the response body
+            HMAC signature of the Trust Store as a response header.
+        """
         onboarding_process = self.get_onboarding_process()
         try:
             trust_store = Crypt.get_trust_store()
@@ -330,19 +358,17 @@ class TrustStoreView(GetOnboardingProcessMixin, View):
 
 @method_decorator(csrf_exempt, name='dispatch')
 class LDevIDView(GetOnboardingProcessMixin, View):
-    """View for the LDevID API endpoint.
+    """View for the LDevID API endpoint."""
 
-    Request type: POST
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+        """Handles the LDevID certificate signing request.
 
-    Inputs:
-        Onbarding process URL extension (in request path)
-        Certificate signing request (as POST file ldevid.csr)
+        Inputs:
+            Onbarding process URL extension (in request path)
+            Certificate signing request (as POST file ldevid.csr)
 
-    Returns: LDevID certificate chain (in response body)
-    """
-
-    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        """Handles the LDevID certificate signing request."""
+        Returns: LDevID certificate chain (in response body)
+        """
         onboarding_process = self.get_onboarding_process()
         # only ever allow one set of credentials to be submitted
         if (
@@ -373,22 +399,20 @@ class LDevIDView(GetOnboardingProcessMixin, View):
                 return HttpResponse('Invalid URI extension.', status=404)
 
         response = HttpResponse(status=401)
-        response['WWW-Authenticate'] = 'Basic realm="%s"' % kwargs["url_ext"]
+        response['WWW-Authenticate'] = 'Basic realm="%s"' % kwargs['url_ext']
         return response
-    
+
 
 class CertChainView(GetOnboardingProcessMixin, View):
-    """View for the LDevID certificate chain API endpoint.
+    """View for the LDevID certificate chain API endpoint."""
 
-    Request type: GET
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+        """Returns the LDevID certificate chain.
 
-    Inputs: Onbarding process URL extension (in request path)
+        Inputs: Onbarding process URL extension (in request path) as kwarg 'url_ext': str
 
-    Returns: LDevID certificate chain (in response body)
-    """
-
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        """Returns the LDevID certificate chain."""
+        Returns: HttpResponse with Onboarding process state as an integer (representing OnboardingProcessState enum)
+        """
         onboarding_process = self.get_onboarding_process()
         chain = onboarding_process.get_cert_chain()
 
@@ -406,17 +430,15 @@ class CertChainView(GetOnboardingProcessMixin, View):
 
 
 class StateView(GetOnboardingProcessMixin, TpLoginRequiredMixin, View):
-    """View for the onboarding process state API endpoint.
+    """View for the onboarding process state API endpoint."""
 
-    Request type: GET
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+        """Returns the onboarding process state.
 
-    Inputs: Onbarding process URL extension (in request path)
+        Inputs: Onbarding process URL extension (in request path) as kwarg 'url_ext': str
 
-    Returns: Onboarding process state as an integer (representing OnboardingProcessState enum, in response body)
-    """
-
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        """Returns the onboarding process state."""
+        Returns: HttpResponse with Onboarding process state as an integer (representing OnboardingProcessState enum)
+        """
         try:
             onboarding_process = self.get_onboarding_process(accept_inactive=True)
         except Http404:

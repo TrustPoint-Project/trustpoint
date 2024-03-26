@@ -126,7 +126,7 @@ class ManualOnboardingProcess(OnboardingProcess):
         self.gen_thread = threading.Thread(target=self._calc_hmac)
         self.gen_thread.start()
         self.hmac = None
-        
+
     def _calc_hmac(self) -> None:
         """Calculates the HMAC signature of the trust store.
 
@@ -189,7 +189,7 @@ class ManualOnboardingProcess(OnboardingProcess):
 
         self._success()
         return chain
-    
+
 
 class DownloadOnboardingProcess(OnboardingProcess):
     """Onboarding process for a device using the download onboarding method."""
@@ -208,14 +208,15 @@ class DownloadOnboardingProcess(OnboardingProcess):
                 self.device.serial_number = 'tpdl_' + secrets.token_urlsafe(12)
             self.pkcs12 = Crypt.gen_keypair_and_ldevid(self.device)
             self.state = OnboardingProcessState.LDEVID_SENT
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             msg = 'Error generating device key or LDevID.'
             self._fail(msg)
             raise OnboardingError(msg) from e
 
     def get_pkcs12(self) -> bytes | None:
-        """Returns the keypair and LDevID certificate as PKCS12 serialized bytes."""
+        """Returns the keypair and LDevID certificate as PKCS12 serialized bytes and ends the onboarding process."""
         self.gen_thread.join()
+        self._success()
         return self.pkcs12
 
 onboarding_processes = []

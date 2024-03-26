@@ -13,13 +13,13 @@ from typing import TYPE_CHECKING
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.serialization import pkcs12, NoEncryption
 from cryptography.hazmat.primitives.asymmetric import ec
+from cryptography.hazmat.primitives.serialization import NoEncryption, pkcs12
 from django.core.files.base import ContentFile
 from util.strings import StringValidator
 
 if TYPE_CHECKING:
-    from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
+    from cryptography.hazmat.primitives.asymmetric.types import CertificatePublicKeyTypes, PrivateKeyTypes
     from cryptography.x509 import Certificate
     from devices.models import Device
 
@@ -66,7 +66,7 @@ class CryptoBackend:
         Raises:
             FileNotFoundError: If the trust store file is not found.
         """
-        with Path('../tests/data/x509/https_server4.crt').open() as certfile:
+        with Path('../tests/data/x509/https_server.crt').open() as certfile:
             return certfile.read()
 
     @staticmethod
@@ -104,7 +104,7 @@ class CryptoBackend:
             ca_chain = ca_p12[2:]
 
         return private_ca_key, ca_cert, ca_chain
-    
+
     @staticmethod
     def _sign_ldevid(pub_key: CertificatePublicKeyTypes, device: Device) -> Certificate:
         if not device.serial_number:
@@ -148,7 +148,7 @@ class CryptoBackend:
         """Signs a certificate signing request (CSR) with the onboarding CA.
 
         Args:
-            csr_str (bytes):
+            csr_pem (bytes):
                 The certificate signing request as bytes in PEM format.
             device (Device):
                 The Device to associate the signed certificate with.
@@ -191,7 +191,7 @@ class CryptoBackend:
         _, ca_cert, _ = CryptoBackend._get_ca_p12(device)
 
         return ca_cert.public_bytes(serialization.Encoding.PEM)
-    
+
     @staticmethod
     def _gen_private_key() -> PrivateKeyTypes:
         """Generates a keypair for the device.
@@ -203,7 +203,7 @@ class CryptoBackend:
             ec.SECP256R1()
         )
         return private_key
-    
+
     @staticmethod
     def gen_keypair_and_ldevid(device: Device) -> bytes:
         """Generates a keypair and LDevID certificate for the device.
