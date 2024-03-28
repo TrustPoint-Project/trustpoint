@@ -119,3 +119,32 @@ function deleteSelected() {
         window.location.href = url_path;
     }
 }
+
+// ---------------------------------------- Side nav menu collapsing ----------------------------------------
+
+// add onclick event listener to all elements with btn-collapse class
+const collapseButtons = document.querySelectorAll('.btn-collapse');
+collapseButtons.forEach(function(button) {
+    button.addEventListener('click', toggleCollapse);
+});
+
+function toggleCollapse(event) {
+    // target is first element with class collapse in parent element
+    console.log(this);
+    const target = this.parentElement.parentElement.querySelector('.tp-menu-collapse');
+    console.log(target);
+
+    if (this.ariaExpanded == "true") {
+        this.ariaExpanded = "false";
+        target.style.height = '0px';
+    } else {
+        this.ariaExpanded = "true";
+        target.style.height = target.scrollHeight + 'px';
+    }
+    //this.ariaExpanded = (this.ariaExpanded == "true") ? "false" : "true";
+
+    //target.classList.toggle('show');
+
+    // stop propagation to prevent the event from bubbling up the DOM tree
+    event.preventDefault();
+}

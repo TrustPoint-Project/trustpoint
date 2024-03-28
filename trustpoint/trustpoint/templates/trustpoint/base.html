@@ -41,24 +41,50 @@
 {#    <div class="container-fluid p-0 m-0 d-flex">#}
         <aside class="tp-aside bg-tp-sidenav">
             <div class="tp-menu-group">
-                <div class="tp-heading {% if page_category == 'home' %}tp-menu-active{% endif %}">Home</div>
-                <a href="{% url 'home:dashboard' %}" class="tp-entry {% if page_name == 'dashboard' %}tp-menu-active{% endif %}">Dashboard</a>
+                <a href="{% url 'home:dashboard' %}" class="tp-menu-head {% if page_name == 'dashboard' %}tp-menu-active{% endif %}">
+                    <svg class="bi" width="20" height="20" fill="currentColor" role="img">
+                        <use href="{% static 'img/icons.svg' %}#icon-home"/></svg>
+                    Dashboard
+                </a>
             </div>
+
             <div class="tp-menu-group">
-                <div class="tp-heading {% if page_category == 'devices' %}tp-menu-active{% endif %}">Devices</div>
-                <a href="{% url 'devices:devices' %}" class="tp-entry {% if page_name == 'devices' %}tp-menu-active{% endif %}">Devices</a>
+                <a href="{% url 'devices:devices' %}" class="tp-menu-head {% if page_category == 'devices' %}tp-menu-active{% endif %}">
+                    <svg class="bi" width="20" height="20" fill="currentColor" role="img">
+                        <use href="{% static 'img/icons.svg' %}#icon-boxes"/></svg>
+                    Devices
+                </a>
             </div>
+
             <div class="tp-menu-group">
-                <div class="tp-heading {% if page_category == 'pki' %}tp-menu-active{% endif %}">PKI</div>
-                <a href="{% url 'pki:endpoint_profiles' %}" class="tp-entry {% if page_name == 'endpoint_profiles' %}tp-menu-active{% endif %}">Endpoint Profiles</a>
-                <a href="{% url 'pki:issuing_cas' %}" class="tp-entry {% if page_name == 'issuing_cas' %}tp-menu-active{% endif %}">Issuing CAs</a>
+                <a href="{% url 'pki:endpoint_profiles' %}" class="tp-menu-head {% if page_category == 'pki' %}tp-menu-active{% endif %}">
+                    <svg class="bi" width="20" height="20" fill="currentColor" role="img">
+                        <use href="{% static 'img/icons.svg' %}#icon-key"/></svg>
+                    PKI
+                    <div class="btn-toggle btn-collapse"
+                        aria-expanded="{% if page_category == 'pki' %}true{% else %}false{% endif %}">
+                    </div>
+                </a>
+                <div class="tp-menu-collapse {% if page_category == 'pki' %}show{% endif %}">
+                    <a href="{% url 'pki:endpoint_profiles' %}" class="tp-menu-item {% if page_name == 'endpoint_profiles' %}tp-menu-active{% endif %}">Endpoint Profiles</a>
+                    <a href="{% url 'pki:issuing_cas' %}" class="tp-menu-item {% if page_name == 'issuing_cas' %}tp-menu-active{% endif %}">Issuing CAs</a>
+                </div>
             </div>
+
             <div class="tp-menu-group">
-                <div class="tp-heading {% if page_category == 'sysconf' %}tp-menu-active{% endif %}">SysConf</div>
-                <a href="{% url 'sysconf:logging' %}" class="tp-entry {% if page_name == 'logging' %}tp-menu-active{% endif %}">Logging</a>
-                <a href="{% url 'sysconf:network' %}" class="tp-entry {% if page_name == 'network' %}tp-menu-active{% endif %}">Network</a>
-                <a href="{% url 'sysconf:ntp' %}" class="tp-entry {% if page_name == 'ntp' %}tp-menu-active{% endif %}">NTP</a>
-                <a href="{% url 'sysconf:ssh' %}" class="tp-entry {% if page_name == 'ssh' %}tp-menu-active{% endif %}">SSH</a>
+                <a href="{% url 'sysconf:logging' %}" class="tp-menu-head {% if page_category == 'sysconf' %}tp-menu-active{% endif %}">
+                    <svg class="bi" width="20" height="20" fill="currentColor" role="img">
+                        <use href="{% static 'img/icons.svg' %}#icon-settings"/></svg>
+                    Configuration
+                    <div class="btn-toggle btn-collapse"
+                        aria-expanded="{% if page_category == 'sysconf' %}true{% else %}false{% endif %}">
+                    </div>
+                </a>
+            <div class="tp-menu-collapse {% if page_category == 'sysconf' %}show{% endif %}">
+                <a href="{% url 'sysconf:logging' %}" class="tp-menu-item {% if page_name == 'logging' %}tp-menu-active{% endif %}">Logging</a>
+                <a href="{% url 'sysconf:network' %}" class="tp-menu-item {% if page_name == 'network' %}tp-menu-active{% endif %}">Network</a>
+                <a href="{% url 'sysconf:ntp' %}" class="tp-menu-item {% if page_name == 'ntp' %}tp-menu-active{% endif %}">NTP</a>
+                <a href="{% url 'sysconf:ssh' %}" class="tp-menu-item {% if page_name == 'ssh' %}tp-menu-active{% endif %}">SSH</a>
             </div>
         </aside>
 
