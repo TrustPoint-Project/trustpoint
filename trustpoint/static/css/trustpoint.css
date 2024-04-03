@@ -101,43 +101,31 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 .tp-aside {
     grid-area: aside;
     padding: 1rem 1rem;
-
+    display: flex;
+    flex-direction: column;
 }
 
-.tp-aside > .tp-menu-group {
+.tp-aside .tp-menu-group {
     margin-bottom: 1rem;
+    --tp-menu-head-padding: 0.875rem;
 }
 
 .tp-menu-group > a {
     color: var(--bs-emphasis-color);
 }
 
-.tp-menu-group > a:hover, .tp-menu-group > a:active, .tp-menu-group > a:focus {
-    background-color: var(--bs-btn-hover-bg);
-}
-
-.tp-menu-group > .tp-menu-active {
-    /* color: rgba(var(--bs-link-color-rgb)) */
-}
-
 .tp-menu-group > * {
-    /* height: 2rem; */
     display: grid;
     align-items: center;
 }
 
 .tp-menu-group .tp-menu-item {
-    padding: 0.5rem 0 0 3.5rem;
+    padding: 0.5rem 0 0 calc(2rem + var(--tp-menu-head-padding)*2);
     color:rgba(var(--bs-emphasis-color-rgb), .6)
 }
 
 .tp-menu-item:hover, .tp-menu-item:focus, .tp-menu-item:active, .tp-menu-item.tp-menu-active {
     color: rgba(var(--bs-emphasis-color-rgb), 1);
-}
-
-aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside button:active, aside a:active {
-    /* background-color: transparent !important; */
-    /* background-color: var(--bs-border-color); */
 }
 
 .bg-tp-sidenav {
@@ -149,7 +137,6 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
     grid-template-columns: auto 1fr auto;
     font-size: 1.1rem;
     border-radius: 0.5rem;
-    --tp-menu-head-padding: 0.875rem;
 }
 
 .tp-menu-head.tp-menu-active {
@@ -163,10 +150,14 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
 }
 
 .tp-menu-head:hover, .tp-menu-head:focus {
-    background-color: var(--bs-secondary-bg) !important;
+    background-color: var(--bs-secondary-bg);
 }
 
-.btn-toggle { /* expand arrow */
+.tp-menu-head.tp-menu-active:hover, .tp-menu-head.tp-menu-active:focus {
+    background-color: var(--bs-border-color);
+}
+
+.btn-collapse { /* expand arrow */
     padding: .3rem var(--tp-menu-head-padding) .3rem .3rem;
     color: var(--bs-body-color);
     background-color: transparent;
@@ -174,11 +165,12 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
     display: inline-flex;
 }
 
-.btn-toggle:hover, .btn-toggle:focus {
-    stroke: rgba(var(--bs-emphasis-color-rgb), 1);
+.btn-collapse:hover, .btn-collapse:focus {
+    /* TODO this does not work as svg loaded as image cannot be styled */
+    color: rgba(var(--bs-emphasis-color-rgb), 1);
 }
 
-.btn-toggle::before {
+.btn-collapse::before {
     width: 16px;
     line-height: 0;
     stroke: var(--bs-body-color);
@@ -189,21 +181,20 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
 }
 
 
-[data-bs-theme="dark"] .btn-toggle::before {
+[data-bs-theme="dark"] .btn-collapse::before {
     content: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='rgba%28255,255,255,.5%29' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M5 14l6-6-6-6'/%3e%3c/svg%3e");
 }
 
-.btn-toggle[aria-expanded="true"] {
+.btn-collapse[aria-expanded="true"] {
     color: rgba(var(--bs-emphasis-color-rgb), .85);
 }
-.btn-toggle[aria-expanded="true"]::before {
+.btn-collapse[aria-expanded="true"]::before {
     transform: rotate(90deg);
 }
 
 .tp-menu-collapse {
     height: 0px;
     overflow: hidden;
-    /* transition: height 0.35s ease; */
 }
 
 .collapse-transition {
@@ -214,6 +205,11 @@ aside button:focus, aside a:focus, aside button:hover, aside a:hover, aside butt
 
 .tp-menu-collapse.show {
     height: auto;
+}
+
+.tp-menu-footer {
+    margin-top: auto;
+    align-self: center;
 }
 
 /* ----- Main content and cards ----- */
@@ -417,12 +413,12 @@ svg.theme-icon {
 
 /* ----- Various ----- */
 
-.btn-toggle-nav a { /* unused class */
+.btn-collapse-nav a { /* unused class */
     padding: .1875rem .5rem;
     margin-top: .125rem;
     margin-left: 1.25rem;
 }
-.btn-toggle-nav a:hover, .btn-toggle-nav a:focus {
+.btn-collapse-nav a:hover, .btn-collapse-nav a:focus {
     background-color: var(--bs-tertiary-bg);
 }
 

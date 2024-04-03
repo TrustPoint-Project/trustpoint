@@ -63,7 +63,7 @@
                     <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-key"/></svg>
                     PKI
-                    <div class="btn-toggle btn-collapse" data-category="pki"
+                    <div class="btn-collapse" data-category="pki"
                         aria-expanded="{% if page_category == 'pki' %}true{% else %}false{% endif %}">
                     </div>
                 </a>
@@ -78,7 +78,7 @@
                     <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-settings"/></svg>
                     Settings
-                    <div class="btn-toggle btn-collapse" data-category="sysconf"
+                    <div class="btn-collapse" data-category="sysconf"
                         aria-expanded="{% if page_category == 'sysconf' %}true{% else %}false{% endif %}">
                     </div>
                 </a>
@@ -88,6 +88,16 @@
                     <a href="{% url 'sysconf:ntp' %}" class="tp-menu-item {% if page_name == 'ntp' %}tp-menu-active{% endif %}">NTP</a>
                     <a href="{% url 'sysconf:ssh' %}" class="tp-menu-item {% if page_name == 'ssh' %}tp-menu-active{% endif %}">SSH</a>
                 </div>
+            </div>
+            <div class="tp-menu-footer">
+                <!--<div class="tp-menu-group">
+                    <a href="{% url 'users:logout' %}" class="tp-menu-head">
+                        <svg class="bi" fill="currentColor" role="img">
+                            <use href="{% static 'img/icons.svg' %}#icon-door"/></svg>
+                        Logout
+                    </a>
+                </div>-->
+                v0.1.0
             </div>
         </aside>
 
