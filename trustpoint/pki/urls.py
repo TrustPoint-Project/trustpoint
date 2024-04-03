@@ -45,6 +45,11 @@ urlpatterns = [
         name='issuing_cas-add_local_request',
     ),
     path(
+        'issuing-certificate-authorities/add/local/pki/',
+        views.AddIssuingCaLocalPki.as_view(),
+        name='issuing_cas-add_local_pki',
+    ),
+    path(
         'issuing-certificate-authorities/add/remote/est/',
         views.AddIssuingCaRemoteEstTemplateView.as_view(),
         name='issuing_cas-add_remote_est',
