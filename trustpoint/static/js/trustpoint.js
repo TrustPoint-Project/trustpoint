@@ -131,11 +131,23 @@ collapseButtons.forEach(function(button) {
     if (button.ariaExpanded == "true") {
         setMenuCollapsed(button, false); // to set explicit scroll height for CSS transition
     }
+    // if the menu was manually expanded, keep it expanded upon navigation
+    if (button.dataset.category && sessionStorage.getItem('tp-menu-expanded-manually-' + button.dataset.category) == 'true') {
+        setMenuCollapsed(button, false, false);
+    }
 });
 
-function setMenuCollapsed(btn, collapse=true) {
+function setMenuCollapsed(btn, collapse=true, transition=true) {
     const target = btn?.parentElement.parentElement.querySelector('.tp-menu-collapse');
     if (!target) return;
+
+    if (transition) {
+        btn.classList.add('collapse-transition');
+        target.classList.add('collapse-transition');
+    } else {
+        btn.classList.remove('collapse-transition');
+        target.classList.remove('collapse-transition');
+    }
 
     if (collapse) {
         btn.ariaExpanded = "false";
@@ -144,12 +156,18 @@ function setMenuCollapsed(btn, collapse=true) {
         btn.ariaExpanded = "true";
         target.style.height = target.scrollHeight + 'px';
     }
+
+    //target.style.transition = transition ? 'height 0.2s' : 'none';
 }
 
 function toggleCollapse(event) {
+    // stop propagation to prevent the event from loading the page
+    event.preventDefault();
+
     let collapse = this.ariaExpanded == "true";
     setMenuCollapsed(this, collapse);
 
-    // stop propagation to prevent the event from loading the page
-    event.preventDefault();
+    if (this.dataset.category) {
+        sessionStorage.setItem('tp-menu-expanded-manually-' + this.dataset.category, !collapse);
+    }
 }

@@ -44,7 +44,7 @@
         <aside class="tp-aside bg-tp-sidenav">
             <div class="tp-menu-group">
                 <a href="{% url 'home:dashboard' %}" class="tp-menu-head {% if page_name == 'dashboard' %}tp-menu-active{% endif %}">
-                    <svg class="bi" width="20" height="20" fill="currentColor" role="img">
+                    <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-home"/></svg>
                     Dashboard
                 </a>
@@ -52,7 +52,7 @@
 
             <div class="tp-menu-group">
                 <a href="{% url 'devices:devices' %}" class="tp-menu-head {% if page_category == 'devices' %}tp-menu-active{% endif %}">
-                    <svg class="bi" width="20" height="20" fill="currentColor" role="img">
+                    <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-boxes"/></svg>
                     Devices
                 </a>
@@ -60,10 +60,10 @@
 
             <div class="tp-menu-group">
                 <a href="{% url 'pki:endpoint_profiles' %}" class="tp-menu-head {% if page_category == 'pki' %}tp-menu-active{% endif %}">
-                    <svg class="bi" width="20" height="20" fill="currentColor" role="img">
+                    <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-key"/></svg>
                     PKI
-                    <div class="btn-toggle btn-collapse"
+                    <div class="btn-toggle btn-collapse" data-category="pki"
                         aria-expanded="{% if page_category == 'pki' %}true{% else %}false{% endif %}">
                     </div>
                 </a>
@@ -75,10 +75,10 @@
 
             <div class="tp-menu-group">
                 <a href="{% url 'sysconf:logging' %}" class="tp-menu-head {% if page_category == 'sysconf' %}tp-menu-active{% endif %}">
-                    <svg class="bi" width="20" height="20" fill="currentColor" role="img">
+                    <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-settings"/></svg>
                     Settings
-                    <div class="btn-toggle btn-collapse"
+                    <div class="btn-toggle btn-collapse" data-category="sysconf"
                         aria-expanded="{% if page_category == 'sysconf' %}true{% else %}false{% endif %}">
                     </div>
                 </a>
