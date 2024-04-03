@@ -5,6 +5,8 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Trustpoint</title>
+        <!-- theme.js must be loaded before content and statics to prevent a brief flash of the wrong color theme -->
+        <script src="{% static 'js/theme.js' %}"></script>
         <link rel="stylesheet" href="{% static 'css/bootstrap.min.css' %}">
         <link rel="stylesheet" href="{% static 'css/trustpoint.css' %}">
         <link rel="stylesheet" href="{% static 'css/sysconf.css' %}">
@@ -15,7 +17,7 @@
     <body id="bs-override">
 
         {# TODO: As this is C/P from base template sans the logout button, consider making nav template #}
-        <nav class="nav-header navbar border-bottom border-body tp-nav">
+        <header class="tp-page-header navbar border-bottom border-body">
             <a class="navbar-brand tp-primary" href="#">
                 <!--<img src="{% static 'img/tplogo-128.png' %}" width="64" height="45" alt="Trustpoint"></a> -->
                 <img src="{% static 'img/tplogo-horizontal-512.png' %}" alt="Trustpoint" id="tp-logo" class="light-only">
@@ -30,7 +32,7 @@
                         <use href="{% static 'img/icons.svg' %}#icon-night"/></svg>
                 </div>
             </div>
-        </nav>
+        </header>
 
         <main class="tp-main tp-main-users">
             <div></div>
@@ -40,7 +42,6 @@
         </main>
 
         <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
-        <script src="{% static 'js/theme.js' %}"></script>
     </body>
 
 </html>

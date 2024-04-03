@@ -18,7 +18,7 @@
 
     <body id="bs-override">
         <div class="tp-content-wrapper">
-            <nav class="nav-header navbar border-bottom border-body tp-nav">
+            <header class="tp-page-header navbar border-bottom border-body">
                 <a class="navbar-brand tp-primary" href="#">
                     <!--<img src="{% static 'img/tplogo-128.png' %}" width="64" height="45" alt="Trustpoint"></a> -->
                     <img src="{% static 'img/tplogo-horizontal-512.png' %}" alt="Trustpoint" id="tp-logo" class="light-only">
@@ -37,11 +37,11 @@
                             <use href="{% static 'img/icons.svg' %}#icon-night"/></svg>
                     </div>
                 </div>
-            </nav>
+            </header>
 
 
 {#    <div class="container-fluid p-0 m-0 d-flex">#}
-        <aside class="tp-aside bg-tp-sidenav">
+        <nav class="tp-sidenav">
             <div class="tp-menu-group">
                 <a href="{% url 'home:dashboard' %}" class="tp-menu-head {% if page_name == 'dashboard' %}tp-menu-active{% endif %}">
                     <svg class="bi" fill="currentColor" role="img">
@@ -99,7 +99,7 @@
                 </div>-->
                 v0.1.0
             </div>
-        </aside>
+        </nav>
 
         <main class="tp-main">
             {% if messages %}
