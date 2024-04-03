@@ -122,29 +122,34 @@ function deleteSelected() {
 
 // ---------------------------------------- Side nav menu collapsing ----------------------------------------
 
+// custom collapse implementation, since the one provided by Bootstrap does not allow preventing navigation
+
 // add onclick event listener to all elements with btn-collapse class
 const collapseButtons = document.querySelectorAll('.btn-collapse');
 collapseButtons.forEach(function(button) {
     button.addEventListener('click', toggleCollapse);
+    if (button.ariaExpanded == "true") {
+        setMenuCollapsed(button, false); // to set explicit scroll height for CSS transition
+    }
 });
 
-function toggleCollapse(event) {
-    // target is first element with class collapse in parent element
-    console.log(this);
-    const target = this.parentElement.parentElement.querySelector('.tp-menu-collapse');
-    console.log(target);
+function setMenuCollapsed(btn, collapse=true) {
+    const target = btn?.parentElement.parentElement.querySelector('.tp-menu-collapse');
+    if (!target) return;
 
-    if (this.ariaExpanded == "true") {
-        this.ariaExpanded = "false";
+    if (collapse) {
+        btn.ariaExpanded = "false";
         target.style.height = '0px';
     } else {
-        this.ariaExpanded = "true";
+        btn.ariaExpanded = "true";
         target.style.height = target.scrollHeight + 'px';
     }
-    //this.ariaExpanded = (this.ariaExpanded == "true") ? "false" : "true";
+}
 
-    //target.classList.toggle('show');
+function toggleCollapse(event) {
+    let collapse = this.ariaExpanded == "true";
+    setMenuCollapsed(this, collapse);
 
-    // stop propagation to prevent the event from bubbling up the DOM tree
+    // stop propagation to prevent the event from loading the page
     event.preventDefault();
 }
