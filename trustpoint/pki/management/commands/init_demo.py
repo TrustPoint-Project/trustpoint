@@ -87,7 +87,6 @@ class Command(BaseCommand):
         issuing_ca = IssuingCa(
             unique_name=unique_name,
             common_name=normalized_p12.common_name,
-            root_common_name=normalized_p12.root_common_name,
             not_valid_before=normalized_p12.not_valid_before,
             not_valid_after=normalized_p12.not_valid_after,
             key_type=normalized_p12.key_type,
