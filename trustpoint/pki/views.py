@@ -454,6 +454,10 @@ class IssuingCaBulkDeleteView(
 
         return super().get(*args, **kwargs)
 
+class AddIssuingCaLocalPki(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView):
+    """Add Issuing CA Local PKI View."""
+
+    template_name = 'pki/issuing_cas/add/local_pki.html'
 
 class AddIssuingCaLocalRequestTemplateView(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView):
     """Add Issuing CA Local Request Template View."""
