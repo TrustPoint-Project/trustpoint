@@ -119,3 +119,55 @@ function deleteSelected() {
         window.location.href = url_path;
     }
 }
+
+// ---------------------------------------- Side nav menu collapsing ----------------------------------------
+
+// custom collapse implementation, since the one provided by Bootstrap does not allow preventing navigation
+
+// add onclick event listener to all elements with btn-collapse class
+const collapseButtons = document.querySelectorAll('.btn-collapse');
+collapseButtons.forEach(function(button) {
+    button.addEventListener('click', toggleCollapse);
+    if (button.ariaExpanded == "true") {
+        setMenuCollapsed(button, false); // to set explicit scroll height for CSS transition
+    }
+    // if the menu was manually expanded, keep it expanded upon navigation
+    if (button.dataset.category && sessionStorage.getItem('tp-menu-expanded-manually-' + button.dataset.category) == 'true') {
+        setMenuCollapsed(button, false, false);
+    }
+});
+
+function setMenuCollapsed(btn, collapse=true, transition=true) {
+    const target = btn?.parentElement.parentElement.querySelector('.tp-menu-collapse');
+    if (!target) return;
+
+    if (transition) {
+        btn.classList.add('collapse-transition');
+        target.classList.add('collapse-transition');
+    } else {
+        btn.classList.remove('collapse-transition');
+        target.classList.remove('collapse-transition');
+    }
+
+    if (collapse) {
+        btn.ariaExpanded = "false";
+        target.style.height = '0px';
+    } else {
+        btn.ariaExpanded = "true";
+        target.style.height = target.scrollHeight + 'px';
+    }
+
+    //target.style.transition = transition ? 'height 0.2s' : 'none';
+}
+
+function toggleCollapse(event) {
+    // stop propagation to prevent the event from loading the page
+    event.preventDefault();
+
+    let collapse = this.ariaExpanded == "true";
+    setMenuCollapsed(this, collapse);
+
+    if (this.dataset.category) {
+        sessionStorage.setItem('tp-menu-expanded-manually-' + this.dataset.category, !collapse);
+    }
+}
