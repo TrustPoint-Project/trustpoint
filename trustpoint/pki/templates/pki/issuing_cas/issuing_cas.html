@@ -91,6 +91,13 @@
                                             Generate a key-pair and request the CA Certificate
                                         </label>
 
+                                        <input class="form-check-input cursor local-issuing-ca" type="radio" name="local-issuing-ca" id="local-issuing-ca-request" value="{% url 'pki:issuing_cas-add_local_pki' %}">
+                                        <label class="form-check-label cursor local-issuing-ca" for="local-issuing-ca-lw-pki" data-bs-toggle="tooltip"
+                                               data-bs-placement="right"
+                                               title="Generates a lightweight PKI.">
+                                            Generate a lightweight PKI (Testing only)
+                                        </label>
+
                                     </div>
 
                                 </div>
