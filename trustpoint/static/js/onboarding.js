@@ -17,7 +17,7 @@ LDEVID_SENT = 4,
 COMPLETED = 5 // aka cert chain sent
 
 function getOnboardingState(urlExt, iconUrl) {
-  fetch('/onboarding/api/state/'+ urlExt)
+  fetch('/api/onboarding/state/'+ urlExt)
     .then(response => response.json())
     .then(data => {
       let val = parseInt(data);

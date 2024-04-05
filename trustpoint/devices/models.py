@@ -60,6 +60,23 @@ class Device(models.Model):
     def __str__(self: Device) -> str:
         """Returns a Device object in human-readable format."""
         return f'Device({self.device_name}, {self.serial_number})'
+    
+    def revoke_ldevid(self: Device) -> bool:
+        """Revokes the LDevID.
+        
+        Deletes the LDevID file and sets the device status to NOT_ONBOARDED.
+        Actual revocation (CRL, OCSP) is not yet implemented.
+        """
+        if not self.ldevid:
+            return False
+        
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+            # TODO(Air): Perhaps extra status for revoked devices?
+            self.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+        self.ldevid.delete()
+        self.ldevid = None
+        self.save()
+        return True
 
     @classmethod
     def get_by_id(cls: Device, device_id: int) -> Device | None:
