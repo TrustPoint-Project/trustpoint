@@ -10,8 +10,8 @@ from django.views.generic.base import RedirectView
 if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
 
-from .forms import LoggingConfigForm, NetworkConfigForm, NTPConfigForm
-from .models import LoggingConfig, NetworkConfig, NTPConfig
+from .forms import LoggingConfigForm, NetworkConfigForm, NTPConfigForm, SecurityConfigForm
+from .models import LoggingConfig, NetworkConfig, NTPConfig, SecurityConfig
 
 
 class IndexView(RedirectView):
@@ -108,3 +108,12 @@ def ssh(request: HttpRequest) -> HttpResponse:
     """
     context = {'page_category': 'sysconf', 'page_name': 'ssh'}
     return render(request, 'sysconf/ssh.html', context=context)
+
+def security(request: HttpRequest) -> HttpResponse:
+    """Handle ssh Configuration
+
+    Returns: HTTPResponse
+    """
+    context = {'page_category': 'sysconf', 'page_name': 'security'}
+    return render(request, 'sysconf/security.html', context=context)
+

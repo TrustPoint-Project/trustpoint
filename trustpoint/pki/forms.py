@@ -1,6 +1,5 @@
 """Module that contains all forms corresponding to the PKI application."""
 
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -98,6 +97,7 @@ class IssuingCaLocalP12FileForm(CleanUniqueNameMixin, IssuingCaUploadForm):
             raise UploadError
 
         return cleaned_data
+
 
 
 class IssuingCaLocalPemFileForm(CleanUniqueNameMixin, IssuingCaUploadForm):

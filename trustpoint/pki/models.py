@@ -15,6 +15,7 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from trustpoint.validators import validate_isidentifer
+from datetime import timedelta
 
 
 class Certificate(models.Model):
@@ -27,6 +28,53 @@ class Certificate(models.Model):
 
     version = models.PositiveSmallIntegerField(choices=Version)
 
+class RootCa(models.Model):
+    """Root CA model."""
+
+    class CaType(models.TextChoices):
+        """Supported curves."""
+
+        SECP256R1 = 'SECP256R1', _('SECP256R1')
+        SECP384R1 = 'SECP384R1', _('SECP384R1')
+        RSA2048 = 'RSA2048', _('RSA2048')
+
+    unique_name = models.CharField(
+        max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True
+    )
+    common_name = models.CharField(max_length=65536, default='', blank=True)
+    not_valid_before = models.DateTimeField(default=timezone.now)
+    not_valid_after = models.DateTimeField(default=timezone.now() + timedelta(days=365*1))
+
+    ca_type = models.CharField(max_length=9, choices=CaType, default='RSA2048')
+
+    created_at = models.DateTimeField(default=timezone.now)
+
+    def __str__(self: RootCa) -> str:
+        """Human-readable representation of the RootCa model instance.
+
+        Returns:
+            str:    Human-readable representation of the RootCa model instance.
+        """
+        return f'RootCa({self.unique_name}, {self.common_name})'
+
+    def get_delete_url(self: RootCa) -> str:
+        """Creates the URL for the corresponding delete-view.
+
+        Returns:
+            str:    URL for the delete-view.
+        """
+        return f'delete/{self.pk}/'
+
+    def get_details_url(self: RootCa) -> str:
+        """Creates the URL for the corresponding details-view.
+
+        Returns:
+            str:    URL for the details-view.
+        """
+        return f'details/{self.pk}/'
+
+    def as_django_ninja_schema(self):
+        pass
 
 
 class IssuingCa(models.Model):

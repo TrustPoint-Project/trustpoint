@@ -93,6 +93,9 @@ class X509CertificateChainBuilder:
         Raises:
             X509CertificateChainBuilderError
         """
+        if certificate.issuer == certificate.subject:
+            return [certificate]
+
         result = [certificate]
         root_found = False
         child_subject = certificate.issuer.public_bytes()
@@ -220,6 +223,7 @@ class P12:
 
                 # SubjectAlternativeName
 
+            #TODO(Florian): If the cert is self-signed only the issueing CA is handled but not the root CA
             certs[0]['heading'] = 'Issuing CA Certificate'
             if len(certs) >= 2:  # noqa: PLR2004
                 certs[-1]['heading'] = 'Root CA Certificate'
