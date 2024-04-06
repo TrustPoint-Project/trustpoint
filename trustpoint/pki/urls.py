@@ -64,4 +64,19 @@ urlpatterns = [
         views.IssuingCaDetailView.as_view(),
         name='issuing_cas-details',
     ),
+    path('root-certificate-authorities/', views.RootCaListView.as_view(), name='root_cas'),
+    re_path(
+        r'^root-certificate-authorities/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
+        views.RootCaBulkDeleteView.as_view(),
+        name='root_cas-delete',
+    ),
+    path('root-certificate-authorities/add/',
+         views.CreateRootCaView.as_view(),
+         name='root_cas-add'),
+    path(
+        'root-certificate-authorities/details/<int:pk>/',
+        views.RootCaDetailView.as_view(),
+        name='root_cas-details',
+    ),
+
 ]

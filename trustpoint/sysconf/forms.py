@@ -2,7 +2,7 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from .models import LoggingConfig, NetworkConfig, NTPConfig
+from .models import LoggingConfig, NetworkConfig, NTPConfig, SecurityConfig
 
 
 class NTPConfigForm(forms.ModelForm):
@@ -43,3 +43,13 @@ class LoggingConfigForm(forms.ModelForm):
             'logging_type': _('Logging Protocol'),
             'network_type': _('Network Protocol'),
         }
+
+class SecurityConfigForm(forms.ModelForm):
+    """Security configuration model form"""
+
+    class Meta:
+        """Meta class"""
+        model = SecurityConfig
+        fields = ['security_mode','enable_local_root_ca','local_root_ca_alg_type']
+
+

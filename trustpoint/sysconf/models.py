@@ -1,6 +1,9 @@
 """Model definitions"""
-from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
+from django.utils.translation import gettext_lazy as _
+from django.core.validators import MaxValueValidator, MinLengthValidator, MinValueValidator
+from trustpoint.validators import validate_isidentifer
+from django.utils import timezone
 
 
 # class SystemConfig(models.Model):
@@ -47,3 +50,30 @@ class NetworkConfig(models.Model):
     def __str__(self) -> str:
         """Output as string"""
         return f'IP-Address:{self.static_ip_address}, Gateway:{self.gateway}, Netmask:{self.netmask}'
+
+class SecurityConfig(models.Model):
+    """Security Configuration model"""
+
+    class SecurityModeChoices(models.TextChoices):
+        """Types of security modes"""
+        LOW = '1', 'low'
+        MIDDLE = '2', 'middle'
+        HIGH = '3', 'high'
+
+    class LocalRootCaAlgTypeChoices(models.TextChoices):
+        """Types of security modes"""
+        secp256r1 = '1', 'secp256r1'
+        secp384r1 = '2', 'secp384r1'
+        rsa2048 = '3', 'rsa2048'
+
+    security_mode = models.CharField(max_length=6, choices=SecurityModeChoices.choices, default=SecurityModeChoices.LOW)
+    enable_local_root_ca = models.BooleanField(default=False)
+    local_root_ca_alg_type = models.CharField(max_length=6, choices=LocalRootCaAlgTypeChoices.choices, default=LocalRootCaAlgTypeChoices.secp256r1)
+
+
+    def __str__(self) -> str:
+        """Output as string"""
+        return f'{self.security_mode}:{self.onboarding_methods}'
+
+
+# -------------

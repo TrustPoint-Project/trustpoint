@@ -10,4 +10,6 @@ urlpatterns = [
     path('network/', views.network, name='network'),
     path('ntp/', views.ntp, name='ntp'),
     path('ssh/', views.ssh, name='ssh'),
+    path('security/', views.security, name='security'),
+
 ]
