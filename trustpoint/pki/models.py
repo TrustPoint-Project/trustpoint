@@ -37,7 +37,7 @@ class RootCa(models.Model):
         SECP256R1 = 'SECP256R1', _('SECP256R1')
         SECP384R1 = 'SECP384R1', _('SECP384R1')
         RSA2048 = 'RSA2048', _('RSA2048')
-
+        
     unique_name = models.CharField(
         max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True
     )
@@ -110,6 +110,7 @@ class IssuingCa(models.Model):
 
         F_P12 = 'F_P12', _('File Import - PKCS#12')
         F_PEM = 'F_PEM', _('File Import - PEM')
+        F_EST = 'F_EST', _('Cert. Import - EST')
 
     unique_name = models.CharField(
         max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True
