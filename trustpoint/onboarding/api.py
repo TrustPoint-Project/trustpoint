@@ -3,18 +3,16 @@ import base64
 from ninja import Router, Schema
 from ninja.security import django_auth
 from django.http import HttpRequest, HttpResponse
+from trustpoint.schema import ErrorSchema
 from devices.models import Device
 from onboarding.models import OnboardingProcess, OnboardingProcessState
 from onboarding.crypto_backend import CryptoBackend as Crypt
 
-router = Router(auth=django_auth)
+router = Router()
 
 class RawFileSchema(Schema):
     """"Wildcard schema, works for arbitrary content."""
     pass
-
-class ErrorSchema(Schema):
-    error: str
 
 # --- PUBLIC ONBOARDING API ENDPOINTS ---
 
@@ -138,7 +136,7 @@ def stop(request: HttpRequest, device_id: int):
     #    onboarding_process.cancel()
     #return 200
 
-@router.post("/revoke/{device_id}")
+@router.post("/revoke/{device_id}", response={200: str, 404: ErrorSchema, 422: ErrorSchema})
 def revoke(request: HttpRequest, device_id: int):
     """Revokes the LDevID certificate for a device."""
     device = Device.get_by_id(device_id)
