@@ -6,8 +6,9 @@ function startPollingOnboardingState(urlExt, iconUrl) {
 
 // Onboarding states, see onboarding/models.py
 const
-CONNECTION_ERROR = -3,
-NO_SUCH_PROCESS = -2,
+CONNECTION_ERROR = -4,
+NO_SUCH_PROCESS = -3,
+CANCELED = -2,
 FAILED = -1,
 STARTED = 0,
 HMAC_GENERATED = 1,
@@ -20,6 +21,7 @@ function getOnboardingState(urlExt, iconUrl) {
   fetch('/api/onboarding/state/'+ urlExt)
     .then(response => response.json())
     .then(data => {
+      console.log(data)
       let val = parseInt(data);
       if (Number.isInteger(val)) setOnboardingStateUI(val, iconUrl);
     }
@@ -110,11 +112,17 @@ function setOnboardingStateUI(state, iconUrl) {
       icon = 'error';
       navBack = true;
       break;
+    case CANCELED:
+      type = 'warning';
+      message = 'Onboarding process was canceled.';
+      icon = 'warning';
+      navBack = true;
+      break;
     case NO_SUCH_PROCESS:
       type = 'danger';
-      message = 'Error: Server did not find the onboarding process. Please reload the page.';
+      message = 'Error: Server did not find the onboarding process.';
       icon = 'error';
-      window.location.reload();
+      navBack = true;
       break;
     default:
       type = 'warning';

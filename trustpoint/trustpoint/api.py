@@ -14,7 +14,8 @@ class AuthBearer(HttpBearer):
 
 api = NinjaAPI(
     auth=(AuthBearer(), django_auth),
-    title='Trustpoint API'
+    title='Trustpoint API',
+    version='0.1.0'
 )
 
 

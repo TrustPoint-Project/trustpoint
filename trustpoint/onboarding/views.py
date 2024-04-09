@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import base64
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 from devices.models import Device
 from django.contrib import messages
@@ -24,6 +24,7 @@ from .models import (
     ManualOnboardingProcess,
     OnboardingProcess,
     OnboardingProcessState,
+    NoOnboardingProcessError,
     onboarding_processes,
 )
 
@@ -245,26 +246,25 @@ class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
         if not device:
             messages.error(request, f'Onboarding: Device with ID {device_id} not found.')
             return
-
-        if device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
-            device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
-            device.save()
-            messages.warning(request, f'Onboarding process for device {device.device_name} canceled.')
-
-        onboarding_process = OnboardingProcess.get_by_device(device)
-        if not onboarding_process:
-            messages.error(request, f'No active onboarding process for device {device.device_name} found.')
-            return
-
-        reason = onboarding_process.error_reason
+        
         # TODO(Air): We also need to remove the onboarding process automatically without calling this view
-        onboarding_processes.remove(onboarding_process)
-        if onboarding_process.state == OnboardingProcessState.COMPLETED:
+
+        state, onboarding_process = OnboardingProcess.cancel(device)
+
+        if state == OnboardingProcessState.COMPLETED:
             messages.success(request, f'Device {device.device_name} onboarded successfully.')
-        elif onboarding_process.state == OnboardingProcessState.FAILED:
-            messages.error(request, f'Onboarding process for device {device.device_name} failed. {reason}')
+        elif state == OnboardingProcessState.FAILED:
             # TODO(Air): what to do if timeout occurs after valid LDevID is issued?
             # TODO(Air): Delete device and add to CRL.
+            reason = onboarding_process.error_reason if onboarding_process else ''
+            messages.error(request, f'Onboarding process for device {device.device_name} failed. {reason}')
+        elif state == OnboardingProcessState.CANCELED:
+            messages.warning(request, f'Onboarding process for device {device.device_name} canceled.')
+        elif state != OnboardingProcessState.NO_SUCH_PROCESS:
+            messages.error(request, f'Onboarding process for device {device.device_name} is in unexpected state {state}.')
+
+        if not onboarding_process:
+            messages.error(request, f'No active onboarding process for device {device.device_name} found.')
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         """Overrides the dispatch method to additionally call the _cancel method."""

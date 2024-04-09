@@ -17,7 +17,7 @@ class LoginPATSchema(Schema):
     success: bool
     pat: str
 
-@router.post("/login", response={200: LoginPATSchema, 403: ErrorSchema}, auth=None)
+@router.post("/login", response={200: LoginPATSchema, 403: ErrorSchema}, auth=None, exclude_none=True)
 def login(request, data: LoginBodySchema):
     """Username/password login endpoint for the API
     
@@ -31,7 +31,7 @@ def login(request, data: LoginBodySchema):
         return 200, {'success': True, 'pat': pat.token}
     return 403, {'error': 'Login failed'}
 
-@router.post("/logout", response={200: SuccessSchema, 422: ErrorSchema})
+@router.post("/logout", response={200: SuccessSchema, 422: ErrorSchema}, exclude_none=True)
 def logout(request, all: bool = False):
     """Logout endpoint for the API
     

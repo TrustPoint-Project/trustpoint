@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import secrets
 import threading
+from typing import TYPE_CHECKING
 from enum import IntEnum
 
 from devices.models import Device
@@ -11,6 +12,9 @@ from django.db import models
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
 from onboarding.crypto_backend import OnboardingError
+
+if TYPE_CHECKING:
+    from typing import Tuple
 
 onboarding_timeout = 1800  # seconds, TODO: add to configuration
 
@@ -21,7 +25,8 @@ class OnboardingProcessState(IntEnum):
     Negative values indicate an error state.
     """
 
-    NO_SUCH_PROCESS = -2
+    NO_SUCH_PROCESS = -3
+    CANCELED = -2
     FAILED = -1
     STARTED = 0
     HMAC_GENERATED = 1
@@ -30,6 +35,14 @@ class OnboardingProcessState(IntEnum):
     LDEVID_SENT = 4
     COMPLETED = 5  # aka cert chain was requested
 
+
+class NoOnboardingProcessError(Exception):
+    """Exception raised when no onboarding process is found for a certain device, ID, or url extension."""
+
+    def __init__(self, message: str = 'No onboarding process found.') -> None:
+        """Initializes a new NoOnboardingProcessError with a given message."""
+        self.message = message
+        super().__init__(self.message)
 
 # NOT a database-backed model
 class OnboardingProcess:
@@ -87,6 +100,31 @@ class OnboardingProcess:
             if process.device == device:
                 return process
         return None
+    
+    @classmethod
+    def cancel(cls: OnboardingProcess, device: Device) -> Tuple[OnboardingProcessState, OnboardingProcess | None]:
+        """Cancels the onboarding process for a given device."""
+        process = cls.get_by_device(device)
+        if process:
+            return process._cancel()
+        elif device and device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+            device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+            device.save()
+            return (OnboardingProcessState.CANCELED, None)
+
+        return (OnboardingProcessState.NO_SUCH_PROCESS, None)
+    
+    def _cancel(self) -> Tuple[OnboardingProcessState, OnboardingProcess]:
+        """Cancels the onboarding process and removes it from the list."""
+        self.active = False
+        self.timer.cancel()
+        onboarding_processes.remove(self)
+        if self.device and self.device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+            self.device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+            self.device.save()
+            self.state = OnboardingProcessState.CANCELED
+
+        return (self.state, self)
 
     def _fail(self, reason: str = '') -> None:
         """Cancels the onboarding process with a given reason."""

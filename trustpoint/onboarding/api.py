@@ -3,7 +3,7 @@ import base64
 from ninja import Router, Schema
 from ninja.security import django_auth
 from django.http import HttpRequest, HttpResponse
-from trustpoint.schema import ErrorSchema
+from trustpoint.schema import ErrorSchema, SuccessSchema
 from devices.models import Device
 from onboarding.models import OnboardingProcess, OnboardingProcessState
 from onboarding.crypto_backend import CryptoBackend as Crypt
@@ -16,7 +16,7 @@ class RawFileSchema(Schema):
 
 # --- PUBLIC ONBOARDING API ENDPOINTS ---
 
-@router.get("/trust-store/{url_ext}", response={200: RawFileSchema, 404: ErrorSchema}, auth=None)
+@router.get("/trust-store/{url_ext}", response={200: RawFileSchema, 404: ErrorSchema}, auth=None, exclude_none=True)
 def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:
     onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
     if not onboarding_process:
@@ -35,7 +35,7 @@ def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:
         onboarding_process.state = OnboardingProcessState.TRUST_STORE_SENT
     return response
 
-@router.post("/ldevid/{url_ext}", response={200: RawFileSchema, 400: ErrorSchema, 404: ErrorSchema, 500: ErrorSchema}, auth=None)
+@router.post("/ldevid/{url_ext}", response={200: RawFileSchema, 400: ErrorSchema, 404: ErrorSchema, 500: ErrorSchema}, auth=None, exclude_none=True)
 def ldevid(request: HttpRequest, url_ext: str):
     """Handles the LDevID certificate signing request.
 
@@ -81,7 +81,7 @@ def ldevid(request: HttpRequest, url_ext: str):
     response['WWW-Authenticate'] = 'Basic realm="%s"' % url_ext
     return response
 
-@router.get("/ldevid/cert-chain/{url_ext}", response={200: RawFileSchema, 404: ErrorSchema}, auth=None)
+@router.get("/ldevid/cert-chain/{url_ext}", response={200: RawFileSchema, 404: ErrorSchema}, auth=None, exclude_none=True)
 def cert_chain(request: HttpRequest, url_ext: str):
     onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
     if not onboarding_process:
@@ -104,12 +104,12 @@ def cert_chain(request: HttpRequest, url_ext: str):
 
 # --- ONBOARDING MANAGEMENT API ENDPOINTS ---
 
-@router.get("/state/{url_ext}", response={200: int, 404: ErrorSchema})
+@router.get("/state/{url_ext}", response={200: int, 404: int})
 def state(request: HttpRequest, url_ext: str):
     onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
     if not onboarding_process:
-        return 404, {'error': 'Onboarding process not found.'}
-    return onboarding_process.state
+        return 404, OnboardingProcessState.NO_SUCH_PROCESS
+    return 200, onboarding_process.state
 
 @router.post("/{device_id}")
 def start(request: HttpRequest, device_id: int):
@@ -124,19 +124,34 @@ def start(request: HttpRequest, device_id: int):
     #return onboarding_process.url_ext
     pass
 
-@router.delete("/{device_id}")
+@router.delete("/{device_id}", response={200: SuccessSchema, 404: ErrorSchema, 422: ErrorSchema}, exclude_none=True)
 def stop(request: HttpRequest, device_id: int):
     """Stops and removes the onboarding process for a device.
     
     Cancels the process if it is running.
     """
-    pass
-    #onboarding_process = OnboardingProcess.get_by_device_id(device_id)
-    #if onboarding_process:
-    #    onboarding_process.cancel()
-    #return 200
+    device = Device.get_by_id(device_id)
+    if not device:
+        return 404, {'error': 'Device not found.'}
+    
+    state, onboarding_process = OnboardingProcess.cancel(device)
 
-@router.post("/revoke/{device_id}", response={200: str, 404: ErrorSchema, 422: ErrorSchema})
+    if state == OnboardingProcessState.COMPLETED:
+        return 200, {'success':True, 'message': f'Device {device.device_name} onboarded successfully.'}
+    elif state == OnboardingProcessState.FAILED:
+        # TODO(Air): what to do if timeout occurs after valid LDevID is issued?
+        # TODO(Air): Delete device and add to CRL.
+        reason = onboarding_process.error_reason if onboarding_process else ''
+        return 422, {'error': f'Onboarding process for device {device.device_name} failed.', 'detail': reason}
+    elif state == OnboardingProcessState.CANCELED:
+        return 200, {'success':True, 'message': f'Onboarding process for device {device.device_name} canceled.'}
+    elif state != OnboardingProcessState.NO_SUCH_PROCESS:
+        return 422, {'error': f'Onboarding process for device {device.device_name} is in unexpected state {state}.'}
+
+    if not onboarding_process:
+        return 404, {'error': f'No active onboarding process for device {device.device_name} found.'}
+
+@router.post("/revoke/{device_id}", response={200: SuccessSchema, 404: ErrorSchema, 422: ErrorSchema}, exclude_none=True)
 def revoke(request: HttpRequest, device_id: int):
     """Revokes the LDevID certificate for a device."""
     device = Device.get_by_id(device_id)
