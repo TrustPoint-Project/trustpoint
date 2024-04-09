@@ -8,7 +8,7 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import MinLengthValidator
 from util.x509.credentials import CredentialsError, CredentialUploadHandler
-
+from util.protocols.est_remote import ESTProtocolHandler
 from .models import IssuingCa
 
 if TYPE_CHECKING:
@@ -180,3 +180,22 @@ class IssuingCaESTForm(CleanUniqueNameMixin, IssuingCaUploadForm):
                 ]
     
     key_type = forms.CharField(widget=forms.Select(choices=KEY_TYPES))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        est_url = cleaned_data.get('est_url')
+        unique_name = cleaned_data.get('unique_name')
+        common_name = cleaned_data.get('common_name')
+
+        est_user_name = cleaned_data.get('est_user_name')
+        est_password = cleaned_data.get('est_password')
+        key_type = cleaned_data.get('key_type')
+        
+        try:
+            ESTProtocolHandler.est_get_ca_certificate(est_user_name,est_password,est_url,unique_name,common_name,key_type)
+        except ValueError as e:
+            self.add_error('est_url', 'Error in EST Protocol'+ str(e))
+            raise UploadError from e
+
+        return cleaned_data
