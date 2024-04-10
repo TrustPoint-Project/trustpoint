@@ -4,6 +4,8 @@ This module contains some general redirect and error views (e.g. 404) as well as
 which can be used within the apps.
 """
 
+from __future__ import annotations
+
 from typing import Any, Callable
 
 from django import forms as dj_forms
@@ -278,8 +280,7 @@ class BulkDeletionMixin:
         form = self.get_form()
         if form.is_valid():
             return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
+        return self.form_invalid(form)
 
     def form_valid(self, form):
         success_url = self.get_success_url()
@@ -288,8 +289,10 @@ class BulkDeletionMixin:
 
 
 class TpLoginRequiredMixin(LoginRequiredMixin):
+    """LoginRequiredMixin that adds a warning message if the user is not logged in."""
     request: HttpRequest
 
     def handle_no_permission(self) -> str:
+        """Redirects to the login page with a warning message if the user is not logged in."""
         messages.add_message(self.request, messages.WARNING, message='Login required!')
         return super().handle_no_permission()

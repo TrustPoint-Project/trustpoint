@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import base64
 from typing import TYPE_CHECKING
 
 from devices.models import Device
@@ -11,25 +10,20 @@ from django.http import Http404, HttpResponse
 from django.http.request import HttpRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import DetailView, RedirectView, TemplateView, View
 
 from trustpoint.views import TpLoginRequiredMixin
 
 from .cli_builder import CliCommandBuilder
-from .crypto_backend import CryptoBackend as Crypt
 from .models import (
     DownloadOnboardingProcess,
     ManualOnboardingProcess,
     OnboardingProcess,
     OnboardingProcessState,
-    NoOnboardingProcessError,
-    onboarding_processes,
 )
 
 if TYPE_CHECKING:
-    from typing import Any, TypeVar
+    from typing import Any
 
     from django.http import HttpRequest
 
@@ -53,8 +47,6 @@ class OnboardingUtilMixin:
     def check_onboarding_prerequisites(self, request: HttpRequest,
                                        allowed_onboarding_protocols: list[Device.OnboardingProtocol]) -> bool:
         """Checks if criteria for starting the onboarding process are met."""
-        device = self.device
-
         ok, msg = Device.check_onboarding_prerequisites(self.kwargs['device_id'], allowed_onboarding_protocols)
 
         if not ok:
@@ -205,7 +197,7 @@ class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
         if not device:
             messages.error(request, f'Onboarding: Device with ID {device_id} not found.')
             return
-        
+
         # TODO(Air): We also need to remove the onboarding process automatically without calling this view
 
         state, onboarding_process = OnboardingProcess.cancel_for_device(device)
@@ -220,7 +212,8 @@ class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
         elif state == OnboardingProcessState.CANCELED:
             messages.warning(request, f'Onboarding process for device {device.device_name} canceled.')
         elif state != OnboardingProcessState.NO_SUCH_PROCESS:
-            messages.error(request, f'Onboarding process for device {device.device_name} is in unexpected state {state}.')
+            messages.error(request,
+                           f'Onboarding process for device {device.device_name} is in unexpected state {state}.')
 
         if not onboarding_process:
             messages.error(request, f'No active onboarding process for device {device.device_name} found.')

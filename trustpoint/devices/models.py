@@ -3,7 +3,6 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -11,8 +10,6 @@ from pki.models import EndpointProfile
 
 from .exceptions import UnknownOnboardingStatusError
 
-if TYPE_CHECKING:
-    from typing import Tuple
 
 class Device(models.Model):
     """Device Model."""
@@ -63,16 +60,16 @@ class Device(models.Model):
     def __str__(self: Device) -> str:
         """Returns a Device object in human-readable format."""
         return f'Device({self.device_name}, {self.serial_number})'
-    
+
     def revoke_ldevid(self: Device) -> bool:
         """Revokes the LDevID.
-        
+
         Deletes the LDevID file and sets the device status to NOT_ONBOARDED.
         Actual revocation (CRL, OCSP) is not yet implemented.
         """
         if not self.ldevid:
             return False
-        
+
         if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
             # TODO(Air): Perhaps extra status for revoked devices?
             self.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
@@ -88,13 +85,12 @@ class Device(models.Model):
             return cls.objects.get(pk=device_id)
         except cls.DoesNotExist:
             return None
-        
+
     @classmethod
     def check_onboarding_prerequisites(cls: Device, device_id: int,
                                        allowed_onboarding_protocols: list[Device.OnboardingProtocol]
-                                        ) -> Tuple[bool, str | None]:
+                                        ) -> tuple[bool, str | None]:
         """Checks if criteria for starting the onboarding process are met."""
-
         device = cls.get_by_id(device_id)
 
         if not device:

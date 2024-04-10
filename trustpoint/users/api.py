@@ -1,9 +1,8 @@
-import base64
 
 from django.contrib.auth import authenticate
 from django.contrib.auth.models import User
 from ninja import Router, Schema
-from ninja.security import django_auth
+
 from trustpoint.schema import ErrorSchema, SuccessSchema
 from users.models import PersonalAccessToken
 
@@ -17,10 +16,10 @@ class LoginPATSchema(Schema):
     success: bool
     pat: str
 
-@router.post("/login", response={200: LoginPATSchema, 403: ErrorSchema}, auth=None, exclude_none=True)
+@router.post('/login', response={200: LoginPATSchema, 403: ErrorSchema}, auth=None, exclude_none=True)
 def login(request, data: LoginBodySchema):
     """Username/password login endpoint for the API
-    
+
     Creates a new personal access token for the user and returns it.
     """
     # TODO(Air): Needs rate-limiting, PAT scoping, etc.
@@ -31,10 +30,10 @@ def login(request, data: LoginBodySchema):
         return 200, {'success': True, 'pat': pat.token}
     return 403, {'error': 'Login failed'}
 
-@router.post("/logout", response={200: SuccessSchema, 422: ErrorSchema}, exclude_none=True)
+@router.post('/logout', response={200: SuccessSchema, 422: ErrorSchema}, exclude_none=True)
 def logout(request, all: bool = False):
     """Logout endpoint for the API
-    
+
     Deletes the personal access token from the user.
     If option "all" is set, all PATs for the user are deleted.
     Does nothing without "all" in case of django_auth.

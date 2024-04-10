@@ -1,16 +1,19 @@
 """Main list of Django Ninja API routers"""
 
-from ninja import NinjaAPI, Schema
+from __future__ import annotations
+
+from ninja import NinjaAPI
 from ninja.security import HttpBearer, django_auth
 from onboarding.api import router as onboarding_router
 from users.api import router as users_router
 from users.models import PersonalAccessToken
 
+
 class AuthBearer(HttpBearer):
+    """Bearer token authentication for the API"""
     def authenticate(self, request, token) -> PersonalAccessToken | None:
-        pat = PersonalAccessToken.get_from_string(token)
-        if pat is not None:
-            return pat
+        """Check the provided token against the database for validity"""
+        return PersonalAccessToken.get_from_string(token)
 
 api = NinjaAPI(
     auth=(AuthBearer(), django_auth),

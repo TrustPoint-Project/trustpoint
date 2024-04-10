@@ -1,7 +1,10 @@
+"""Models for the users application."""
+
 import secrets
+
+from django.contrib.auth.models import User
 from django.db import models
 from django.utils import timezone
-from django.contrib.auth.models import User
 
 TOKEN_BYTES = 32
 
@@ -14,7 +17,7 @@ def unique_token():
 
 def expiration():
     return timezone.now() + timezone.timedelta(days=365)
-  
+
 class PersonalAccessToken(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     token = models.CharField(max_length=TOKEN_BYTES*2,default=unique_token,editable=False,unique=True)
@@ -25,7 +28,7 @@ class PersonalAccessToken(models.Model):
         if tk and tk.expiration > timezone.now():
             return tk.user
         return None
-  
+
     def get_from_string(provided_token:str):
         return PersonalAccessToken.objects.filter(token=provided_token).last()
 
