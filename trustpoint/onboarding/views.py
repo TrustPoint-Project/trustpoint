@@ -55,57 +55,16 @@ class OnboardingUtilMixin:
         """Checks if criteria for starting the onboarding process are met."""
         device = self.device
 
-        if not device:
-            messages.error(request, f'Onboarding: Device with ID {self.kwargs['device_id']} not found.')
-            return False
+        ok, msg = Device.check_onboarding_prerequisites(self.kwargs['device_id'], allowed_onboarding_protocols)
 
-        if not device.endpoint_profile:
-            messages.error(request,
-                f'Onboarding: Please select an endpoint profile for device {device.device_name} first.')
-            return False
-        if not device.endpoint_profile.issuing_ca:
-            messages.error(request,
-                f'Onboarding: Endpoint profile {device.endpoint_profile.unique_name} has no issuing CA set.')
-            return False
-
-        if device.onboarding_protocol not in allowed_onboarding_protocols:
-            try:
-                label = Device.OnboardingProtocol(device.onboarding_protocol).label
-            except ValueError:
-                messages.error(request, 'Onboarding: Please select a valid onboarding protocol.')
-                return False
-
-            messages.error(request, f'Onboarding protocol {label} is not implemented.')
+        if not ok:
+            messages.error(request, msg)
             return False
 
         # TODO(Air): check that device is not already onboarded
         # Re-onboarding might be a valid use case, e.g. to renew a certificate
 
         return True
-
-    if TYPE_CHECKING:
-        OnboardingProcessTypes = TypeVar('OnboardingProcessTypes', bound=OnboardingProcess)
-    def make_onboarding_process(self, process_type: type[OnboardingProcessTypes]) -> OnboardingProcessTypes:
-        """Returns the onboarding process for the device, creates a new one if it does not exist.
-
-        Args:
-            process_type (classname): The (class) type of the onboarding process to create.
-
-        Returns:
-            OnboardingProcessTypes: The onboarding process instance for the device.
-        """
-        # check if onboarding process for this device already exists
-        onboarding_process = OnboardingProcess.get_by_device(self.device)
-
-        if not onboarding_process:
-            onboarding_process = process_type(self.device)
-            onboarding_processes.append(onboarding_process)
-            self.device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_RUNNING
-            # TODO(Air): very unnecessary save required to update onboarding status in table
-            # Problem: if server is restarted during onboarding, status is stuck at running
-            self.device.save()
-
-        return onboarding_process
 
 
 class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView):
@@ -124,7 +83,7 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
 
         device = self.device
 
-        onboarding_process = self.make_onboarding_process(DownloadOnboardingProcess)
+        onboarding_process = OnboardingProcess.make_onboarding_process(device, DownloadOnboardingProcess)
 
         messages.warning(request, 'Keep the PKCS12 file secure! It contains the private key of the device.')
 
@@ -179,7 +138,7 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
         if device.onboarding_protocol == Device.OnboardingProtocol.MANUAL:
             return ManualDownloadView.as_view()(request, *args, **kwargs)
 
-        onboarding_process = self.make_onboarding_process(ManualOnboardingProcess)
+        onboarding_process = OnboardingProcess.make_onboarding_process(device, ManualOnboardingProcess)
 
         context = {
             'page_category': 'onboarding',
@@ -249,7 +208,7 @@ class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
         
         # TODO(Air): We also need to remove the onboarding process automatically without calling this view
 
-        state, onboarding_process = OnboardingProcess.cancel(device)
+        state, onboarding_process = OnboardingProcess.cancel_for_device(device)
 
         if state == OnboardingProcessState.COMPLETED:
             messages.success(request, f'Device {device.device_name} onboarded successfully.')

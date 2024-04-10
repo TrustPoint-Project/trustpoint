@@ -5,7 +5,7 @@ from ninja.security import django_auth
 from django.http import HttpRequest, HttpResponse
 from trustpoint.schema import ErrorSchema, SuccessSchema
 from devices.models import Device
-from onboarding.models import OnboardingProcess, OnboardingProcessState
+from onboarding.models import OnboardingProcess, OnboardingProcessState, DownloadOnboardingProcess, ManualOnboardingProcess
 from onboarding.crypto_backend import CryptoBackend as Crypt
 
 router = Router()
@@ -120,9 +120,41 @@ def start(request: HttpRequest, device_id: int):
     Returns a JSON object with the secrets required for the onboarding process.
     An exception is the manual P12 download onboarding type, which will return the PKCS#12 file.
     """
-    #onboarding_process = OnboardingProcess.start(device_id)
-    #return onboarding_process.url_ext
-    pass
+    device = Device.get_by_id(device_id)
+    if not device:
+        return 404, {'error': 'Device not found.'}
+    
+    ok, msg = Device.check_onboarding_prerequisites(device_id, 
+                [Device.OnboardingProtocol.CLI,
+                 Device.OnboardingProtocol.TP_CLIENT,
+                 Device.OnboardingProtocol.MANUAL])
+    
+    if not ok:
+        return 422, {'error': msg}
+    
+    if (device.onboarding_protocol == Device.OnboardingProtocol.MANUAL):
+        onboarding_process = OnboardingProcess.make_onboarding_process(device, DownloadOnboardingProcess)
+        response = HttpResponse(onboarding_process.get_pkcs12(), status=200, content_type='application/x-pkcs12')
+        response['Content-Disposition'] = f'attachment; filename="{device.serial_number}.p12"'
+        onboarding_process.cancel()
+        return response
+    
+    onboarding_process = OnboardingProcess.make_onboarding_process(device, ManualOnboardingProcess)
+    properties = {
+        'otp': onboarding_process.otp,
+        'salt': onboarding_process.salt,
+        'tsotp': onboarding_process.tsotp,
+        'tssalt': onboarding_process.tssalt,
+        'host': request.get_host(),
+        'url': onboarding_process.url,
+        'device': {
+            'name': device.device_name,
+            'id': device.id,
+            'sn': device.serial_number,
+        }
+    }
+    return 200, properties
+
 
 @router.delete("/{device_id}", response={200: SuccessSchema, 404: ErrorSchema, 422: ErrorSchema}, exclude_none=True)
 def stop(request: HttpRequest, device_id: int):
@@ -134,7 +166,7 @@ def stop(request: HttpRequest, device_id: int):
     if not device:
         return 404, {'error': 'Device not found.'}
     
-    state, onboarding_process = OnboardingProcess.cancel(device)
+    state, onboarding_process = OnboardingProcess.cancel_for_device(device)
 
     if state == OnboardingProcessState.COMPLETED:
         return 200, {'success':True, 'message': f'Device {device.device_name} onboarded successfully.'}

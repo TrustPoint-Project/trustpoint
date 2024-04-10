@@ -14,7 +14,7 @@ from onboarding.crypto_backend import CryptoBackend as Crypt
 from onboarding.crypto_backend import OnboardingError
 
 if TYPE_CHECKING:
-    from typing import Tuple
+    from typing import Any, Tuple, TypeVar
 
 onboarding_timeout = 1800  # seconds, TODO: add to configuration
 
@@ -77,36 +77,61 @@ class OnboardingProcess:
         """Returns the onboarding process in human-readable format."""
         return self.__str__()
 
-    @classmethod
-    def get_by_id(cls: OnboardingProcess, process_id: int) -> OnboardingProcess | None:
+    @staticmethod
+    def get_by_id(process_id: int) -> OnboardingProcess | None:
         """Returns the onboarding process with a given ID."""
         for process in onboarding_processes:
             if process.id == process_id:
                 return process
         return None
 
-    @classmethod
-    def get_by_url_ext(cls: OnboardingProcess, url: str) -> OnboardingProcess | None:
+    @staticmethod
+    def get_by_url_ext(url: str) -> OnboardingProcess | None:
         """Returns the onboarding process with a given URL extension."""
         for process in onboarding_processes:
             if process.url == url:
                 return process
         return None
 
-    @classmethod
-    def get_by_device(cls: OnboardingProcess, device: Device) -> OnboardingProcess | None:
+    @staticmethod
+    def get_by_device(device: Device) -> OnboardingProcess | None:
         """Returns the onboarding process for a given device."""
         for process in onboarding_processes:
             if process.device == device:
                 return process
         return None
     
-    @classmethod
-    def cancel(cls: OnboardingProcess, device: Device) -> Tuple[OnboardingProcessState, OnboardingProcess | None]:
+    if TYPE_CHECKING:
+        OnboardingProcessTypes = TypeVar('OnboardingProcessTypes', bound='OnboardingProcess')
+    @staticmethod
+    def make_onboarding_process(device: Device, process_type: type[OnboardingProcessTypes]) -> OnboardingProcessTypes:
+        """Returns the onboarding process for the device, creates a new one if it does not exist.
+
+        Args:
+            process_type (classname): The (class) type of the onboarding process to create.
+
+        Returns:
+            OnboardingProcessTypes: The onboarding process instance for the device.
+        """
+        # check if onboarding process for this device already exists
+        onboarding_process = OnboardingProcess.get_by_device(device)
+
+        if not onboarding_process:
+            onboarding_process = process_type(device)
+            onboarding_processes.append(onboarding_process)
+            device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_RUNNING
+            # TODO(Air): very unnecessary save required to update onboarding status in table
+            # Problem: if server is restarted during onboarding, status is stuck at running
+            device.save()
+
+        return onboarding_process
+    
+    @staticmethod
+    def cancel_for_device(device: Device) -> Tuple[OnboardingProcessState, OnboardingProcess | None]:
         """Cancels the onboarding process for a given device."""
-        process = cls.get_by_device(device)
+        process = OnboardingProcess.get_by_device(device)
         if process:
-            return process._cancel()
+            return process.cancel()
         elif device and device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
             device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
             device.save()
@@ -114,12 +139,13 @@ class OnboardingProcess:
 
         return (OnboardingProcessState.NO_SUCH_PROCESS, None)
     
-    def _cancel(self) -> Tuple[OnboardingProcessState, OnboardingProcess]:
+    def cancel(self) -> Tuple[OnboardingProcessState, OnboardingProcess]:
         """Cancels the onboarding process and removes it from the list."""
         self.active = False
         self.timer.cancel()
         onboarding_processes.remove(self)
         if self.device and self.device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+            # actual cancellation (cancel() may be called just to remove the process from onboarding_processes)
             self.device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
             self.device.save()
             self.state = OnboardingProcessState.CANCELED

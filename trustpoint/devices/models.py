@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -10,6 +11,8 @@ from pki.models import EndpointProfile
 
 from .exceptions import UnknownOnboardingStatusError
 
+if TYPE_CHECKING:
+    from typing import Tuple
 
 class Device(models.Model):
     """Device Model."""
@@ -85,3 +88,33 @@ class Device(models.Model):
             return cls.objects.get(pk=device_id)
         except cls.DoesNotExist:
             return None
+        
+    @classmethod
+    def check_onboarding_prerequisites(cls: Device, device_id: int,
+                                       allowed_onboarding_protocols: list[Device.OnboardingProtocol]
+                                        ) -> Tuple[bool, str | None]:
+        """Checks if criteria for starting the onboarding process are met."""
+
+        device = cls.get_by_id(device_id)
+
+        if not device:
+            return (False, f'Onboarding: Device with ID {device_id} not found.')
+
+        if not device.endpoint_profile:
+            return (False, f'Onboarding: Please select an endpoint profile for device {device.device_name} first.')
+
+        if not device.endpoint_profile.issuing_ca:
+            return (False, f'Onboarding: Endpoint profile {device.endpoint_profile.unique_name} has no issuing CA set.')
+
+        if device.onboarding_protocol not in allowed_onboarding_protocols:
+            try:
+                label = Device.OnboardingProtocol(device.onboarding_protocol).label
+            except ValueError:
+                return (False, 'Onboarding: Please select a valid onboarding protocol.')
+
+            return (False, f'Onboarding protocol {label} is not implemented.')
+
+        # TODO(Air): check that device is not already onboarded
+        # Re-onboarding might be a valid use case, e.g. to renew a certificate
+
+        return (True, None)
