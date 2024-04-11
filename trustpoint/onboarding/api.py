@@ -38,7 +38,6 @@ def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:
     except FileNotFoundError:
         onboarding_process.fail('Trust store file not found.')
         return 404, {'error': 'Trust store file not found.'}
-        return HttpResponse('Trust store file not found.', status=500)
 
     response = HttpResponse(trust_store, status=200, content_type='application/x-pem-file')
     response['hmac-signature'] = onboarding_process.get_hmac()
