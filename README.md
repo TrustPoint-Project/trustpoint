@@ -171,6 +171,21 @@ The login page can be accessed directly via /users/login/.
 
 Use the username and password which you previously provided through the **createsuperuser** command.
 
+#### Management commands for testing purposes
+
+```bash
+python manage.py clear_db
+```
+
+Clears all IssuingCA, EndpointProfile, and Device instances from the database.
+
+```bash
+python manage.py init_demo
+```
+
+Populates the database with some example CA and device instances.
+
+
 
 #### Adding dependencies to the project.
 

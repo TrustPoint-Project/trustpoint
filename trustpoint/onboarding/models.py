@@ -5,12 +5,16 @@ from __future__ import annotations
 import secrets
 import threading
 from enum import IntEnum
+from typing import TYPE_CHECKING
 
 from devices.models import Device
 from django.db import models
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
 from onboarding.crypto_backend import OnboardingError
+
+if TYPE_CHECKING:
+    from typing import TypeVar
 
 onboarding_timeout = 1800  # seconds, TODO: add to configuration
 
@@ -21,7 +25,8 @@ class OnboardingProcessState(IntEnum):
     Negative values indicate an error state.
     """
 
-    NO_SUCH_PROCESS = -2
+    NO_SUCH_PROCESS = -3
+    CANCELED = -2
     FAILED = -1
     STARTED = 0
     HMAC_GENERATED = 1
@@ -30,6 +35,14 @@ class OnboardingProcessState(IntEnum):
     LDEVID_SENT = 4
     COMPLETED = 5  # aka cert chain was requested
 
+
+class NoOnboardingProcessError(Exception):
+    """Exception raised when no onboarding process is found for a certain device, ID, or url extension."""
+
+    def __init__(self, message: str = 'No onboarding process found.') -> None:
+        """Initializes a new NoOnboardingProcessError with a given message."""
+        self.message = message
+        super().__init__(self.message)
 
 # NOT a database-backed model
 class OnboardingProcess:
@@ -64,29 +77,81 @@ class OnboardingProcess:
         """Returns the onboarding process in human-readable format."""
         return self.__str__()
 
-    @classmethod
-    def get_by_id(cls: OnboardingProcess, process_id: int) -> OnboardingProcess | None:
+    @staticmethod
+    def get_by_id(process_id: int) -> OnboardingProcess | None:
         """Returns the onboarding process with a given ID."""
         for process in onboarding_processes:
             if process.id == process_id:
                 return process
         return None
 
-    @classmethod
-    def get_by_url_ext(cls: OnboardingProcess, url: str) -> OnboardingProcess | None:
+    @staticmethod
+    def get_by_url_ext(url: str) -> OnboardingProcess | None:
         """Returns the onboarding process with a given URL extension."""
         for process in onboarding_processes:
             if process.url == url:
                 return process
         return None
 
-    @classmethod
-    def get_by_device(cls: OnboardingProcess, device: Device) -> OnboardingProcess | None:
+    @staticmethod
+    def get_by_device(device: Device) -> OnboardingProcess | None:
         """Returns the onboarding process for a given device."""
         for process in onboarding_processes:
             if process.device == device:
                 return process
         return None
+
+    if TYPE_CHECKING:
+        OnboardingProcessTypes = TypeVar('OnboardingProcessTypes', bound='OnboardingProcess')
+    @staticmethod
+    def make_onboarding_process(device: Device, process_type: type[OnboardingProcessTypes]) -> OnboardingProcessTypes:
+        """Returns the onboarding process for the device, creates a new one if it does not exist.
+
+        Args:
+            device (Device): The device to create the onboarding process for.
+            process_type (classname): The (class) type of the onboarding process to create.
+
+        Returns:
+            OnboardingProcessTypes: The onboarding process instance for the device.
+        """
+        # check if onboarding process for this device already exists
+        onboarding_process = OnboardingProcess.get_by_device(device)
+
+        if not onboarding_process:
+            onboarding_process = process_type(device)
+            onboarding_processes.append(onboarding_process)
+            device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_RUNNING
+            # TODO(Air): very unnecessary save required to update onboarding status in table
+            # Problem: if server is restarted during onboarding, status is stuck at running
+            device.save()
+
+        return onboarding_process
+
+    @staticmethod
+    def cancel_for_device(device: Device) -> tuple[OnboardingProcessState, OnboardingProcess | None]:
+        """Cancels the onboarding process for a given device."""
+        process = OnboardingProcess.get_by_device(device)
+        if process:
+            return process.cancel()
+        if device and device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+            device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+            device.save()
+            return (OnboardingProcessState.CANCELED, None)
+
+        return (OnboardingProcessState.NO_SUCH_PROCESS, None)
+
+    def cancel(self) -> tuple[OnboardingProcessState, OnboardingProcess]:
+        """Cancels the onboarding process and removes it from the list."""
+        self.active = False
+        self.timer.cancel()
+        onboarding_processes.remove(self)
+        if self.device and self.device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+            # actual cancellation (cancel() may be called just to remove the process from onboarding_processes)
+            self.device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+            self.device.save()
+            self.state = OnboardingProcessState.CANCELED
+
+        return (self.state, self)
 
     def _fail(self, reason: str = '') -> None:
         """Cancels the onboarding process with a given reason."""
