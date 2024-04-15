@@ -2,6 +2,9 @@
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+from crispy_forms.helper import FormHelper
+from crispy_forms.layout import Layout, Fieldset
+
 from .models import LoggingConfig, NetworkConfig, NTPConfig, SecurityConfig
 
 
@@ -47,9 +50,26 @@ class LoggingConfigForm(forms.ModelForm):
 class SecurityConfigForm(forms.ModelForm):
     """Security configuration model form"""
 
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.helper = FormHelper()
+        # self.helper.add_input(Submit('submit', 'Submit'))
+        self.helper.layout = Layout(
+            Fieldset(
+                'Security Level Presets',
+                'security_mode',
+            ),
+            Fieldset(
+                'Advanced Security Settings',
+                'enable_local_root_ca',	
+                'local_root_ca_alg_type'
+            )
+        )
+
+
     security_mode = forms.ChoiceField(choices=SecurityConfig.SecurityModeChoices.choices,
                                       widget=forms.RadioSelect(),
-                                      label=_('Security level preset'))
+                                      label='')
 
     class Meta:
         """Meta class"""

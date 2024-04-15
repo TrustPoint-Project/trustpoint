@@ -1,5 +1,5 @@
 {% extends 'trustpoint/base.html' %}
-{% load crispy_forms_filters %}
+{% load crispy_forms_tags %}
 {% block content %}
     <div class="card card-main text-center">
         <div class="card-header d-flex">
@@ -11,15 +11,13 @@
                   id="security_configuration">
                 {% csrf_token %}
                 <fieldset class="form-group tp-form-group">
-                    {{ security_config_form|crispy }}
+                    {% crispy security_config_form %}
                 </fieldset>
+                <hr>
                 <button class="btn btn-primary col ms-3 me-1" type="submit" name="security_configuration">Save
                     Configuration
                 </button>
             </form>
-        </div>
-        <div class="card-footer text-body-secondary">
-
         </div>
     </div>
 {% endblock content %}
