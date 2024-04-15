@@ -56,9 +56,9 @@ class SecurityConfig(models.Model):
 
     class SecurityModeChoices(models.TextChoices):
         """Types of security modes"""
-        LOW = '1', 'low'
-        MIDDLE = '2', 'middle'
-        HIGH = '3', 'high'
+        LOW = '1', 'Basic'
+        MEDIUM = '2', 'Medium'
+        HIGH = '3', 'High'
 
     class LocalRootCaAlgTypeChoices(models.TextChoices):
         """Types of security modes"""

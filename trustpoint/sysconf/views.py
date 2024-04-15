@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from django.views.generic.base import RedirectView
+from django.contrib import messages
 
 if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
@@ -115,5 +116,26 @@ def security(request: HttpRequest) -> HttpResponse:
     Returns: HTTPResponse
     """
     context = {'page_category': 'sysconf', 'page_name': 'security'}
-    return render(request, 'sysconf/security.html', context=context)
+
+    # Try to read the configuration
+    try:
+        security_config = SecurityConfig.objects.get(id=1)
+    except ObjectDoesNotExist:
+        # create an empty configuration
+        security_config = SecurityConfig()
+
+    if request.method == 'POST':
+        security_configuration_form = SecurityConfigForm(request.POST, instance=security_config)
+        if security_configuration_form.is_valid():
+            security_configuration_form.save()
+            messages.success(request, 'Configuration saved successfully')
+        else:
+            messages.error(request, 'Error saving the configuration')
+
+        context['security_config_form'] = security_configuration_form
+        return render(request, 'sysconf/security.html', context=context)
+
+    else:
+        context['security_config_form'] = SecurityConfigForm(instance=security_config)
+        return render(request, 'sysconf/security.html', context=context)
 

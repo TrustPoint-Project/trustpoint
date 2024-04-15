@@ -47,9 +47,18 @@ class LoggingConfigForm(forms.ModelForm):
 class SecurityConfigForm(forms.ModelForm):
     """Security configuration model form"""
 
+    security_mode = forms.ChoiceField(choices=SecurityConfig.SecurityModeChoices.choices,
+                                      widget=forms.RadioSelect(),
+                                      label=_('Security level preset'))
+
     class Meta:
         """Meta class"""
         model = SecurityConfig
         fields = ['security_mode','enable_local_root_ca','local_root_ca_alg_type']
+        labels = {
+            'security_mode': _('Security Level'),
+            'enable_local_root_ca': _('Enable Local Root CA'),
+            'local_root_ca_alg_type': _('Local Root CA Algorithm Type'),
+        }
 
 
