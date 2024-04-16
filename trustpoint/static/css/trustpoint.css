@@ -446,7 +446,11 @@ svg.theme-icon {
     color: #6c757d;
 }
 
-
+.card:hover {
+  color: #fff;
+  transform: scale(1.025);
+  box-shadow: rgba(0, 0, 0, 0.24) 0px 5px 10px
+}
 
 .form-error { /* unused class */
     font-size: 0.8rem;
