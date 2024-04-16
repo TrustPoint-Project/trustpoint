@@ -6,20 +6,36 @@
   <div class="col-6">
     <canvas id="barChart" width="400" height="200"></canvas>
   </div>
+</div>
+<div class="row p-3">
   <div class="col-8">
-    <canvas id="stackChart" width="400" height="200"></canvas>
+    <h2>Number of Endpoints</h2>
+    <canvas id="stackedAreaChart" width="400" height="200"></canvas>
   </div>
   <div class="col-4">
+    <h2>Number of Devices</h2>
     <canvas id="donutChart" width="200" height="200"></canvas>
+  </div>
+</div>
+<div class="row p-3">
+  <!-- <div class="col-4">
+    <h2>Number of Devices</h2>
+    <canvas id="donutChart" width="200" height="200"></canvas>
+  </div> -->
+  <div class="col-12">
+    <h2>Number of Devices</h2>
+    <canvas id="stackChart" width="400" height="200"></canvas>
   </div>
 </div>
 <!-- Number panels row -->
 <div class="row p-3">
+  <!-- number of root CAs -->
   <div class="col-3">
-    <div class="card bg-secondary text-white">
+    <div class="card card1 bg-secondary text-white">
       <!-- <h2 class="text-center pb-4"><i class="bi bi-cpu"></i></h2> -->
       <h2 class="text-center pb-4">Number of Root CAs</h2>
-      <h2 class="text-center pb-4">{{number_of_root_cas}}</h2>
+      <!-- <h1 class="text-center pb-4">{{number_of_root_cas}}</h1> -->
+      <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_root_cas}}</p>
       <div class="row p-0">
         <div class="col-5 small">Active: 2</div>
         <div class="col-5 offset-2 small p-0">Inactive: 0</div>
@@ -46,11 +62,12 @@
       </div>
     </div>
   </div>
+  <!-- number of issuing CAs -->
   <div class="col-3">
     <div class="card bg-secondary text-white">
       <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
       <h2 class="text-center pb-4">Number of Issuing CAs</h2>
-      <h2 class="text-center pb-4">{{number_of_issuing_cas}}</h2>
+      <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_issuing_cas}}</p>
       <div class="row p-0">
         <div class="col-5 small">Active: 2</div>
         <div class="col-5 offset-2 small p-0">Inactive: 1</div>
@@ -77,11 +94,12 @@
       </div>
     </div>
   </div>
+  <!-- number of endpoints -->
   <div class="col-3">
     <div class="card bg-secondary text-white">
       <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
       <h2 class="text-center pb-4">Number of Endpoints</h2>
-      <h2 class="text-center pb-4">{{number_of_endpoints}}</h2>
+      <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_endpoints}}</p>
       <div class="row p-0">
         <div class="col-5 small">Active: 3</div>
         <div class="col-5 offset-2 small p-0">Inactive: 1</div>
@@ -108,14 +126,15 @@
       </div>
     </div>
   </div>
+  <!-- number of devices -->
   <div class="col-3">
     <div class="card bg-secondary text-white">
       <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
       <h2 class="text-center pb-4">Number of Devices</h2>
-      <h2 class="text-center pb-4">{{number_of_devices}}</h2>
+      <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_devices}}</p>
       <div class="row p-0">
-        <div class="col-5 small">Onboarded: 12</div>
-        <div class="col-5 offset-2 small p-0">Not Onboarded: 3</div>
+        <div class="col-5 small">Onboard: 12</div>
+        <div class="col-5 offset-2 small p-0">Notonboard: 3</div>
       </div>
       <div class="row pt-0 pb-1">
         <div
@@ -161,6 +180,11 @@
     var ctx = document.getElementById("donutChart").getContext("2d");
     var donutChartConfig = JSON.parse("{{ donut_chart_config|escapejs }}");
     var lineChart = new Chart(ctx, donutChartConfig);
+  });
+  document.addEventListener("DOMContentLoaded", function () {
+    var ctx = document.getElementById("stackedAreaChart").getContext("2d");
+    var stackedAreaChartConfig = JSON.parse("{{ stack_area_chart_config|escapejs }}");
+    var lineChart = new Chart(ctx, stackedAreaChartConfig);
   });
 </script>
 

@@ -18,6 +18,12 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
     template_name = 'home/dashboard.html'
 
     total_number_of_devices = 15
+    total_number_of_endpoints = 4
+    last_week_dates = None
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.last_week_dates = self.generate_last_week_dates()
 
     def get_line_chart_data(self):
         data = [(i+1)*2 for i in range(7)]
@@ -36,7 +42,12 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         return dates_as_strings 
     
     def get_all_devices(self):
-        devices_history = [[self.total_number_of_devices-i%3 if j%2 else i%3  for i in range(7)] for j in range(2)]
+        total_number_devices = self.get_line_chart_data()
+        devices_history = [[total_number_devices[i]-i%3 if j%2 else i%3 for i in range(7)] for j in range(2)]
+        return devices_history
+
+    def get_all_endpoints(self):
+        devices_history = [[self.total_number_of_endpoints-i%2 if j%2 else i%2 for i in range(7)] for j in range(2)]
         return devices_history
 
     def get_number_of_devices(self):
@@ -52,12 +63,12 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
     def get_number_of_issuingcas(self):
         return 3
     def get_number_of_endpoints(self):
-        return 4
+        return self.total_number_of_endpoints
     def get_line_chart_config(self):
         config = {
             "type": "line",
             "data": {
-                "labels": self.generate_last_week_dates(),
+                "labels": self.last_week_dates,
                 "datasets": [{
                     "label": "Number of devices",
                     "data": self.get_line_chart_data(),
@@ -80,7 +91,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         config = {
             "type": "bar",
             "data": {
-                "labels": self.generate_last_week_dates(),
+                "labels": self.last_week_dates,
                 "datasets": [{
                     "label": "Number of Issuing CAs",
                     "data": self.get_bar_chart_data(),
@@ -111,24 +122,60 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
               "data": [active_devices, number_of_devices-active_devices],
               "borderWidth": 1,
               "backgroundColor": [
+                '#0d6efd',
                 '#D10C15',
-                '#0d6efd'
               ],
               "hoverOffset": 4
             }]
           }
         }
         return config
+
+    def get_stack_area_chart_config(self):
+        endpoint_history = self.get_all_endpoints()
+        config = {
+            "type": "line",
+            "data": {
+                "labels": self.last_week_dates,
+                "datasets": [ {
+                    "label": 'Inactive',
+                    "data": endpoint_history[0],
+                    "backgroundColor": [
+                      '#D10C15',
+                    ],
+                    "stack": "stack",
+                    "fill": True,
+                    },
+                    {
+                    "label": "Active",
+                    "data": endpoint_history[1],
+                    "borderColor": "#0d6efd",
+                    "backgroundColor": "#0d6efd",
+                    "tension": 0.4,
+                    "fill": True,
+                    "stack": "stack"
+                  }
+                 ]
+            },
+            "options": {
+                "scales": {
+                    "y": {
+                        "beginAtZero": True
+                    }
+                }
+            }
+        }
+        return config
     
     def get_stack_chart_config(self):
-        devices_history = self.get_all_devices()
+        device_history = self.get_all_devices()
         config = {
             "type": "bar",
             "data": {
-                "labels": self.generate_last_week_dates(),
+                "labels": self.last_week_dates,
                 "datasets": [ {
                     "label": 'Inactive',
-                    "data": devices_history[0],
+                    "data": device_history[0],
                     "backgroundColor": [
                       '#D10C15',
                     ],
@@ -136,7 +183,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
                     },
                     {
                     "label": "Active",
-                    "data": devices_history[1],
+                    "data": device_history[1],
                     "borderColor": "#0d6efd",
                     "backgroundColor": "#0d6efd",
                     "tension": 0.4,
@@ -161,6 +208,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         context['line_chart_config'] = json.dumps(line_chart_config)
         context['bar_chart_config'] = json.dumps(self.get_bar_chart_config())
         context['stack_chart_config'] = json.dumps(self.get_stack_chart_config())
+        context['stack_area_chart_config'] = json.dumps(self.get_stack_area_chart_config())
         context['donut_chart_config'] = json.dumps(self.get_donut_chart_config())
         context['number_of_devices'] = self.get_number_of_devices()
         context['number_of_issuing_cas'] = self.get_number_of_issuingcas()
