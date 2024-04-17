@@ -7,9 +7,15 @@ from typing import TYPE_CHECKING
 from django import forms
 from django.core.exceptions import ValidationError
 from django.core.validators import MinLengthValidator
-from util.x509.credentials import CredentialsError, CredentialUploadHandler
+from django.forms import ModelChoiceField
+from django.forms.widgets import DateTimeInput
+from django.utils.timezone import now
+from datetime import timedelta
 
-from .models import IssuingCa
+from util.x509.credentials import CredentialsError, CredentialUploadHandler
+from util.x509.enrollment import Enrollment
+
+from .models import IssuingCa, RootCa
 
 if TYPE_CHECKING:
     from typing import Any
@@ -34,6 +40,13 @@ class UploadError(ValidationError):
         exc_msg = 'Upload failed!'
         super().__init__(exc_msg, *args, **kwargs)
 
+class CreateError(ValidationError):
+    """Raised if the creation of a (root) CA failed."""
+
+    def __init__(self: CreateError, *args: Any, **kwargs: Any) -> None:
+        """Add the error message by passing it to constructor of the parent class."""
+        exc_msg = 'CA creation failed!'
+        super().__init__(exc_msg, *args, **kwargs)
 
 class CleanUniqueNameMixin:
     """Mixin for clean unique name which checks that the unique name is not already present in the database."""
@@ -159,5 +172,64 @@ class IssuingCaLocalPemFileForm(CleanUniqueNameMixin, IssuingCaUploadForm):
 
         if self.errors:
             raise UploadError
+
+        return cleaned_data
+
+class RootCaChoiceField(ModelChoiceField):
+    def label_from_instance(self, obj):
+        return f"{obj.unique_name} - {obj.ca_type}"
+
+class IssuingCaLocalSignedForm(CleanUniqueNameMixin, IssuingCaUploadForm):
+    """Issuing CA form for locally signed CAs."""
+
+    unique_name = forms.CharField(max_length=20,
+                                  required=True,
+                                  validators=[MinLengthValidator(3)])
+    common_name = forms.CharField(max_length=20, required=True)
+    root_ca = RootCaChoiceField(
+        queryset=RootCa.objects.all(),
+        label="Root CA / Issuer DN",
+        empty_label="Select a Root CA / Issuer DN",
+        to_field_name="unique_name",
+        widget=forms.Select(attrs={'class': 'form-control'}),
+        required=True
+    )
+    not_valid_before = forms.DateTimeField(
+        initial=now(),
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}, format='%Y-%m-%dT%H:%M'),
+        label='Not Valid Before',
+        required=True
+    )
+    not_valid_after = forms.DateTimeField(
+        initial=lambda: now() + timedelta(days=365),  # default one year from now
+        widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}, format='%Y-%m-%dT%H:%M'),
+        label='Not Valid After',
+        required=True
+    )
+
+    def __init__(self, *args, **kwargs):
+        super(IssuingCaLocalSignedForm, self).__init__(*args, **kwargs)
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        unique_name = cleaned_data.get('unique_name')
+        common_name = cleaned_data.get('common_name')
+        root_ca = cleaned_data.get('root_ca')
+        not_valid_before = cleaned_data.get('not_valid_before')
+        not_valid_after = cleaned_data.get('not_valid_after')
+
+        try:
+            Enrollment.generate_local_signed_sub_ca(unique_name=unique_name,
+                                                    common_name=common_name,
+                                                    root_ca_unique_name=root_ca.unique_name,
+                                                    not_valid_before=not_valid_before,
+                                                    not_valid_after=not_valid_after,
+                                                    subject_password=None,
+                                                    issuer_password=None,
+                                                    config_type=IssuingCa.ConfigType.F_SELF)
+        except ValueError as e:
+            self.add_error('unique_name', 'Error while generating a subordinate CA'+ str(e))
+            raise CreateError from e
 
         return cleaned_data

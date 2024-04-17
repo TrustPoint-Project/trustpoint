@@ -37,6 +37,8 @@ class RootCa(models.Model):
         SECP256R1 = 'SECP256R1', _('SECP256R1')
         SECP384R1 = 'SECP384R1', _('SECP384R1')
         RSA2048 = 'RSA2048', _('RSA2048')
+        RSA4096 = 'RSA4096', _('RSA4096')
+
 
     unique_name = models.CharField(
         max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True
@@ -45,7 +47,7 @@ class RootCa(models.Model):
     not_valid_before = models.DateTimeField(default=timezone.now)
     not_valid_after = models.DateTimeField(default=timezone.now() + timedelta(days=365*1))
 
-    ca_type = models.CharField(max_length=9, choices=CaType, default='RSA2048')
+    ca_type = models.CharField(max_length=9, choices=CaType.choices, default='RSA2048')
 
     created_at = models.DateTimeField(default=timezone.now)
 
@@ -110,6 +112,7 @@ class IssuingCa(models.Model):
 
         F_P12 = 'F_P12', _('File Import - PKCS#12')
         F_PEM = 'F_PEM', _('File Import - PEM')
+        F_SELF = 'F_SELF', _('Locally signed')
 
     unique_name = models.CharField(
         max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True

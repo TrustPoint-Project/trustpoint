@@ -60,15 +60,8 @@ class SecurityConfig(models.Model):
         MEDIUM = '2', 'Medium'
         HIGH = '3', 'High'
 
-    class LocalRootCaAlgTypeChoices(models.TextChoices):
-        """Types of security modes"""
-        secp256r1 = '1', 'secp256r1'
-        secp384r1 = '2', 'secp384r1'
-        rsa2048 = '3', 'rsa2048'
-
     security_mode = models.CharField(max_length=6, choices=SecurityModeChoices.choices, default=SecurityModeChoices.LOW)
     enable_local_root_ca = models.BooleanField(default=False)
-    local_root_ca_alg_type = models.CharField(max_length=6, choices=LocalRootCaAlgTypeChoices.choices, default=LocalRootCaAlgTypeChoices.secp256r1)
 
 
     def __str__(self) -> str:
