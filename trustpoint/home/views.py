@@ -111,6 +111,26 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         }
         return config
     
+    def get_endoint_donut_chart_config(self):
+        number_of_endpoints = self.get_number_of_endpoints()
+        active_endpoints = 3
+        config = {
+          "type": "doughnut",
+          "data": {
+            "labels": ["active", "inactive"],
+            "datasets": [{
+              "data": [active_endpoints, number_of_endpoints-active_endpoints],
+              "borderWidth": 1,
+              "backgroundColor": [
+                '#0d6efd',
+                '#D10C15',
+              ],
+              "hoverOffset": 4
+            }]
+          }
+        }
+        return config
+
     def get_donut_chart_config(self):
         number_of_devices = self.get_number_of_devices()
         active_devices = 8
@@ -134,7 +154,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
     def get_stack_area_chart_config(self):
         endpoint_history = self.get_all_endpoints()
         config = {
-            "type": "line",
+            "type": "bar",
             "data": {
                 "labels": self.last_week_dates,
                 "datasets": [ {
@@ -210,6 +230,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         context['stack_chart_config'] = json.dumps(self.get_stack_chart_config())
         context['stack_area_chart_config'] = json.dumps(self.get_stack_area_chart_config())
         context['donut_chart_config'] = json.dumps(self.get_donut_chart_config())
+        context['endpoint_donut_chart_config'] = json.dumps(self.get_endoint_donut_chart_config())
         context['number_of_devices'] = self.get_number_of_devices()
         context['number_of_issuing_cas'] = self.get_number_of_issuingcas()
         context['number_of_root_cas'] = self.get_number_of_rootcas()

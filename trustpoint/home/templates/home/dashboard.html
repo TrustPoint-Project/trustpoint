@@ -14,15 +14,15 @@
   </div>
   <div class="col-4">
     <h2>Number of Devices</h2>
-    <canvas id="donutChart" width="200" height="200"></canvas>
+    <canvas id="donutChartDevice" width="200" height="200"></canvas>
   </div>
 </div>
 <div class="row p-3">
-  <!-- <div class="col-4">
-    <h2>Number of Devices</h2>
-    <canvas id="donutChart" width="200" height="200"></canvas>
-  </div> -->
-  <div class="col-12">
+  <div class="col-4">
+    <h2>Number of Endpoints</h2>
+    <canvas id="donutChartEndpoint" width="200" height="200"></canvas>
+  </div>
+  <div class="col-8">
     <h2>Number of Devices</h2>
     <canvas id="stackChart" width="400" height="200"></canvas>
   </div>
@@ -177,8 +177,13 @@
     var lineChart = new Chart(ctx, stackChartConfig);
   });
   document.addEventListener("DOMContentLoaded", function () {
-    var ctx = document.getElementById("donutChart").getContext("2d");
+    var ctx = document.getElementById("donutChartDevice").getContext("2d");
     var donutChartConfig = JSON.parse("{{ donut_chart_config|escapejs }}");
+    var lineChart = new Chart(ctx, donutChartConfig);
+  });
+  document.addEventListener("DOMContentLoaded", function () {
+    var ctx = document.getElementById("donutChartEndpoint").getContext("2d");
+    var donutChartConfig = JSON.parse("{{ endpoint_donut_chart_config|escapejs }}");
     var lineChart = new Chart(ctx, donutChartConfig);
   });
   document.addEventListener("DOMContentLoaded", function () {
