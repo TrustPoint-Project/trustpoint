@@ -74,11 +74,10 @@ class SecurityConfigForm(forms.ModelForm):
     class Meta:
         """Meta class"""
         model = SecurityConfig
-        fields = ['security_mode','enable_local_root_ca','local_root_ca_alg_type']
+        fields = ['security_mode','enable_local_root_ca']
         labels = {
             'security_mode': _('Security Level'),
             'enable_local_root_ca': _('Enable Local Root CA'),
-            'local_root_ca_alg_type': _('Local Root CA Algorithm Type'),
         }
 
 
