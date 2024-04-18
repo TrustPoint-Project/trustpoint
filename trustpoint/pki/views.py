@@ -7,6 +7,12 @@ import io
 import sys
 from typing import TYPE_CHECKING
 
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
+from cryptography.hazmat.primitives.serialization import BestAvailableEncryption, pkcs7, pkcs12
+from cryptography.x509.oid import NameOID
 from django.contrib import messages
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -14,30 +20,15 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import RedirectView, TemplateView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, FormMixin, UpdateView
+from django.views.generic.edit import CreateView, FormMixin, FormView, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_tables2 import SingleTableView
-from django.views.generic.edit import FormView
 from util.x509.credentials import CredentialUploadHandler
 from util.x509.enrollment import Enrollment
 
-from cryptography import x509
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import rsa, ec
-from cryptography.hazmat.primitives.serialization import BestAvailableEncryption, pkcs12
-from cryptography.x509.oid import NameOID
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import rsa, ec
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.serialization import pkcs7
-from cryptography import x509
-import requests
-import base64
-from django.views.generic.edit import FormView
 from trustpoint.views import BulkDeletionMixin, ContextDataMixin, Form, MultiFormView, TpLoginRequiredMixin
 
-from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm, IssuingCaLocalSignedForm, IssuingCaESTForm
+from .forms import IssuingCaESTForm, IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm, IssuingCaLocalSignedForm
 from .models import EndpointProfile, IssuingCa, RootCa
 from .tables import EndpointProfileTable, IssuingCaTable, RootCaTable
 
@@ -48,7 +39,6 @@ if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
 
     from .forms import IssuingCaUploadForm
-    from util.x509.credentials import P12
 
 
 # -------------------------------------------------- EndpointProfiles --------------------------------------------------

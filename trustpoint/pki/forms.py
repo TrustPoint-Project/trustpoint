@@ -187,17 +187,25 @@ class IssuingCaESTForm(CleanUniqueNameMixin, IssuingCaUploadForm):
     est_password = forms.CharField(
         widget=forms.PasswordInput(), label='Issuing CA Private Key Password', required=False
     )
-    KEY_TYPES = [ ('RSA_2048','RSA 2048'),
-                ('RSA_4096','RSA 4096'),
-                ('ECC_256','Secp256r1'),
-                ('ECC_384','Secp348r1'),
-                ]
-    
+    KEY_TYPES =  ( ('RSA_2048','RSA 2048'),
+                  ('RSA_4096','RSA 4096'),
+                  ('ECC_256','Secp256r1'),
+                  ('ECC_384','Secp348r1'),
+                )
+
     key_type = forms.CharField(widget=forms.Select(choices=KEY_TYPES))
 
-    def clean(self):
+    def clean(self) -> dict[str, Any]:
+        """Calls ESTProtocolHandler in clean method. This ensures that protocol errors can be displayed in the form
+
+        Raises:
+            UploadError: Import of certificate failed
+
+        Returns:
+            dict[str, Any]: returns the cleaned data
+        """
         cleaned_data = super().clean()
-        
+
         est_url = cleaned_data.get('est_url')
         unique_name = cleaned_data.get('unique_name')
         common_name = cleaned_data.get('common_name')
@@ -205,7 +213,7 @@ class IssuingCaESTForm(CleanUniqueNameMixin, IssuingCaUploadForm):
         est_user_name = cleaned_data.get('est_user_name')
         est_password = cleaned_data.get('est_password')
         key_type = cleaned_data.get('key_type')
-        
+
         try:
             ESTProtocolHandler.est_get_ca_certificate(est_user_name,est_password,est_url,unique_name,common_name,key_type)
         except ValueError as e:
