@@ -26,10 +26,18 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.primitives.serialization import BestAvailableEncryption, pkcs12
 from cryptography.x509.oid import NameOID
-
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import rsa, ec
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.serialization import pkcs7
+from cryptography import x509
+import requests
+import base64
+from django.views.generic.edit import FormView
 from trustpoint.views import BulkDeletionMixin, ContextDataMixin, Form, MultiFormView, TpLoginRequiredMixin
 
-from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm, IssuingCaLocalSignedForm
+from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm, IssuingCaLocalSignedForm, IssuingCaESTForm
 from .models import EndpointProfile, IssuingCa, RootCa
 from .tables import EndpointProfileTable, IssuingCaTable, RootCaTable
 
@@ -40,6 +48,7 @@ if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
 
     from .forms import IssuingCaUploadForm
+    from util.x509.credentials import P12
 
 
 # -------------------------------------------------- EndpointProfiles --------------------------------------------------
@@ -645,10 +654,13 @@ class AddIssuingCaLocalRequestTemplateView(IssuingCasContextMixin, TpLoginRequir
     template_name = 'pki/issuing_cas/add/local_request.html'
 
 
-class AddIssuingCaRemoteEstTemplateView(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView):
+class AddIssuingCaRemoteEstTemplateView(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView, FormView):
     """Add Issuing CA Remote EST Template View."""
 
     template_name = 'pki/issuing_cas/add/remote_est.html'
+    form_class=IssuingCaESTForm
+    success_url = reverse_lazy('pki:issuing_cas')
+    ignore_url = reverse_lazy('pki:issuing_cas')
 
 
 class AddIssuingCaRemoteCmpTemplateView(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView):

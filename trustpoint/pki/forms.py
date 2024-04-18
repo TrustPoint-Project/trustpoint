@@ -13,6 +13,7 @@ from django.utils.timezone import now
 from datetime import timedelta
 
 from util.x509.credentials import CredentialsError, CredentialUploadHandler
+from util.protocols.est_remote import ESTProtocolHandler
 from util.x509.enrollment import Enrollment
 
 from .models import IssuingCa, RootCa
@@ -172,6 +173,44 @@ class IssuingCaLocalPemFileForm(CleanUniqueNameMixin, IssuingCaUploadForm):
 
         if self.errors:
             raise UploadError
+
+        return cleaned_data
+
+class IssuingCaESTForm(CleanUniqueNameMixin, IssuingCaUploadForm):
+    """Retrieve an issuing CA certificate from a remote CA via EST"""
+
+    est_url = forms.CharField(max_length=100, required=True)
+    unique_name = forms.CharField(max_length=20, required=True, validators=[MinLengthValidator(3)])
+    common_name = forms.CharField(max_length=20, required=True, validators=[MinLengthValidator(3)])
+
+    est_user_name = forms.CharField(max_length=20, required=True, validators=[MinLengthValidator(3)])
+    est_password = forms.CharField(
+        widget=forms.PasswordInput(), label='Issuing CA Private Key Password', required=False
+    )
+    KEY_TYPES = [ ('RSA_2048','RSA 2048'),
+                ('RSA_4096','RSA 4096'),
+                ('ECC_256','Secp256r1'),
+                ('ECC_384','Secp348r1'),
+                ]
+    
+    key_type = forms.CharField(widget=forms.Select(choices=KEY_TYPES))
+
+    def clean(self):
+        cleaned_data = super().clean()
+        
+        est_url = cleaned_data.get('est_url')
+        unique_name = cleaned_data.get('unique_name')
+        common_name = cleaned_data.get('common_name')
+
+        est_user_name = cleaned_data.get('est_user_name')
+        est_password = cleaned_data.get('est_password')
+        key_type = cleaned_data.get('key_type')
+        
+        try:
+            ESTProtocolHandler.est_get_ca_certificate(est_user_name,est_password,est_url,unique_name,common_name,key_type)
+        except ValueError as e:
+            self.add_error('est_url', 'Error in EST Protocol'+ str(e))
+            raise UploadError from e
 
         return cleaned_data
 
