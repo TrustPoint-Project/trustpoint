@@ -17,7 +17,9 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormMixin, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_tables2 import SingleTableView
+from django.views.generic.edit import FormView
 from util.x509.credentials import CredentialUploadHandler
+from util.x509.enrollment import Enrollment
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
@@ -35,7 +37,7 @@ import base64
 from django.views.generic.edit import FormView
 from trustpoint.views import BulkDeletionMixin, ContextDataMixin, Form, MultiFormView, TpLoginRequiredMixin
 
-from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm, IssuingCaESTForm
+from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm, IssuingCaLocalSignedForm, IssuingCaESTForm
 from .models import EndpointProfile, IssuingCa, RootCa
 from .tables import EndpointProfileTable, IssuingCaTable, RootCaTable
 
@@ -254,55 +256,16 @@ class CreateRootCaView(RootCasContextMixin, TpLoginRequiredMixin, CreateView):
     template_name = 'pki/root_cas/add.html'
     success_url = reverse_lazy('pki:root_cas')
 
-    def generate_cert_from_model(self, root_ca_instance, passphrase):
-        if root_ca_instance.ca_type == 'RSA2048':
-            private_key = rsa.generate_private_key(
-                public_exponent=65537,
-                key_size=2048,
-            )
-        elif root_ca_instance.ca_type == 'SECP256R1':
-            private_key = ec.generate_private_key(
-                ec.SECP256R1()
-            )
-        elif root_ca_instance.ca_type == 'SECP384R1':
-            private_key = ec.generate_private_key(
-                ec.SECP384R1()
-            )
-        else:
-            raise ValueError("Unsupported algorithm type")
-
-        # Prepare certificate subject and issuer from RootCa instance
-        subject = issuer = x509.Name([
-            x509.NameAttribute(NameOID.COMMON_NAME, root_ca_instance.common_name),
-        ])
-
-        certificate = x509.CertificateBuilder().subject_name(
-            subject
-        ).issuer_name(
-            issuer
-        ).public_key(
-            private_key.public_key()
-        ).serial_number(
-            x509.random_serial_number()
-        ).not_valid_before(
-            root_ca_instance.not_valid_before
-        ).not_valid_after(
-            root_ca_instance.not_valid_after
-        ).sign(private_key, hashes.SHA256())
-
-        # Create a PKCS#12 (P12) archive
-        p12 = pkcs12.serialize_key_and_certificates(
-            b"mykeycert", private_key, certificate, None, BestAvailableEncryption(passphrase)
-        )
-
-        return p12
-
     # TODO(Florian): Hardcoded enrollment code for self signed root CA
     def form_valid(self, form):
         new_root_ca = form.save()
 
-        passphrase = b"foo123"
-        p12_token = self.generate_cert_from_model(new_root_ca, passphrase)
+        passphrase = None
+        p12_token = Enrollment.generate_root_ca(common_name=new_root_ca.common_name,
+                                                    key_type=new_root_ca.ca_type,
+                                                    not_valid_before=new_root_ca.not_valid_before,
+                                                    not_valid_after=new_root_ca.not_valid_after,
+                                                    password=passphrase)
 
         p12_filename = f"media/{new_root_ca.unique_name}.p12"
         with open(p12_filename, "wb") as f:
@@ -332,7 +295,7 @@ class RootCaDetailView(RootCasContextMixin, TpLoginRequiredMixin, DetailView):
 
         #TODO(Florian): Hardcoded enrollment code for self signed root CA
         with default_storage.open(f"{self.get_object().unique_name}.p12", 'rb') as f:
-            certs_json = CredentialUploadHandler.parse_and_normalize_p12(f.read(), b"foo123").full_cert_chain_as_dict()
+            certs_json = CredentialUploadHandler.parse_and_normalize_p12(f.read(), None).full_cert_chain_as_dict()
 
         context['certs'] = certs_json
         context['unique_name'] = self.get_object().unique_name
@@ -677,10 +640,13 @@ class IssuingCaBulkDeleteView(
 
         return super().get(*args, **kwargs)
 
-class AddIssuingCaLocalPki(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView):
+class AddIssuingCaLocalPki(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView, FormView):
     """Add Issuing CA Local PKI View."""
 
-    template_name = 'pki/issuing_cas/add/local_pki.html'
+    template_name = 'pki/issuing_cas/add/local_signed_ca.html'
+    form_class = IssuingCaLocalSignedForm
+    success_url = reverse_lazy('pki:issuing_cas')
+    ignore_url = reverse_lazy('pki:issuing_cas')
 
 class AddIssuingCaLocalRequestTemplateView(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView):
     """Add Issuing CA Local Request Template View."""

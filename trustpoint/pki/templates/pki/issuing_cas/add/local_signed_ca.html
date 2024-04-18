@@ -1,0 +1,26 @@
+{% extends 'trustpoint/base.html' %}
+{% load crispy_forms_filters %}
+{% block content %}
+    <div class="card card-main text-center">
+        <div class="card-header d-flex">
+            <h1>Generate a local CA signed by a local Coot CA</h1>
+        </div>
+        <div class="card-body tp-main-centered pt-3 pb-4">
+
+            <div class="alert alert-warning" role="alert">
+            INFO: The Issuing CA to be created will use the same algorithm as the selected Root CA.
+            </div>
+            <form method="POST" class="tp-main-form text-start" id="add-est-request-form">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <div class="tp-form-btn-group tp-form-btn-group mt-5">
+                    <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">Cancel</a>
+                    <button class="btn btn-primary w-100 mt-1" type="submit" name="add-local-signed-ca">Generate local signed CA </button>
+                </div>
+            </form>
+
+        </div>
+
+
+    </div>
+{% endblock content %}

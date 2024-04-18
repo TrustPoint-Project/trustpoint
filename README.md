@@ -28,6 +28,51 @@ As a result, Trustpoint aims to offer a solution tailored to the domain of machi
 
 - supports concepts for zero-touch onboarding as well as user-driven onboarding
 
+## Onboarding using Trustpoint client localhost
+
+- make sure your database schema is up to date
+
+```
+python manage.py makemigrations
+python manage.py migrate
+```
+
+- start trustpoint server with https
+- Add root CA
+  - localhost as common name
+- Add new issuing CA
+  - CA type: Local issuing CA, Import method: Import issuing CA from file
+  - use PEM format
+  - select the keys and certs from tests/data/rsa2048, leave password empty
+- Add Endpoint profile
+  - add unique and select issuing ca from dropdown
+- Add New device
+  - device name
+  - Onboarding Protocol: Trustpoint Client
+  - Endpoint profile: previously added
+- Start onboarding using trustpoint client
+  - copy the command by the trustpoint server frontend
+  - run the command in trustpoint-client folder. It should give following output
+  ```
+  Provisioning client...
+  Current system time is 2024-04-16T14:50:58Z
+  Retrieving Trustpoint Trust Store
+  trust-store.pem missing, downloading from Trustpoint...
+  Using PBKDF2-HMAC verification
+  Computed PBKDF2-key: 5195651ac62207f15b3425bf7a7cef919a5be5499abf02c258b82b107d740da4
+  Computed HMAC: af92597d792de750f0a3b7f89e78895659fd646fde760f9047288098cd3da75a
+  Thank you, the trust store was downloaded successfully.
+  Generating private key and CSR for LDevID
+  Device Serial number: tpclient_3DIhO3zuhH6KDrBu
+  Uploading CSR to Trustpoint for signing
+  LDevID certificate downloaded successfully
+  Cert expires 2025-04-16 14:50:58+00:00, 364 days, 23:59:59 h from now.
+  Downloading LDevID certificate chain
+  Certificate chain downloaded successfully
+  Successfully provisioned the Trustpoint-Client.
+  ```
+  - on trustpoint frontend device onboarding status will turned to `ok`
+
 ## What are the features of this early technology preview?
 
 - Django-based GUI
@@ -46,7 +91,7 @@ Trustpoint is funded as part of a project sponsored by the German Federal Minist
 The current version uses a Python Django framework.  
 We are using pyenv and poetry to manage different python versions and dependencies.
 
-Please note that the current version is in **early development status** and still subject to **major changes**.  Our aim is to make an operational version of the software available quickly in order to receive as much feedback as possible from users.
+Please note that the current version is in **early development status** and still subject to **major changes**. Our aim is to make an operational version of the software available quickly in order to receive as much feedback as possible from users.
 
 ### Pyenv
 
@@ -82,6 +127,7 @@ You can install the desired python version as follows
 pyenv install 3.12.2
 pyenv global 3.12.2
 ```
+
 ### Poetry
 
 You should use poetry to create a virtual environment and to manage the dependencies (instead of pip directly).  
@@ -107,7 +153,6 @@ If you are using pyenv, make sure to add the following configuration:
 poetry config virtualenvs.prefer-active-python true
 ```
 
-
 ### Install dependencies with poetry.
 
 If you have an existing virtual environment, e.g. through using python3 -m venv,
@@ -127,7 +172,6 @@ cd /path/to/trustpoint/
 poetry install
 ```
 
-
 ### Activating the environment
 
 ```shell
@@ -139,7 +183,7 @@ You can now use the manage.py file as usual.
 #### Setting up the DB and SuperUser
 
 Firstly, we need to create a sqlite database for development, migrate / create the required tables and create
-a superuser.  The superuser credentials can later be used to access the admin page: localhost:8000/admin/.
+a superuser. The superuser credentials can later be used to access the admin page: localhost:8000/admin/.
 
 ```bash
 cd trustpoint
@@ -147,7 +191,6 @@ python manage.py makemigrations
 python manage.py migrate
 python manage.py createsuperuser
 ```
-
 
 #### Running the development server
 
@@ -162,7 +205,6 @@ Alternatively, use the following command to run a development HTTPS server (self
 ```bash
 python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server.crt --key-file ../tests/data/x509/https_server.pem
 ```
-
 
 #### Logging in
 
@@ -185,8 +227,6 @@ python manage.py init_demo
 
 Populates the database with some example CA and device instances.
 
-
-
 #### Adding dependencies to the project.
 
 Dependencies generally required for the project can be added using the following:
@@ -201,7 +241,6 @@ Dependencies that are only required in development, use the following to add in 
 poetry add --group=dev <name-of-package>
 ```
 
-
 #### Using the ruff linter and formatter
 
 For linting everything in the current directory use:
@@ -211,27 +250,30 @@ ruff check .
 ```
 
 For active formatting everything in the current directory use:
+
 ```shell
 ruff format .
 ```
 
-
 ### Docker
 
-You can also build and run Trustpoint as a Docker image. 
+You can also build and run Trustpoint as a Docker image.
 
 1. Build the Docker image:
-   * Open a terminal and navigate to your project's root directory.
-   * Run the following command to build the Docker image:
+
+   - Open a terminal and navigate to your project's root directory.
+   - Run the following command to build the Docker image:
+
    ```
    docker build -t trustpoint .
    ```
 
 2. Run the Docker container:
-   * Once the image is built, you can run a container based on that image:
+   - Once the image is built, you can run a container based on that image:
    ```
    docker run -p 8000:8000 trustpoint
    ```
+
 ## Where is the license?
 
 There is no explicit license yet. All rights reserved.
@@ -248,4 +290,4 @@ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
-SOFTWARE.  
+SOFTWARE.
