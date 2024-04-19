@@ -42,7 +42,8 @@ from cryptography.x509.oid import NameOID
 
 from trustpoint.views import BulkDeletionMixin, ContextDataMixin, Form, MultiFormView, TpLoginRequiredMixin
 
-from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm, IssuingCaLocalSignedForm, AddTruststoreForm
+from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm, IssuingCaLocalSignedForm, AddTruststoreForm, \
+    IssuingCaESTForm
 from .models import EndpointProfile, IssuingCa, RootCa, Truststore
 from .tables import EndpointProfileTable, IssuingCaTable, RootCaTable, TruststoreTable
 
