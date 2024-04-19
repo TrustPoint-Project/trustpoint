@@ -76,6 +76,14 @@ class IssuingCaUploadForm(forms.Form):
 
     unique_name: forms.CharField
 
+class TruststoreUploadForm(forms.Form):
+    """Form for uploading a truststore through files."""
+
+    # Disables crispy alert header (msg of ValidationError in clean())
+    non_field_errors: bool = False
+
+    unique_name: forms.CharField
+
 
 # TODO(Alex): Gather more details in an error case and forward that information to the user through the error messages
 class IssuingCaLocalP12FileForm(CleanUniqueNameMixin, IssuingCaUploadForm):
@@ -278,5 +286,25 @@ class IssuingCaLocalSignedForm(CleanUniqueNameMixin, IssuingCaUploadForm):
         except ValueError as e:
             self.add_error('unique_name', 'Error while generating a subordinate CA'+ str(e))
             raise CreateError from e
+
+        return cleaned_data
+
+class AddTruststoreForm(CleanUniqueNameMixin, TruststoreUploadForm):
+    """Truststore form for adding new Truststores"""
+
+    truststore_certificate_file = forms.FileField(label='Upload Truststore (.pem file)', required=False)
+    truststore_certificate_text = forms.CharField(label='Or enter Truststore Certificate Text', widget=forms.Textarea,
+                                                  required=False)
+    def clean(self):
+        cleaned_data = super().clean()
+
+        truststore_certificate_file = cleaned_data.get('truststore_certificate_file')
+        truststore_certificate_text = cleaned_data.get('truststore_certificate_text')
+
+        # Validate that either file or text is provided, but not both
+        if truststore_certificate_file and truststore_certificate_text:
+            raise ValidationError("Please provide either a file or text for the truststore certificate, not both.")
+        if not truststore_certificate_file and not truststore_certificate_text:
+            raise ValidationError("Please provide a truststore certificate either as a file or as text.")
 
         return cleaned_data

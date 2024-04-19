@@ -191,6 +191,37 @@ def auto_delete_file_on_delete(sender: models.Model, instance: IssuingCa, **kwar
             Path.unlink(path)
 
 
+class Truststore(models.Model):
+    """Truststore model."""
+
+    class KeyType(models.TextChoices):
+        """Supported key-types."""
+
+        RSA = 'RSA', _('RSA')
+        ECC = 'ECC', _('ECC')
+
+    class Curves(models.TextChoices):
+        """Supported curves."""
+
+        SECP256R1 = 'SECP256R1', _('SECP256R1')
+        SECP384R1 = 'SECP384R1', _('SECP384R1')
+
+    common_name = models.CharField(max_length=65536, default='', blank=True)
+    subject = models.CharField(max_length=65536, default='', blank=True)
+    issuer = models.CharField(max_length=65536, default='', blank=True)
+
+    not_valid_before = models.DateTimeField()
+    not_valid_after = models.DateTimeField()
+
+    key_type = models.CharField(max_length=3, choices=KeyType)
+    key_size = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(65536)])
+    curve = models.CharField(max_length=10, choices=Curves, default='', blank=True)
+
+    pem = models.FileField(
+        verbose_name='PEM encoded file',
+    )
+    created_at = models.DateTimeField(default=timezone.now)
+
 class EndpointProfile(models.Model):
     """Endpoint Profile model."""
 
