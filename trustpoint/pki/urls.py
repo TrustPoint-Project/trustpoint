@@ -1,6 +1,5 @@
 """URL configuration for the PKI application."""
 
-
 from django.urls import path, re_path
 
 from . import views
@@ -28,7 +27,9 @@ urlpatterns = [
         views.EndpointProfilesDetailView.as_view(),
         name='endpoint_profiles-details',
     ),
-    path('issuing-certificate-authorities/', views.IssuingCaListView.as_view(), name='issuing_cas'),
+    path('issuing-certificate-authorities/',
+         views.IssuingCaListView.as_view(),
+         name='issuing_cas'),
     re_path(
         r'^issuing-certificate-authorities/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
         views.IssuingCaBulkDeleteView.as_view(),
@@ -77,6 +78,22 @@ urlpatterns = [
         'root-certificate-authorities/details/<int:pk>/',
         views.RootCaDetailView.as_view(),
         name='root_cas-details',
+    ),
+    path('truststores/',
+         views.TruststoreListView.as_view(),
+         name='truststores'),
+    path('truststores/add/',
+         views.AddTruststoreView.as_view(),
+         name='truststores-add'),
+    path(
+        'truststores/details/<int:pk>/',
+        views.TruststoreDetailView.as_view(),
+        name='truststore-details',
+    ),
+    path(
+        'truststores/delete/<int:pk>/',
+        views.TruststoreDeleteView.as_view(),
+        name='truststores-delete',
     ),
 
 ]

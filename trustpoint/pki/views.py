@@ -14,14 +14,22 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.base import RedirectView, TemplateView
 from django.views.generic.detail import DetailView
+from django.views.generic import DeleteView
 from django.views.generic.edit import CreateView, FormMixin, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_tables2 import SingleTableView
 from django.views.generic.edit import FormView
+from django.http import Http404
+from django.shortcuts import get_object_or_404
+
+
 from util.x509.credentials import CredentialUploadHandler
 from util.x509.enrollment import Enrollment
+from util.x509.truststore import PEMCertificateValidator
 
 from cryptography import x509
+from cryptography.hazmat.primitives import serialization
+import binascii
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.primitives.serialization import BestAvailableEncryption, pkcs12
@@ -29,9 +37,9 @@ from cryptography.x509.oid import NameOID
 
 from trustpoint.views import BulkDeletionMixin, ContextDataMixin, Form, MultiFormView, TpLoginRequiredMixin
 
-from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm, IssuingCaLocalSignedForm
-from .models import EndpointProfile, IssuingCa, RootCa
-from .tables import EndpointProfileTable, IssuingCaTable, RootCaTable
+from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm, IssuingCaLocalSignedForm, AddTruststoreForm
+from .models import EndpointProfile, IssuingCa, RootCa, Truststore
+from .tables import EndpointProfileTable, IssuingCaTable, RootCaTable, TruststoreTable
 
 if TYPE_CHECKING:
     from typing import Any
@@ -219,14 +227,14 @@ class UpdateEndpointProfileView(EndpointProfilesContextMixin, TpLoginRequiredMix
 # ----------------------------------------------------- RootCas -----------------------------------------------------
 
 class RootCasContextMixin(TpLoginRequiredMixin, ContextDataMixin):
-    """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
+    """Mixin which adds context_data for the PKI -> Root CAs pages."""
 
     context_page_category = 'pki'
     context_page_name = 'root_cas'
 
 
 class RootCasRedirectView(TpLoginRequiredMixin, RedirectView):
-    """View that redirects to the index of the PKI Issuing CA application: Issuing CAs."""
+    """View that redirects to the index of the PKI Root CA application: Root CAs."""
 
     permanent = False
     pattern_name = 'pki:root_cas'
@@ -655,3 +663,138 @@ class AddIssuingCaRemoteCmpTemplateView(IssuingCasContextMixin, TpLoginRequiredM
     """Add Issuing CA Remote CMP Template View."""
 
     template_name = 'pki/issuing_cas/add/remote_cmp.html'
+
+
+class TruststoreContextMixin(TpLoginRequiredMixin, ContextDataMixin):
+    """Mixin which adds context_data for the PKI -> Truststores pages."""
+
+    context_page_category = 'pki'
+    context_page_name = 'truststores'
+
+
+class TruststoreRedirectView(TpLoginRequiredMixin, RedirectView):
+    """View that redirects to the index of the PKI Truststore application: Truststore"""
+
+    permanent = False
+    pattern_name = 'pki:truststores'
+
+class TruststoreListView(TruststoreContextMixin, TpLoginRequiredMixin, SingleTableView):
+    """Issuing CAs List View."""
+
+    model = Truststore
+    table_class = TruststoreTable
+    template_name = 'pki/truststores/truststores.html'
+
+class AddTruststoreView(TpLoginRequiredMixin, FormView):
+    """Add Truststore View that handles the form for adding a new Truststore with file or text input."""
+
+    template_name = 'pki/truststores/add.html'
+    form_class = AddTruststoreForm
+    success_url = reverse_lazy('pki:issuing_cas')  # Redirect URL after successful form submission
+
+    def form_valid(self, form):
+
+        truststore_certificate_file = form.cleaned_data.get('truststore_certificate_file')
+        truststore_certificate_text = form.cleaned_data.get('truststore_certificate_text')
+
+        # Depending on your application's requirements, handle file or text
+        if truststore_certificate_file:
+            PEMCertificateValidator.validate_certificate(truststore_certificate_file)
+            pass
+        elif truststore_certificate_text:
+            PEMCertificateValidator.validate_certificate(truststore_certificate_text)
+            pass
+
+        return super().form_valid(form)
+
+    def form_invalid(self, form):
+        return super().form_invalid(form)
+
+
+class TruststoreDeleteView(TpLoginRequiredMixin, DeleteView):
+    model = Truststore
+    template_name = 'pki/truststores/confirm_delete.html'
+    context_object_name = 'objects'
+    success_url = reverse_lazy('pki:truststores')
+
+    def get_object(self):
+        """Ensure object is fetched from DB only once."""
+        if not hasattr(self, '_object'):
+            self._object = get_object_or_404(Truststore, pk=self.kwargs.get('pk'))
+        return self._object
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['list_heading'] = 'Are you sure you want to delete this Truststore?'
+        context['objects'] = [self.get_object()]
+        return context
+
+class TruststoreDetailView(TpLoginRequiredMixin, DetailView):
+    """Detail view for Truststores"""
+
+    model = Truststore
+    pk_url_kwarg = 'pk'
+    template_name = 'pki/truststores/details.html'
+
+    #TODO(Florian): Add separate class for this to handle pure PEM files
+    def extract_cert_details(self, cert_obj):
+        cert_details = {
+            'Subject': cert_obj.subject.rfc4514_string(),
+            'Issuer': cert_obj.issuer.rfc4514_string(),
+            'Valid From': cert_obj.not_valid_before.strftime("%Y-%m-%d %H:%M:%S"),
+            'Valid To': cert_obj.not_valid_after.strftime("%Y-%m-%d %H:%M:%S"),
+            'Serial Number': str(cert_obj.serial_number),
+        }
+
+        extensions = {}
+        for ext in cert_obj.extensions:
+            if isinstance(ext.value, x509.SubjectAlternativeName):
+                san = [name.value for name in ext.value]
+                extensions['Subject Alternative Names'] = san
+            elif isinstance(ext.value, x509.KeyUsage):
+                usages = [
+                    'digital_signature' if ext.value.digital_signature else '',
+                    'key_encipherment' if ext.value.key_encipherment else '',
+                    'data_encipherment' if ext.value.data_encipherment else '',
+                ]
+                extensions['Key Usage'] = ', '.join([usage for usage in usages if usage])
+            elif isinstance(ext.value, x509.ExtendedKeyUsage):
+                ekus = [eku._name for eku in ext.value]
+                extensions['Extended Key Usage'] = ', '.join(ekus)
+            elif isinstance(ext.value, x509.BasicConstraints):
+                extensions['Basic Constraints'] = 'CA: {}, Path Length: {}'.format(
+                    ext.value.ca, ext.value.path_length)
+            elif isinstance(ext.value, x509.CRLDistributionPoints):
+                cdps = [crl.full_name[0].value for crl in ext.value if crl.full_name]
+                extensions['CRL Distribution Points'] = cdps
+
+        cert_details['Extensions'] = extensions
+        return cert_details
+
+    def get_context_data(self: TruststoreDetailView, **kwargs: Any) -> dict:
+        """Adds the certificates to the context.
+
+        Args:
+            **kwargs (Any): Keyword arguments. These are passed to super().get_context_data(**kwargs).
+
+        Returns:
+            dict:
+                The context to be used for the view.
+        """
+        context = super().get_context_data(**kwargs)
+
+        truststore = self.get_object()
+        pem_path = truststore.pem.name
+
+        try:
+            with default_storage.open(pem_path, 'rb') as f:
+                cert_data = f.read()
+                cert_parsed = CredentialUploadHandler.parse_pem_cert(cert_data)
+                cert_json = self.extract_cert_details(cert_parsed)
+                context['cert'] = cert_json
+        except FileNotFoundError:
+            raise Http404(f"PEM file not found: {pem_path}")
+        except Exception as e:
+            context['error'] = f"Error reading PEM file: {str(e)}"
+
+        return context
