@@ -7,6 +7,12 @@ import io
 import sys
 from typing import TYPE_CHECKING
 
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
+from cryptography.hazmat.primitives.serialization import BestAvailableEncryption, pkcs7, pkcs12
+from cryptography.x509.oid import NameOID
 from django.contrib import messages
 from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import InMemoryUploadedFile
@@ -21,7 +27,6 @@ from django_tables2 import SingleTableView
 from django.views.generic.edit import FormView
 from django.http import Http404
 from django.shortcuts import get_object_or_404
-
 
 from util.x509.credentials import CredentialUploadHandler
 from util.x509.enrollment import Enrollment
@@ -40,6 +45,7 @@ from trustpoint.views import BulkDeletionMixin, ContextDataMixin, Form, MultiFor
 from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm, IssuingCaLocalSignedForm, AddTruststoreForm
 from .models import EndpointProfile, IssuingCa, RootCa, Truststore
 from .tables import EndpointProfileTable, IssuingCaTable, RootCaTable, TruststoreTable
+
 
 if TYPE_CHECKING:
     from typing import Any
@@ -653,10 +659,13 @@ class AddIssuingCaLocalRequestTemplateView(IssuingCasContextMixin, TpLoginRequir
     template_name = 'pki/issuing_cas/add/local_request.html'
 
 
-class AddIssuingCaRemoteEstTemplateView(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView):
+class AddIssuingCaRemoteEstTemplateView(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView, FormView):
     """Add Issuing CA Remote EST Template View."""
 
     template_name = 'pki/issuing_cas/add/remote_est.html'
+    form_class=IssuingCaESTForm
+    success_url = reverse_lazy('pki:issuing_cas')
+    ignore_url = reverse_lazy('pki:issuing_cas')
 
 
 class AddIssuingCaRemoteCmpTemplateView(IssuingCasContextMixin, TpLoginRequiredMixin, TemplateView):

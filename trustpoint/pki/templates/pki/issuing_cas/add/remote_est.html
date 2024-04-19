@@ -1,11 +1,22 @@
 {% extends 'trustpoint/base.html' %}
+{% load crispy_forms_filters %}
 {% block content %}
     <div class="card card-main text-center">
         <div class="card-header">
-            Remote EST
+            Add CA Certificate
         </div>
         <div class="card-body">
+            <h2>Get CA Certificate via EST</h2>
+            <hr>
 
+            <form method="POST" class="tp-main-form text-start" id="add-est-request-form">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <div class="tp-form-btn-group tp-form-btn-group mt-5">
+                    <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">Cancel</a>
+                    <button class="btn btn-primary w-100 mt-1" type="submit" name="add-endpoint-profile">Send EST Certificate request </button>
+                </div>
+            </form>
         </div>
         <div class="card-footer text-body-secondary">
 
