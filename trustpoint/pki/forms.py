@@ -274,6 +274,9 @@ class IssuingCaLocalSignedForm(CleanUniqueNameMixin, IssuingCaUploadForm):
         not_valid_before = cleaned_data.get('not_valid_before')
         not_valid_after = cleaned_data.get('not_valid_after')
 
+        if self.errors:
+            return cleaned_data  # do not try enrollment if there are form validation errors
+
         try:
             Enrollment.generate_local_signed_sub_ca(unique_name=unique_name,
                                                     common_name=common_name,
