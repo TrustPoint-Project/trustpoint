@@ -14,6 +14,11 @@
 body {
     font-family: 'tpQuicksand', sans-serif;
     font-weight: var(--tp-font-weight);
+    max-width: 100vw;
+    width: 100vw;
+    max-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
 }
 
 a {
@@ -40,14 +45,15 @@ h3 {
 
 /* Parent grid layout */
 .tp-content-wrapper {
-    width: 100%;
+    width: 100vw;
+    height: 100vh;
     min-height: 100vh;
     display: grid;
     grid-template-areas:
     "header header"
     "sidenav main";
     grid-template-columns: 15rem auto;
-    grid-template-rows: max-content auto;
+    grid-template-rows: auto 1fr;
     padding: 0;
     margin: 0;
 }
@@ -101,6 +107,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     display: flex;
     flex-direction: column;
     background-color: var(--bs-tertiary-bg);
+    overflow-y: auto;
 }
 
 .tp-sidenav .tp-menu-group {
@@ -211,6 +218,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 .tp-main {
     grid-area: main;
     padding: 3rem;
+    overflow-y: auto;
 }
 
 .card > div {
@@ -317,6 +325,10 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 }
 
 /* ----- Tables ----- */
+
+.table-container {
+    overflow-x: auto;
+}
 
 .tp-table-btn {
     padding: 0.2rem 0.4rem;
