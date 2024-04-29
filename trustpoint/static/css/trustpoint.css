@@ -87,12 +87,12 @@ h3 {
 }
 
 a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
-.tp-btn-link:hover, .tp-btn-link:focus, .tp-btn-link:active, .theme-toggle:hover {
+.tp-btn-link:hover, .tp-btn-link:focus, .tp-btn-link:active, .theme-toggle-icon:hover {
     color: rgba(var(--bs-link-hover-color-rgb)) !important;
     background: transparent;
 }
 
-.theme-toggle {
+.theme-toggle-icon {
     display: flex;
     align-items: center;
     padding-left: 6px;
@@ -116,7 +116,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 }
 
 .tp-menu-group > a {
-    color: var(--bs-emphasis-color);
+    /* color: var(--bs-emphasis-color); */
 }
 
 .tp-menu-group > * {
@@ -137,7 +137,16 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     display: grid;
     grid-template-columns: auto 1fr auto;
     font-size: 1.1rem;
+    font-weight: var(--tp-font-weight);
+    background-color: transparent;
     border-radius: 0.5rem;
+    border: 0px solid black;
+    color: var(--bs-emphasis-color);
+    text-decoration: none;
+    text-align: left;
+    align-items: center;
+    padding: 0;
+    width: 100%;
 }
 
 .tp-menu-head.tp-menu-active {
@@ -210,7 +219,11 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 
 .tp-menu-footer {
     margin-top: auto;
-    align-self: center;
+}
+
+#tp-version {
+    display: flex;
+    justify-content: center;
 }
 
 /* ----- Main content and cards ----- */
