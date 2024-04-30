@@ -120,7 +120,30 @@ function deleteSelected() {
     }
 }
 
-// ---------------------------------------- Side nav menu collapsing ----------------------------------------
+// ---------------------------------------- Side nav menu toggling ----------------------------------------
+
+function hideMenu() {
+    document.querySelector('.tp-sidenav').classList.remove('sidenav-show');
+    document.querySelector('#menu-icon-menu').classList.remove('d-none');
+    document.querySelector('#menu-icon-back').classList.add('d-none');
+}
+
+function toggleMenu(event) {
+    document.querySelector('.tp-sidenav').classList.toggle('sidenav-show');
+    document.querySelector('#menu-icon-menu').classList.toggle('d-none');
+    document.querySelector('#menu-icon-back').classList.toggle('d-none');
+}
+
+function setupMenuToggle() {
+    document.querySelector('.menu-icon').addEventListener('click', toggleMenu);
+    document.querySelector('.tp-main').addEventListener('click', hideMenu);
+}
+
+window.addEventListener('load', function(e) {
+    setupMenuToggle();
+});
+
+// ---------------------------------------- Side nav submenu collapsing ----------------------------------------
 
 // custom collapse implementation, since the one provided by Bootstrap does not allow preventing navigation
 
@@ -154,7 +177,10 @@ function setMenuCollapsed(btn, collapse=true, transition=true) {
         target.style.height = '0px';
     } else {
         btn.ariaExpanded = "true";
-        target.style.height = target.scrollHeight + 'px';
+        if (target.scrollHeight > 0)
+            target.style.height = target.scrollHeight + 'px';
+        else
+            target.style.height = 'auto';
     }
 
     //target.style.transition = transition ? 'height 0.2s' : 'none';

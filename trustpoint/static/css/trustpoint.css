@@ -66,6 +66,7 @@ h3 {
     padding: 0 2rem;
     margin: 0;
     height: 4rem;
+    background-color: var(--bs-tertiary-bg);
 }
 
 .tp-page-header > div > .navbar-brand {
@@ -99,6 +100,18 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     cursor: pointer;
 }
 
+.menu-icon {
+    width: 3rem;
+    height: 3rem;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.bi-size100 {
+    width: 100%;
+    height: 100%;
+}
+
 /* ----- Side navigation menu ----- */
 
 .tp-sidenav {
@@ -108,6 +121,59 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     flex-direction: column;
     background-color: var(--bs-tertiary-bg);
     overflow-y: auto;
+}
+
+@media (1001px <= width <= 2000px) { /* permanent side nav with logo */
+    .tp-content-wrapper {
+        grid-template-areas:
+        "header main"
+        "sidenav main";
+    }
+
+    .tp-page-header {
+        grid-column: 1;
+        padding: 1rem 1.75rem 0.5rem 1.75rem;
+        height: 5rem;
+    }
+
+    .menu-icon {
+        display: none;
+    }
+}
+
+/* permanent header bar with centered logo and hamburger menu button */
+@media (max-width: 1000px) {
+    .tp-content-wrapper {
+        grid-template-areas:
+        "header header"
+        "main main";
+    }
+
+    .tp-sidenav {
+        transition: transform 0.25s ease-in;
+        transform: translateX(-101%);
+        /* below feels like sort of a crowbar solution */
+        position: fixed;
+        top: 4rem;
+        bottom: 0px;
+        z-index: 10;
+    }
+
+    .tp-page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0 1.125rem;
+    }
+
+    .tp-main {
+        padding: 2rem;
+    }
+
+    .sidenav-show {
+        transition: transform 0.25s ease-out;
+        transform: translateX(0);
+    }
 }
 
 .tp-sidenav .tp-menu-group {
@@ -244,10 +310,11 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     align-items: center;
 }
 
-.tp-main-centered {
-    display: grid;
-    grid-template-columns: 50rem;
-    justify-content: center;
+.card > .tp-main-centered {
+    width: 100%;
+    max-width: 50rem;
+    margin: auto;
+    padding: 0.75rem 1rem;
 }
 
 .tp-main-users {
