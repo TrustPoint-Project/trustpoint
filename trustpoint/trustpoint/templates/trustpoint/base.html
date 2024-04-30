@@ -19,24 +19,19 @@
     <body id="bs-override">
         <div class="tp-content-wrapper">
             <header class="tp-page-header navbar border-bottom border-body">
+                <div class="menu-icon">
+                    <svg id="menu-icon-menu" class="bi bi-size100" fill="currentColor" role="img" aria-label="Show Menu">
+                        <use href="{% static 'img/icons.svg' %}#icon-menu"/></svg>
+                    <svg id="menu-icon-back" class="bi bi-size100 d-none" fill="currentColor" role="img" aria-label="Hide Menu">
+                        <use href="{% static 'img/icons.svg' %}#icon-x"/></svg>
+                </div>
                 <a class="navbar-brand tp-primary" href="#">
                     <!--<img src="{% static 'img/tplogo-128.png' %}" width="64" height="45" alt="Trustpoint"></a> -->
                     <img src="{% static 'img/tplogo-horizontal-512.png' %}" alt="Trustpoint" id="tp-logo" class="light-only">
                     <img src="{% static 'img/tplogo-horizontal-whitepoint.png' %}" alt="Trustpoint" id="tp-logo" class="dark-only">
                     <!-- <img src="{% static 'img/tplogo-horizontal-0A74FF.png' %}" alt="Trustpoint" id="tp-logo" class="dark-only"> -->
                 </a>
-                <div class="d-flex">
-                    <form class="d-flex" role="search" method="POST" action="{% url 'users:logout' %}">
-                        {% csrf_token %}
-                        <button class="btn btn-mute btn-link tp-btn-link" type="submit">Logout</button>
-                    </form>
-                    <div class="theme-toggle">
-                        <svg class="bi theme-icon dark-only" width="20" height="20" fill="#ffffff" role="img" aria-label="Change theme">
-                            <use href="{% static 'img/icons.svg' %}#icon-sun-fill"/></svg>
-                        <svg class="bi theme-icon light-only" width="20" height="20" fill="#000000" role="img" aria-label="Change theme">
-                            <use href="{% static 'img/icons.svg' %}#icon-night"/></svg>
-                    </div>
-                </div>
+                <div><!-- Intentionally empty for flex layout --></div>
             </header>
 
 
@@ -93,14 +88,28 @@
                 </div>
             </div>
             <div class="tp-menu-footer">
-                <!--<div class="tp-menu-group">
-                    <a href="{% url 'users:logout' %}" class="tp-menu-head">
-                        <svg class="bi" fill="currentColor" role="img">
+                <div class="tp-menu-group">
+                    <button class="tp-menu-head theme-toggle" type="button">
+                        <svg class="bi theme-icon dark-only" width="20" height="20" fill="#ffffff" role="img" aria-label="Change theme">
+                            <use href="{% static 'img/icons.svg' %}#icon-sun"/></svg>
+                        <span class="dark-only">Light theme</span>
+                        <svg class="bi theme-icon light-only" width="20" height="20" fill="#000000" role="img" aria-label="Change theme">
+                            <use href="{% static 'img/icons.svg' %}#icon-moon-stars"/></svg>
+                            <span class="light-only">Dark theme</span>
+                    </button>
+                    <form method="POST" action="{% url 'users:logout' %}">
+                        {% csrf_token %}
+                        <button class="tp-menu-head" type="submit">
+                            <svg class="bi" fill="currentColor" role="img">
                             <use href="{% static 'img/icons.svg' %}#icon-door"/></svg>
-                        Logout
-                    </a>
-                </div>-->
-                v0.1.0
+                            Logout
+                        </button>
+                    </form>
+
+                </div>
+                <div id="tp-version">
+                    v0.1.0
+                </div>
             </div>
         </nav>
 

@@ -50,7 +50,7 @@ h3 {
     min-height: 100vh;
     display: grid;
     grid-template-areas:
-    "header header"
+    "header main"
     "sidenav main";
     grid-template-columns: 15rem auto;
     grid-template-rows: auto 1fr;
@@ -62,9 +62,18 @@ h3 {
 
 .tp-page-header {
     grid-area: header;
-    grid-column: 1 / 3;
-    padding: 0 2rem;
+    grid-column: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.75rem 0.5rem 1.75rem;
     margin: 0;
+    height: 5rem;
+    background-color: var(--bs-tertiary-bg);
+}
+
+.tp-page-header-users {
+    padding: 0 1.125rem;
     height: 4rem;
 }
 
@@ -87,16 +96,29 @@ h3 {
 }
 
 a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
-.tp-btn-link:hover, .tp-btn-link:focus, .tp-btn-link:active, .theme-toggle:hover {
+.tp-btn-link:hover, .tp-btn-link:focus, .tp-btn-link:active, .theme-toggle-icon:hover {
     color: rgba(var(--bs-link-hover-color-rgb)) !important;
     background: transparent;
 }
 
-.theme-toggle {
+.theme-toggle-icon {
     display: flex;
     align-items: center;
     padding-left: 6px;
     cursor: pointer;
+}
+
+.menu-icon {
+    display: none;
+    width: 3rem;
+    height: 3rem;
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.bi-size100 {
+    width: 100%;
+    height: 100%;
 }
 
 /* ----- Side navigation menu ----- */
@@ -116,7 +138,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 }
 
 .tp-menu-group > a {
-    color: var(--bs-emphasis-color);
+    /* color: var(--bs-emphasis-color); */
 }
 
 .tp-menu-group > * {
@@ -137,7 +159,16 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     display: grid;
     grid-template-columns: auto 1fr auto;
     font-size: 1.1rem;
+    font-weight: var(--tp-font-weight);
+    background-color: transparent;
     border-radius: 0.5rem;
+    border: 0px solid black;
+    color: var(--bs-emphasis-color);
+    text-decoration: none;
+    text-align: left;
+    align-items: center;
+    padding: 0;
+    width: 100%;
 }
 
 .tp-menu-head.tp-menu-active {
@@ -210,7 +241,11 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 
 .tp-menu-footer {
     margin-top: auto;
-    align-self: center;
+}
+
+#tp-version {
+    display: flex;
+    justify-content: center;
 }
 
 /* ----- Main content and cards ----- */
@@ -226,15 +261,23 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 }
 
 .tp-card-header {
-    display: grid;
-    grid-template-columns: max-content auto 15rem;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
     align-items: center;
 }
 
-.tp-main-centered {
-    display: grid;
-    grid-template-columns: 50rem;
-    justify-content: center;
+.tp-card-header > .btn {
+    margin-left: auto;
+    width: 15rem;
+    min-width: max-content;
+}
+
+.card > .tp-main-centered {
+    width: 100%;
+    max-width: 50rem;
+    margin: auto;
+    padding: 0.75rem 1rem;
 }
 
 .tp-main-users {
@@ -243,6 +286,11 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     top: 40%;
     left: 50%;
     transform: translate(-50%, -50%);
+}
+
+.tp-card-users {
+    width: 90vw;
+    max-width: 25rem;
 }
 
 /* ----- Input and elements ----- */
@@ -256,10 +304,10 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     font-weight: var(--tp-font-weight);
 }
 
-#bs-override .btn-primary {
-    /* background-color: var(--trustpoint-ci);
-    border-color: var(--trustpoint-ci); */
-}       
+/* #bs-override .btn-primary {
+    background-color: var(--trustpoint-ci);
+    border-color: var(--trustpoint-ci);
+} */     
 
 .cursor, .cursor:hover {
     cursor: pointer;
@@ -480,5 +528,44 @@ svg.theme-icon {
 /*aside > div {*/
 /*    width: 16rem;*/
 /*}*/
+
+/* ----- Media queries for responsive design ----- */
+
+@media (max-width: 992px) {
+    /* permanent header bar with centered logo and hamburger menu button */
+    .tp-content-wrapper {
+        grid-template-areas:
+        "header header"
+        "main main";
+    }
+
+    .tp-sidenav {
+        transition: transform 0.25s ease-in;
+        transform: translateX(-101%);
+        position: fixed;
+        top: 4rem;
+        bottom: 0px;
+        z-index: 10;
+    }
+
+    .tp-page-header {
+        grid-column: 1 / 3;
+        padding: 0 1.125rem;
+        height: 4rem;
+    }
+
+    .tp-main {
+        padding: 2rem;
+    }
+
+    .sidenav-show {
+        transition: transform 0.25s ease-out;
+        transform: translateX(0);
+    }
+
+    .menu-icon {
+        display: flex;
+    }
+}
 
 /* ----- Testing ----- */
