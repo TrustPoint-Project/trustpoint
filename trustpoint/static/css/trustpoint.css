@@ -50,7 +50,7 @@ h3 {
     min-height: 100vh;
     display: grid;
     grid-template-areas:
-    "header header"
+    "header main"
     "sidenav main";
     grid-template-columns: 15rem auto;
     grid-template-rows: auto 1fr;
@@ -62,11 +62,19 @@ h3 {
 
 .tp-page-header {
     grid-area: header;
-    grid-column: 1 / 3;
-    padding: 0 2rem;
+    grid-column: 1;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 1.75rem 0.5rem 1.75rem;
     margin: 0;
-    height: 4rem;
+    height: 5rem;
     background-color: var(--bs-tertiary-bg);
+}
+
+.tp-page-header-users {
+    padding: 0 1.125rem;
+    height: 4rem;
 }
 
 .tp-page-header > div > .navbar-brand {
@@ -101,6 +109,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 }
 
 .menu-icon {
+    display: none;
     width: 3rem;
     height: 3rem;
     cursor: pointer;
@@ -121,59 +130,6 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     flex-direction: column;
     background-color: var(--bs-tertiary-bg);
     overflow-y: auto;
-}
-
-@media (1001px <= width <= 2000px) { /* permanent side nav with logo */
-    .tp-content-wrapper {
-        grid-template-areas:
-        "header main"
-        "sidenav main";
-    }
-
-    .tp-page-header {
-        grid-column: 1;
-        padding: 1rem 1.75rem 0.5rem 1.75rem;
-        height: 5rem;
-    }
-
-    .menu-icon {
-        display: none;
-    }
-}
-
-/* permanent header bar with centered logo and hamburger menu button */
-@media (max-width: 1000px) {
-    .tp-content-wrapper {
-        grid-template-areas:
-        "header header"
-        "main main";
-    }
-
-    .tp-sidenav {
-        transition: transform 0.25s ease-in;
-        transform: translateX(-101%);
-        /* below feels like sort of a crowbar solution */
-        position: fixed;
-        top: 4rem;
-        bottom: 0px;
-        z-index: 10;
-    }
-
-    .tp-page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 0 1.125rem;
-    }
-
-    .tp-main {
-        padding: 2rem;
-    }
-
-    .sidenav-show {
-        transition: transform 0.25s ease-out;
-        transform: translateX(0);
-    }
 }
 
 .tp-sidenav .tp-menu-group {
@@ -305,9 +261,16 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 }
 
 .tp-card-header {
-    display: grid;
-    grid-template-columns: max-content auto 15rem;
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
     align-items: center;
+}
+
+.tp-card-header > .btn {
+    margin-left: auto;
+    width: 15rem;
+    min-width: max-content;
 }
 
 .card > .tp-main-centered {
@@ -325,6 +288,11 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     transform: translate(-50%, -50%);
 }
 
+.tp-card-users {
+    width: 90vw;
+    max-width: 25rem;
+}
+
 /* ----- Input and elements ----- */
 
 #bs-override .btn
@@ -336,10 +304,10 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     font-weight: var(--tp-font-weight);
 }
 
-#bs-override .btn-primary {
-    /* background-color: var(--trustpoint-ci);
-    border-color: var(--trustpoint-ci); */
-}       
+/* #bs-override .btn-primary {
+    background-color: var(--trustpoint-ci);
+    border-color: var(--trustpoint-ci);
+} */     
 
 .cursor, .cursor:hover {
     cursor: pointer;
@@ -560,5 +528,44 @@ svg.theme-icon {
 /*aside > div {*/
 /*    width: 16rem;*/
 /*}*/
+
+/* ----- Media queries for responsive design ----- */
+
+@media (max-width: 992px) {
+    /* permanent header bar with centered logo and hamburger menu button */
+    .tp-content-wrapper {
+        grid-template-areas:
+        "header header"
+        "main main";
+    }
+
+    .tp-sidenav {
+        transition: transform 0.25s ease-in;
+        transform: translateX(-101%);
+        position: fixed;
+        top: 4rem;
+        bottom: 0px;
+        z-index: 10;
+    }
+
+    .tp-page-header {
+        grid-column: 1 / 3;
+        padding: 0 1.125rem;
+        height: 4rem;
+    }
+
+    .tp-main {
+        padding: 2rem;
+    }
+
+    .sidenav-show {
+        transition: transform 0.25s ease-out;
+        transform: translateX(0);
+    }
+
+    .menu-icon {
+        display: flex;
+    }
+}
 
 /* ----- Testing ----- */
