@@ -1,15 +1,17 @@
 #FROM python:3.12
 FROM python:3.12-slim-bookworm
 
+ENV PYTHONUNBUFFERED 1
+
 # Set the working directory in the container
 WORKDIR /app
-
-# Copy the current directory contents into the container at /app
-COPY . /app
 
 # Install poetry
 ENV POETRY_HOME=/opt/poetry
 RUN python -m venv $POETRY_HOME && $POETRY_HOME/bin/pip install poetry==1.8.2
+
+# Copy the current directory contents into the container at /app
+COPY . /app
 
 # Install dependencies (we do not need venv in the container)
 RUN $POETRY_HOME/bin/poetry config virtualenvs.create false && $POETRY_HOME/bin/poetry install --no-interaction
@@ -25,5 +27,6 @@ RUN echo "from django.contrib.auth import get_user_model; User = get_user_model(
 EXPOSE 8000
 
 # Run development server with HTTPS when the container launches
-CMD python manage.py runserver_plus 0.0.0.0:8000 --cert-file ../tests/data/x509/https_server.crt --key-file ../tests/data/x509/https_server.pem
+# CMD python manage.py runserver_plus 0.0.0.0:8000 --cert-file ../tests/data/x509/https_server.crt --key-file ../tests/data/x509/https_server.pem
+CMD ["python", "manage.py", "runserver_plus", "0.0.0.0:8000", "--cert-file", "../tests/data/x509/https_server.crt", "--key-file", "../tests/data/x509/https_server.pem"]
 # CMD ["python", "trustpoint/manage.py", "runserver", "0.0.0.0:8000"]
