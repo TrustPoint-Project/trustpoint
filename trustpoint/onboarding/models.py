@@ -65,6 +65,8 @@ class OnboardingProcess:
         self.error_reason = ''
         self.url = secrets.token_urlsafe(4)
         self.timer = threading.Timer(onboarding_timeout, self._timeout)
+        # TODO (Air): instead of daemon, consider using events to exit gracefully on shutdown
+        self.timer.daemon = True
         self.timer.start()
         self.active = True
         OnboardingProcess.id_counter += 1
@@ -188,7 +190,7 @@ class ManualOnboardingProcess(OnboardingProcess):
         self.tsotp = secrets.token_hex(8)
         self.salt = secrets.token_hex(8)
         self.tssalt = secrets.token_hex(8)
-        self.gen_thread = threading.Thread(target=self._calc_hmac)
+        self.gen_thread = threading.Thread(target=self._calc_hmac, daemon=True)
         self.gen_thread.start()
         self.hmac = None
 
