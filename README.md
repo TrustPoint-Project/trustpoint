@@ -28,57 +28,17 @@ As a result, Trustpoint aims to offer a solution tailored to the domain of machi
 
 - supports concepts for zero-touch onboarding as well as user-driven onboarding
 
-## Onboarding using Trustpoint client localhost
-
-- make sure your database schema is up to date
-
-```
-python manage.py makemigrations
-python manage.py migrate
-```
-
-- start trustpoint server with https
-- Add root CA
-  - localhost as common name
-- Add new issuing CA
-  - CA type: Local issuing CA, Import method: Import issuing CA from file
-  - use PEM format
-  - select the keys and certs from tests/data/rsa2048, leave password empty
-- Add Endpoint profile
-  - add unique and select issuing ca from dropdown
-- Add New device
-  - device name
-  - Onboarding Protocol: Trustpoint Client
-  - Endpoint profile: previously added
-- Start onboarding using trustpoint client
-  - copy the command by the trustpoint server frontend
-  - run the command in trustpoint-client folder. It should give following output
-  ```
-  Provisioning client...
-  Current system time is 2024-04-16T14:50:58Z
-  Retrieving Trustpoint Trust Store
-  trust-store.pem missing, downloading from Trustpoint...
-  Using PBKDF2-HMAC verification
-  Computed PBKDF2-key: 5195651ac62207f15b3425bf7a7cef919a5be5499abf02c258b82b107d740da4
-  Computed HMAC: af92597d792de750f0a3b7f89e78895659fd646fde760f9047288098cd3da75a
-  Thank you, the trust store was downloaded successfully.
-  Generating private key and CSR for LDevID
-  Device Serial number: tpclient_3DIhO3zuhH6KDrBu
-  Uploading CSR to Trustpoint for signing
-  LDevID certificate downloaded successfully
-  Cert expires 2025-04-16 14:50:58+00:00, 364 days, 23:59:59 h from now.
-  Downloading LDevID certificate chain
-  Certificate chain downloaded successfully
-  Successfully provisioned the Trustpoint-Client.
-  ```
-  - on trustpoint frontend device onboarding status will turned to `ok`
 
 ## What are the features of this early technology preview?
 
-- Django-based GUI
-- Manage PKCS12 Issuing CAs
-- Sample configuration views
+- Django-based responsive GUI
+- Manage Issuing CAs via PKCS12, PEM, or request from external PKI via EST
+- Lightweight PKI (local root CA) for testing and evaluation purposes
 - Demo of user-driven onboarding with [Trustpoint Client](https://github.com/TrustPoint-Project/trustpoint-client)
+- Manual device onboarding via CLI and PKCS12 export
+- Device management table
+- Demo home visualization update
+- Sample configuration views
 
 ## Who is developing Trustpoint?
 
@@ -97,13 +57,9 @@ Please note that the current version is in **early development status** and stil
 
 [OPTIONAL]
 You can use pyenv to install and manage different Python versions in parallel.  
-To install it, install all required build dependencies:
+To install it, install all [required build dependencies](https://github.com/pyenv/pyenv/wiki#suggested-build-environment).
 
-https://github.com/pyenv/pyenv/wiki#suggested-build-environment
-
-Then follow the installation manual:
-
-https://github.com/pyenv/pyenv?tab=readme-ov-file#installation
+Then follow the [installation manual](https://github.com/pyenv/pyenv?tab=readme-ov-file#installation).
 
 You can add the following to your .bashrc:
 
@@ -131,9 +87,7 @@ pyenv global 3.12.2
 ### Poetry
 
 You should use poetry to create a virtual environment and to manage the dependencies (instead of pip directly).  
-The easiest way to install poetry is their offered installer.
-
-https://python-poetry.org/docs/#installing-with-the-official-installer
+The easiest way to install poetry is their offered [installer](https://python-poetry.org/docs/#installing-with-the-official-installer)
 
 You can also follow the manual steps, without just executing a downloaded script (security wise, the better decision).
 
@@ -143,9 +97,7 @@ You can add the following to your .bashrc
 export PATH="$PATH:/home/<your-user-name>/.local/bin/"
 ```
 
-To configure the python environment, follow:
-
-https://python-poetry.org/docs/managing-environments/
+To configure the python environment, see [the Poetry documentation on managing environments](https://python-poetry.org/docs/managing-environments/)
 
 If you are using pyenv, make sure to add the following configuration:
 
@@ -227,7 +179,7 @@ python manage.py init_demo
 
 Populates the database with some example CA and device instances.
 
-#### Adding dependencies to the project.
+#### Adding dependencies to the project
 
 Dependencies generally required for the project can be added using the following:
 
@@ -273,6 +225,54 @@ You can also build and run Trustpoint as a Docker image.
    ```
    docker run -p 8000:8000 trustpoint
    ```
+
+## Usage
+
+### Demo Onboarding using Trustpoint Client on localhost
+
+- make sure your database schema is up to date
+
+```
+python manage.py makemigrations
+python manage.py migrate
+```
+
+- Start Trustpoint developer server with HTTPS (runserver_plus)
+- Add root CA (do not use in production!)
+  - localhost as common name
+- Add new issuing CA
+  - CA type: Local issuing CA, Import method: Import issuing CA from file
+  - use PEM format
+  - select the keys and certs from tests/data/rsa2048, leave password empty
+  - Alternatively, generate CA from local root CA
+- Add Endpoint profile
+  - add unique name and select an issuing CA from dropdown
+- Add new device
+  - Set device name
+  - Select onboarding protocol: Trustpoint Client
+  - Select the endpoint profile as previously added
+- Start onboarding using the [Trustpoint Client](https://github.com/TrustPoint-Project/trustpoint-client)
+  - copy the command by the trustpoint server frontend
+  - run the command in trustpoint-client folder. It should give an output similar to the following:
+  ```
+  Provisioning client...
+  Current system time is 2024-04-16T14:50:58Z
+  Retrieving Trustpoint Trust Store
+  trust-store.pem missing, downloading from Trustpoint...
+  Using PBKDF2-HMAC verification
+  Computed PBKDF2-key: 5195651ac62207f15b3425bf7a7cef919a5be5499abf02c258b82b107d740da4
+  Computed HMAC: af92597d792de750f0a3b7f89e78895659fd646fde760f9047288098cd3da75a
+  Thank you, the trust store was downloaded successfully.
+  Generating private key and CSR for LDevID
+  Device Serial number: tpclient_3DIhO3zuhH6KDrBu
+  Uploading CSR to Trustpoint for signing
+  LDevID certificate downloaded successfully
+  Cert expires 2025-04-16 14:50:58+00:00, 364 days, 23:59:59 h from now.
+  Downloading LDevID certificate chain
+  Certificate chain downloaded successfully
+  Successfully provisioned the Trustpoint-Client.
+  ```
+  - on trustpoint frontend device onboarding status will turned to `ok`
 
 ## Where is the license?
 
