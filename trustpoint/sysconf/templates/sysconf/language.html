@@ -1,0 +1,34 @@
+{% extends 'trustpoint/base.html' %}
+{% load crispy_forms_filters %}
+{% load i18n %}
+{% block content %}
+<div class="card card-main text-center">
+    <div class="card-header d-flex">
+        <h1>{% trans "Language Configuration" %}</h1>
+    </div>
+    <div class="card-body tp-main-centered pt-3 pb-4">
+
+        <form method="POST" action="{% url 'set_language' %}" class="tp-main-form text-start" enctype="multipart/form-data" id="ntp_configuration">
+            {% csrf_token %}
+            <fieldset class="form-group tp-form-group">
+                <input name="next" type="hidden" value="{{ redirect_to }}">
+                <select name="language" class="select form-select">
+                    {% get_current_language as LANGUAGE_CODE %}
+                    {% get_available_languages as LANGUAGES %}
+                    {% get_language_info_list for LANGUAGES as languages %}
+                    {% for language in languages %}
+                        <option value="{{ language.code }}"{% if language.code == LANGUAGE_CODE %} selected{% endif %}>
+                            {{ language.name_local }} ({{ language.code }})
+                        </option>
+                    {% endfor %}
+                </select>
+            </fieldset>
+            <hr>
+            <button class="btn btn-primary col ms-3 me-1" type="submit" name="language_configuration">{% trans "Save" %}</button>
+        </form>
+    </div>
+    <div class="card-footer text-body-secondary">
+
+    </div>
+</div>
+{% endblock content %}

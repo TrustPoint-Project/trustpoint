@@ -32,6 +32,7 @@ urlpatterns = [
     path('devices/', include('devices.urls')),
     path('onboarding/', include('onboarding.urls')),
     path('sysconf/', include('sysconf.urls')),
+    path("i18n/", include("django.conf.urls.i18n")),
     path('', views.IndexView.as_view()),
 ]
 

@@ -21,6 +21,14 @@ class IndexView(RedirectView):
     pattern_name = 'sysconf:logging'
 
 
+def language(request: HttpRequest) -> HttpResponse:
+    """Handle language Configuration
+
+    Returns: HTTPResponse
+    """
+    context = {'page_category': 'sysconf', 'page_name': 'language'}
+    return render(request, 'sysconf/language.html', context=context)
+
 # Create your views here.
 def logging(request: HttpRequest) -> HttpResponse:
     """Handle logging Configuration

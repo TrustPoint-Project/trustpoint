@@ -1,4 +1,5 @@
 {% load static %}
+{% load i18n %}
 <!doctype html>
 <html lang="en" data-bs-theme="dark">
     <head>
@@ -41,7 +42,7 @@
                 <a href="{% url 'home:dashboard' %}" class="tp-menu-head {% if page_name == 'dashboard' %}tp-menu-active{% endif %}">
                     <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-home"/></svg>
-                    Dashboard
+                    {% translate "Dashboard" %}
                 </a>
             </div>
 
@@ -49,7 +50,7 @@
                 <a href="{% url 'devices:devices' %}" class="tp-menu-head {% if page_category == 'devices' %}tp-menu-active{% endif %}">
                     <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-boxes"/></svg>
-                    Devices
+                    {% translate "Devices" %}
                 </a>
             </div>
 
@@ -57,16 +58,16 @@
                 <a href="{% url 'pki:endpoint_profiles' %}" class="tp-menu-head {% if page_category == 'pki' %}tp-menu-active{% endif %}">
                     <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-key"/></svg>
-                    PKI
+                    {% translate "PKI" %}
                     <div class="btn-collapse" data-category="pki"
                         aria-expanded="{% if page_category == 'pki' %}true{% else %}false{% endif %}">
                     </div>
                 </a>
                 <div class="tp-menu-collapse {% if page_category == 'pki' %}show{% endif %}">
-                    <a href="{% url 'pki:endpoint_profiles' %}" class="tp-menu-item {% if page_name == 'endpoint_profiles' %}tp-menu-active{% endif %}">Endpoint Profiles</a>
-                    <a href="{% url 'pki:issuing_cas' %}" class="tp-menu-item {% if page_name == 'issuing_cas' %}tp-menu-active{% endif %}">Issuing CAs</a>
-                    <a href="{% url 'pki:root_cas' %}" class="tp-menu-item {% if page_name == 'root_cas' %}tp-menu-active{% endif %}">Root CAs</a>
-                    <a href="{% url 'pki:truststores' %}" class="tp-menu-item {% if page_name == 'truststores' %}tp-menu-active{% endif %}">Truststores</a>
+                    <a href="{% url 'pki:endpoint_profiles' %}" class="tp-menu-item {% if page_name == 'endpoint_profiles' %}tp-menu-active{% endif %}">{% trans "Endpoint Profiles" %}</a>
+                    <a href="{% url 'pki:issuing_cas' %}" class="tp-menu-item {% if page_name == 'issuing_cas' %}tp-menu-active{% endif %}">{% trans "Issuing CAs" %}</a>
+                    <a href="{% url 'pki:root_cas' %}" class="tp-menu-item {% if page_name == 'root_cas' %}tp-menu-active{% endif %}">{% trans "Root CAs" %}</a>
+                    <a href="{% url 'pki:truststores' %}" class="tp-menu-item {% if page_name == 'truststores' %}tp-menu-active{% endif %}">{% trans "Truststores" %}</a>
                 </div>
             </div>
 
@@ -74,17 +75,18 @@
                 <a href="{% url 'sysconf:logging' %}" class="tp-menu-head {% if page_category == 'sysconf' %}tp-menu-active{% endif %}">
                     <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-settings"/></svg>
-                    Settings
+                        {% translate "Settings" %}
                     <div class="btn-collapse" data-category="sysconf"
                         aria-expanded="{% if page_category == 'sysconf' %}true{% else %}false{% endif %}">
                     </div>
                 </a>
                 <div class="tp-menu-collapse {% if page_category == 'sysconf' %}show{% endif %}">
-                    <a href="{% url 'sysconf:logging' %}" class="tp-menu-item {% if page_name == 'logging' %}tp-menu-active{% endif %}">Logging</a>
-                    <a href="{% url 'sysconf:network' %}" class="tp-menu-item {% if page_name == 'network' %}tp-menu-active{% endif %}">Network</a>
-                    <a href="{% url 'sysconf:ntp' %}" class="tp-menu-item {% if page_name == 'ntp' %}tp-menu-active{% endif %}">NTP</a>
-                    <a href="{% url 'sysconf:ssh' %}" class="tp-menu-item {% if page_name == 'ssh' %}tp-menu-active{% endif %}">SSH</a>
-                    <a href="{% url 'sysconf:security' %}" class="tp-menu-item {% if page_name == 'security' %}tp-menu-active{% endif %}">Security</a>
+                    <a href="{% url 'sysconf:language' %}" class="tp-menu-item {% if page_name == 'language' %}tp-menu-active{% endif %}">{% trans "Language" %}</a>
+                    <a href="{% url 'sysconf:logging' %}" class="tp-menu-item {% if page_name == 'logging' %}tp-menu-active{% endif %}">{% trans "Logging" %}</a>
+                    <a href="{% url 'sysconf:network' %}" class="tp-menu-item {% if page_name == 'network' %}tp-menu-active{% endif %}">{% trans "Network" %}</a>
+                    <a href="{% url 'sysconf:ntp' %}" class="tp-menu-item {% if page_name == 'ntp' %}tp-menu-active{% endif %}">{% trans "NTP" %}</a>
+                    <a href="{% url 'sysconf:ssh' %}" class="tp-menu-item {% if page_name == 'ssh' %}tp-menu-active{% endif %}">{% trans "SSH" %}</a>
+                    <a href="{% url 'sysconf:security' %}" class="tp-menu-item {% if page_name == 'security' %}tp-menu-active{% endif %}">{% trans "Security" %}</a>
                 </div>
             </div>
             <div class="tp-menu-footer">
@@ -92,17 +94,17 @@
                     <button class="tp-menu-head theme-toggle" type="button">
                         <svg class="bi theme-icon dark-only" width="20" height="20" fill="#ffffff" role="img" aria-label="Change theme">
                             <use href="{% static 'img/icons.svg' %}#icon-sun"/></svg>
-                        <span class="dark-only">Light theme</span>
+                        <span class="dark-only">{% trans "Light theme" %}</span>
                         <svg class="bi theme-icon light-only" width="20" height="20" fill="#000000" role="img" aria-label="Change theme">
                             <use href="{% static 'img/icons.svg' %}#icon-moon-stars"/></svg>
-                            <span class="light-only">Dark theme</span>
+                            <span class="light-only">{% trans "Dark theme" %}</span>
                     </button>
                     <form method="POST" action="{% url 'users:logout' %}">
                         {% csrf_token %}
                         <button class="tp-menu-head" type="submit">
                             <svg class="bi" fill="currentColor" role="img">
                             <use href="{% static 'img/icons.svg' %}#icon-door"/></svg>
-                            Logout
+                            {% translate "Logout" %}
                         </button>
                     </form>
 

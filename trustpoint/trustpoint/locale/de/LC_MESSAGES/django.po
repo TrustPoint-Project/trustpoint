@@ -1,0 +1,100 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-05-08 19:49+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\trustpoint\settings.py:127
+msgid "German"
+msgstr "Deutsch"
+
+#: .\trustpoint\settings.py:128
+msgid "English"
+msgstr "Englisch"
+
+#: .\trustpoint\templates\trustpoint\base.html:45
+msgid "Dashboard"
+msgstr "Übersicht"
+
+#: .\trustpoint\templates\trustpoint\base.html:53
+msgid "Devices"
+msgstr "Geräte"
+
+#: .\trustpoint\templates\trustpoint\base.html:61
+msgid "PKI"
+msgstr "PKI"
+
+#: .\trustpoint\templates\trustpoint\base.html:67
+msgid "Endpoint Profiles"
+msgstr "Endpunkt-Profile"
+
+#: .\trustpoint\templates\trustpoint\base.html:68
+msgid "Issuing CAs"
+msgstr "Issuing-CAs"
+
+#: .\trustpoint\templates\trustpoint\base.html:69
+msgid "Root CAs"
+msgstr "Root-CAs"
+
+#: .\trustpoint\templates\trustpoint\base.html:70
+msgid "Truststores"
+msgstr "Truststores"
+
+#: .\trustpoint\templates\trustpoint\base.html:78
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: .\trustpoint\templates\trustpoint\base.html:84
+msgid "Language"
+msgstr "Sprache (Language)"
+
+#: .\trustpoint\templates\trustpoint\base.html:85
+msgid "Logging"
+msgstr "Logging"
+
+#: .\trustpoint\templates\trustpoint\base.html:86
+msgid "Network"
+msgstr "Netzwerk"
+
+#: .\trustpoint\templates\trustpoint\base.html:87
+msgid "NTP"
+msgstr "NTP"
+
+#: .\trustpoint\templates\trustpoint\base.html:88
+msgid "SSH"
+msgstr "SSH"
+
+#: .\trustpoint\templates\trustpoint\base.html:89
+msgid "Security"
+msgstr "Sicherheit"
+
+#: .\trustpoint\templates\trustpoint\base.html:97
+msgid "Light theme"
+msgstr "Helles Theme"
+
+#: .\trustpoint\templates\trustpoint\base.html:100
+msgid "Dark theme"
+msgstr "Dunkles Theme"
+
+#: .\trustpoint\templates\trustpoint\base.html:107
+msgid "Logout"
+msgstr "Ausloggen"
+
+#: .\trustpoint\validators.py:25
+msgid ""
+"Must start with a letter and only contain letters, numbers and underscores."
+msgstr "Muss mit einem Buchstaben beginnen und darf nur aus Buchstaben, Ziffern, und Unterstrichen bestehen."

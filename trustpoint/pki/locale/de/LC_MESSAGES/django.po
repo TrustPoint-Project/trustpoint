@@ -1,0 +1,78 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-05-08 19:37+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+#: .\pki\models.py:25
+msgid "Version 1"
+msgstr ""
+
+#: .\pki\models.py:26
+msgid "Version 2"
+msgstr ""
+
+#: .\pki\models.py:27
+msgid "Version 3"
+msgstr ""
+
+#: .\pki\models.py:37 .\pki\models.py:94 .\pki\models.py:206
+msgid "SECP256R1"
+msgstr ""
+
+#: .\pki\models.py:38 .\pki\models.py:95 .\pki\models.py:207
+msgid "SECP384R1"
+msgstr ""
+
+#: .\pki\models.py:39
+msgid "RSA2048"
+msgstr ""
+
+#: .\pki\models.py:40
+msgid "RSA4096"
+msgstr ""
+
+#: .\pki\models.py:88 .\pki\models.py:200
+msgid "RSA"
+msgstr ""
+
+#: .\pki\models.py:89 .\pki\models.py:201
+msgid "ECC"
+msgstr ""
+
+#: .\pki\models.py:107
+msgid "Local"
+msgstr ""
+
+#: .\pki\models.py:108
+msgid "Remote"
+msgstr ""
+
+#: .\pki\models.py:113
+msgid "File Import - PKCS#12"
+msgstr ""
+
+#: .\pki\models.py:114
+msgid "File Import - PEM"
+msgstr ""
+
+#: .\pki\models.py:115
+msgid "Locally signed"
+msgstr ""
+
+#: .\pki\models.py:116
+msgid "Cert. Import - EST"
+msgstr ""

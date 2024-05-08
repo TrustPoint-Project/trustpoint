@@ -81,6 +81,10 @@ class CryptoBackend:
             tuple[PrivateKeyTypes | None, Certificate | None, list[Certificate]]:
                 The CA private key, certificate and the CA certificate chain.
         """
+        if not device.endpoint_profile:
+            msg = 'No endpoint profile configured for device.'
+            raise OnboardingError(msg)
+
         try:
             signing_ca = device.endpoint_profile.issuing_ca
         except AttributeError as e:
