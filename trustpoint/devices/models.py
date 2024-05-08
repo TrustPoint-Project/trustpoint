@@ -19,7 +19,7 @@ class Device(models.Model):
 
         NOT_ONBOARDED = 'P', _('Pending')
         ONBOARDING_RUNNING = 'R', _('Running')
-        ONBOARDED = 'O', _('OK')
+        ONBOARDED = 'O', _('Onboarded')
         ONBOARDING_FAILED = 'F', _('Failed')
         REVOKED = 'D', _('Revoked')
 
