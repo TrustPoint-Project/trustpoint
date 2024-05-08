@@ -19,10 +19,13 @@
 
 
                 <hr>
+
+                {% if onboarded %}
                 <div class="tp-form-btn-group tp-form-btn-group pt-5">
                     <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Cancel</a>
                     <input type="submit" class="btn btn-danger" value="Revoke Certificates">
                 </div>
+                {% endif %}
 
             </div>
         </div>

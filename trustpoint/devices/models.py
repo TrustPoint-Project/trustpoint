@@ -21,6 +21,7 @@ class Device(models.Model):
         ONBOARDING_RUNNING = 'R', _('Running')
         ONBOARDED = 'O', _('OK')
         ONBOARDING_FAILED = 'F', _('Failed')
+        REVOKED = 'D', _('Revoked')
 
         @classmethod
         def get_color(cls: Device.DeviceOnboardingStatus, choice: Device.DeviceOnboardingStatus | str) -> str:
@@ -32,6 +33,8 @@ class Device(models.Model):
                 return 'warning'
             if choice == cls.ONBOARDED.value:
                 return 'success'
+            if choice == cls.REVOKED.value:
+                return 'revoked'
             if choice == cls.ONBOARDING_FAILED.value:
                 return 'danger'
             raise UnknownOnboardingStatusError
@@ -64,7 +67,7 @@ class Device(models.Model):
     def revoke_ldevid(self: Device) -> bool:
         """Revokes the LDevID.
 
-        Deletes the LDevID file and sets the device status to NOT_ONBOARDED.
+        Deletes the LDevID file and sets the device status to REVOKED.
         Actual revocation (CRL, OCSP) is not yet implemented.
         """
         if not self.ldevid:
@@ -72,7 +75,7 @@ class Device(models.Model):
 
         if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
             # TODO(Air): Perhaps extra status for revoked devices?
-            self.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+            self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
         self.ldevid.delete()
         self.ldevid = None
         self.save()

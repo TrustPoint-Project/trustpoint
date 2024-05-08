@@ -233,6 +233,12 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
     context_object_name = 'device'
     pk_url_kwarg = 'device_id'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        device = self.get_object()
+        context['onboarded'] = (device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED)
+        return context
+
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
         """Revokes the LDevID certificate for a device.
 
