@@ -11,6 +11,7 @@ from django.http.request import HttpRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.generic import DetailView, RedirectView, TemplateView, View
+from django.utils.translation import gettext as _
 
 from trustpoint.views import TpLoginRequiredMixin
 
@@ -35,12 +36,12 @@ class OnboardingUtilMixin:
         try:
             device_id = self.kwargs['device_id']
         except KeyError:
-            messages.error(request, 'Onboarding: device_id kwarg not provided.')
+            messages.error(request, _('Onboarding: device_id kwarg not provided.'))
             return False
 
         self.device = Device.get_by_id(device_id)
         if not self.device:
-            messages.error(request, f'Onboarding: Device with ID {device_id} not found.')
+            messages.error(request, _('Onboarding: Device with ID %s not found.') % device_id)
             return False
         return True
 
@@ -77,7 +78,7 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
 
         onboarding_process = OnboardingProcess.make_onboarding_process(device, DownloadOnboardingProcess)
 
-        messages.warning(request, 'Keep the PKCS12 file secure! It contains the private key of the device.')
+        messages.warning(request, _('Keep the PKCS12 file secure! It contains the private key of the device.'))
 
         context = {
             'page_category': 'onboarding',
@@ -176,7 +177,7 @@ class Detail404RedirectionMessageView(DetailView):
             return super().get(request, *args, **kwargs)
         except Http404:
             if not hasattr(self, 'category'):
-                self.category = 'Error'
+                self.category = _('Error')
             messages.error(self.request,
                            f'{self.category}: {self.model.__name__} with ID {kwargs[self.pk_url_kwarg]} not found.')
             return redirect(self.redirection_view)
@@ -195,7 +196,7 @@ class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
         """Cancels the onboarding process for a device."""
         device = Device.get_by_id(device_id)
         if not device:
-            messages.error(request, f'Onboarding: Device with ID {device_id} not found.')
+            messages.error(request, _('Onboarding: Device with ID %s not found.') % device_id)
             return
 
         # TODO(Air): We also need to remove the onboarding process automatically without calling this view
@@ -203,20 +204,22 @@ class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
         state, onboarding_process = OnboardingProcess.cancel_for_device(device)
 
         if state == OnboardingProcessState.COMPLETED:
-            messages.success(request, f'Device {device.device_name} onboarded successfully.')
+            messages.success(request, _('Onboarding: Device %s onboarded successfully.') % device.device_name)
         elif state == OnboardingProcessState.FAILED:
             # TODO(Air): what to do if timeout occurs after valid LDevID is issued?
             # TODO(Air): Delete device and add to CRL.
             reason = onboarding_process.error_reason if onboarding_process else ''
-            messages.error(request, f'Onboarding process for device {device.device_name} failed. {reason}')
+            messages.error(request, _('Onboarding process for device %(name)s failed. %(reason)s')
+                                    % {"name": device.device_name, "reason": reason})
         elif state == OnboardingProcessState.CANCELED:
-            messages.warning(request, f'Onboarding process for device {device.device_name} canceled.')
+            messages.warning(request, _('Onboarding process for device %s canceled.') % device.device_name)
         elif state != OnboardingProcessState.NO_SUCH_PROCESS:
             messages.error(request,
-                           f'Onboarding process for device {device.device_name} is in unexpected state {state}.')
+                           _('Onboarding process for device %(name)s is in unexpected state %(state)s.')
+                           % {"name": device.device_name, "state": state})
 
         if not onboarding_process:
-            messages.error(request, f'No active onboarding process for device {device.device_name} found.')
+            messages.error(request, _('No active onboarding process for device %s found.') % device.device_name)
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         """Overrides the dispatch method to additionally call the _cancel method."""
@@ -228,7 +231,7 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
 
     template_name = 'onboarding/revoke.html'
     model = Device
-    category = 'Revocation'
+    category = _('Revocation')
     redirection_view = 'devices:devices'
     context_object_name = 'device'
     pk_url_kwarg = 'device_id'
@@ -243,7 +246,7 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
         device = self.get_object() # don't need error handling, will return 404 if missing
 
         if device.revoke_ldevid():
-            messages.success(request, f'LDevID certificate for device {device.device_name} revoked.')
+            messages.success(request, _('LDevID certificate for device %s revoked.') % device.device_name)
         else:
-            messages.warning(request, f'Device {device.device_name} has no LDevID certificate to revoke.')
+            messages.warning(request, _('Device %s has no LDevID certificate to revoke.') % device.device_name)
         return redirect(self.redirection_view)

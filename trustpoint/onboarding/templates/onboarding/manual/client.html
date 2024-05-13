@@ -1,6 +1,7 @@
 {% extends 'trustpoint/base.html' %}
 {% load crispy_forms_filters %}
 {% load static %}
+{% load i18n %}
 {% block head %}
     <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
     <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:exit' device_id %}"</script>
@@ -9,25 +10,25 @@
 {% block content %}
     <div class="card card-main text-center">
         <div class="card-header d-flex">
-            <h1>Onboarding device {{ device_name }} with Trustpoint Client</h1>
+            <h1>{% blocktranslate %}Onboarding device {{ device_name }} with Trustpoint Client{% endblocktranslate %}</h1>
         </div>
         <div class="card-body tp-main-centered pt-3 pb-4">
-            <h2>Trustpoint Client Download</h2>
+            <h2>{% trans "Trustpoint Client Download" %}</h2>
             todo
             <hr>
-            <h2>Trustpoint Client Provisioning command</h2>
+            <h2>{% trans "Trustpoint Client Provisioning command" %}</h2>
             <pre class="mt-2"><code id="code-provisioning-0">{{ cmd_0 }}</code></pre>
-            <div><button class="btn btn-primary float-end" onclick="copyToClipboard(this,'#code-provisioning-0')">Copy to clipboard</button></div>
+            <div class="text-end"><button class="btn btn-primary" onclick="copyToClipboard(this,'#code-provisioning-0')">{% trans "Copy to clipboard" %}</button></div>
             <hr>
-            <h2>Onboarding progress</h2>
+            <h2>{% trans "Onboarding progress" %}</h2>
             <div id="onboarding-state" class="alert alert-info d-flex align-items-center mt-3 breathing-anim" role="alert">  
                 <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
-                <div>Fetching state from server...</div>                
+                <div>{% trans "Fetching state from server..." %}</div>                
             </div>
         </div>
         <div class="card-footer text-body-secondary">
-            <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Back</a>
-            <a href="{% url 'onboarding:exit' device_id %}" class="btn btn-danger">Cancel</a>
+            <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans "Back" %}</a>
+            <a href="{% url 'onboarding:exit' device_id %}" class="btn btn-danger">{% trans "Cancel" %}</a>
         </div>
     </div>
 {% endblock content %}

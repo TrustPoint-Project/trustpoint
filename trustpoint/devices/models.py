@@ -106,7 +106,7 @@ class Device(models.Model):
             try:
                 label = Device.OnboardingProtocol(device.onboarding_protocol).label
             except ValueError:
-                return (False, 'Onboarding: Please select a valid onboarding protocol.')
+                return (False, _('Onboarding: Please select a valid onboarding protocol.'))
 
             return (False, f'Onboarding protocol {label} is not implemented.')
 

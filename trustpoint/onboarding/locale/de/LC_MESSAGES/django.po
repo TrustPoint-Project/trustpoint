@@ -1,0 +1,164 @@
+# German translation file for the Onboarding app in the Trustpoint project.
+# Copyright (C) 2024 Trustpoint Project Funded Partners
+# This file is distributed under the same license as the Trustpoint package.
+# Christian Schwinne <christian.schwinne AT hshl.de>, 2024.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-05-13 08:30+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\onboarding\templates\onboarding\manual\cli.html:13
+#, python-format
+msgid "Onboarding device %(device_name)s manually via CLI"
+msgstr "Manuelles Onboarding von Gerät %(device_name)s via CLI"
+
+#: .\onboarding\templates\onboarding\manual\cli.html:16
+msgid "Overall onboarding progress"
+msgstr "Onboarding-Gesamtfortschritt"
+
+#: .\onboarding\templates\onboarding\manual\cli.html:19
+#: .\onboarding\templates\onboarding\manual\client.html:26
+#: .\onboarding\templates\onboarding\manual\download.html:18
+msgid "Fetching state from server..."
+msgstr "Status wird vom Server abgerufen..."
+
+#: .\onboarding\templates\onboarding\manual\cli.html:22
+msgid "Device onboarding commands"
+msgstr "Geräte-Onboarding-Befehle"
+
+#: .\onboarding\templates\onboarding\manual\cli.html:23
+msgid "Step 1: Download and verify TLS trust store"
+msgstr "Schritt 1: TLS Truststore herunterladen und verifizieren"
+
+#: .\onboarding\templates\onboarding\manual\cli.html:28
+#: .\onboarding\templates\onboarding\manual\cli.html:42
+#: .\onboarding\templates\onboarding\manual\cli.html:56
+#: .\onboarding\templates\onboarding\manual\client.html:21
+msgid "Copy to clipboard"
+msgstr "Kopieren"
+
+#: .\onboarding\templates\onboarding\manual\cli.html:37
+msgid "Step 2: Create LDevID certificate"
+msgstr "Schritt 2: LDevID-Zertifikat erzeugen"
+
+#: .\onboarding\templates\onboarding\manual\cli.html:51
+msgid "Step 3: Dowload LDevID certificate chain"
+msgstr "Schritt 3: LDevID-Zertifikatskette herunterladen"
+
+#: .\onboarding\templates\onboarding\manual\cli.html:66
+#: .\onboarding\templates\onboarding\manual\client.html:30
+#: .\onboarding\templates\onboarding\manual\download.html:31
+msgid "Back"
+msgstr "Zurück"
+
+#: .\onboarding\templates\onboarding\manual\cli.html:67
+#: .\onboarding\templates\onboarding\manual\client.html:31
+#: .\onboarding\templates\onboarding\manual\download.html:32
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: .\onboarding\templates\onboarding\manual\client.html:13
+#, fuzzy, python-format
+msgid "Onboarding device %(device_name)s with Trustpoint Client"
+msgstr "Onboarding von Gerät %(device_name)s via Trustpoint Client"
+
+#: .\onboarding\templates\onboarding\manual\client.html:16
+msgid "Trustpoint Client Download"
+msgstr "Herunterladen des Trustpoint Clients"
+
+#: .\onboarding\templates\onboarding\manual\client.html:19
+msgid "Trustpoint Client Provisioning command"
+msgstr "Trustpoint-Client Onboardingbefehl"
+
+#: .\onboarding\templates\onboarding\manual\client.html:23
+msgid "Onboarding progress"
+msgstr "Onboarding-Status"
+
+#: .\onboarding\templates\onboarding\manual\download.html:13
+#, python-format
+msgid "Download certificate for device %(device_name)s"
+msgstr "Zertifikat für Gerät %(device_name)s herunterladen"
+
+#: .\onboarding\templates\onboarding\manual\download.html:20
+msgid "Download PKCS12 key and certificate"
+msgstr "PKCS12-Zertifikatsbündel herunterladen"
+
+#: .\onboarding\templates\onboarding\manual\download.html:22
+msgid "Download PKCS12"
+msgstr "PKCS12 herunterladen"
+
+#: .\onboarding\templates\onboarding\manual\download.html:25
+msgid "Keypair in PEM format"
+msgstr "Schlüsselpaar im PEM-Format"
+
+#: .\onboarding\templates\onboarding\manual\download.html:27
+msgid "LDevID certificate"
+msgstr "LDevID-Zertifikat"
+
+#: .\onboarding\views.py:39
+msgid "Onboarding: device_id kwarg not provided."
+msgstr "Onboarding: device_id kwarg fehlt."
+
+#: .\onboarding\views.py:44 .\onboarding\views.py:199
+#, python-format
+msgid "Onboarding: Device with ID %s not found."
+msgstr "Onboarding: Kein Gerät mit der ID %s gefunden."
+
+#: .\onboarding\views.py:81
+msgid "Keep the PKCS12 file secure! It contains the private key of the device."
+msgstr "Halten Sie die PKCS12-Datei geheim! Sie enthält den privaten Schlüssel des Geräts."
+
+#: .\onboarding\views.py:180
+msgid "Error"
+msgstr "Fehler"
+
+#: .\onboarding\views.py:207
+#, python-format
+msgid "Onboarding: Device %s onboarded successfully."
+msgstr "Onboarding: Das Gerät %s wurde erfolgreich hinzugefügt."
+
+#: .\onboarding\views.py:212
+#, python-format
+msgid "Onboarding process for device %(name)s failed. %(reason)s"
+msgstr "Onboarding-Prozess für das Gerät %(name)s fehlgeschlagen. %(reason)s"
+
+#: .\onboarding\views.py:215
+#, python-format
+msgid "Onboarding process for device %s canceled."
+msgstr "Onboarding-Prozess für das Gerät %s abgebrochen."
+
+#: .\onboarding\views.py:218
+#, python-format
+msgid ""
+"Onboarding process for device %(name)s is in unexpected state %(state)s."
+msgstr "Onboarding-Prozess für das Gerät %(name)s ist im unerwarteten Zustand %(state)s"
+
+#: .\onboarding\views.py:222
+#, python-format
+msgid "No active onboarding process for device %s found."
+msgstr "Es wurde kein aktiver Onboarding-Prozess für das Gerät %s gefunden."
+
+#: .\onboarding\views.py:234
+msgid "Revocation"
+msgstr "Zertifikatswiderruf"
+
+#: .\onboarding\views.py:249
+#, python-format
+msgid "LDevID certificate for device %s revoked."
+msgstr "Das LDevID-Zertifikat für Gerät %s wurde widerrufen."
+
+#: .\onboarding\views.py:251
+#, python-format
+msgid "Device %s has no LDevID certificate to revoke."
+msgstr "Das Gerät %s hat kein LDevID-Zertifikat, das widerrufen werden kann."
