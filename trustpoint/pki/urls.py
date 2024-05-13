@@ -95,5 +95,8 @@ urlpatterns = [
         views.TruststoreDeleteView.as_view(),
         name='truststores-delete',
     ),
+    path('revoked-certificates/',
+         views.CRLListView.as_view(),
+         name='revoked_certificates'),
 
 ]

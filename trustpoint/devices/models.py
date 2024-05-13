@@ -6,7 +6,7 @@ from __future__ import annotations
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from pki.models import EndpointProfile
+from pki.models import EndpointProfile, CertificateRevocationList
 
 from .exceptions import UnknownOnboardingStatusError
 
@@ -76,6 +76,14 @@ class Device(models.Model):
         if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
             # TODO(Air): Perhaps extra status for revoked devices?
             self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
+
+        CertificateRevocationList.objects.create(
+                device_name=self.device_name,
+                serial_number=self.serial_number,
+                revocation_datetime=timezone.now(),
+                revocation_reason='Requested by user',
+                issuer=self.endpoint_profile.issuing_ca
+            )
         self.ldevid.delete()
         self.ldevid = None
         self.save()

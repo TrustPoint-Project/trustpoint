@@ -44,7 +44,7 @@ from trustpoint.views import BulkDeletionMixin, ContextDataMixin, Form, MultiFor
 
 from .forms import IssuingCaLocalP12FileForm, IssuingCaLocalPemFileForm, IssuingCaLocalSignedForm, AddTruststoreForm, \
     IssuingCaESTForm
-from .models import EndpointProfile, IssuingCa, RootCa, Truststore
+from .models import EndpointProfile, IssuingCa, RootCa, Truststore, CertificateRevocationList
 from .tables import EndpointProfileTable, IssuingCaTable, RootCaTable, TruststoreTable
 
 
@@ -808,3 +808,13 @@ class TruststoreDetailView(TpLoginRequiredMixin, DetailView):
             context['error'] = f"Error reading PEM file: {str(e)}"
 
         return context
+
+# -------------------------------------------------- Certificate revocation list  --------------------------------------------------
+
+
+class CRLListView(TpLoginRequiredMixin, SingleTableView):
+    """Revoked Certificates List View."""
+
+    model = CertificateRevocationList
+    table_class = None
+    template_name = 'pki/revoked_certificates/revoked_certificates.html'

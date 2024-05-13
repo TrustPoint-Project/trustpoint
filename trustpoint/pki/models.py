@@ -17,7 +17,6 @@ from django.utils.translation import gettext_lazy as _
 from trustpoint.validators import validate_isidentifer
 from datetime import timedelta
 
-
 class Certificate(models.Model):
     """X509 Certificate Model"""
 
@@ -268,3 +267,14 @@ class TestB(models.Model):
 
     def __str__(self):
         return f'TestB({self.b})'
+
+
+class CertificateRevocationList(models.Model):
+    device_name = models.CharField(max_length=50, unique=True, help_text="Device name")
+    serial_number = models.CharField(max_length=50, unique=True, help_text="Unique serial numer of revoked certificate.", primary_key=True)
+    revocation_datetime = models.DateTimeField(help_text="Timestamp when certificate got revoked.")
+    revocation_reason = models.CharField(max_length=255, blank=True, help_text="Reason of revoation.")
+    issuer = models.ForeignKey(IssuingCa, on_delete=models.CASCADE, help_text="Name of Issuing CA.")
+
+    def __str__(self):
+        return f"{self.serial_number} - Revoked on {self.revocation_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
