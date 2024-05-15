@@ -40,16 +40,16 @@ class RootCa(models.Model):
         RSA4096 = 'RSA4096', _('RSA4096')
 
 
-    unique_name = models.CharField(
+    unique_name = models.CharField(_('Unique Name'),
         max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True
     )
-    common_name = models.CharField(max_length=65536, default='', blank=True)
-    not_valid_before = models.DateTimeField(default=timezone.now)
-    not_valid_after = models.DateTimeField(default=timezone.now() + timedelta(days=365*1))
+    common_name = models.CharField(_('Common Name'), max_length=65536, default='', blank=True)
+    not_valid_before = models.DateTimeField(_('Not valid before'), default=timezone.now)
+    not_valid_after = models.DateTimeField(_('Not valid after'), default=timezone.now() + timedelta(days=365*1))
 
-    ca_type = models.CharField(max_length=9, choices=CaType.choices, default='RSA2048')
+    ca_type = models.CharField(_('CA Type'), max_length=9, choices=CaType.choices, default='RSA2048')
 
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(_('Created at'), default=timezone.now)
 
     def __str__(self: RootCa) -> str:
         """Human-readable representation of the RootCa model instance.
@@ -116,23 +116,24 @@ class IssuingCa(models.Model):
         F_EST = 'F_EST', _('Cert. Import - EST')
 
     unique_name = models.CharField(
-        max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True
+        _('Unique Name'), max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True
     )
 
-    common_name = models.CharField(max_length=65536, default='', blank=True)
-    not_valid_before = models.DateTimeField()
-    not_valid_after = models.DateTimeField()
+    common_name = models.CharField(_('Common Name'), max_length=65536, default='', blank=True)
+    not_valid_before = models.DateTimeField(_('Not valid before'))
+    not_valid_after = models.DateTimeField(_('Not valid after'))
 
-    key_type = models.CharField(max_length=3, choices=KeyType)
-    key_size = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(65536)])
-    curve = models.CharField(max_length=10, choices=Curves, default='', blank=True)
-    localization = models.CharField(max_length=1, choices=Localization)
-    config_type = models.CharField('Configuration Type', max_length=10, choices=ConfigType)
+    key_type = models.CharField(_('Key Type'), max_length=3, choices=KeyType)
+    key_size = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(65536)],
+                                   verbose_name=_('Key Size'))
+    curve = models.CharField(_('Curve'), max_length=10, choices=Curves, default='', blank=True)
+    localization = models.CharField(_('Localization'), max_length=1, choices=Localization)
+    config_type = models.CharField(_('Configuration Type'), max_length=10, choices=ConfigType)
 
     p12 = models.FileField(
-        verbose_name='PKCS#12 File (.p12, .pfx)',
+        verbose_name=_('PKCS#12 File (.p12, .pfx)'),
     )
-    created_at = models.DateTimeField(default=timezone.now)
+    created_at = models.DateTimeField(_('Created at'), default=timezone.now)
 
     def __str__(self: IssuingCa) -> str:
         """Human-readable representation of the IssuingCa model instance.
@@ -206,29 +207,30 @@ class Truststore(models.Model):
         SECP256R1 = 'SECP256R1', _('SECP256R1')
         SECP384R1 = 'SECP384R1', _('SECP384R1')
 
-    common_name = models.CharField(max_length=65536, default='', blank=True)
-    subject = models.CharField(max_length=65536, default='', blank=True)
-    issuer = models.CharField(max_length=65536, default='', blank=True)
+    common_name = models.CharField(max_length=65536, default='', blank=True, verbose_name=_('Common Name'))
+    subject = models.CharField(max_length=65536, default='', blank=True, verbose_name=_('Subject'))
+    issuer = models.CharField(max_length=65536, default='', blank=True, verbose_name=_('Issuer'))
 
-    not_valid_before = models.DateTimeField()
-    not_valid_after = models.DateTimeField()
+    not_valid_before = models.DateTimeField(verbose_name=_('Not valid before'))
+    not_valid_after = models.DateTimeField(verbose_name=_('Not valid after'))
 
-    key_type = models.CharField(max_length=3, choices=KeyType)
-    key_size = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(65536)])
-    curve = models.CharField(max_length=10, choices=Curves, default='', blank=True)
+    key_type = models.CharField(max_length=3, choices=KeyType, verbose_name=_('Key Type'))
+    key_size = models.IntegerField(_('Key Size'), validators=[MinValueValidator(0), MaxValueValidator(65536)])
+    curve = models.CharField(_('Curve'), max_length=10, choices=Curves, default='', blank=True)
 
-    pem = models.FileField(
-        verbose_name='PEM encoded file',
-    )
-    created_at = models.DateTimeField(default=timezone.now)
+    pem = models.FileField(_('PEM encoded file'))
+
+    created_at = models.DateTimeField(_('Created at'), default=timezone.now)
 
 class EndpointProfile(models.Model):
     """Endpoint Profile model."""
 
     unique_endpoint = models.CharField(
-        max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True
+        _('Unique Endpoint'), max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True
     )
-    issuing_ca = models.ForeignKey(IssuingCa, on_delete=models.SET_NULL, blank=True, null=True)
+    issuing_ca = models.ForeignKey(IssuingCa,
+        on_delete=models.SET_NULL, blank=True, null=True, verbose_name=_('Issuing CA')
+    )
 
     def __str__(self: EndpointProfile) -> str:
         """Human-readable representation of the EndpointProfile model instance.
@@ -255,6 +257,7 @@ class EndpointProfile(models.Model):
         return super().save(*args, **kwargs)
 
 
+# TODO(Air): Remove these test classes
 class TestA(models.Model):
     a = models.CharField(max_length=10, default='')
 

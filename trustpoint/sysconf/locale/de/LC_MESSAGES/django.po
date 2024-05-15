@@ -1,14 +1,14 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# German translation file for the Sysconf app in the Trustpoint project.
+# Copyright (C) 2024 Trustpoint Project Funded Partners
+# This file is distributed under the same license as the Trustpoint package.
+# Christian Schwinne <christian.schwinne AT hshl.de>, 2024.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-05-08 19:49+0200\n"
+"POT-Creation-Date: 2024-05-14 15:08+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,7 +20,7 @@ msgstr ""
 
 #: .\sysconf\forms.py:18
 msgid "NTP Server Address"
-msgstr ""
+msgstr "NTP-Serveradresse"
 
 #: .\sysconf\forms.py:29
 msgid "Static IP Address"
@@ -30,11 +30,11 @@ msgstr "Statische IP-Adresse"
 msgid "DHCP"
 msgstr ""
 
-#: .\sysconf\forms.py:31
+#: .\sysconf\forms.py:31 .\sysconf\models.py:49
 msgid "Netmask"
 msgstr "Subnetzmaske"
 
-#: .\sysconf\forms.py:32
+#: .\sysconf\forms.py:32 .\sysconf\models.py:48
 msgid "Gateway"
 msgstr ""
 
@@ -62,6 +62,38 @@ msgstr "Sicherheitslevel"
 msgid "Enable Local Root CA"
 msgstr "Lokale Root-CA erlauben"
 
+#: .\sysconf\models.py:21
+msgid "Logging server address"
+msgstr "Adresse des Loggingservers"
+
+#: .\sysconf\models.py:23
+msgid "Logging server port"
+msgstr "Port des Loggingservers"
+
+#: .\sysconf\models.py:37
+msgid "Logging type"
+msgstr "Logging-Art"
+
+#: .\sysconf\models.py:38
+msgid "Network type"
+msgstr "Netzwerkart"
+
+#: .\sysconf\models.py:47
+msgid "Static IP address"
+msgstr "Statische IP-Adresse"
+
+#: .\sysconf\models.py:61
+msgid "Basic"
+msgstr "Grundlegend"
+
+#: .\sysconf\models.py:62
+msgid "Medium"
+msgstr "Mittel"
+
+#: .\sysconf\models.py:63
+msgid "High"
+msgstr "Hoch"
+
 #: .\sysconf\templates\sysconf\language.html:7
 msgid "Language Configuration"
 msgstr "Spracheinstellungen"
@@ -69,3 +101,7 @@ msgstr "Spracheinstellungen"
 #: .\sysconf\templates\sysconf\language.html:27
 msgid "Save"
 msgstr "Speichern"
+
+#: .\sysconf\templates\sysconf\ssh.html:6
+msgid "SSH"
+msgstr "SSH"

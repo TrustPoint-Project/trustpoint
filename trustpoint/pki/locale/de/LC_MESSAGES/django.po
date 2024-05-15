@@ -1,14 +1,14 @@
-# SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
-# This file is distributed under the same license as the PACKAGE package.
-# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# German translation file for the PKI app in the Trustpoint project.
+# Copyright (C) 2024 Trustpoint Project Funded Partners
+# This file is distributed under the same license as the Trustpoint package.
+# Christian Schwinne <christian.schwinne AT hshl.de>, 2024.
 #
 #, fuzzy
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-05-08 19:37+0200\n"
+"POT-Creation-Date: 2024-05-15 09:40+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -17,6 +17,15 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\pki\forms.py:299
+msgid "Upload Truststore (.pem file)"
+msgstr "Truststore hochladen (.pem-Datei)"
+
+#: .\pki\forms.py:300
+msgid "Or enter Truststore certificate as PEM text"
+msgstr "Alternativ das Truststore-Zertifikat als PEM-formatierten Text eingeben"
+
 #: .\pki\models.py:25
 msgid "Version 1"
 msgstr ""
@@ -29,11 +38,11 @@ msgstr ""
 msgid "Version 3"
 msgstr ""
 
-#: .\pki\models.py:37 .\pki\models.py:94 .\pki\models.py:206
+#: .\pki\models.py:37 .\pki\models.py:94 .\pki\models.py:207
 msgid "SECP256R1"
 msgstr ""
 
-#: .\pki\models.py:38 .\pki\models.py:95 .\pki\models.py:207
+#: .\pki\models.py:38 .\pki\models.py:95 .\pki\models.py:208
 msgid "SECP384R1"
 msgstr ""
 
@@ -45,34 +54,412 @@ msgstr ""
 msgid "RSA4096"
 msgstr ""
 
-#: .\pki\models.py:88 .\pki\models.py:200
+#: .\pki\models.py:43 .\pki\models.py:119
+#: .\pki\templates\pki\issuing_cas\confirm_delete.html:18
+#: .\pki\templates\pki\root_cas\confirm_delete.html:18
+msgid "Unique Name"
+msgstr "Eindeutiger Name"
+
+#: .\pki\models.py:46 .\pki\models.py:122 .\pki\models.py:210
+#: .\pki\templates\pki\issuing_cas\confirm_delete.html:19
+#: .\pki\templates\pki\root_cas\confirm_delete.html:19
+msgid "Common Name"
+msgstr "Common Name"
+
+#: .\pki\models.py:47 .\pki\models.py:123 .\pki\models.py:214
+msgid "Not valid before"
+msgstr "Nicht gültig vor"
+
+#: .\pki\models.py:48 .\pki\models.py:124 .\pki\models.py:215
+msgid "Not valid after"
+msgstr "Nicht gültig nach"
+
+#: .\pki\models.py:50
+msgid "CA Type"
+msgstr "Typ der CA"
+
+#: .\pki\models.py:52 .\pki\models.py:136 .\pki\models.py:223
+msgid "Created at"
+msgstr "Erzeugt um"
+
+#: .\pki\models.py:88 .\pki\models.py:201
 msgid "RSA"
 msgstr ""
 
-#: .\pki\models.py:89 .\pki\models.py:201
+#: .\pki\models.py:89 .\pki\models.py:202
 msgid "ECC"
 msgstr ""
 
 #: .\pki\models.py:107
 msgid "Local"
-msgstr ""
+msgstr "Lokal"
 
 #: .\pki\models.py:108
 msgid "Remote"
-msgstr ""
+msgstr "Extern"
 
 #: .\pki\models.py:113
 msgid "File Import - PKCS#12"
-msgstr ""
+msgstr "Import aus Datei - PKCS#12"
 
 #: .\pki\models.py:114
 msgid "File Import - PEM"
-msgstr ""
+msgstr "Import aus Datei - PEM"
 
 #: .\pki\models.py:115
 msgid "Locally signed"
-msgstr ""
+msgstr "Lokal signiert"
 
 #: .\pki\models.py:116
 msgid "Cert. Import - EST"
+msgstr "Zert. Import - EST"
+
+#: .\pki\models.py:126 .\pki\models.py:217
+msgid "Key Type"
+msgstr "Schlüsselart"
+
+#: .\pki\models.py:128 .\pki\models.py:218
+msgid "Key Size"
+msgstr "Schlüssellänge"
+
+#: .\pki\models.py:129 .\pki\models.py:219
+msgid "Curve"
+msgstr "Kurve"
+
+#: .\pki\models.py:130
+msgid "Localization"
+msgstr "Lokalisation"
+
+#: .\pki\models.py:131
+msgid "Configuration Type"
+msgstr "Konfigurationsart"
+
+#: .\pki\models.py:134
+msgid "PKCS#12 File (.p12, .pfx)"
+msgstr "PKCS#12-Datei (.p12, .pfx)"
+
+#: .\pki\models.py:211
+msgid "Subject"
+msgstr "Subject"
+
+#: .\pki\models.py:212
+msgid "Issuer"
+msgstr "Aussteller"
+
+#: .\pki\models.py:221
+msgid "PEM encoded file"
+msgstr "Datei im PEM-Format"
+
+#: .\pki\models.py:229
+msgid "Unique Endpoint"
+msgstr "Eindeutiger Endpunkt"
+
+#: .\pki\models.py:232 .\pki\tables.py:133
+msgid "Issuing CA"
+msgstr "Issuing CA"
+
+#: .\pki\tables.py:33
+msgid "There are no Issuing CAs available."
+msgstr "Es sind keine Issuing CAs angelegt."
+
+#: .\pki\tables.py:50 .\pki\tables.py:64 .\pki\tables.py:162
+#: .\pki\tables.py:177 .\pki\tables.py:230 .\pki\tables.py:244
+#: .\pki\tables.py:306 .\pki\tables.py:320
+msgid "Details"
+msgstr "Details"
+
+#: .\pki\tables.py:51 .\pki\tables.py:77 .\pki\tables.py:164
+#: .\pki\tables.py:203 .\pki\tables.py:231 .\pki\tables.py:257
+#: .\pki\tables.py:307 .\pki\tables.py:333
+msgid "Delete"
+msgstr "Entfernen"
+
+#: .\pki\tables.py:111
+msgid "There are no Endpoint Profiles available."
+msgstr "Es sind keine Endpunkt-Profile angelegt."
+
+#: .\pki\tables.py:142
+msgid "Issuing CA Algorithm"
+msgstr "Algorithmus der Issuing CA"
+
+#: .\pki\tables.py:151
+msgid "Issuing CA Key Size"
+msgstr "Schlüssellänge der Issuing CA"
+
+#: .\pki\tables.py:160
+msgid "Issuing CA Curve"
+msgstr "Kurve der Issuing CA"
+
+#: .\pki\tables.py:163 .\pki\tables.py:190
+msgid "Update"
+msgstr "Bearbeiten"
+
+#: .\pki\tables.py:217
+msgid "There are no Root CAs available."
+msgstr "Es sind keine Root CAs angelegt."
+
+#: .\pki\tables.py:288
+msgid "There are no Truststores available."
+msgstr "Es sind keine Truststores angelegt."
+
+#: .\pki\templates\pki\endpoint_profiles\add.html:7
+#: .\pki\templates\pki\endpoint_profiles\add.html:11
+#: .\pki\templates\pki\endpoint_profiles\add.html:19
+msgid "Add Endpoint Profile"
+msgstr "Endpunkt-Profil hinzufügen"
+
+#: .\pki\templates\pki\endpoint_profiles\add.html:18
+#: .\pki\templates\pki\endpoint_profiles\confirm_delete.html:32
+#: .\pki\templates\pki\endpoint_profiles\update.html:18
+#: .\pki\templates\pki\issuing_cas\add\local_file.html:42
+#: .\pki\templates\pki\issuing_cas\add\local_file.html:56
+#: .\pki\templates\pki\issuing_cas\add\local_signed_ca.html:19
+#: .\pki\templates\pki\issuing_cas\confirm_delete.html:27
+#: .\pki\templates\pki\root_cas\add.html:16
+#: .\pki\templates\pki\root_cas\confirm_delete.html:27
+msgid "Cancel"
+msgstr "Abbrechen"
+
+#: .\pki\templates\pki\endpoint_profiles\confirm_delete.html:9
+msgid "Confirm Delete - Endpoint Profiles"
+msgstr "Entfernen bestätigen - Endpunkt-Profile"
+
+#: .\pki\templates\pki\endpoint_profiles\confirm_delete.html:15
+#: .\pki\templates\pki\endpoint_profiles\details.html:13
+msgid "Endpoint Profile"
+msgstr "Endpunkt-Profil"
+
+#: .\pki\templates\pki\endpoint_profiles\confirm_delete.html:18
+#: .\pki\templates\pki\endpoint_profiles\details.html:16
+msgid "Unique Endpoint Name"
+msgstr "Eindeutiger Endpunkt-Name"
+
+#: .\pki\templates\pki\endpoint_profiles\confirm_delete.html:19
+#: .\pki\templates\pki\endpoint_profiles\details.html:17
+msgid "Issuing CA Unique Name"
+msgstr "Eindeutiger Name der Issuing CA"
+
+#: .\pki\templates\pki\endpoint_profiles\confirm_delete.html:33
+#: .\pki\templates\pki\issuing_cas\confirm_delete.html:28
+#: .\pki\templates\pki\root_cas\confirm_delete.html:28
+msgid "Confirm Delete"
+msgstr "Entfernen bestätigen"
+
+#: .\pki\templates\pki\endpoint_profiles\details.html:9
+msgid "Details - Endpoint Profile"
+msgstr "Details - Endpunkt-Profil"
+
+#: .\pki\templates\pki\endpoint_profiles\details.html:39
+#: .\pki\templates\pki\issuing_cas\details.html:37
+#: .\pki\templates\pki\root_cas\details.html:37
+msgid "Back"
+msgstr "Zurück"
+
+#: .\pki\templates\pki\endpoint_profiles\endpoint_profiles.html:8
+msgid "Endpoint Profiles"
+msgstr "Endpunkt-Profile"
+
+#: .\pki\templates\pki\endpoint_profiles\endpoint_profiles.html:12
+msgid "Add new Endpoint Profile"
+msgstr "Neues Endpunkt-Profil hinzufügen"
+
+#: .\pki\templates\pki\endpoint_profiles\endpoint_profiles.html:21
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:21
+#: .\pki\templates\pki\root_cas\root_cas.html:19
+msgid "Delete selected"
+msgstr "Ausgewählte entfernen"
+
+#: .\pki\templates\pki\endpoint_profiles\update.html:7
+#: .\pki\templates\pki\endpoint_profiles\update.html:11
+msgid "Update Endpoint Profile"
+msgstr "Endpunkt-Profil bearbeiten"
+
+#: .\pki\templates\pki\endpoint_profiles\update.html:19
+msgid "Apply Changes"
+msgstr "Änderungen anwenden"
+
+#: .\pki\templates\pki\issuing_cas\add\local_file.html:7
+#: .\pki\templates\pki\issuing_cas\add\local_file.html:11
+#: .\pki\templates\pki\issuing_cas\add\local_file.html:43
+#: .\pki\templates\pki\issuing_cas\add\local_file.html:57
+msgid "Upload Issuing CA"
+msgstr "Issuing CA hochladen"
+
+#: .\pki\templates\pki\issuing_cas\add\local_file.html:13
+msgid "File Format"
+msgstr "Dateiformat"
+
+#: .\pki\templates\pki\issuing_cas\add\local_file.html:21
+msgid "PKCS#12 Format"
+msgstr "PKCS#12-Format"
+
+#: .\pki\templates\pki\issuing_cas\add\local_file.html:28
+msgid "PEM / DER Format"
+msgstr "PEM / DER-Format"
+
+#: .\pki\templates\pki\issuing_cas\add\local_request.html:6
+msgid "Local Request"
+msgstr "Lokale Anforderung"
+
+#: .\pki\templates\pki\issuing_cas\add\local_signed_ca.html:8
+msgid "Generate a local CA signed by a local Root CA"
+msgstr "Erstellung einer lokalen CA signiert von einer lokalen Root CA"
+
+#: .\pki\templates\pki\issuing_cas\add\local_signed_ca.html:13
+msgid ""
+"The Issuing CA to be created will use the same algorithm as the selected "
+"Root CA."
 msgstr ""
+"Die erzeugte Issuing CA verwendet den gleichen Algorithmus wie die "
+"ausgewählte Root CA."
+
+#: .\pki\templates\pki\issuing_cas\add\local_signed_ca.html:20
+msgid "Generate locally signed CA"
+msgstr "Erstelle eine lokal signierte CA"
+
+#: .\pki\templates\pki\issuing_cas\add\remote_cmp.html:6
+msgid "Remote CMP"
+msgstr "Extern CMP"
+
+#: .\pki\templates\pki\issuing_cas\add\remote_est.html:7
+msgid "Add CA Certificate"
+msgstr "CA-Zertifikat hinzufügen"
+
+#: .\pki\templates\pki\issuing_cas\add\remote_est.html:10
+msgid "Get CA Certificate via EST"
+msgstr "CA-Zertifikat über EST abrufen"
+
+#: .\pki\templates\pki\issuing_cas\add\remote_est.html:18
+msgid "Send EST Certificate request"
+msgstr "EST-Zertifikatsanfrage senden"
+
+#: .\pki\templates\pki\issuing_cas\confirm_delete.html:9
+msgid "Confirm Delete - Issuing CAs"
+msgstr "Entfernen bestätigen - Issuing CAs"
+
+#: .\pki\templates\pki\issuing_cas\confirm_delete.html:20
+#: .\pki\templates\pki\root_cas\confirm_delete.html:20
+msgid "Root Common Name"
+msgstr "Root Common Name"
+
+#: .\pki\templates\pki\issuing_cas\confirm_delete.html:21
+#: .\pki\templates\pki\root_cas\confirm_delete.html:21
+msgid "Created At"
+msgstr "Erstellt um"
+
+#: .\pki\templates\pki\issuing_cas\details.html:9
+#, python-format
+msgid "Details - Issuing CA - %(name)s"
+msgstr "Details - Issuing CA - %(name)s"
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:8
+msgid "Issuing CAs"
+msgstr "Issuing CAs"
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:12
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:103
+msgid "Add new Issuing CA"
+msgstr "Neue Issuing CA hinzufügen"
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:30
+msgid "Choose Issuing CA Type"
+msgstr "Typ der Issuing CA wählen"
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:40
+msgid "Trustpoint will act as a Registration Authority (RA)."
+msgstr "Trustpoint dient als Registrierungsstelle (RA)."
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:41
+msgid "Remote Issuing CA"
+msgstr "Externe Issuing CA"
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:47
+msgid "Installs, requests or generates a local Issuing CA Certificate."
+msgstr ""
+"Installiert oder generiert ein lokales Issuing CA-Zertifikat oder fordert "
+"dieses an."
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:48
+msgid "Local Issuing CA"
+msgstr "Lokale Issuing CA"
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:56
+msgid "Choose PKI Protocol"
+msgstr "PKI-Protokoll wählen"
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:74
+msgid "Choose Import Method"
+msgstr "Importmethode wählen"
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:80
+msgid ""
+"Allows to import the Issuing CA from file, e.g. from PKCS#12 or PEM files."
+msgstr ""
+"Erlaubt das Importieren der Issuing CA aus einer Datei wie z.B. PKCS#12 oder "
+"PEM."
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:81
+msgid "Import Issuing CA from file"
+msgstr "Issuing CA aus Datei importieren"
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:87
+msgid ""
+"Generates a key-pair and requests an Issuing CA Certificate, e.g. using EST "
+"or CMP."
+msgstr ""
+"Ein Schlüsselpaar erzeugen und das CA-Zertifikat z.B. via EST oder CMP "
+"anfordern."
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:88
+msgid "Generate a key-pair and request the CA Certificate"
+msgstr "Ein Schlüsselpaar erzeugen und das CA-Zertifikat anfordern"
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:94
+msgid "Generate a local Issuing CA which is signed by a local Root CA."
+msgstr "Eine von einer lokalen Root CA lokal signierte Issuing CA erzeugen."
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:95
+msgid "Generate a locally signed Issuing CA"
+msgstr "Eine lokal signierte Issuing CA erzeugen"
+
+#: .\pki\templates\pki\issuing_cas\issuing_cas.html:102
+msgid "Close"
+msgstr "Schließen"
+
+#: .\pki\templates\pki\root_cas\add.html:7
+#: .\pki\templates\pki\root_cas\add.html:17
+msgid "Add local root CA"
+msgstr "Lokale Root CA hinzufügen"
+
+#: .\pki\templates\pki\root_cas\confirm_delete.html:9
+msgid "Confirm Delete - Root CA"
+msgstr "Entfernen bestätigen - Root CA"
+
+#: .\pki\templates\pki\root_cas\details.html:9
+#, python-format
+msgid "Details - Root CA - %(name)s"
+msgstr "Details - Root-CA - %(name)s"
+
+#: .\pki\templates\pki\root_cas\root_cas.html:7
+msgid "Root CAs"
+msgstr "Root CAs"
+
+#: .\pki\templates\pki\root_cas\root_cas.html:10
+msgid "Add new local Root CA"
+msgstr "Neue lokale Root CA hinzufügen"
+
+#: .\pki\templates\pki\truststores\truststores.html:8
+msgid "Truststores"
+msgstr ""
+
+#: .\pki\templates\pki\truststores\truststores.html:11
+msgid "Add new Truststore"
+msgstr "Neuen Truststore hinzufügen"
+
+#: .\pki\views.py:260
+msgid ""
+"Operating a Root CA on Trustpoint is only recommended for testing. Please do "
+"not use in production. "
+msgstr ""
+"In Trustpoint integrierte Root CAs sollten nur zu Testzwecken genutzt "
+"werden. Bitte nicht im Betrieb verwenden."

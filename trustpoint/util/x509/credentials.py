@@ -12,6 +12,8 @@ from cryptography.hazmat.primitives.serialization import NoEncryption, load_pem_
 from cryptography.x509 import Certificate, ObjectIdentifier, ExtensionNotFound
 from cryptography.x509.oid import ExtensionOID
 
+from django.utils.translation import gettext_lazy as _
+
 
 if TYPE_CHECKING:
     from datetime import datetime
@@ -178,28 +180,32 @@ class P12:
         try:
             certs = []
             for crypto_cert in self._p12.additional_certs:
+                # TODO(Air): Add translations, strings must be generated in view or template
                 cert = crypto_cert.certificate
+
+                cert_public_key_type = None
+                if isinstance(self._p12.key, RSAPrivateKey):
+                    cert_public_key_type = 'RSA'
+                elif isinstance(self._p12.key, EllipticCurvePrivateKey):
+                    cert_public_key_type = 'ECC'
+                else:
+                    cert_public_key_type = 'Unknown'
+
                 # noinspection PyProtectedMember
                 cert_dict = {
                     'Version': cert.version.name,
                     'Serial Number': '0x' + hex(cert.serial_number).upper()[2:],
                     'Subject': cert.subject.rfc4514_string(attr_name_overrides=self._attr_name_overrides),
                     'Issuer': cert.issuer.rfc4514_string(attr_name_overrides=self._attr_name_overrides),
-                    'Not Valid Before': cert.not_valid_before_utc,
-                    'Not Valid After': cert.not_valid_after_utc,
-                    'Public Key Type': None,
+                    'Not valid before': cert.not_valid_before_utc,
+                    'Not valid after': cert.not_valid_after_utc,
+                    'Public Key Type': cert_public_key_type,
                     'Public Key Size': str(cert.public_key().key_size) + ' bits',
                     # TODO(Alex): names are not standardized, use own OID Enums in the future
                     'Signature Algorithm': str(cert.signature_algorithm_oid._name),  # noqa: SLF001
                     'Extensions': []
                 }
 
-                if isinstance(self._p12.key, RSAPrivateKey):
-                    cert_dict['Public Key Type'] = 'RSA'
-                elif isinstance(self._p12.key, EllipticCurvePrivateKey):
-                    cert_dict['Public Key Type'] = 'ECC'
-                else:
-                    cert_dict['Public Key Type'] = 'Unknown'
                 certs.append(cert_dict)
 
                 try:
@@ -224,12 +230,12 @@ class P12:
                 # SubjectAlternativeName
 
             #TODO(Florian): If the cert is self-signed only the issueing CA is handled but not the root CA
-            certs[0]['heading'] = 'Issuing CA Certificate'
+            certs[0]['heading'] = _('Issuing CA Certificate')
             if len(certs) >= 2:  # noqa: PLR2004
-                certs[-1]['heading'] = 'Root CA Certificate'
+                certs[-1]['heading'] = _('Root CA Certificate')
             if len(certs) >= 3:  # noqa: PLR2004
                 for i in range(1, len(certs) - 1):
-                    certs[i]['heading'] = 'Intermediate CA Certificate'
+                    certs[i]['heading'] = _('Intermediate CA Certificate')
 
         # TODO(Alex): check which Exceptions could occur
         except (KeyError, ValueError, TypeError) as exception:

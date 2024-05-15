@@ -1,21 +1,22 @@
 {% extends 'trustpoint/base.html' %}
+{% load i18n %}
 {% load crispy_forms_filters %}
 {% block content %}
     <div class="card card-main text-center">
         <div class="card-header d-flex">
-            <h1>Update Endpoint Profile</h1>
+            <h1>{% trans "Update Endpoint Profile" %}</h1>
         </div>
         <div class="card-body tp-main-centered pt-3 pb-4">
 
-            <h2>Update Endpoint Profile</h2>
+            <h2>{% trans "Update Endpoint Profile" %}</h2>
             <hr>
 
             <form method="POST" class="tp-main-form text-start" id="update-endpoint-profile-form">
                 {% csrf_token %}
                 {{ form|crispy }}
                 <div class="tp-form-btn-group tp-form-btn-group mt-5">
-                    <a href="{% url 'pki:endpoint_profiles' %}" class="btn btn-secondary">Cancel</a>
-                    <button class="btn btn-primary w-100 mt-1" type="submit" name="update-endpoint-profile">Apply Changes</button>
+                    <a href="{% url 'pki:endpoint_profiles' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                    <button class="btn btn-primary w-100 mt-1" type="submit" name="update-endpoint-profile">{% trans "Apply Changes" %}</button>
                 </div>
             </form>
 

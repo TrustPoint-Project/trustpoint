@@ -7,6 +7,8 @@ from typing import TYPE_CHECKING
 
 import django_tables2 as tables
 from django.utils.html import format_html
+from django.utils.functional import lazy
+from django.utils.translation import gettext_lazy as _
 
 from .models import EndpointProfile, IssuingCa, RootCa, Truststore
 
@@ -16,6 +18,7 @@ if TYPE_CHECKING:
 
 CHECKBOX_ATTRS: dict[str, dict[str, str]] = {'th': {'id': 'checkbox-column'}, 'td': {'class': 'row_checkbox'}}
 
+format_html_lazy = lazy(format_html, str)
 
 class IssuingCaTable(tables.Table):
     """Table representation of the IssuingCa model."""
@@ -27,8 +30,8 @@ class IssuingCaTable(tables.Table):
         template_name = 'django_tables2/bootstrap5.html'
         order_by = '-created_at'
         empty_values = ()
-        _msg = 'There are no Issuing CAs available.'
-        empty_text = format_html('<div class="text-center">{}</div>', _msg)
+        _msg = _('There are no Issuing CAs available.')
+        empty_text = format_html_lazy('<div class="text-center">{}</div>', _msg)
         fields = (
             'row_checkbox',
             'unique_name',
@@ -44,8 +47,8 @@ class IssuingCaTable(tables.Table):
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
-    details = tables.Column(empty_values=(), orderable=False)
-    delete = tables.Column(empty_values=(), orderable=False)
+    details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
+    delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
 
     @staticmethod
     def render_details(record: IssuingCa) -> SafeString:
@@ -57,7 +60,8 @@ class IssuingCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn"">Details</a>', record.pk)
+        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+                           record.pk, _('Details'))
 
     @staticmethod
     def render_delete(record: IssuingCa) -> SafeString:
@@ -69,7 +73,8 @@ class IssuingCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">Delete</a>', record.pk)
+        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
+                           record.pk, _('Delete'))
 
     # TODO(Alex): consider explicitly not supporting multiple CNs
     # TODO(Alex): there were cases in the past in which this was misused due to software not handling this correctly
@@ -103,8 +108,8 @@ class EndpointProfileTable(tables.Table):
         template_name = 'django_tables2/bootstrap5.html'
         order_by = '-created_at'
         empty_values = ()
-        _msg = 'There are no Endpoint Profiles available.'
-        empty_text = format_html('<div class="text-center">{}</div>', _msg)
+        _msg = _('There are no Endpoint Profiles available.')
+        empty_text = format_html_lazy('<div class="text-center">{}</div>', _msg)
         fields = (
             'row_checkbox',
             'unique_endpoint',
@@ -125,7 +130,7 @@ class EndpointProfileTable(tables.Table):
         ),
         orderable=True,
         accessor='issuing_ca.unique_name',
-        verbose_name='Issuing CA',
+        verbose_name=_('Issuing CA'),
     )
     algorithm = tables.Column(
         empty_values=(
@@ -134,7 +139,7 @@ class EndpointProfileTable(tables.Table):
         ),
         orderable=True,
         accessor='issuing_ca.key_type',
-        verbose_name='Issuing CA Algorithm',
+        verbose_name=_('Issuing CA Algorithm'),
     )
     key_size = tables.Column(
         empty_values=(
@@ -143,7 +148,7 @@ class EndpointProfileTable(tables.Table):
         ),
         orderable=True,
         accessor='issuing_ca.key_size',
-        verbose_name='Issuing CA Key Size',
+        verbose_name=_('Issuing CA Key Size'),
     )
     curve = tables.Column(
         empty_values=(
@@ -152,11 +157,11 @@ class EndpointProfileTable(tables.Table):
         ),
         orderable=True,
         accessor='issuing_ca.curve',
-        verbose_name='Issuing CA Curve',
+        verbose_name=_('Issuing CA Curve'),
     )
-    details = tables.Column(empty_values=(), orderable=False)
-    update = tables.Column(empty_values=(), orderable=False)
-    delete = tables.Column(empty_values=(), orderable=False)
+    details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
+    update = tables.Column(empty_values=(), orderable=False, verbose_name=_('Update'))
+    delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
 
     @staticmethod
     def render_details(record: EndpointProfile) -> SafeString:
@@ -168,7 +173,8 @@ class EndpointProfileTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn"">Details</a>', record.pk)
+        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+                           record.pk, _('Details'))
 
     @staticmethod
     def render_update(record: EndpointProfile) -> SafeString:
@@ -180,7 +186,8 @@ class EndpointProfileTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the update-view.
         """
-        return format_html('<a href="update/{}/" class="btn btn-primary tp-table-btn">Update</a>', record.pk)
+        return format_html('<a href="update/{}/" class="btn btn-primary tp-table-btn">{}</a>',
+                           record.pk, _('Update'))
 
     @staticmethod
     def render_delete(record: EndpointProfile) -> SafeString:
@@ -192,7 +199,8 @@ class EndpointProfileTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">Delete</a>', record.pk)
+        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
+                           record.pk, _('Delete'))
 
 # ---------------
 
@@ -206,8 +214,8 @@ class RootCaTable(tables.Table):
         template_name = 'django_tables2/bootstrap5.html'
         order_by = '-created_at'
         empty_values = ()
-        _msg = 'There are no Root CAs available.'
-        empty_text = format_html('<div class="text-center">{}</div>', _msg)
+        _msg = _('There are no Root CAs available.')
+        empty_text = format_html_lazy('<div class="text-center">{}</div>', _msg)
         fields = (
             'row_checkbox',
             'unique_name',
@@ -219,8 +227,8 @@ class RootCaTable(tables.Table):
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
-    details = tables.Column(empty_values=(), orderable=False)
-    delete = tables.Column(empty_values=(), orderable=False)
+    details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
+    delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
 
     @staticmethod
     def render_details(record: RootCa) -> SafeString:
@@ -232,7 +240,8 @@ class RootCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn"">Details</a>', record.pk)
+        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+                           record.pk, _('Details'))
 
     @staticmethod
     def render_delete(record: RootCa) -> SafeString:
@@ -244,7 +253,8 @@ class RootCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">Delete</a>', record.pk)
+        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
+                           record.pk, _('Delete'))
 
     @staticmethod
     def render_common_name(value: str) -> SafeString:
@@ -275,8 +285,8 @@ class TruststoreTable(tables.Table):
         template_name = 'django_tables2/bootstrap5.html'
         order_by = '-created_at'
         empty_values = ()
-        _msg = 'There are no Truststores available.'
-        empty_text = format_html('<div class="text-center">{}</div>', _msg)
+        _msg = _('There are no Truststores available.')
+        empty_text = format_html_lazy('<div class="text-center">{}</div>', _msg)
         fields = (
             #'row_checkbox',
             'common_name',
@@ -293,8 +303,8 @@ class TruststoreTable(tables.Table):
         )
 
     #row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
-    details = tables.Column(empty_values=(), orderable=False)
-    delete = tables.Column(empty_values=(), orderable=False)
+    details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
+    delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
 
     @staticmethod
     def render_details(record: Truststore) -> SafeString:
@@ -306,7 +316,8 @@ class TruststoreTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn"">Details</a>', record.pk)
+        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+                           record.pk, _('Details'))
 
     @staticmethod
     def render_delete(record: Truststore) -> SafeString:
@@ -318,7 +329,8 @@ class TruststoreTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">Delete</a>', record.pk)
+        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
+                           record.pk, _('Delete'))
 
     @staticmethod
     def render_common_name(value: str) -> SafeString:

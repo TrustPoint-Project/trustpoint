@@ -1,13 +1,14 @@
 {% extends 'trustpoint/base.html' %}
+{% load i18n %}
 {% load render_table from django_tables2 %}
 {% block content %}
 
     <div class="card card-main text-center">
         <div class="card-header tp-card-header">
-            <h1>Truststores</h1>
+            <h1>{% trans "Truststores" %}</h1>
             <div></div>
             <a id="modal-button" type="button" class="btn btn-primary" href="{% url 'pki:truststores-add' %}">
-                Add New Truststore
+                {% trans "Add new Truststore" %}
             </a>
         </div>
         <div class="card-body text-start">

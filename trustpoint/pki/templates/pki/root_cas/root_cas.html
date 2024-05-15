@@ -1,17 +1,13 @@
 {% extends 'trustpoint/base.html' %}
 {% load render_table from django_tables2 %}
+{% load i18n %}
 {% block content %}
-
-    <div class="alert alert-warning" role="alert">
-        WARNING: Operating a Root CA on Trustpoint is only recommended for testing. Please do not use in production.
-    </div>
-
     <div class="card card-main text-center">
         <div class="card-header tp-card-header">
-            <h1>Root CAs</h1>
+            <h1>{% trans "Root CAs" %}</h1>
             <div></div>
             <a id="modal-button" type="button" class="btn btn-primary" href="{% url 'pki:root_cas-add' %}">
-                Add New Local Root CA
+                {% trans "Add new local Root CA" %}
             </a>
         </div>
         <div class="card-body text-start">
@@ -20,7 +16,7 @@
 
         </div>
         <div class="card-footer tp-table-footer-btn-group">
-            <button id="tp-table-delete-selected" type="button" class="btn btn-secondary">Delete Selected</button>
+            <button id="tp-table-delete-selected" type="button" class="btn btn-secondary">{% trans "Delete selected" %}</button>
         </div>
 
     </div>

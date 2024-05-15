@@ -1,12 +1,12 @@
 {% extends 'trustpoint/base.html' %}
-
+{% load i18n %}
 {% block content %}
 
     <form method="POST">
         {% csrf_token %}
         <div class="card card-main text-center">
             <div class="card-header d-flex">
-                <h1>Confirm Delete - Issuing CAs</h1>
+                <h1>{% trans "Confirm Delete - Issuing CAs" %}</h1>
             </div>
             <div class="card-body tp-main-centered pt-3 pb-4">
 
@@ -15,17 +15,17 @@
 
                 <ul class="list-group list-group-flush text-start tp-form-grid-2">
                     {% for object in objects %}
-                        <li class="list-group-item"><span><strong>Unique Name:</strong></span><span>{{ object.unique_name }}</span></li>
-                        <li class="list-group-item"><span><strong>Common Name:</strong></span><span>{{ object.common_name }}</span></li>
-                        <li class="list-group-item"><span><strong>Root Common Name:</strong></span><span>{{ object.root_common_name }}</span></li>
-                        <li class="list-group-item {% if not forloop.last %}mb-5{% endif %}"><span><strong>Created At:</strong></span><span>{{ object.created_at }}</span></li>
+                        <li class="list-group-item"><span><strong>{% trans "Unique Name" %}:</strong></span><span>{{ object.unique_name }}</span></li>
+                        <li class="list-group-item"><span><strong>{% trans "Common Name" %}:</strong></span><span>{{ object.common_name }}</span></li>
+                        <li class="list-group-item"><span><strong>{% trans "Root Common Name" %}:</strong></span><span>{{ object.root_common_name }}</span></li>
+                        <li class="list-group-item {% if not forloop.last %}mb-5{% endif %}"><span><strong>{% trans "Created At" %}:</strong></span><span>{{ object.created_at }}</span></li>
                     {% endfor %}
                 </ul>
 
                 <hr>
                 <div class="tp-form-btn-group tp-form-btn-group">
-                    <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">Cancel</a>
-                    <input type="submit" class="btn btn-danger" value="Confirm Delete">
+                    <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                    <input type="submit" class="btn btn-danger" value="{% trans "Confirm Delete" %}">
                 </div>
 
             </div>
