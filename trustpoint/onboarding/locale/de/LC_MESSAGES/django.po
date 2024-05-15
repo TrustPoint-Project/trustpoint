@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-05-13 08:30+0200\n"
+"POT-Creation-Date: 2024-05-15 14:17+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -28,7 +28,7 @@ msgid "Overall onboarding progress"
 msgstr "Onboarding-Gesamtfortschritt"
 
 #: .\onboarding\templates\onboarding\manual\cli.html:19
-#: .\onboarding\templates\onboarding\manual\client.html:26
+#: .\onboarding\templates\onboarding\manual\client.html:27
 #: .\onboarding\templates\onboarding\manual\download.html:18
 msgid "Fetching state from server..."
 msgstr "Status wird vom Server abgerufen..."
@@ -44,7 +44,7 @@ msgstr "Schritt 1: TLS Truststore herunterladen und verifizieren"
 #: .\onboarding\templates\onboarding\manual\cli.html:28
 #: .\onboarding\templates\onboarding\manual\cli.html:42
 #: .\onboarding\templates\onboarding\manual\cli.html:56
-#: .\onboarding\templates\onboarding\manual\client.html:21
+#: .\onboarding\templates\onboarding\manual\client.html:22
 msgid "Copy to clipboard"
 msgstr "Kopieren"
 
@@ -57,31 +57,31 @@ msgid "Step 3: Dowload LDevID certificate chain"
 msgstr "Schritt 3: LDevID-Zertifikatskette herunterladen"
 
 #: .\onboarding\templates\onboarding\manual\cli.html:66
-#: .\onboarding\templates\onboarding\manual\client.html:30
+#: .\onboarding\templates\onboarding\manual\client.html:31
 #: .\onboarding\templates\onboarding\manual\download.html:31
 msgid "Back"
 msgstr "Zurück"
 
 #: .\onboarding\templates\onboarding\manual\cli.html:67
-#: .\onboarding\templates\onboarding\manual\client.html:31
+#: .\onboarding\templates\onboarding\manual\client.html:32
 #: .\onboarding\templates\onboarding\manual\download.html:32
 msgid "Cancel"
 msgstr "Abbrechen"
 
-#: .\onboarding\templates\onboarding\manual\client.html:13
+#: .\onboarding\templates\onboarding\manual\client.html:14
 #, fuzzy, python-format
 msgid "Onboarding device %(device_name)s with Trustpoint Client"
 msgstr "Onboarding von Gerät %(device_name)s via Trustpoint Client"
 
-#: .\onboarding\templates\onboarding\manual\client.html:16
+#: .\onboarding\templates\onboarding\manual\client.html:17
 msgid "Trustpoint Client Download"
 msgstr "Herunterladen des Trustpoint Clients"
 
-#: .\onboarding\templates\onboarding\manual\client.html:19
+#: .\onboarding\templates\onboarding\manual\client.html:20
 msgid "Trustpoint Client Provisioning command"
 msgstr "Trustpoint-Client Onboardingbefehl"
 
-#: .\onboarding\templates\onboarding\manual\client.html:23
+#: .\onboarding\templates\onboarding\manual\client.html:24
 msgid "Onboarding progress"
 msgstr "Onboarding-Status"
 
@@ -117,7 +117,9 @@ msgstr "Onboarding: Kein Gerät mit der ID %s gefunden."
 
 #: .\onboarding\views.py:81
 msgid "Keep the PKCS12 file secure! It contains the private key of the device."
-msgstr "Halten Sie die PKCS12-Datei geheim! Sie enthält den privaten Schlüssel des Geräts."
+msgstr ""
+"Halten Sie die PKCS12-Datei geheim! Sie enthält den privaten Schlüssel des "
+"Geräts."
 
 #: .\onboarding\views.py:180
 msgid "Error"
@@ -142,7 +144,9 @@ msgstr "Onboarding-Prozess für das Gerät %s abgebrochen."
 #, python-format
 msgid ""
 "Onboarding process for device %(name)s is in unexpected state %(state)s."
-msgstr "Onboarding-Prozess für das Gerät %(name)s ist im unerwarteten Zustand %(state)s"
+msgstr ""
+"Onboarding-Prozess für das Gerät %(name)s ist im unerwarteten Zustand "
+"%(state)s"
 
 #: .\onboarding\views.py:222
 #, python-format
