@@ -53,16 +53,16 @@ class SecurityConfigForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.helper = FormHelper()
-        # self.helper.add_input(Submit('submit', 'Submit'))
+
         self.helper.layout = Layout(
             Fieldset(
-                'Security Level Presets',
+                _('Security level presets'),
                 'security_mode',
             ),
             Fieldset(
-                'Advanced Security Settings',
+                _('Advanced security settings'),
                 'enable_local_root_ca',	
-                'local_root_ca_alg_type'
+                #'local_root_ca_alg_type'
             )
         )
 
@@ -70,6 +70,11 @@ class SecurityConfigForm(forms.ModelForm):
     security_mode = forms.ChoiceField(choices=SecurityConfig.SecurityModeChoices.choices,
                                       widget=forms.RadioSelect(),
                                       label='')
+    
+    enable_local_root_ca = forms.BooleanField(required=False, label=_('Enable Local Root CA'),
+                                widget=forms.CheckboxInput(
+                                    attrs={'data-sl-defaults': '[true,false,false]',
+                                           'data-more-secure': 'false'}))
 
     class Meta:
         """Meta class"""

@@ -7,6 +7,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import render
 from django.views.generic.base import RedirectView
 from django.contrib import messages
+from django.utils.translation import gettext as _
 
 if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
@@ -46,6 +47,9 @@ def logging(request: HttpRequest) -> HttpResponse:
         logging_config_form = LoggingConfigForm(request.POST, instance=logging_config)
         if logging_config_form.is_valid():
             logging_config_form.save()
+            messages.success(request, _('Your changes were saved successfully.'))
+        else:
+            messages.error(request, _('Error saving the configuration'))
 
         context['logging_config_form'] = logging_config_form
         return render(request, 'sysconf/logging.html', context=context)
@@ -73,6 +77,9 @@ def network(request: HttpRequest) -> HttpResponse:
         network_configuration_form = NetworkConfigForm(request.POST, instance=network_config)
         if network_configuration_form.is_valid():
             network_configuration_form.save()
+            messages.success(request, _('Your changes were saved successfully.'))
+        else:
+            messages.error(request, _('Error saving the configuration'))
 
         context['network_config_form'] = network_configuration_form
         return render(request, 'sysconf/network.html', context=context)
@@ -100,7 +107,9 @@ def ntp(request: HttpRequest) -> HttpResponse:
         ntp_configuration_form = NTPConfigForm(request.POST, instance=ntp_config)
         if ntp_configuration_form.is_valid():
             ntp_configuration_form.save()
-
+            messages.success(request, _('Your changes were saved successfully.'))
+        else:
+            messages.error(request, _('Error saving the configuration'))
         context['ntp_config_form'] = ntp_configuration_form
         return render(request, 'sysconf/ntp.html', context=context)
 
@@ -136,10 +145,9 @@ def security(request: HttpRequest) -> HttpResponse:
         security_configuration_form = SecurityConfigForm(request.POST, instance=security_config)
         if security_configuration_form.is_valid():
             security_configuration_form.save()
-            messages.success(request, 'Configuration saved successfully')
+            messages.success(request, _('Your changes were saved successfully.'))
         else:
-            messages.error(request, 'Error saving the configuration')
-
+            messages.error(request, _('Error saving the configuration'))
         context['security_config_form'] = security_configuration_form
         return render(request, 'sysconf/security.html', context=context)
 

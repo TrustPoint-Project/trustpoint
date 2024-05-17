@@ -3,12 +3,11 @@
 {% load i18n %}
 {% block content %}
 <div class="card card-main text-center">
-    <div class="card-header d-flex">
+    <div class="card-header tp-card-header">
         <h1>{% trans "Language Configuration" %}</h1>
     </div>
-    <div class="card-body tp-main-centered pt-3 pb-4">
-
-        <form method="POST" action="{% url 'set_language' %}" class="tp-main-form text-start" enctype="multipart/form-data" id="ntp_configuration">
+    <div class="card-body tp-main-centered pt-4 pb-4">
+        <form method="POST" action="{% url 'set_language' %}" class="tp-main-form text-start" enctype="multipart/form-data" id="language_configuration">
             {% csrf_token %}
             <fieldset class="form-group tp-form-group">
                 <input name="next" type="hidden" value="{{ redirect_to }}">
@@ -23,12 +22,12 @@
                     {% endfor %}
                 </select>
             </fieldset>
-            <hr>
-            <button class="btn btn-primary col ms-3 me-1" type="submit" name="language_configuration">{% trans "Save" %}</button>
         </form>
     </div>
     <div class="card-footer text-body-secondary">
-
+        <button class="btn btn-primary ms-3 float-end" type="submit" form="language_configuration">
+            {% trans "Save" %}
+        </button>
     </div>
 </div>
 {% endblock content %}

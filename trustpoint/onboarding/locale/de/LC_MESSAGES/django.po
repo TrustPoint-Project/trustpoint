@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-05-15 14:17+0200\n"
+"POT-Creation-Date: 2024-05-17 10:23+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -18,53 +18,53 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: .\onboarding\templates\onboarding\manual\cli.html:13
+#: .\onboarding\templates\onboarding\manual\cli.html:14
 #, python-format
 msgid "Onboarding device %(device_name)s manually via CLI"
 msgstr "Manuelles Onboarding von Gerät %(device_name)s via CLI"
 
-#: .\onboarding\templates\onboarding\manual\cli.html:16
+#: .\onboarding\templates\onboarding\manual\cli.html:17
 msgid "Overall onboarding progress"
 msgstr "Onboarding-Gesamtfortschritt"
 
-#: .\onboarding\templates\onboarding\manual\cli.html:19
+#: .\onboarding\templates\onboarding\manual\cli.html:20
 #: .\onboarding\templates\onboarding\manual\client.html:27
-#: .\onboarding\templates\onboarding\manual\download.html:18
+#: .\onboarding\templates\onboarding\manual\download.html:19
 msgid "Fetching state from server..."
 msgstr "Status wird vom Server abgerufen..."
 
-#: .\onboarding\templates\onboarding\manual\cli.html:22
+#: .\onboarding\templates\onboarding\manual\cli.html:23
 msgid "Device onboarding commands"
 msgstr "Geräte-Onboarding-Befehle"
 
-#: .\onboarding\templates\onboarding\manual\cli.html:23
+#: .\onboarding\templates\onboarding\manual\cli.html:24
 msgid "Step 1: Download and verify TLS trust store"
 msgstr "Schritt 1: TLS Truststore herunterladen und verifizieren"
 
-#: .\onboarding\templates\onboarding\manual\cli.html:28
-#: .\onboarding\templates\onboarding\manual\cli.html:42
-#: .\onboarding\templates\onboarding\manual\cli.html:56
+#: .\onboarding\templates\onboarding\manual\cli.html:29
+#: .\onboarding\templates\onboarding\manual\cli.html:43
+#: .\onboarding\templates\onboarding\manual\cli.html:57
 #: .\onboarding\templates\onboarding\manual\client.html:22
 msgid "Copy to clipboard"
 msgstr "Kopieren"
 
-#: .\onboarding\templates\onboarding\manual\cli.html:37
+#: .\onboarding\templates\onboarding\manual\cli.html:38
 msgid "Step 2: Create LDevID certificate"
 msgstr "Schritt 2: LDevID-Zertifikat erzeugen"
 
-#: .\onboarding\templates\onboarding\manual\cli.html:51
+#: .\onboarding\templates\onboarding\manual\cli.html:52
 msgid "Step 3: Dowload LDevID certificate chain"
 msgstr "Schritt 3: LDevID-Zertifikatskette herunterladen"
 
-#: .\onboarding\templates\onboarding\manual\cli.html:66
+#: .\onboarding\templates\onboarding\manual\cli.html:67
 #: .\onboarding\templates\onboarding\manual\client.html:31
-#: .\onboarding\templates\onboarding\manual\download.html:31
+#: .\onboarding\templates\onboarding\manual\download.html:32
 msgid "Back"
 msgstr "Zurück"
 
-#: .\onboarding\templates\onboarding\manual\cli.html:67
+#: .\onboarding\templates\onboarding\manual\cli.html:68
 #: .\onboarding\templates\onboarding\manual\client.html:32
-#: .\onboarding\templates\onboarding\manual\download.html:32
+#: .\onboarding\templates\onboarding\manual\download.html:33
 msgid "Cancel"
 msgstr "Abbrechen"
 
@@ -85,24 +85,24 @@ msgstr "Trustpoint-Client Onboardingbefehl"
 msgid "Onboarding progress"
 msgstr "Onboarding-Status"
 
-#: .\onboarding\templates\onboarding\manual\download.html:13
+#: .\onboarding\templates\onboarding\manual\download.html:14
 #, python-format
 msgid "Download certificate for device %(device_name)s"
 msgstr "Zertifikat für Gerät %(device_name)s herunterladen"
 
-#: .\onboarding\templates\onboarding\manual\download.html:20
+#: .\onboarding\templates\onboarding\manual\download.html:21
 msgid "Download PKCS12 key and certificate"
 msgstr "PKCS12-Zertifikatsbündel herunterladen"
 
-#: .\onboarding\templates\onboarding\manual\download.html:22
+#: .\onboarding\templates\onboarding\manual\download.html:23
 msgid "Download PKCS12"
 msgstr "PKCS12 herunterladen"
 
-#: .\onboarding\templates\onboarding\manual\download.html:25
+#: .\onboarding\templates\onboarding\manual\download.html:26
 msgid "Keypair in PEM format"
 msgstr "Schlüsselpaar im PEM-Format"
 
-#: .\onboarding\templates\onboarding\manual\download.html:27
+#: .\onboarding\templates\onboarding\manual\download.html:28
 msgid "LDevID certificate"
 msgstr "LDevID-Zertifikat"
 

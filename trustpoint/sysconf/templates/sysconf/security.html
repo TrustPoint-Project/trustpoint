@@ -1,23 +1,32 @@
 {% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load static %}
 {% load crispy_forms_tags %}
+{% block head %}
+    <script src="{% url 'javascript-catalog' %}"></script>
+{% endblock head %}
 {% block content %}
     <div class="card card-main text-center">
         <div class="card-header d-flex">
-            <h1>Security Configuration</h1>
+            <h1>{% trans "Security Configuration" %}</h1>
         </div>
-        <div class="card-body tp-main-centered pt-3 pb-4">
-
+        <div class="card-body tp-main-centered pt-4 pb-4">
             <form method="POST" class="tp-main-form text-start" enctype="multipart/form-data"
                   id="security_configuration">
                 {% csrf_token %}
                 <fieldset class="form-group tp-form-group">
                     {% crispy security_config_form %}
                 </fieldset>
-                <hr>
-                <button class="btn btn-primary col ms-3 me-1" type="submit" name="security_configuration">Save
-                    Configuration
-                </button>
             </form>
+            <div id="mismatch_warning" class="alert alert-warning tp-d-none align-items-center mt-3" role="alert">  
+                <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-warning"/></svg>
+                <div id="mismatch_warning_text" class="flex-grow-1 text-start"></div>                
+            </div>
+        </div>
+        <div class="card-footer text-body-secondary">
+            <button class="btn btn-primary ms-3 float-end" type="submit" form="security_configuration">
+                {% trans "Save" %}
+            </button>
         </div>
     </div>
 {% endblock content %}
