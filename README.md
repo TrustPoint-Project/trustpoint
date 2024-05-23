@@ -196,7 +196,7 @@ Compiles the translation files (.po) to binary (.mo) files actually used by Djan
 
 ```bash
 cd ../docs
-sphinx-apidoc -o ./source ../trustpoint
+sphinx-apidoc -f -e -o ./source ../trustpoint /*/migrations/*
 make html
 ```
 

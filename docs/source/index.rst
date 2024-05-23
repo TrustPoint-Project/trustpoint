@@ -10,6 +10,16 @@ Welcome to Trustpoint's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   devices
+   home
+   manage
+   onboarding
+   pki
+   sysconf
+   trustpoint
+   users
+   util
+
 
 
 Indices and tables
