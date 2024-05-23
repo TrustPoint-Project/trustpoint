@@ -57,6 +57,7 @@ class UpdateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('devices:devices')
 
 
+
 class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
     """Detail view for Devices."""
 

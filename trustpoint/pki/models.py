@@ -22,11 +22,66 @@ class Certificate(models.Model):
     """X509 Certificate Model"""
 
     class Version(models.IntegerChoices):
-        v1 = 0, _('Version 1')
-        v2 = 1, _('Version 2')
+        """X509 RFC 5280 - Certificate Version."""
+        # We only allow version 3 or later if any are available in the future.
         v3 = 2, _('Version 3')
 
+    signature_algorithm = None
+    signature_value = None
+    fingerprint_sha256 = None
+
     version = models.PositiveSmallIntegerField(choices=Version)
+
+    serial_number = None
+
+    subject = None
+
+    # Reference
+    issuer = None
+
+    valid_not_before = None
+    valid_not_after = None
+
+    # Reference
+    subject_public_key_info = None
+
+    signature = None
+
+    pem = None
+
+    # ----- methods -----
+    der = None
+    is_end_entity_cert = None
+    is_intermediate_ca_cert = None
+    is_root_ca_cert = None
+    ca_level = None
+
+    # ----- extensions -----
+    ext_authority_key_id = None
+    ext_subject_key_id = None
+    ext_key_usage = None
+    ext_certificate_policies = None
+    ext_policy_mappings = None
+    ext_subject_alternative_name = None
+    ext_issuer_alternative_name = None
+    ext_subject_directory_attributes = None
+    ext_basic_constraints = None
+    ext_name_constraints = None
+    ext_policy_constraints = None
+    ext_extended_key_usage = None
+    ext_crl_distribution_points = None
+    ext_inhibit_any_policy = None
+    ext_freshest_crl = None
+
+    # Private Internet Access
+    ext_authority_information_access = None
+    ext_subject_information_access = None
+
+
+
+
+
+
 
 class RootCa(models.Model):
     """Root CA model."""
@@ -39,9 +94,11 @@ class RootCa(models.Model):
         RSA2048 = 'RSA2048', _('RSA2048')
         RSA4096 = 'RSA4096', _('RSA4096')
 
-
-    unique_name = models.CharField(_('Unique Name'),
-        max_length=100, validators=[MinLengthValidator(3), validate_isidentifer], unique=True
+    unique_name = models.CharField(
+        _('Unique Name'),
+        max_length=100,
+        validators=[MinLengthValidator(3), validate_isidentifer],
+        unique=True
     )
     common_name = models.CharField(_('Common Name'), max_length=65536, default='', blank=True)
     not_valid_before = models.DateTimeField(_('Not valid before'), default=timezone.now)
