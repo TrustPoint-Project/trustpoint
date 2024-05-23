@@ -192,6 +192,14 @@ python manage.py compilemsg
 
 Compiles the translation files (.po) to binary (.mo) files actually used by Django.
 
+#### Building auto documentation
+
+```bash
+cd ../docs
+sphinx-apidoc -o ./source ../trustpoint
+make html
+```
+
 #### Adding dependencies to the project
 
 Dependencies generally required for the project can be added using the following:
