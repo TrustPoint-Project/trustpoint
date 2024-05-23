@@ -27,7 +27,7 @@ with (Path(__file__).resolve().parent / Path('dev_secret_key.txt')).open('r') as
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['10.10.0.4', 'localhost', '127.0.0.1']
+ALLOWED_HOSTS = ['10.10.0.4', 'localhost', '127.0.0.1', '0.0.0.0']
 
 
 # Application definition
