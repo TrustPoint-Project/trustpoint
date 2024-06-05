@@ -17,6 +17,8 @@ from django.utils.translation import gettext_lazy as _
 from trustpoint.validators import validate_isidentifer
 from datetime import timedelta
 
+from pki.crypto_backend import CRLManager
+
 class Certificate(models.Model):
     """X509 Certificate Model"""
 
@@ -167,6 +169,21 @@ class IssuingCa(models.Model):
         p12 = pkcs12.load_pkcs12(pkcs12_bytes, b'')
         return [cert.certificate for cert in p12.additional_certs]
 
+    def generate_crl(self):
+        """generate CRL."""
+        # TODO Dominik: After Alex rebuilds the Databases, rebuild the CRLManager paths.
+        manager = CRLManager(
+            ca_cert_path="<path/to/ca/certificate>",
+            ca_private_key_path="<path/to/ca/private_key>",
+            pr_key_passphrase=None)
+        crl_entries = self.revoked_certificates.all()
+        return manager.create_crl(crl_entries)
+
+    def get_crl():
+        # TODO Implement the saving and retrieval of CRL
+        # from databse after restruction from Alex.
+        pass
+
 
 # noinspection PyUnusedLocal
 @receiver(models.signals.post_delete)
@@ -270,11 +287,13 @@ class TestB(models.Model):
 
 
 class CertificateRevocationList(models.Model):
+    """Certificate Revocation model."""
     device_name = models.CharField(max_length=50, unique=True, help_text="Device name")
-    serial_number = models.CharField(max_length=50, unique=True, help_text="Unique serial numer of revoked certificate.", primary_key=True)
+    device_serial_number = models.CharField(max_length=50, unique=True, help_text="Unique serial numer of device.", primary_key=True)
+    cert_serial_number = models.CharField(max_length=50, unique=True, help_text="Unique serial numer of revoked certificate.")
     revocation_datetime = models.DateTimeField(help_text="Timestamp when certificate got revoked.")
     revocation_reason = models.CharField(max_length=255, blank=True, help_text="Reason of revoation.")
-    issuer = models.ForeignKey(IssuingCa, on_delete=models.CASCADE, help_text="Name of Issuing CA.")
+    issuingCa = models.ForeignKey(IssuingCa, on_delete=models.CASCADE, related_name='revoked_certificates', help_text="Name of Issuing CA.")
 
     def __str__(self):
         return f"{self.serial_number} - Revoked on {self.revocation_datetime.strftime('%Y-%m-%d %H:%M:%S')}"

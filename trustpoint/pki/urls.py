@@ -97,6 +97,10 @@ urlpatterns = [
     ),
     path('revoked-certificates/',
          views.CRLListView.as_view(),
-         name='revoked_certificates'),
+         name='revoked_certificates'
+    ),
+    path('download-crl/<int:ca_id>/',
+         views.CRLListView.download_crl,
+         name='crl'),
 
 ]

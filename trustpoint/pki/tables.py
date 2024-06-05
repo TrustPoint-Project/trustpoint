@@ -7,7 +7,6 @@ from typing import TYPE_CHECKING
 
 import django_tables2 as tables
 from django.utils.html import format_html
-
 from .models import EndpointProfile, IssuingCa, RootCa, Truststore
 
 if TYPE_CHECKING:
@@ -41,11 +40,13 @@ class IssuingCaTable(tables.Table):
             'config_type',
             'details',
             'delete',
+            'crl'
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
     details = tables.Column(empty_values=(), orderable=False)
     delete = tables.Column(empty_values=(), orderable=False)
+    crl = tables.Column(empty_values=(), orderable=False)
 
     @staticmethod
     def render_details(record: IssuingCa) -> SafeString:
@@ -70,6 +71,18 @@ class IssuingCaTable(tables.Table):
             SafeString: The html hyperlink for the delete-view.
         """
         return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">Delete</a>', record.pk)
+
+    @staticmethod
+    def render_crl(record: IssuingCa) -> SafeString:
+        """Creates the html hyperlink for the details-view.
+
+        Args:
+            record (IssuingCa): The current record of the IssuingCa model.
+
+        Returns:
+            SafeString: The html hyperlink for the details-view.
+        """
+        return format_html('<a href="/pki/download-crl/{}/" class="btn btn-primary" download>Download CRL</a>', record.pk)
 
     # TODO(Alex): consider explicitly not supporting multiple CNs
     # TODO(Alex): there were cases in the past in which this was misused due to software not handling this correctly

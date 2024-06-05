@@ -6,6 +6,7 @@ from __future__ import annotations
 import io
 import sys
 from typing import TYPE_CHECKING
+from urllib.parse import quote
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
@@ -25,7 +26,7 @@ from django.views.generic.edit import CreateView, FormMixin, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_tables2 import SingleTableView
 from django.views.generic.edit import FormView
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.shortcuts import get_object_or_404
 
 from util.x509.credentials import CredentialUploadHandler
@@ -52,7 +53,7 @@ if TYPE_CHECKING:
     from typing import Any
 
     from django.db.models import QuerySet
-    from django.http import HttpRequest, HttpResponse
+    from django.http import HttpRequest
 
     from .forms import IssuingCaUploadForm
 
@@ -815,6 +816,19 @@ class TruststoreDetailView(TpLoginRequiredMixin, DetailView):
 class CRLListView(TpLoginRequiredMixin, SingleTableView):
     """Revoked Certificates List View."""
 
+    from onboarding.crypto_backend import CryptoBackend
+
     model = CertificateRevocationList
     table_class = None
     template_name = 'pki/revoked_certificates/revoked_certificates.html'
+
+    @staticmethod
+    def download_crl(self: IssuingCa, ca_id):
+        try:
+            issuing_ca = IssuingCa.objects.get(pk=ca_id)
+            crl_data = issuing_ca.generate_crl()
+            response = HttpResponse(crl_data, content_type='text/plain')
+            response['Content-Disposition'] = f'attachment; filename="{quote('a')}"'
+            return response
+        except IssuingCa.DoesNotExist:
+            return HttpResponse("Issuing CA not found", status=404)
