@@ -271,8 +271,8 @@ class DownloadOnboardingProcess(OnboardingProcess):
     def _gen_keypair_and_ldevid(self) -> None:
         """Generates a keypair and LDevID certificate for the device."""
         try:
-            if not self.device.serial_number:
-                self.device.serial_number = 'tpdl_' + secrets.token_urlsafe(12)
+            if not self.device.device_serial_number:
+                self.device.device_serial_number = 'tpdl_' + secrets.token_urlsafe(12)
             self.pkcs12 = Crypt.gen_keypair_and_ldevid(self.device)
             self.state = OnboardingProcessState.LDEVID_SENT
         except Exception as e:  # noqa: BLE001
@@ -285,5 +285,6 @@ class DownloadOnboardingProcess(OnboardingProcess):
         self.gen_thread.join()
         self._success()
         return self.pkcs12
+
 
 onboarding_processes = []

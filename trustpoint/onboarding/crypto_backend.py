@@ -107,13 +107,13 @@ class CryptoBackend:
 
     @staticmethod
     def _sign_ldevid(pub_key: CertificatePublicKeyTypes, device: Device) -> Certificate:
-        if not device.serial_number:
+        if not device.device_serial_number:
             exc_msg = 'No serial number provided.'
             raise OnboardingError(exc_msg)
 
         subject = x509.Name([
             x509.NameAttribute(x509.NameOID.COMMON_NAME, 'ldevid.trustpoint.local'),
-            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.serial_number)
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.device_serial_number)
         ])
 
         private_ca_key, ca_cert, _ = CryptoBackend._get_ca_p12(device)
@@ -165,17 +165,17 @@ class CryptoBackend:
         except (x509.ExtensionNotFound, IndexError):
             csr_serial = None
 
-        if not device.serial_number and not csr_serial:
+        if not device.device_serial_number and not csr_serial:
             exc_msg = 'No serial number provided.'
             raise OnboardingError(exc_msg)
         if csr_serial and not StringValidator.is_urlsafe(csr_serial):
             exc_msg = 'Invalid serial number in CSR.'
             raise OnboardingError(exc_msg)
-        if device.serial_number and csr_serial and device.serial_number != csr_serial:
+        if device.device_serial_number and csr_serial and device.device_serial_number != csr_serial:
             exc_msg = 'CSR serial number does not match device serial number.'
             raise OnboardingError(exc_msg)
-        serial_no = device.serial_number or csr_serial
-        device.serial_number = serial_no
+        serial_no = device.device_serial_number or csr_serial
+        device.device_serial_number = serial_no
 
         return CryptoBackend._sign_ldevid(csr.public_key(), device).public_bytes(serialization.Encoding.PEM)
 
@@ -220,7 +220,7 @@ class CryptoBackend:
         _, ca_cert, _ = CryptoBackend._get_ca_p12(device)
 
         pkcs12 = serialization.pkcs12.serialize_key_and_certificates(
-            name=device.serial_number.encode(),
+            name=device.device_serial_number.encode(),
             key=private_key,
             cert=ldevid,
             cas=[ca_cert],

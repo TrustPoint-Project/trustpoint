@@ -34,7 +34,7 @@ class DeviceTable(tables.Table):
         fields = (
             'row_checkbox',
             'device_name',
-            'serial_number',
+            'device_serial_number',
             'endpoint_profile',
             'onboarding_protocol',
             'device_onboarding_status',
@@ -151,7 +151,7 @@ class DeviceTable(tables.Table):
 
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
             return format_html(
-                '<a href="{}" class="btn btn-danger tp-onboarding-btn">Revoke Certificates</a>',
+                '<a href="{}" class="btn btn-danger tp-onboarding-btn">Revoke Certificate</a>',
                 reverse('onboarding:revoke', kwargs={'device_id': record.pk}),
             )
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:

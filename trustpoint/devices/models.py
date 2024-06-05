@@ -49,7 +49,7 @@ class Device(models.Model):
         FIDO = 'FI', _('FIDO FDO')
 
     device_name = models.CharField(max_length=100, unique=True, default='test')
-    serial_number = models.CharField(max_length=100, blank=True)
+    device_serial_number = models.CharField(max_length=100, blank=True)
     ldevid = models.FileField(blank=True, null=True)
     onboarding_protocol = models.CharField(
         max_length=2, choices=OnboardingProtocol, default=OnboardingProtocol.MANUAL, blank=True
@@ -62,7 +62,7 @@ class Device(models.Model):
 
     def __str__(self: Device) -> str:
         """Returns a Device object in human-readable format."""
-        return f'Device({self.device_name}, {self.serial_number})'
+        return f'Device({self.device_name}, {self.device_serial_number})'
 
     def revoke_ldevid(self: Device) -> bool:
         """Revokes the LDevID.
@@ -79,10 +79,11 @@ class Device(models.Model):
 
         CertificateRevocationList.objects.create(
                 device_name=self.device_name,
-                serial_number=self.serial_number,
+                device_serial_number=self.device_serial_number,
+                cert_serial_number=123,
                 revocation_datetime=timezone.now(),
                 revocation_reason='Requested by user',
-                issuer=self.endpoint_profile.issuing_ca
+                issuingCa=self.endpoint_profile.issuing_ca
             )
         self.ldevid.delete()
         self.ldevid = None

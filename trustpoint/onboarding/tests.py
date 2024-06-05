@@ -78,14 +78,14 @@ class CryptoBackendTests(TestCase):
         ldevid = Crypt._sign_ldevid(private_key.public_key(), device)
         self.assertIsInstance(ldevid, x509.Certificate, 'LDevID is not an instance of x509.Certificate.')
         self.assertEqual(ldevid.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value,
-                         device.serial_number, 'Issued LDevID subject SN does not match device serial number.')
+                         device.device_serial_number, 'Issued LDevID subject SN does not match device serial number.')
 
     @staticmethod
     def _gen_test_csr(device: Device) -> x509.CertificateSigningRequest:
         """Generates a test CSR."""
         private_key = Crypt._gen_private_key()
         return x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
-          x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.serial_number),
+          x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.device_serial_number),
           x509.NameAttribute(x509.NameOID.COMMON_NAME, 'client.trustpoint.ldevid.local'),
         ])).sign(private_key, hashes.SHA256())
 
@@ -101,7 +101,7 @@ class CryptoBackendTests(TestCase):
             self.fail('sign_ldevid_from_csr did not return valid PEM certificate bytes.')
         self.assertIsInstance(ldevid, x509.Certificate, 'LDevID is not an instance of x509.Certificate.')
         self.assertEqual(ldevid.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value,
-                         device.serial_number, 'Issued LDevID subject SN does not match device serial number.')
+                         device.device_serial_number, 'Issued LDevID subject SN does not match device serial number.')
 
 
 class OnboardingProcessTests(TestCase):

@@ -83,7 +83,7 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
             'page_category': 'onboarding',
             'page_name': 'download',
             'url': onboarding_process.url,
-            'sn': device.serial_number,
+            'sn': device.device_serial_number,
             'device_name': device.device_name,
             'device_id': device.id,
         }
