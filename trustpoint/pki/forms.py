@@ -10,6 +10,7 @@ from django.core.validators import MinLengthValidator
 from django.forms import ModelChoiceField
 from django.forms.widgets import DateTimeInput
 from django.utils.timezone import now
+from django.utils.translation import gettext_lazy as _
 from datetime import timedelta
 
 from util.x509.credentials import CredentialsError, CredentialUploadHandler
@@ -252,13 +253,13 @@ class IssuingCaLocalSignedForm(CleanUniqueNameMixin, IssuingCaUploadForm):
     not_valid_before = forms.DateTimeField(
         initial=now(),
         widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}, format='%Y-%m-%dT%H:%M'),
-        label='Not Valid Before',
+        label=_('Not valid before'),
         required=True
     )
     not_valid_after = forms.DateTimeField(
         initial=lambda: now() + timedelta(days=365),  # default one year from now
         widget=forms.DateTimeInput(attrs={'type': 'datetime-local', 'class': 'form-control'}, format='%Y-%m-%dT%H:%M'),
-        label='Not Valid After',
+        label=_('Not valid after'),
         required=True
     )
 
@@ -295,8 +296,8 @@ class IssuingCaLocalSignedForm(CleanUniqueNameMixin, IssuingCaUploadForm):
 class AddTruststoreForm(CleanUniqueNameMixin, TruststoreUploadForm):
     """Truststore form for adding new Truststores"""
 
-    truststore_certificate_file = forms.FileField(label='Upload Truststore (.pem file)', required=False)
-    truststore_certificate_text = forms.CharField(label='Or enter Truststore Certificate Text', widget=forms.Textarea,
+    truststore_certificate_file = forms.FileField(label=_('Upload Truststore (.pem file)'), required=False)
+    truststore_certificate_text = forms.CharField(label=_('Or enter Truststore certificate as PEM text'), widget=forms.Textarea,
                                                   required=False)
     def clean(self):
         cleaned_data = super().clean()

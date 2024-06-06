@@ -165,7 +165,7 @@ The login page can be accessed directly via /users/login/.
 
 Use the username and password which you previously provided through the **createsuperuser** command.
 
-#### Management commands for testing purposes
+#### Management commands for testing and development purposes
 
 ```bash
 python manage.py clear_db
@@ -178,6 +178,27 @@ python manage.py init_demo
 ```
 
 Populates the database with some example CA and device instances.
+
+```bash
+python manage.py makemsg -l de
+python manage.py makemsg -l de -d djangojs
+```
+
+Makes the translation (.po) files from translatable strings. gettext must be installed on your system.
+
+```bash
+python manage.py compilemsg
+```
+
+Compiles the translation files (.po) to binary (.mo) files actually used by Django.
+
+#### Building auto documentation
+
+```bash
+cd ../docs
+sphinx-apidoc -f -e -o ./source ../trustpoint /*/migrations/*
+make html
+```
 
 #### Adding dependencies to the project
 

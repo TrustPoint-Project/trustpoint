@@ -12,6 +12,7 @@ from django import forms as dj_forms
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponseRedirect
+from django.utils.translation import gettext_lazy as _
 from django.views.generic.base import ContextMixin, RedirectView, TemplateResponseMixin, View
 
 
@@ -294,5 +295,5 @@ class TpLoginRequiredMixin(LoginRequiredMixin):
 
     def handle_no_permission(self) -> str:
         """Redirects to the login page with a warning message if the user is not logged in."""
-        messages.add_message(self.request, messages.WARNING, message='Login required!')
+        messages.add_message(self.request, messages.WARNING, message=_('Login required!'))
         return super().handle_no_permission()

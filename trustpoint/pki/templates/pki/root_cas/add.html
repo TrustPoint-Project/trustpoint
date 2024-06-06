@@ -1,9 +1,10 @@
 {% extends 'trustpoint/base.html' %}
 {% load crispy_forms_filters %}
+{% load i18n %}
 {% block content %}
     <div class="card card-main text-center">
         <div class="card-header d-flex">
-            <h1>Add local root CA</h1>
+            <h1>{% trans "Add local root CA" %}</h1>
         </div>
         <div class="card-body tp-main-centered pt-3 pb-4">
 
@@ -12,8 +13,8 @@
                 {% csrf_token %}
                 {{ form|crispy }}
                 <div class="tp-form-btn-group tp-form-btn-group mt-5">
-                    <a href="{% url 'pki:root_cas' %}" class="btn btn-secondary">Cancel</a>
-                    <button class="btn btn-primary w-100 mt-1" type="submit" name="add-root-ca">Add local root CA</button>
+                    <a href="{% url 'pki:root_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                    <button class="btn btn-primary w-100 mt-1" type="submit" name="add-root-ca">{% trans "Add local root CA" %}</button>
                 </div>
             </form>
 

@@ -81,6 +81,10 @@ class CryptoBackend:
             tuple[PrivateKeyTypes | None, Certificate | None, list[Certificate]]:
                 The CA private key, certificate and the CA certificate chain.
         """
+        if not device.endpoint_profile:
+            msg = 'No endpoint profile configured for device.'
+            raise OnboardingError(msg)
+
         try:
             signing_ca = device.endpoint_profile.issuing_ca
         except AttributeError as e:
@@ -188,7 +192,7 @@ class CryptoBackend:
         Raises:
             OnboardingError: If the onboarding CA is not configured or not available.
         """
-        _, ca_cert, _ = CryptoBackend._get_ca_p12(device)
+        __, ca_cert, __ = CryptoBackend._get_ca_p12(device)
 
         return ca_cert.public_bytes(serialization.Encoding.PEM)
 
@@ -217,7 +221,7 @@ class CryptoBackend:
 
         ldevid = CryptoBackend._sign_ldevid(private_key.public_key(), device)
 
-        _, ca_cert, _ = CryptoBackend._get_ca_p12(device)
+        __, ca_cert, __ = CryptoBackend._get_ca_p12(device)
 
         pkcs12 = serialization.pkcs12.serialize_key_and_certificates(
             name=device.device_serial_number.encode(),

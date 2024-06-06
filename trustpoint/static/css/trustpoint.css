@@ -404,6 +404,10 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 
 /* ----- General layout utility classes ----- */
 
+.tp-d-none {
+    display: none;
+}
+
 .tp-px-2 { /* unused class */
     padding: 0 2rem;
 }

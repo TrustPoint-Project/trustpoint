@@ -19,6 +19,7 @@ from django.core.files.storage import default_storage
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.utils.translation import gettext as _
 from django.views.generic.base import RedirectView, TemplateView
 from django.views.generic.detail import DetailView
 from django.views.generic import DeleteView
@@ -254,6 +255,11 @@ class RootCaListView(RootCasContextMixin, TpLoginRequiredMixin, SingleTableView)
     model = RootCa
     table_class = RootCaTable
     template_name = 'pki/root_cas/root_cas.html'
+
+    def get(self, request, *args, **kwargs):
+        messages.add_message(request, messages.WARNING,
+            _('Operating a Root CA on Trustpoint is only recommended for testing. Please do not use in production. '))
+        return super().get(request, *args, **kwargs)
 
 class CreateRootCaView(RootCasContextMixin, TpLoginRequiredMixin, CreateView):
     """Root CA Create View."""

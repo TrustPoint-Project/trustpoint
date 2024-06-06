@@ -1,0 +1,165 @@
+# German translation file for the Trustpoint (main) app in the Trustpoint project.
+# Copyright (C) 2024 Trustpoint Project Funded Partners
+# This file is distributed under the same license as the Trustpoint package.
+# Christian Schwinne <christian.schwinne AT hshl.de>, 2024.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-05-15 09:40+0200\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: .\users\templates\users\login.html:31
+msgid "Trustpoint - Login"
+msgstr "Trustpoint - Login"
+
+#: .\users\templates\users\login.html:42
+msgid "Login"
+msgstr "Login"
+
+#: .\users\templates\users\logout.html:6
+msgid "Trustpoint - Logout"
+msgstr "Trustpoint - Logout"
+
+#: .\users\templates\users\logout.html:10
+msgid "You have been logged out."
+msgstr "Sie wurden erfolgreich ausgeloggt."
+
+#: .\users\templates\users\logout.html:17
+msgid "Login again"
+msgstr "Erneut einloggen"
+
+#: .\util\x509\credentials.py:233
+msgid "Issuing CA Certificate"
+msgstr "Issuing CA-Zertifikat"
+
+#: .\util\x509\credentials.py:235
+msgid "Root CA Certificate"
+msgstr "Root CA-Zertifikat"
+
+#: .\util\x509\credentials.py:238
+msgid "Intermediate CA Certificate"
+msgstr "Zwischen-CA-Zertifikat"
+
+#: .\trustpoint\settings.py:127
+msgid "German"
+msgstr "Deutsch"
+
+#: .\trustpoint\settings.py:128
+msgid "English"
+msgstr "Englisch"
+
+#: .\trustpoint\templates\trustpoint\base.html:45
+msgid "Dashboard"
+msgstr "Übersicht"
+
+#: .\trustpoint\templates\trustpoint\base.html:53
+msgid "Devices"
+msgstr "Geräte"
+
+#: .\trustpoint\templates\trustpoint\base.html:61
+msgid "PKI"
+msgstr "PKI"
+
+#: .\trustpoint\templates\trustpoint\base.html:67
+msgid "Endpoint Profiles"
+msgstr "Endpunkt-Profile"
+
+#: .\trustpoint\templates\trustpoint\base.html:68
+msgid "Issuing CAs"
+msgstr "Issuing CAs"
+
+#: .\trustpoint\templates\trustpoint\base.html:69
+msgid "Root CAs"
+msgstr "Root CAs"
+
+#: .\trustpoint\templates\trustpoint\base.html:70
+msgid "Truststores"
+msgstr "Truststores"
+
+#: .\trustpoint\templates\trustpoint\base.html:78
+msgid "Settings"
+msgstr "Einstellungen"
+
+#: .\trustpoint\templates\trustpoint\base.html:84
+msgid "Language"
+msgstr "Sprache (Language)"
+
+#: .\trustpoint\templates\trustpoint\base.html:85
+msgid "Logging"
+msgstr "Logging"
+
+#: .\trustpoint\templates\trustpoint\base.html:86
+msgid "Network"
+msgstr "Netzwerk"
+
+#: .\trustpoint\templates\trustpoint\base.html:87
+msgid "NTP"
+msgstr "NTP"
+
+#: .\trustpoint\templates\trustpoint\base.html:88
+msgid "SSH"
+msgstr "SSH"
+
+#: .\trustpoint\templates\trustpoint\base.html:89
+msgid "Security"
+msgstr "Sicherheit"
+
+#: .\trustpoint\templates\trustpoint\base.html:97
+msgid "Light theme"
+msgstr "Helles Theme"
+
+#: .\trustpoint\templates\trustpoint\base.html:100
+msgid "Dark theme"
+msgstr "Dunkles Theme"
+
+#: .\trustpoint\templates\trustpoint\base.html:107
+msgid "Logout"
+msgstr "Ausloggen"
+
+#: .\trustpoint\validators.py:25
+msgid ""
+"Must start with a letter and only contain letters, numbers and underscores."
+msgstr ""
+"Muss mit einem Buchstaben beginnen und darf nur aus Buchstaben, Ziffern, und "
+"Unterstrichen bestehen."
+
+#: .\trustpoint\views.py:298
+msgid "Login required!"
+msgstr "Login erforderlich!"
+
+#~ msgid "Version"
+#~ msgstr "Version"
+
+#~ msgid "Serial Number"
+#~ msgstr "Seriennummer"
+
+#~ msgid "Issuer"
+#~ msgstr "Aussteller"
+
+#~ msgid "Not valid before"
+#~ msgstr "Nicht gültig vor"
+
+#~ msgid "Not valid after"
+#~ msgstr "Nicht gültig nach"
+
+#~ msgid "Public Key Type"
+#~ msgstr "Typ des öffentlichen Schlüssels"
+
+#~ msgid "Public Key Size"
+#~ msgstr "Länge des öffentlichen Schlüssels"
+
+#~ msgid "Signature Algorithm"
+#~ msgstr "Signaturalgorithmus"
+
+#~ msgid "Extensions"
+#~ msgstr "Erweiterungen"

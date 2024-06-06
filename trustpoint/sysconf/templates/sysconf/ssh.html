@@ -1,14 +1,17 @@
 {% extends 'trustpoint/base.html' %}
+{% load i18n %}
 {% block content %}
     <div class="card card-main text-center">
-        <div class="card-header">
-            SSH
+        <div class="card-header d-flex">
+            <h1>{% trans "SSH" %}</h1>
         </div>
-        <div class="card-body">
+        <div class="card-body tp-main-centered pt-4 pb-4">
 
         </div>
         <div class="card-footer text-body-secondary">
-
+            <button class="btn btn-primary ms-3 float-end" type="submit" form="ssh_configuration">
+                {% trans "Save" %}
+            </button>
         </div>
     </div>
 {% endblock content %}

@@ -1,22 +1,22 @@
 {% extends 'trustpoint/base.html' %}
-
+{% load i18n %}
 {% block content %}
 
     <form method="POST">
         {% csrf_token %}
         <div class="card card-main text-center">
             <div class="card-header d-flex">
-                <h1>Confirm Delete - Endpoint Profiles</h1>
+                <h1>{% trans "Confirm Delete - Endpoint Profiles" %}</h1>
             </div>
             <div class="card-body tp-main-centered pt-3 pb-4">
 
             {% for object in objects %}
 
-                <h2 class="pt-5 text-start">Endpoint Profile</h2>
+                <h2 class="pt-5 text-start">{% trans "Endpoint Profile" %}</h2>
                 <hr>
                 <ul class="list-group list-group-flush text-start tp-form-grid-2-2">
-                    <li class="list-group-item"><span><strong>Unique Endpoint Name:</strong></span><span>{{ object.unique_endpoint }}</span></li>
-                    <li class="list-group-item"><span><strong>Issuing CA Unique Name:</strong></span><span>
+                    <li class="list-group-item"><span><strong>{% trans "Unique Endpoint Name" %}:</strong></span><span>{{ object.unique_endpoint }}</span></li>
+                    <li class="list-group-item"><span><strong>{% trans "Issuing CA Unique Name" %}:</strong></span><span>
                         {% if no_issuing_ca %}
                             {{ no_issuing_ca }}
                         {% else %}
@@ -27,11 +27,10 @@
             {% endfor %}
 
 
-
                 <hr>
                 <div class="tp-form-btn-group tp-form-btn-group pt-5">
-                    <a href="{% url 'pki:endpoint_profiles' %}" class="btn btn-secondary">Cancel</a>
-                    <input type="submit" class="btn btn-danger" value="Confirm Delete">
+                    <a href="{% url 'pki:endpoint_profiles' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                    <input type="submit" class="btn btn-danger" value="{% trans "Confirm Delete" %}">
                 </div>
 
             </div>

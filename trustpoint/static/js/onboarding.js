@@ -48,85 +48,85 @@ function setOnboardingStateUI(state, iconUrl) {
   switch (state) {
     case STARTED:
       type = 'info';
-      message = 'Generating secrets...';
+      message = gettext('Generating secrets...');
       icon = 'clock';
       extraClasses = 'breathing-anim';
       break;
     case HMAC_GENERATED:
       type = 'info';
-      message = 'Waiting for client to connect...';
+      message = gettext('Waiting for client to connect...');
       icon = 'clock';
       extraClasses = 'breathing-anim';
       break;
     case TRUST_STORE_SENT:
       type = 'info';
-      message = '<strong>Step 1/3</strong> Sent trust store to client. Waiting for CSR...';
+      message = gettext('<strong>Step 1/3</strong> Sent trust store to client. Waiting for CSR...');
       icon = 'clock';
       extraClasses = 'breathing-anim';
 
       var el = document.querySelector('#onboarding-state-1');
       if (!el) break;
       type1 = 'info';
-      message1 = 'Trust store requested.';
+      message1 = gettext('Trust store requested.');
       icon1 = 'info';
       setOnboardingStateUIElement(el, iconUrl, type1, message1, icon1);
       break;
     case DEVICE_VALIDATED:
       type = 'info';
-      message = '<strong>Step 2/3</strong> Device validated. Signing certificate...';
+      message = gettext('<strong>Step 2/3</strong> Device validated. Signing certificate...');
       icon = 'clock';
       extraClasses = 'breathing-anim';
       break;
     case LDEVID_SENT:
       if (isDL) {
         type = 'success';
-        message = 'PKCS12 ready for download.';
+        message = gettext('PKCS12 ready for download.');
         icon = 'success';
       } else {
         type = 'info';
-        message = '<strong>Step 3/3</strong> Sent signed certificate to client. Waiting for certificate chain request...';
+        message = gettext('<strong>Step 3/3</strong> Sent signed certificate to client. Waiting for certificate chain request...');
         icon = 'clock';
         extraClasses = 'breathing-anim';
       }
       var el = document.querySelector('#onboarding-state-2');
       if (!el) break;
       var type1 = 'success';
-      var message1 = 'LDevID downloaded successfully.';
+      var message1 = gettext('LDevID downloaded successfully.');
       var icon1 = 'success';
       setOnboardingStateUIElement(el, iconUrl, type1, message1, icon1);
       el = document.querySelector('#onboarding-state-3');
       if (!el) break;
       var type2 = 'secondary';
-      var message2 = 'Certificate chain not requested yet.';
+      var message2 = gettext('Certificate chain not requested yet.');
       var icon2 = 'clock';
       break;
     case COMPLETED:
       type = 'success';
-      message = 'Onboarding completed successfully. Redirecting...';
+      message = gettext('Onboarding completed successfully. Redirecting...');
       icon = 'success';
       navBack = true;
       break;
     case FAILED:
       type = 'danger';
-      message = 'Error: Something went wrong during the onboarding process.';
+      message = gettext('Error: Something went wrong during the onboarding process.');
       icon = 'error';
       navBack = true;
       break;
     case CANCELED:
       type = 'warning';
-      message = 'Onboarding process was canceled.';
+      message = gettext('Onboarding process was canceled.');
       icon = 'warning';
       navBack = true;
       break;
     case NO_SUCH_PROCESS:
       type = 'danger';
-      message = 'Error: Server did not find the onboarding process.';
+      message = gettext('Error: Server did not find the onboarding process.');
       icon = 'error';
       navBack = true;
       break;
     default:
       type = 'warning';
-      message = 'Could not get onboarding state from server';
+      message = gettext('Could not get onboarding state from server');
       icon = 'warning';
       break;
   }
@@ -142,7 +142,7 @@ function resetButton(caller) {
   caller.classList.remove('btn-success');
   caller.classList.remove('btn-danger');
   caller.classList.add('btn-primary');
-  caller.textContent = 'Copy to clipboard';
+  caller.textContent = gettext('Copy to clipboard');
 }
 
 async function copyToClipboard(caller, el) {
@@ -150,10 +150,10 @@ async function copyToClipboard(caller, el) {
   try {
     await navigator.clipboard.writeText(document.querySelector(el).textContent);
     caller.classList.add('btn-success');
-    caller.textContent = 'Copied!';
+    caller.textContent = gettext('Copied!');
   } catch (error) {
     caller.classList.add('btn-danger');
-    caller.textContent = 'Couldn\'t copy';
+    caller.textContent = gettext("Couldn't copy");
   }
   setTimeout(resetButton, 1200, caller);
 }

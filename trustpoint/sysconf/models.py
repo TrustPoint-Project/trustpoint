@@ -18,8 +18,10 @@ class NTPConfig(models.Model):
 
 class LoggingConfig(models.Model):
     """Logging Configuration model"""
-    logging_server_address = models.GenericIPAddressField(protocol='both')
-    logging_server_port = models.IntegerField(validators=[MinValueValidator(0), MaxValueValidator(65536)])
+    logging_server_address = models.GenericIPAddressField(_("Logging server address"), protocol='both')
+    logging_server_port = models.IntegerField(
+        _("Logging server port"), validators=[MinValueValidator(0), MaxValueValidator(65536)]
+    )
 
     class LogTypes(models.TextChoices):
         """Types of logging protocols"""
@@ -32,8 +34,8 @@ class LoggingConfig(models.Model):
         TCP = '1', 'TCP'
         UDP = '2', 'UDP'
 
-    logging_type = models.CharField(max_length=3, choices=LogTypes.choices, default=LogTypes.SYSLOG)
-    network_type = models.CharField(max_length=2, choices=NetworkTypes.choices, default=NetworkTypes.TCP)
+    logging_type = models.CharField(_("Logging type"), max_length=3, choices=LogTypes.choices, default=LogTypes.SYSLOG)
+    network_type = models.CharField(_("Network type"), max_length=2, choices=NetworkTypes.choices, default=NetworkTypes.TCP)
 
     def __str__(self) -> str:
         """Output as string"""
@@ -42,9 +44,9 @@ class LoggingConfig(models.Model):
 
 class NetworkConfig(models.Model):
     """Network Configuration model"""
-    static_ip_address = models.GenericIPAddressField(protocol='both', blank=True, null=True)
-    gateway = models.GenericIPAddressField(protocol='both', blank=True, null=True)
-    netmask = models.CharField(max_length=20, blank=True, null=True)
+    static_ip_address = models.GenericIPAddressField(_("Static IP address"), protocol='both', blank=True, null=True)
+    gateway = models.GenericIPAddressField(_("Gateway"), protocol='both', blank=True, null=True)
+    netmask = models.CharField(_("Netmask"), max_length=20, blank=True, null=True)
     dhcp = models.BooleanField(default=False)
 
     def __str__(self) -> str:
@@ -56,9 +58,9 @@ class SecurityConfig(models.Model):
 
     class SecurityModeChoices(models.TextChoices):
         """Types of security modes"""
-        LOW = '1', 'Basic'
-        MEDIUM = '2', 'Medium'
-        HIGH = '3', 'High'
+        LOW = '1', _('Basic')
+        MEDIUM = '2', _('Medium')
+        HIGH = '3', _('High')
 
     security_mode = models.CharField(max_length=6, choices=SecurityModeChoices.choices, default=SecurityModeChoices.LOW)
     enable_local_root_ca = models.BooleanField(default=False)

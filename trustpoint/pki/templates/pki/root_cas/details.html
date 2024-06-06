@@ -1,12 +1,12 @@
 {% extends 'trustpoint/base.html' %}
-
+{% load i18n %}
 {% block content %}
 
     <form method="POST">
         {% csrf_token %}
         <div class="card card-main text-center">
             <div class="card-header d-flex">
-                <h1>Details - Root CA - {{ object.unique_name }}</h1>
+                <h1>{% blocktranslate with name=object.unique_name %}Details - Root CA - {{ name }}{% endblocktranslate %}</h1>
             </div>
             <div class="card-body tp-main-centered pt-3 pb-4">
 
@@ -34,7 +34,7 @@
                 {% endfor %}
 
                 <div class="tp-form-btn-group tp-form-btn-group mt-5">
-                    <a href="{% url 'pki:root_cas' %}" class="btn btn-primary">Back</a>
+                    <a href="{% url 'pki:root_cas' %}" class="btn btn-primary">{% trans "Back" %}</a>
                 </div>
 
             </div>
