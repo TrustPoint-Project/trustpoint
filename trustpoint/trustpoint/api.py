@@ -16,6 +16,7 @@ class AuthBearer(HttpBearer):
         """Check the provided token against the database for validity"""
         return PersonalAccessToken.get_from_string(token)
 
+
 api = NinjaAPI(
     auth=(AuthBearer(), django_auth),
     title='Trustpoint API',
@@ -24,7 +25,7 @@ api = NinjaAPI(
 
 api.add_router('/devices/', devices_router, tags=['Devices'])
 api.add_router('/onboarding/', onboarding_router, tags=['Onboarding'])
-api.add_router('/pki/', 'pki.api.router', tags=['PKI'])
+# api.add_router('/pki/', 'pki.api.router', tags=['PKI'])
 api.add_router('/users/', users_router, tags=['Users'])
 
 # TODO(Air): Couldn't get non-GET requests to work with CSRF using Django-auth reliably

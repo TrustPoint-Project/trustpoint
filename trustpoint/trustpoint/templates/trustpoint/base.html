@@ -55,7 +55,7 @@
             </div>
 
             <div class="tp-menu-group">
-                <a href="{% url 'pki:endpoint_profiles' %}" class="tp-menu-head {% if page_category == 'pki' %}tp-menu-active{% endif %}">
+                <a href="" class="tp-menu-head {% if page_category == 'pki' %}tp-menu-active{% endif %}">
                     <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-key"/></svg>
                     {% translate "PKI" %}
@@ -64,9 +64,9 @@
                     </div>
                 </a>
                 <div class="tp-menu-collapse {% if page_category == 'pki' %}show{% endif %}">
-                    <a href="{% url 'pki:endpoint_profiles' %}" class="tp-menu-item {% if page_name == 'endpoint_profiles' %}tp-menu-active{% endif %}">{% trans "Endpoint Profiles" %}</a>
-                    <a href="{% url 'pki:issuing_cas' %}" class="tp-menu-item {% if page_name == 'issuing_cas' %}tp-menu-active{% endif %}">{% trans "Issuing CAs" %}</a>
-                    <a href="{% url 'pki:root_cas' %}" class="tp-menu-item {% if page_name == 'root_cas' %}tp-menu-active{% endif %}">{% trans "Root CAs" %}</a>
+{#                    <a href="{% url 'pki:endpoint_profiles' %}" class="tp-menu-item {% if page_name == 'endpoint_profiles' %}tp-menu-active{% endif %}">{% trans "Endpoint Profiles" %}</a>#}
+{#                    <a href="{% url 'pki:issuing_cas' %}" class="tp-menu-item {% if page_name == 'issuing_cas' %}tp-menu-active{% endif %}">{% trans "Issuing CAs" %}</a>#}
+{#                    <a href="{% url 'pki:root_cas' %}" class="tp-menu-item {% if page_name == 'root_cas' %}tp-menu-active{% endif %}">{% trans "Root CAs" %}</a>#}
                     <a href="{% url 'pki:truststores' %}" class="tp-menu-item {% if page_name == 'truststores' %}tp-menu-active{% endif %}">{% trans "Truststores" %}</a>
                 </div>
             </div>

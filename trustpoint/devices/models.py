@@ -6,7 +6,7 @@ from __future__ import annotations
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from pki.models import EndpointProfile
+# from pki.models import EndpointProfile
 
 from .exceptions import UnknownOnboardingStatusError
 
@@ -54,7 +54,7 @@ class Device(models.Model):
     device_onboarding_status = models.CharField(
         max_length=1, choices=DeviceOnboardingStatus, default=DeviceOnboardingStatus.NOT_ONBOARDED, blank=True
     )
-    endpoint_profile = models.ForeignKey(EndpointProfile, on_delete=models.SET_NULL, blank=True, null=True)
+    # endpoint_profile = models.ForeignKey(EndpointProfile, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self: Device) -> str:
@@ -96,11 +96,11 @@ class Device(models.Model):
         if not device:
             return (False, f'Onboarding: Device with ID {device_id} not found.')
 
-        if not device.endpoint_profile:
-            return (False, f'Onboarding: Please select an endpoint profile for device {device.device_name} first.')
-
-        if not device.endpoint_profile.issuing_ca:
-            return (False, f'Onboarding: Endpoint profile {device.endpoint_profile.unique_name} has no issuing CA set.')
+        # if not device.endpoint_profile:
+        #     return (False, f'Onboarding: Please select an endpoint profile for device {device.device_name} first.')
+        #
+        # if not device.endpoint_profile.issuing_ca:
+        #     return (False, f'Onboarding: Endpoint profile {device.endpoint_profile.unique_name} has no issuing CA set.')
 
         if device.onboarding_protocol not in allowed_onboarding_protocols:
             try:
