@@ -4,29 +4,17 @@
 from __future__ import annotations
 
 from ipaddress import IPv4Address, IPv6Address, IPv4Network, IPv6Network
-from pathlib import Path
-from typing import Any
-import textwrap
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
-from cryptography.x509 import Certificate as CryptoCert
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509.extensions import ExtensionNotFound
-from cryptography.x509.extensions import Extensions as CryptoExtensions
 
-from django.core.validators import MaxValueValidator, MinLengthValidator, MinValueValidator
 from django.db import models
-from django.dispatch import receiver
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from django.utils.html import format_html
 from django.db import transaction
-from cryptography.x509.oid import NameOID, ExtensionOID
-from django.core.exceptions import ValidationError
-
-from trustpoint.validators import validate_isidentifer
-from datetime import timedelta
+from cryptography.x509.oid import NameOID
 
 from .oid import SignatureAlgorithmOid, PublicKeyAlgorithmOid, EllipticCurveOid, CertificateExtensionOid, NameOid
 
@@ -582,24 +570,26 @@ class Certificate(models.Model):
     @property
     def signature_padding_scheme(self) -> str:
         return SignatureAlgorithmOid(self.signature_algorithm_oid).padding_scheme.verbose_name
+
     signature_padding_scheme.fget.short_description = _('Signature Padding Scheme')
 
     version = models.PositiveSmallIntegerField(verbose_name=_('Version'), choices=Version, editable=False)
     serial_number = models.CharField(verbose_name=_('Serial Number'), max_length=256, editable=False)
 
     certificate_hierarchy_type = models.CharField(
-        verbose_name=_('Certificate Hierarchy Type'),
+        verbose_name=_('Certificate Type'),
         max_length=2,
         choices=CertificateHierarchyType,
         editable=False)
 
     certificate_hierarchy_depth = models.PositiveSmallIntegerField(
-        verbose_name=_('Certificate Hierarchy Depth'),
+        verbose_name=_('Hierarchy Depth'),
         editable=False)
 
     @property
     def public_key_algorithm(self) -> str:
         return PublicKeyAlgorithmOid(self.public_key_algorithm_oid).verbose_name
+
     public_key_algorithm.fget.short_description = _('Public Key Algorithm')
     public_key_algorithm_oid = models.CharField(
         _('Public Key Algorithm OID'),
@@ -617,6 +607,7 @@ class Certificate(models.Model):
     @property
     def public_key_ec_curve(self) -> str:
         return EllipticCurveOid(self.public_key_ec_curve_oid).name
+
     public_key_ec_curve.fget.short_description = _('Public Key Curve (ECC)')
 
     public_key_size = models.PositiveIntegerField(_('Public Key Size'), editable=False)
@@ -631,6 +622,7 @@ class Certificate(models.Model):
     @property
     def signature_algorithm(self) -> str:
         return SignatureAlgorithmOid(self.signature_algorithm_oid).verbose_name
+
     signature_algorithm.fget.short_description = _('Signature Algorithm')
 
     subject = models.ManyToManyField(
@@ -641,10 +633,8 @@ class Certificate(models.Model):
     subject_public_bytes = models.CharField(verbose_name=_('Subject Public Bytes'), max_length=2048, editable=False)
     issuer_public_bytes = models.CharField(verbose_name=_('Issuer Public Bytes'), max_length=2048, editable=False)
 
-    # subject_public_bytes = models.CharField(verbose_name=_('Subject Public Bytes'), max_length=2048, editable=False)
-    # subject = models.CharField(verbose_name=_('Subject'), max_length=256, editable=False)
-    # subject = models.ManyToManyField(Name, verbose_name=_('Subject'), editable=False, related_name='Certificates')
-    # issuer = models.CharField(verbose_name=_('Issuer'), max_length=256, editable=False)
+    sha256_fingerprint = models.CharField(verbose_name=_('Fingerprint (SHA256)'), max_length=256, editable=False)
+
     issuer_ref = models.ForeignKey(
         'self',
         verbose_name=_('Issuer Reference'),
@@ -743,7 +733,8 @@ class Certificate(models.Model):
     # ext_subject_information_access = None
 
     def __str__(self) -> str:
-        return f'Certificate({self.serial_number})'
+        subject_common_name = self.subject.filter(oid=NameOid.COMMON_NAME.dotted_string).first().value
+        return f'Certificate(CN={subject_common_name})'
 
     def save(self, *args, **kwargs) -> None:
         raise NotImplementedError('Certificates cannot be saved manually. Use the save_certificate() method.')
@@ -751,25 +742,22 @@ class Certificate(models.Model):
     def _create_and_save(self, *args, **kwargs) -> None:
         return super().save(*args, **kwargs)
 
-    # TODO explicit checks: raising Exceptions or Warnings
     @classmethod
-    def save_certificate(
+    def save_certificate_and_key(
             cls,
-            cert: x509.Certificate | str | bytes,
-            priv_key: None | str | bytes | rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey = None,
-            priv_key_pw: None | bytes = None) -> None:
-        if isinstance(cert, str):
-            cert = x509.load_pem_x509_certificate(cert.encode())
-        elif isinstance(cert, bytes):
-            cert = x509.load_pem_x509_certificate(cert)
+            cert: x509.Certificate,
+            priv_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey = None) -> None:
+        cls._save_certificate_and_key(cert=cert, priv_key=priv_key)
 
-        if isinstance(priv_key_pw, str):
-            priv_key_pw = priv_key_pw.encode()
-        if isinstance(priv_key, str):
-            priv_key = priv_key.encode()
+    @classmethod
+    def save_certificate(cls, cert: x509.Certificate) -> 'Certificate':
+        return cls._save_certificate_and_key(cert=cert, priv_key=None)
 
-        if isinstance(priv_key, bytes):
-            priv_key = serialization.load_pem_private_key(priv_key, password=priv_key_pw)
+    @classmethod
+    def _save_certificate_and_key(
+            cls,
+            cert: x509.Certificate,
+            priv_key: None | rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey) -> 'Certificate':
 
         if priv_key is not None:
             priv_key_pem = priv_key.private_bytes(
@@ -786,6 +774,8 @@ class Certificate(models.Model):
         not_valid_before = cert.not_valid_before_utc
         not_valid_after = cert.not_valid_after_utc
 
+        sha256_fingerprint = cert.fingerprint(algorithm=hashes.SHA256()).hex().upper()
+
         # TODO: cert.public_key_algorithm_oid will be available from cryptography 43.0.0
         if isinstance(cert.public_key(), rsa.RSAPublicKey):
             public_key_algorithm_oid = PublicKeyAlgorithmOid.RSA.dotted_string
@@ -798,16 +788,23 @@ class Certificate(models.Model):
             # TODO: ED & Exception Handling
             raise ValueError
 
-        # TODO: depth handling
         if cert.issuer.public_bytes() == cert.subject.public_bytes():
             certificate_hierarchy_depth = 0
             certificate_hierarchy_type = Certificate.CertificateHierarchyType.ROOT_CA.value
         else:
-            certificate_hierarchy_depth = 1
-            certificate_hierarchy_type = Certificate.CertificateHierarchyType.INTERMEDIATE_CA.value
+            issuer_cert = cls.objects.filter(subject_public_bytes=cert.issuer.public_bytes().hex().upper()).first()
+            certificate_hierarchy_depth = issuer_cert.certificate_hierarchy_depth + 1
+            try:
+                is_ca = cert.extensions.get_extension_for_class(x509.BasicConstraints).value.ca
+            except x509.ExtensionNotFound:
+                is_ca = False
+
+            if is_ca is True:
+                certificate_hierarchy_type = Certificate.CertificateHierarchyType.INTERMEDIATE_CA.value
+            else:
+                certificate_hierarchy_type = Certificate.CertificateHierarchyType.END_ENTITY_CERT.value
 
         # TODO: Properties if root, intermediate / issuing or end-entity
-
         public_key_size = cert.public_key().key_size
 
         signature_algorithm_oid = cert.signature_algorithm_oid.dotted_string
@@ -837,6 +834,7 @@ class Certificate(models.Model):
             serial_number=serial_number,
             not_valid_before=not_valid_before,
             not_valid_after=not_valid_after,
+            sha256_fingerprint=sha256_fingerprint,
             public_key_algorithm_oid=public_key_algorithm_oid,
             signature_algorithm_oid=signature_algorithm_oid,
             signature_value=signature_value,
@@ -853,7 +851,7 @@ class Certificate(models.Model):
 
         # --------------------------------------------- Store in DataBase ----------------------------------------------
 
-        cls._atomic_save(cert_model=cert_model, cert=cert, subject=subject)
+        return cls._atomic_save(cert_model=cert_model, cert=cert, subject=subject)
 
     @staticmethod
     def _save_extensions(cert_model: Certificate, cert: x509.Certificate) -> None:
@@ -874,17 +872,24 @@ class Certificate(models.Model):
 
         cert_model._create_and_save()
 
+    @staticmethod
+    def _is_root_ca(cert: x509.Certificate) -> bool:
+        # TODO: check signature, etc. -> path validation
+        if cert.subject.public_bytes() == cert.issuer.public_bytes():
+            return True
+        return False
+
     @classmethod
     @transaction.atomic
     def _atomic_save(
             cls,
             cert_model: Certificate,
             cert: x509.Certificate,
-            subject: list[tuple[str, str]]) -> None:
+            subject: list[tuple[str, str]]) -> 'Certificate':
 
         # TODO: Extremely botched IssuingCA search -> Do a full cert chain validation (RFC 5280)
         if Certificate.objects.filter(subject_public_bytes=cert.subject.public_bytes().hex().upper()).exists():
-            return None
+            raise ValueError('Certificate already exists in database.')
 
         cls._save_extensions(cert_model, cert)
 
@@ -895,7 +900,7 @@ class Certificate(models.Model):
             issuing_ca_cert = Certificate.objects.filter(
                 subject_public_bytes=cert.issuer.public_bytes().hex().upper()).first()
             if not issuing_ca_cert:
-                return None
+                raise ValueError('Issuer certificate does not exist in database.')
             cert_model.issuer_ref = issuing_ca_cert
         cert_model._create_and_save()
 
@@ -910,8 +915,62 @@ class Certificate(models.Model):
                 cert_model.subject.add(attr_type_and_val)
 
         cert_model._create_and_save()
+        return cert_model
 
 
 class TrustStore(models.Model):
-    unique_name = models.CharField(max_length=30)
-    cert_chains = models.ManyToManyField(Certificate, related_name='truststores')
+    unique_name = models.CharField(max_length=30, editable=False)
+    leaf_certs = models.ManyToManyField(Certificate, related_name='truststores', verbose_name='Leaf Certificates')
+
+    def __str__(self) -> str:
+        return f'TrustStore(name={self.unique_name})'
+
+    @classmethod
+    def save_trust_store(cls, unique_name, trust_store: list[x509.Certificate]) -> None:
+        if cls.objects.filter(unique_name=unique_name).exists():
+            raise ValueError(f'A Trust-Store with the unique name {unique_name} already exists.')
+
+        subjects = [cert.subject.public_bytes() for cert in trust_store]
+        issuers = [cert.issuer.public_bytes() for cert in trust_store]
+        last_cert_subjects_in_chains = [subject for subject in subjects if subject not in issuers]
+        leaf_certs = [
+            cert for cert in trust_store if cert.subject.public_bytes() in last_cert_subjects_in_chains]
+        cert_chains = []
+
+        for leaf_cert in leaf_certs:
+            cert_chain = [leaf_cert]
+            while True:
+                if leaf_cert.subject.public_bytes() == leaf_cert.issuer.public_bytes():
+                    break
+                for cert in trust_store:
+                    if cert.subject.public_bytes() == leaf_cert.issuer.public_bytes():
+                        cert_chain.append(cert)
+                        leaf_cert = cert
+                        break
+                else:
+                    raise ValueError('Trust-Store contains orphaned certificates.')
+
+            cert_chains.append(cert_chain)
+
+        cls._save_trust_store(unique_name=unique_name, cert_chains=cert_chains)
+
+    @classmethod
+    @transaction.atomic
+    def _save_trust_store(
+            cls,
+            unique_name,
+            cert_chains: list[list[x509.Certificate]]) -> None:
+
+        trust_store = TrustStore(unique_name=unique_name)
+        trust_store.save()
+
+        # TODO: check via sha256 fingerprint instead of subject
+        for cert_chain in cert_chains:
+            c = None
+            for cert in reversed(cert_chain):
+                if Certificate.objects.filter(subject_public_bytes=cert.subject.public_bytes().hex().upper()).exists():
+                    continue
+                c = Certificate.save_certificate(cert=cert)
+            trust_store.leaf_certs.add(c)
+
+        trust_store.save()

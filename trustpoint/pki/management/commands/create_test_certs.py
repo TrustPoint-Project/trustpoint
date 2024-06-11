@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import enum
+import subprocess
 
 from django.core.management import BaseCommand
 from pathlib import Path
@@ -10,10 +12,12 @@ import shutil
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.x509.oid import NameOID
+from cryptography.hazmat.primitives.serialization import pkcs12, BestAvailableEncryption
 import datetime
 import ipaddress
+from . import Algorithm
 
 
 class Command(BaseCommand):
@@ -21,48 +25,72 @@ class Command(BaseCommand):
 
     help = 'Removes all migrations, deletes db and runs makemigrations and migrate afterwards.'
 
-    def handle(self, *args, **kwargs) -> None:
-        tests_data_path = Path(__file__).parent.parent.parent.parent.parent / Path('tests/data/certs')
-        shutil.rmtree(tests_data_path, ignore_errors=True)
-        tests_data_path.mkdir(exist_ok=True)
+    @classmethod
+    def _create_certificate(
+            cls,
+            common_name: str,
+            algorithm: Algorithm,
+            path: Path,
+            issuer: None | x509.Certificate = None,
+            issuer_priv_key: None | rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey = None,
+            validity_days: int = 365) -> tuple[str, x509.Certificate, rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey]:
+
+        if algorithm == Algorithm.RSA2048:
+            private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        elif algorithm == Algorithm.RSA4096:
+            private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+        elif algorithm == Algorithm.SECP256:
+            private_key = ec.generate_private_key(ec.SECP256R1())
+        elif algorithm == Algorithm.SECP521:
+            private_key = ec.generate_private_key(ec.SECP521R1())
+        else:
+            raise ValueError('Unknown algorithm.')
 
         one_day = datetime.timedelta(1, 0, 0)
-        private_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048,
-        )
         public_key = private_key.public_key()
         builder = x509.CertificateBuilder()
         builder = builder.subject_name(x509.Name([
-            x509.NameAttribute(NameOID.COMMON_NAME, 'cryptography.io'),
+            x509.NameAttribute(NameOID.COMMON_NAME, common_name),
         ]))
-        builder = builder.issuer_name(x509.Name([
-            x509.NameAttribute(NameOID.COMMON_NAME, 'cryptography.io'),
-        ]))
+        if issuer is None:
+            builder = builder.issuer_name(x509.Name([
+                x509.NameAttribute(NameOID.COMMON_NAME, common_name),
+            ]))
+        else:
+            builder = builder.issuer_name(issuer.subject)
         builder = builder.not_valid_before(datetime.datetime.today() - one_day)
-        builder = builder.not_valid_after(datetime.datetime.today() + (one_day * 30))
+        builder = builder.not_valid_after(datetime.datetime.today() + (one_day * validity_days))
         builder = builder.serial_number(x509.random_serial_number())
         builder = builder.public_key(public_key)
 
         # ------------------------------------------------- Extensions -------------------------------------------------
+        if issuer is None:
+            ca = True
+            path_length = 1
+        elif issuer.extensions.get_extension_for_class(x509.BasicConstraints).value.path_length == 1:
+            ca = True
+            path_length = 0
+        else:
+            ca = False
+            path_length = None
 
         builder = builder.add_extension(
-            x509.BasicConstraints(ca=True, path_length=1), critical=True
+            x509.BasicConstraints(ca=ca, path_length=path_length), critical=True
         )
 
         builder = builder.add_extension(
             x509.KeyUsage(
                 digital_signature=True,
-                content_commitment=False,
+                content_commitment=True,
                 key_encipherment=True,
-                data_encipherment=False,
+                data_encipherment=True,
                 key_agreement=True,
-                key_cert_sign=False,
+                key_cert_sign=True,
                 crl_sign=True,
-                encipher_only=False,
+                encipher_only=True,
                 decipher_only=True
             ),
-            critical=False
+            critical=True
         )
 
         some_arbitrary_der_as_hex = (
@@ -87,8 +115,8 @@ class Command(BaseCommand):
 
                     x509.DirectoryName(
                         x509.Name([
-                                x509.NameAttribute(NameOID.COMMON_NAME, 'Trustpoint Model Test'),
-                                x509.NameAttribute(NameOID.ORGANIZATION_NAME, 'Trustpoint')
+                            x509.NameAttribute(NameOID.COMMON_NAME, 'Trustpoint Model Test'),
+                            x509.NameAttribute(NameOID.ORGANIZATION_NAME, 'Trustpoint')
                         ])
                     )
                 ]
@@ -120,9 +148,14 @@ class Command(BaseCommand):
             critical=False
         )
 
-        certificate = builder.sign(
-            private_key=private_key, algorithm=hashes.SHA256(),
-        )
+        if issuer_priv_key is None:
+            certificate = builder.sign(
+                private_key=private_key, algorithm=hashes.SHA256(),
+            )
+        else:
+            certificate = builder.sign(
+                private_key=issuer_priv_key, algorithm=hashes.SHA256(),
+            )
 
         pem_priv_key = private_key.private_bytes(
             encoding=serialization.Encoding.PEM,
@@ -130,8 +163,81 @@ class Command(BaseCommand):
             encryption_algorithm=serialization.NoEncryption()
         )
 
-        with open(tests_data_path / 'key.pem', 'wb') as f:
+        pem_cert = certificate.public_bytes(serialization.Encoding.PEM)
+
+        with open(path / f'{common_name}-key.pem', 'wb') as f:
             f.write(pem_priv_key)
 
-        with open(tests_data_path / 'cert.pem', 'wb') as f:
-            f.write(certificate.public_bytes(serialization.Encoding.PEM))
+        with open(path / f'{common_name}-cert.pem', 'wb') as f:
+            f.write(pem_cert)
+
+        return pem_cert.decode(), certificate, private_key
+
+    def _create_cert_chain(self, algorithm: Algorithm, path: Path) -> None:
+
+        pem_root_cert, root_cert, root_private_key = self._create_certificate(
+            common_name=f'{algorithm.value}-root-ca',
+            algorithm=algorithm,
+            path=path)
+
+        pem_issuing_cert, issuing_cert, issuing_private = self._create_certificate(
+            common_name=f'{algorithm.value}-issuing-ca',
+            algorithm=algorithm,
+            path=path,
+            issuer=root_cert,
+            issuer_priv_key=root_private_key
+        )
+
+        pem_ee_cert, ee_cert, ee_key = self._create_certificate(
+            common_name=f'{algorithm.value}-ee',
+            algorithm=algorithm,
+            path=path,
+            issuer=issuing_cert,
+            issuer_priv_key=issuing_private
+        )
+
+        p12 = pkcs12.serialize_key_and_certificates(
+            name=b'',
+            key=ee_key,
+            cert=ee_cert,
+            cas=[root_cert, issuing_cert],
+            encryption_algorithm=BestAvailableEncryption(b"password")
+        )
+
+        with open(path / f'{algorithm.value}.p12', 'wb') as f:
+            f.write(p12)
+
+        with open(path / f'{algorithm.value}-chain.pem', 'wb') as f:
+            cert_chain = pem_root_cert + pem_issuing_cert + pem_ee_cert
+            f.write(cert_chain.encode())
+
+    @staticmethod
+    def _create_trust_store(path: Path):
+        certs = ''
+        for value in [algo.value for algo in Algorithm]:
+            with open(path / f'{value}-chain.pem', 'r') as f:
+                certs += f.read()
+
+        with open(path / 'trust-store.pem', 'w') as f:
+            f.write(certs)
+
+    def handle(self, *args, **kwargs) -> None:
+        tests_data_path = Path(__file__).parent.parent.parent.parent.parent / Path('tests/data/certs')
+        shutil.rmtree(tests_data_path, ignore_errors=True)
+        tests_data_path.mkdir(exist_ok=True)
+
+        self._create_cert_chain(algorithm=Algorithm.RSA2048, path=tests_data_path)
+        self._create_cert_chain(algorithm=Algorithm.RSA4096, path=tests_data_path)
+        self._create_cert_chain(algorithm=Algorithm.SECP256, path=tests_data_path)
+        self._create_cert_chain(algorithm=Algorithm.SECP521, path=tests_data_path)
+
+        self._create_trust_store(path=tests_data_path)
+
+        for algo in Algorithm:
+            cmd = (
+                f'openssl verify -CAfile {tests_data_path}/{algo.value}-root-ca-cert.pem -untrusted '
+                f'{tests_data_path}/{algo.value}-issuing-ca-cert.pem {tests_data_path}/{algo.value}-ee-cert.pem'
+            )
+            print(f'Created certificate chain with {algo.name} and SHA256.')
+            print(f'Verifying certificate chain with {algo.name} and SHA256.')
+            print(subprocess.check_output(cmd, shell=True).decode())

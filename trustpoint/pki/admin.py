@@ -7,7 +7,15 @@ from .models import (
     KeyUsageExtension,
     AttributeTypeAndValue,
     IssuerAlternativeNameExtension,
-    SubjectAlternativeNameExtension)
+    SubjectAlternativeNameExtension,
+    TrustStore)
+
+
+class TrustStoreAdmin(admin.ModelAdmin):
+    readonly_fields = [
+        'unique_name',
+        'leaf_certs'
+    ]
 
 
 class AttributeTypeAndValueAdmin(admin.ModelAdmin):
@@ -62,6 +70,7 @@ class CertificateAdmin(admin.ModelAdmin):
         'certificate_hierarchy_depth',
         'version',
         'serial_number',
+        'sha256_fingerprint',
         'subject',
         'subject_public_bytes',
         # 'subject',
@@ -90,6 +99,7 @@ class CertificateAdmin(admin.ModelAdmin):
     )
 
 
+admin.site.register(TrustStore, TrustStoreAdmin)
 admin.site.register(SubjectAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(IssuerAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(AttributeTypeAndValue, AttributeTypeAndValueAdmin)
