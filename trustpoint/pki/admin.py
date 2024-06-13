@@ -68,34 +68,41 @@ class CertificateAdmin(admin.ModelAdmin):
     readonly_fields = (
         'certificate_hierarchy_type',
         'certificate_hierarchy_depth',
-        'version',
-        'serial_number',
+
+        'common_name',
         'sha256_fingerprint',
-        'subject',
-        'subject_public_bytes',
-        # 'subject',
-        # 'issuer',
-        'issuer_ref',
-        'not_valid_before',
-        'not_valid_after',
-        'public_key_algorithm_oid',
-        'public_key_algorithm',
-        'public_key_size',
-        'public_key_ec_curve_oid',
-        'public_key_ec_curve',
+
         'signature_algorithm_oid',
         'signature_algorithm',
-        'signature_padding_scheme',
+        'signature_algorithm_padding_scheme',
         'signature_value',
+
+        'version',
+        'serial_number',
+
+        'issuer_public_bytes',
+        'issuer',
+
+        'not_valid_before',
+        'not_valid_after',
+
+        'subject_public_bytes',
+        'subject',
+
+        'spki_algorithm_oid',
+        'spki_algorithm',
+        'spki_key_size',
+        'spki_ec_curve_oid',
+        'spki_ec_curve',
+
+        'cert_pem',
         'public_key_pem',
         'private_key_pem',
-        'cert_pem',
-        'public_key_der',
-        'cert_der',
-        'basic_constraints_extension',
+
         'key_usage_extension',
+        'subject_alternative_name_extension',
         'issuer_alternative_name_extension',
-        'subject_alternative_name_extension'
+        'basic_constraints_extension'
     )
 
 
