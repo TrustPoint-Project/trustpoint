@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+import abc
+
 from ipaddress import IPv4Address, IPv6Address, IPv4Network, IPv6Network
 
 from cryptography import x509
@@ -17,8 +19,16 @@ from django.utils.translation import gettext_lazy as _
 from .oid import SignatureAlgorithmOid, PublicKeyAlgorithmOid, EllipticCurveOid, CertificateExtensionOid, NameOid
 
 
-class AttributeTypeAndValue(models.Model):
+# ----------------------------------------- Subject / Issuer Field Structures ------------------------------------------
 
+class AttributeTypeAndValue(models.Model):
+    """AttributeTypeAndValue Model.
+
+    Used for subject entries as well as the GeneralNameDirectoryName entries within
+    the SubjectAlternativeName and IssuerAlternativeName.
+
+    See RFC5280 for more information.
+    """
     class Meta:
         unique_together = ('oid', 'value')
 
@@ -34,6 +44,12 @@ class AttributeTypeAndValue(models.Model):
 
 
 class GeneralNameRFC822Name(models.Model):
+    """GeneralNameRFC822Name Model.
+
+    Entries of either SubjectAlternativeNames or IssuerAlternativeNames.
+
+    See RFC5280 for more information.
+    """
     value = models.CharField(max_length=1024, editable=False, verbose_name='Value', unique=True)
 
     def __str__(self) -> str:
@@ -41,6 +57,12 @@ class GeneralNameRFC822Name(models.Model):
 
 
 class GeneralNameDNSName(models.Model):
+    """GeneralNameDNSName Model.
+
+    Entries of either SubjectAlternativeNames or IssuerAlternativeNames.
+
+    See RFC5280 for more information.
+    """
     value = models.CharField(max_length=1024, editable=False, verbose_name='Value', unique=True)
 
     def __str__(self) -> str:
@@ -48,6 +70,12 @@ class GeneralNameDNSName(models.Model):
 
 
 class GeneralNameDirectoryName(models.Model):
+    """GeneralNameDirectoryName Model.
+
+    Entries of either SubjectAlternativeNames or IssuerAlternativeNames.
+
+    See RFC5280 for more information.
+    """
     names = models.ManyToManyField(
         AttributeTypeAndValue,
         verbose_name=_('Name'),
@@ -63,6 +91,12 @@ class GeneralNameDirectoryName(models.Model):
 
 
 class GeneralNameUniformResourceIdentifier(models.Model):
+    """GeneralNameUniformResourceIdentifier Model.
+
+    Entries of either SubjectAlternativeNames or IssuerAlternativeNames.
+
+    See RFC5280 for more information.
+    """
     value = models.CharField(max_length=16384, editable=False, verbose_name='Value', unique=True)
 
     def __str__(self) -> str:
@@ -70,7 +104,12 @@ class GeneralNameUniformResourceIdentifier(models.Model):
 
 
 class GeneralNameIpAddress(models.Model):
+    """GeneralNameIpAddress Model.
 
+    Entries of either SubjectAlternativeNames or IssuerAlternativeNames.
+
+    See RFC5280 for more information.
+    """
     class Meta:
         unique_together = ('ip_type', 'value')
 
@@ -88,6 +127,12 @@ class GeneralNameIpAddress(models.Model):
 
 
 class GeneralNameRegisteredId(models.Model):
+    """GeneralNameRegisteredId Model.
+
+    Entries of either SubjectAlternativeNames or IssuerAlternativeNames.
+
+    See RFC5280 for more information.
+    """
     value = models.CharField(max_length=256, editable=False, verbose_name='Value')
 
     def __str__(self) -> str:
@@ -95,7 +140,12 @@ class GeneralNameRegisteredId(models.Model):
 
 
 class GeneralNameOtherName(models.Model):
+    """GeneralNameOtherName Model.
 
+    Entries of either SubjectAlternativeNames or IssuerAlternativeNames.
+
+    See RFC5280 for more information.
+    """
     class Meta:
         unique_together = ('type_id', 'value')
 
@@ -107,10 +157,35 @@ class GeneralNameOtherName(models.Model):
 
 
 class CertificateExtension:
-    pass
+    """Abstract Base Class of Extension Models.
+
+    Due to a Metaclass conflict, this class is not derived from abc.ABC on purpose.
+    # TODO: check if this can be rectified
+    """
+
+    @classmethod
+    @abc.abstractmethod
+    def save_from_crypto_extensions(cls, crypto_basic_constraints_extension: x509.Extension) \
+            -> None | CertificateExtension:
+        """Stores the extension in the database.
+
+        Meant to be called within an atomic transaction while storing a certificate.
+
+        Args:
+            crypto_basic_constraints_extension (x509.CertificateExtension):
+                The x509.Extension object that contains all extensions of the certificate.
+
+        Returns:
+            trustpoint.pki.models.CertificateExtension: The instance of the saved extension.
+        """
+        pass
 
 
 class BasicConstraintsExtension(CertificateExtension, models.Model):
+    """BasicConstraintsExtension Model.
+
+    See RFC5280 for more information.
+    """
 
     class Meta:
         unique_together = ('critical', 'ca', 'path_length_constraint')
@@ -137,6 +212,17 @@ class BasicConstraintsExtension(CertificateExtension, models.Model):
     @classmethod
     def save_from_crypto_extensions(cls, crypto_basic_constraints_extension: x509.Extension) \
             -> None | BasicConstraintsExtension:
+        """Stores the BasicConstraintsExtension in the database.
+
+        Meant to be called within an atomic transaction while storing a certificate.
+
+        Args:
+            crypto_basic_constraints_extension (x509.CertificateExtension):
+                The x509.Extension object that contains all extensions of the certificate.
+
+        Returns:
+            trustpoint.pki.models.BasicConstraintsExtension: The instance of the saved BasicConstraintsExtension.
+        """
 
         try:
             existing_entry = BasicConstraintsExtension.objects.filter(
@@ -159,7 +245,10 @@ class BasicConstraintsExtension(CertificateExtension, models.Model):
 
 
 class KeyUsageExtension(CertificateExtension, models.Model):
+    """KeyUsageExtension Model.
 
+    See RFC5280 for more information.
+    """
     class Meta:
         unique_together = (
             'digital_signature',
@@ -197,6 +286,17 @@ class KeyUsageExtension(CertificateExtension, models.Model):
     @classmethod
     def save_from_crypto_extensions(cls, crypto_basic_constraints_extension: x509.Extension) \
             -> None | KeyUsageExtension:
+        """Stores the KeyUsageExtension in the database.
+
+        Meant to be called within an atomic transaction while storing a certificate.
+
+        Args:
+            crypto_basic_constraints_extension (x509.CertificateExtension):
+                The x509.Extension object that contains all extensions of the certificate.
+
+        Returns:
+            trustpoint.pki.models.KeyUsageExtension: The instance of the saved KeyUsageExtension.
+        """
 
         try:
             # noinspection PyProtectedMember
@@ -235,6 +335,11 @@ class KeyUsageExtension(CertificateExtension, models.Model):
 
 
 class AlternativeNameExtensionModel(models.Model):
+    """AlternativeNameExtensionModel Model.
+
+    See RFC5280 for more information.
+    """
+
     _alternative_name_extension_type: str
 
     critical = models.BooleanField(verbose_name=_('Critical'), editable=False)
@@ -382,10 +487,26 @@ class AlternativeNameExtensionModel(models.Model):
         directory_name.save()
 
     @classmethod
-    def _save_from_crypto_extensions(
-            cls, alt_name_ext: AlternativeNameExtensionModel,
+    def save_crypto_extensions(
+            cls,
+            alt_name_ext: SubjectAlternativeNameExtension | IssuerAlternativeNameExtension,
             crypto_basic_constraints_extension: x509.Extension) \
             -> None | AlternativeNameExtensionModel:
+        """Stores the AlternativeNameExtensionModel in the database.
+
+        Meant to be called within an atomic transaction while storing a certificate.
+
+        Args:
+            alt_name_ext (SubjectAlternativeNameExtension | IssuerAlternativeNameExtension):
+                The SubjectAlternativeNameExtension or IssuerAlternativeNameExtension instance to be saved.
+
+            crypto_basic_constraints_extension (x509.CertificateExtension):
+                The x509.Extension object that contains all extensions of the certificate.
+
+        Returns:
+            trustpoint.pki.models.AlternativeNameExtensionModel:
+                The instance of the saved AlternativeNameExtensionModel.
+        """
 
         for entry in crypto_basic_constraints_extension.value:
 
@@ -413,18 +534,34 @@ class AlternativeNameExtensionModel(models.Model):
 
 
 class IssuerAlternativeNameExtension(CertificateExtension, AlternativeNameExtensionModel):
+    """IssuerAlternativeNameExtension Model.
+
+    See RFC5280 for more information.
+    """
 
     _alternative_name_extension_type = 'issuer'
 
     @classmethod
     def save_from_crypto_extensions(cls, crypto_basic_constraints_extension: x509.Extension) \
             -> None | IssuerAlternativeNameExtension:
+        """Stores the IssuerAlternativeNameExtension in the database.
+
+        Meant to be called within an atomic transaction while storing a certificate.
+
+        Args:
+            crypto_basic_constraints_extension (x509.CertificateExtension):
+                The x509.Extension object that contains all extensions of the certificate.
+
+        Returns:
+            trustpoint.pki.models.IssuerAlternativeNameExtension:
+            The instance of the saved IssuerAlternativeNameExtension.
+        """
 
         try:
             alt_name_ext = IssuerAlternativeNameExtension(critical=crypto_basic_constraints_extension.critical)
             alt_name_ext.save()
 
-            return cls._save_from_crypto_extensions(
+            return super(IssuerAlternativeNameExtension, cls).save_crypto_extensions(
                 alt_name_ext=alt_name_ext,
                 crypto_basic_constraints_extension=crypto_basic_constraints_extension)
 
@@ -433,17 +570,34 @@ class IssuerAlternativeNameExtension(CertificateExtension, AlternativeNameExtens
 
 
 class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExtensionModel):
+    """SubjectAlternativeNameExtension Model.
+
+    See RFC5280 for more information.
+    """
+
     _alternative_name_extension_type = 'subject'
 
     @classmethod
     def save_from_crypto_extensions(cls, crypto_basic_constraints_extension: x509.Extension) \
             -> None | SubjectAlternativeNameExtension:
+        """Stores the SubjectAlternativeNameExtension in the database.
+
+        Meant to be called within an atomic transaction while storing a certificate.
+
+        Args:
+            crypto_basic_constraints_extension (x509.CertificateExtension):
+                The x509.Extension object that contains all extensions of the certificate.
+
+        Returns:
+            trustpoint.pki.models.SubjectAlternativeNameExtension:
+            The instance of the saved SubjectAlternativeNameExtension.
+        """
 
         try:
             alt_name_ext = SubjectAlternativeNameExtension(critical=crypto_basic_constraints_extension.critical)
             alt_name_ext.save()
 
-            return cls._save_from_crypto_extensions(
+            return super(SubjectAlternativeNameExtension, cls).save_crypto_extensions(
                 alt_name_ext=alt_name_ext,
                 crypto_basic_constraints_extension=crypto_basic_constraints_extension)
 
@@ -539,7 +693,10 @@ class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExten
 
 
 class Certificate(models.Model):
-    """X509 Certificate Model"""
+    """X509 Certificate Model.
+
+    See RFC5280 for more information.
+    """
 
     # ------------------------------------------------- Django Choices -------------------------------------------------
 
@@ -815,11 +972,6 @@ class Certificate(models.Model):
     # ext_subject_information_access = None
 
     def __str__(self) -> str:
-        """Retrieves human-readable string representation of the certificate instance.
-
-        Returns:
-            str: Human-readable string representation of the certificate instance.
-        """
         subject_common_name = self.common_name
         return f'Certificate(CN={subject_common_name})'
 
@@ -908,11 +1060,6 @@ class Certificate(models.Model):
     # ---------------------------------------------- Private save methods ----------------------------------------------
 
     def _save(self, *args, **kwargs) -> None:
-        """Save method for internal use only.
-
-        Returns:
-            None
-        """
         return super().save(*args, **kwargs)
 
     @classmethod
@@ -1057,7 +1204,7 @@ class Certificate(models.Model):
             NotImplementedError
         """
         raise NotImplementedError(
-            '.save() must not be called directly on a Certificate instance to protect the integrity. '
+            '.save() must not be called directly on a Certificate instance to protect the integrity of the database. '
             'Use .save_certificate() or .save_certificate_and_key() passing the required cryptography objects.'
         )
 
