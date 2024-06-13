@@ -26,20 +26,19 @@ class Command(BaseCommand):
         cert_types = ['root-ca', 'issuing-ca', 'ee']
         names = [f'{algo.value}-{cert_type}' for algo, cert_type in product(Algorithm, cert_types)]
         for name in names:
-            for cert_type in ['root-ca', 'issuing-ca', 'ee']:
-                cert = path / Path(f'{name}-cert.pem')
-                if cert_type in ['root-ca', 'issuing-ca']:
-                    ext_key = None
-                else:
-                    key = path / Path(f'{name}-key.pem')
-                    with open(key, 'rb') as f:
-                        key_pem = f.read()
-                    ext_key = serialization.load_pem_private_key(key_pem, password=None)
+            cert = path / Path(f'{name}-cert.pem')
+            if name.endswith('ee'):
+                key = path / Path(f'{name}-key.pem')
+                with open(key, 'rb') as f:
+                    key_pem = f.read()
+                ext_key = serialization.load_pem_private_key(key_pem, password=None)
+            else:
+                ext_key = None
 
-                with open(cert, 'rb') as f:
-                    cert_pem = f.read()
+            with open(cert, 'rb') as f:
+                cert_pem = f.read()
 
-                ext_cert = x509.load_pem_x509_certificate(cert_pem)
-                Certificate.save_certificate(cert=ext_cert, priv_key=ext_key)
+            ext_cert = x509.load_pem_x509_certificate(cert_pem)
+            Certificate.save_certificate_and_key(cert=ext_cert, priv_key=ext_key)
 
     print('\nDONE\n')

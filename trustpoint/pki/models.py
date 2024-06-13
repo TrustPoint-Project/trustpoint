@@ -8,7 +8,6 @@ from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509.extensions import ExtensionNotFound
 
 from django.db import models
@@ -17,9 +16,6 @@ from django.db import transaction
 from cryptography.x509.oid import NameOID
 
 from .oid import SignatureAlgorithmOid, PublicKeyAlgorithmOid, EllipticCurveOid, CertificateExtensionOid, NameOid
-
-
-RFC4514_ATTR_OVERWRITES = {NameOID.SERIAL_NUMBER: 'SerialNumber'}
 
 
 class AttributeTypeAndValue(models.Model):
@@ -570,7 +566,6 @@ class Certificate(models.Model):
     @property
     def signature_padding_scheme(self) -> str:
         return SignatureAlgorithmOid(self.signature_algorithm_oid).padding_scheme.verbose_name
-
     signature_padding_scheme.fget.short_description = _('Signature Padding Scheme')
 
     version = models.PositiveSmallIntegerField(verbose_name=_('Version'), choices=Version, editable=False)
@@ -589,8 +584,8 @@ class Certificate(models.Model):
     @property
     def public_key_algorithm(self) -> str:
         return PublicKeyAlgorithmOid(self.public_key_algorithm_oid).verbose_name
-
     public_key_algorithm.fget.short_description = _('Public Key Algorithm')
+
     public_key_algorithm_oid = models.CharField(
         _('Public Key Algorithm OID'),
         max_length=256,
@@ -607,7 +602,6 @@ class Certificate(models.Model):
     @property
     def public_key_ec_curve(self) -> str:
         return EllipticCurveOid(self.public_key_ec_curve_oid).name
-
     public_key_ec_curve.fget.short_description = _('Public Key Curve (ECC)')
 
     public_key_size = models.PositiveIntegerField(_('Public Key Size'), editable=False)
@@ -622,13 +616,21 @@ class Certificate(models.Model):
     @property
     def signature_algorithm(self) -> str:
         return SignatureAlgorithmOid(self.signature_algorithm_oid).verbose_name
-
     signature_algorithm.fget.short_description = _('Signature Algorithm')
 
     subject = models.ManyToManyField(
         AttributeTypeAndValue,
         verbose_name=_('Subject'),
         editable=False)
+
+    @property
+    def common_name(self) -> str:
+        cn = self.subject.filter(oid=NameOid.COMMON_NAME.dotted_string).first()
+        if cn:
+            return cn.value
+        return ''
+    common_name.fget.short_description = _('Common Name')
+
 
     subject_public_bytes = models.CharField(verbose_name=_('Subject Public Bytes'), max_length=2048, editable=False)
     issuer_public_bytes = models.CharField(verbose_name=_('Issuer Public Bytes'), max_length=2048, editable=False)
@@ -656,6 +658,15 @@ class Certificate(models.Model):
         null=True,
         blank=True,
         unique=True)
+
+    def get_crypto_private_key(self) -> None | rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey:
+        if self.private_key_pem:
+            return serialization.load_pem_private_key(self.private_key_pem.encode(), password=None)
+        else:
+            return None
+
+    def get_crypto_certificate(self) -> x509.Certificate:
+        return x509.load_pem_x509_certificate(self.cert_pem.encode())
 
     @property
     def cert_der(self) -> str:
