@@ -941,23 +941,33 @@ class Certificate(models.Model):
             return None
         return self.issuer.get_cert_as_crypto()
 
-    def get_root_ca_cert(self):
-        pass
+    def get_root_ca_cert(self) -> Certificate:
+        cert = self
+        while True:
+            if cert.issuer is None:
+                return cert
+            cert = cert.issuer
 
-    def get_root_ca_cert_as_pem(self):
-        pass
+    def get_root_ca_cert_as_pem(self) -> str:
+        return self.get_root_ca_cert().get_cert_as_pem()
 
-    def get_root_ca_cert_as_der(self):
-        pass
+    def get_root_ca_cert_as_der(self) -> bytes:
+        return self.get_root_ca_cert().get_cert_as_der()
 
-    def get_root_ca_cert_as_crypto(self):
-        pass
+    def get_root_ca_cert_as_crypto(self) -> x509.Certificate:
+        return self.get_root_ca_cert().get_cert_as_crypto()
 
-    def get_cert_chain(self):
-        pass
+    def get_cert_chain(self) -> list[Certificate]:
+        certs = [self]
+        cert = self.issuer
+        while True:
+            if cert is None:
+                return list(reversed(certs))
+            certs.append(cert)
+            cert = cert.issuer
 
-    def get_cert_chain_as_pem(self):
-        pass
+    def get_cert_chain_as_pem(self) -> list[str]:
+        return [cert.get_cert_as_pem() for cert in self.get_cert_chain()]
 
     def get_cert_chain_as_crypto(self) -> list[x509.Certificate]:
         """Retrieves the certificate as cryptography.x509.Certificate objects.
@@ -968,18 +978,20 @@ class Certificate(models.Model):
                 The first element will be the Root CA certificate.
                 The last element will be the certificate on which this method was called on.
         """
-        cert_crypto = self.get_cert_as_crypto()
-        cert = self
-        cert_chain = [cert_crypto]
-        if cert_crypto.subject.public_bytes() == cert_crypto.issuer.public_bytes():
-            return cert_chain
+        certs = self.get_cert_chain()
+        certs_crypto = []
+        for cert in certs:
+            certs_crypto.append(cert.get_cert_as_crypto())
+        return certs_crypto
 
-        while True:
-            if cert.issuer is None:
-                break
-            cert_chain.append(cert.issuer.get_cert_as_crypto())
-            cert = cert.issuer
-        return list(reversed(cert_chain))
+    def get_issued_certs(self) -> list[Certificate]:
+        return self.issued_certs
+
+    def get_issued_certs_as_pem(self) -> list[str]:
+        return [cert.get_cert_as_pem() for cert in self.get_issued_certs()]
+
+    def get_issued_certs_as_der(self) -> list[bytes]:
+        return [cert.get_cert_as_der() for cert in self.get_issued_certs()]
 
     def get_issued_certs_as_crypto(self) -> list[x509.Certificate]:
         """Retrieves all certificates that were issued by this certificate as cryptography.x509.Certificate objects.
@@ -989,10 +1001,7 @@ class Certificate(models.Model):
                 Certificates that have been issued by the certificate on which this method was called on.
                 There is no particular order of these.
         """
-        issued_certs = []
-        for cert in self.issued_certs:
-            issued_certs.append(cert.get_cert_as_crypto())
-        return issued_certs
+        return [cert.get_cert_as_crypto() for cert in self.get_issued_certs()]
 
     # --------------------------------------------------- Extensions ---------------------------------------------------
     # order of extensions follows RFC5280
