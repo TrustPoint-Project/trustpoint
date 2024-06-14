@@ -919,14 +919,35 @@ class Certificate(models.Model):
         return serialization.load_pem_private_key(self.private_key_pem.encode(), password=None)
 
     def get_issuer_cert(self) -> None | Certificate:
+        """Retrieves the issuer certificate as django Certificate model object.
+
+        Returns:
+            trustpoint.pki.models.Certificate:
+                Issuer certificate as cryptography.x509.Certificate object.
+                None, if the current certificate is self-signed.
+        """
         return self.issuer
 
-    def get_issuer_cert_as_pem(self):
+    def get_issuer_cert_as_pem(self) -> None | str:
+        """Retrieves the issuer certificate as PEM encoded string.
+
+        Returns:
+            None | str:
+                Issuer certificate PEM encoded string.
+                None, if the current certificate is self-signed.
+        """
         if self.issuer is None:
             return None
         return self.issuer.get_cert_as_pem()
 
-    def get_issuer_cert_as_der(self):
+    def get_issuer_cert_as_der(self) -> None | bytes:
+        """Retrieves the issuer certificate as DER encoded bytes.
+
+        Returns:
+            None | bytes:
+                Issuer certificate DER encoded bytes.
+                None, if the current certificate is self-signed.
+        """
         if self.issuer is None:
             return None
         return self.issuer.get_cert_as_der()
@@ -935,13 +956,22 @@ class Certificate(models.Model):
         """Retrieves the issuer certificate as cryptography.x509.Certificate object
 
         Returns:
-            cryptography.x509.Certificate: Issuer certificate as cryptography.x509.Certificate object.
+            cryptography.x509.Certificate:
+                Issuer certificate as cryptography.x509.Certificate object.
+                None, if the current certificate is self-signed.
         """
         if self.issuer is None:
             return None
         return self.issuer.get_cert_as_crypto()
 
     def get_root_ca_cert(self) -> Certificate:
+        """Retrieves the root ca certificate as django Certificate model object.
+
+        Returns:
+            trustpoint.pki.models.Certificate:
+                Root CA certificate as cryptography.x509.Certificate object.
+                Returns self, if the current certificate is a Root CA or self-signed certificate.
+        """
         cert = self
         while True:
             if cert.issuer is None:
