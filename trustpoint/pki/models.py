@@ -1,5 +1,10 @@
 """Module that contains all models corresponding to the PKI app."""
 
+# TODO: Unit Tests!
+# TODO: Unique Identifiers (even if deprecated in X.509 v3)
+# TODO: Proper path validations
+# TODO: Porper check if root ca cert / self-signed cert
+
 
 from __future__ import annotations
 
@@ -10,6 +15,7 @@ from ipaddress import IPv4Address, IPv6Address, IPv4Network, IPv6Network
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.x509.extensions import ExtensionNotFound
 from django.db import models
@@ -20,6 +26,7 @@ from .oid import SignatureAlgorithmOid, PublicKeyAlgorithmOid, EllipticCurveOid,
 
 
 # ----------------------------------------- Subject / Issuer Field Structures ------------------------------------------
+
 
 class AttributeTypeAndValue(models.Model):
     """AttributeTypeAndValue Model.
@@ -835,8 +842,6 @@ class Certificate(models.Model):
         return EllipticCurveOid(self.spki_ec_curve_oid).name
     spki_ec_curve.fget.short_description = _('Public Key Curve (ECC)')
 
-    # TODO: Unique Identifiers (even if deprecated in X.509 v3)
-
     # ---------------------------------------------------- Raw Data ----------------------------------------------------
 
     cert_pem = models.CharField(verbose_name=_('Certificate (PEM)'), max_length=65536, editable=False, unique=True)
@@ -852,6 +857,7 @@ class Certificate(models.Model):
         unique=True)
 
     # --------------------------------------------- Data Retrieval Methods ---------------------------------------------
+
     def get_cert_as_pem(self) -> str:
         """Retrieves the certificate as PEM string.
 
@@ -911,6 +917,82 @@ class Certificate(models.Model):
             rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey: Public key as cryptography private key object.
         """
         return serialization.load_pem_private_key(self.private_key_pem.encode(), password=None)
+
+    def get_issuer_cert(self) -> None | Certificate:
+        return self.issuer
+
+    def get_issuer_cert_as_pem(self):
+        if self.issuer is None:
+            return None
+        return self.issuer.get_cert_as_pem()
+
+    def get_issuer_cert_as_der(self):
+        if self.issuer is None:
+            return None
+        return self.issuer.get_cert_as_der()
+
+    def get_issuer_cert_as_crypto(self) -> None | x509.Certificate:
+        """Retrieves the issuer certificate as cryptography.x509.Certificate object
+
+        Returns:
+            cryptography.x509.Certificate: Issuer certificate as cryptography.x509.Certificate object.
+        """
+        if self.issuer is None:
+            return None
+        return self.issuer.get_cert_as_crypto()
+
+    def get_root_ca_cert(self):
+        pass
+
+    def get_root_ca_cert_as_pem(self):
+        pass
+
+    def get_root_ca_cert_as_der(self):
+        pass
+
+    def get_root_ca_cert_as_crypto(self):
+        pass
+
+    def get_cert_chain(self):
+        pass
+
+    def get_cert_chain_as_pem(self):
+        pass
+
+    def get_cert_chain_as_crypto(self) -> list[x509.Certificate]:
+        """Retrieves the certificate as cryptography.x509.Certificate objects.
+
+        Returns:
+            list[cryptography.x509.Certificate]:
+                Certificate chain as cryptography.x509.Certificate object.
+                The first element will be the Root CA certificate.
+                The last element will be the certificate on which this method was called on.
+        """
+        cert_crypto = self.get_cert_as_crypto()
+        cert = self
+        cert_chain = [cert_crypto]
+        if cert_crypto.subject.public_bytes() == cert_crypto.issuer.public_bytes():
+            return cert_chain
+
+        while True:
+            if cert.issuer is None:
+                break
+            cert_chain.append(cert.issuer.get_cert_as_crypto())
+            cert = cert.issuer
+        return list(reversed(cert_chain))
+
+    def get_issued_certs_as_crypto(self) -> list[x509.Certificate]:
+        """Retrieves all certificates that were issued by this certificate as cryptography.x509.Certificate objects.
+
+        Returns:
+            list[cryptography.x509.Certificate]:
+                Certificates that have been issued by the certificate on which this method was called on.
+                There is no particular order of these.
+        """
+        issued_certs = []
+        for cert in self.issued_certs:
+            issued_certs.append(cert.get_cert_as_crypto())
+        return issued_certs
 
     # --------------------------------------------------- Extensions ---------------------------------------------------
     # order of extensions follows RFC5280
@@ -1193,6 +1275,50 @@ class Certificate(models.Model):
 
         return cert_model
 
+    # ------------------------------------------------------ Util ------------------------------------------------------
+
+    @staticmethod
+    def _sort_cert_chain(certs: list[x509.Certificate]) -> list[x509.Certificate]:
+        """Sorts a list of x509.Certificate objects.
+
+        This expects certificates all being part of a single certificate chain.
+
+        Args:
+            certs (list[x509.Certificate]):
+            Expects all certificates to be part of single certificate chain.
+            If one or more certificates are included, that are not part of the chain, a ValueError is raised.
+
+        Returns:
+            list[x509.Certificate]:
+                Sorted list of x509.Certificate objects. The first element is the Root CA Certificate.
+                If the list contains more than a single Root CA Certificate,
+                the last element will be an Intermediate CA, Issuing CA or End-Entity Certificate.
+
+        Raises:
+            ValueError: If the list cannot be sorted.
+        """
+
+        sorted_certs = []
+        for cert in certs:
+            # TODO: proper validation
+            if cert.subject.public_bytes() == cert.issuer.public_bytes():
+                sorted_certs.append(cert)
+                break
+        else:
+            raise ValueError('Failed to sort list. No Root CA Certificate found.')
+
+        while True:
+            for cert in certs:
+                # TODO: proper path validation
+                if cert != sorted_certs[0] and cert.issuer.public_bytes() == sorted_certs[-1].subject.public_bytes():
+                    sorted_certs.append(cert)
+                    break
+            else:
+                if len(certs) != len(sorted_certs):
+                    raise ValueError(
+                        'Failed to sort list. Contains certificates that are not part of the same certificate chain.')
+                return sorted_certs
+
     # ---------------------------------------------- Public save methods -----------------------------------------------
 
     def save(self, *args, **kwargs) -> None:
@@ -1212,7 +1338,7 @@ class Certificate(models.Model):
     def save_certificate_and_key(
             cls,
             cert: x509.Certificate,
-            priv_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey = None) -> Certificate:
+            priv_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey) -> Certificate:
         """Store the certificate and corresponding private key in the database and / or secure storage.
 
         Returns:
@@ -1221,13 +1347,36 @@ class Certificate(models.Model):
         return cls._save_certificate_and_key(cert=cert, priv_key=priv_key)
 
     @classmethod
-    def save_certificate(cls, cert: x509.Certificate) -> Certificate:
+    def save_certificate(cls, cert: x509.Certificate, exist_ok: bool = False) -> Certificate:
         """Store the certificate in the database.
 
         Returns:
             trustpoint.pki.models.Certificate: The certificate object that has just been saved.
         """
-        return cls._save_certificate_and_key(cert=cert, priv_key=None)
+        return cls._save_certificate_and_key(cert=cert, priv_key=None, exist_ok=exist_ok)
+
+    @classmethod
+    def save_certificate_chain(cls, certs: list[x509.Certificate]) -> Certificate:
+        sorted_certs = cls._sort_cert_chain(certs)
+        last_cert = sorted_certs.pop(-1)
+        for cert in sorted_certs:
+            cls._save_certificate_and_key(cert, priv_key=None, exist_ok=True)
+        return cls._save_certificate_and_key(last_cert, priv_key=None)
+
+    @classmethod
+    def save_certificate_chain_and_key(
+            cls,
+            certs: list[x509.Certificate],
+            priv_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey) -> Certificate:
+        sorted_certs = cls._sort_cert_chain(certs)
+        last_cert = sorted_certs.pop(-1)
+        for cert in sorted_certs:
+            cls.save_certificate(cert=cert, exist_ok=True)
+        return cls.save_certificate_and_key(cert=last_cert, priv_key=priv_key)
+
+    @classmethod
+    def save_pkcs12(cls, pkcs12_obj: pkcs12, password: None | bytes = None) -> Certificate:
+        raise NotImplementedError('TODO: Implement this method.')
 
 
 class TrustStore(models.Model):
