@@ -21,7 +21,11 @@ jobs:
       with:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
         password: ${{ secrets.DOCKER_HUB_ACCESS_TOKEN }}
+  deploy:
 
+    runs-on: ubuntu-latest
+
+    steps:
     - name: Push the Docker image
       run: |
         docker tag trustpoint:${{ github.sha }} ${{ secrets.DOCKER_HUB_USERNAME }}/trustpoint:${{ github.sha }}
