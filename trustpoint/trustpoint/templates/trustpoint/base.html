@@ -12,7 +12,6 @@
         <link rel="stylesheet" href="{% static 'css/bootstrap-icons.min.css' %}">
         <link rel="stylesheet" href="{% static 'css/fonts/bootstrap-icons.woff2' %}">
         <link rel="stylesheet" href="{% static 'css/trustpoint.css' %}">
-        <link rel="stylesheet" href="{% static 'css/sysconf.css' %}">
         <link rel="icon" href="{% static 'img/favicon-32.png' %}">
         {% block head %}{% endblock head %}
     </head>
@@ -55,7 +54,7 @@
             </div>
 
             <div class="tp-menu-group">
-                <a href="" class="tp-menu-head {% if page_category == 'pki' %}tp-menu-active{% endif %}">
+                <a href="{% url 'pki:certificates' %}" class="tp-menu-head {% if page_category == 'pki' %}tp-menu-active{% endif %}">
                     <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-key"/></svg>
                     {% translate "PKI" %}
@@ -66,11 +65,7 @@
                 <div class="tp-menu-collapse {% if page_category == 'pki' %}show{% endif %}">
 {#                    <a href="{% url 'pki:endpoint_profiles' %}" class="tp-menu-item {% if page_name == 'endpoint_profiles' %}tp-menu-active{% endif %}">{% trans "Endpoint Profiles" %}</a>#}
 {#                    <a href="{% url 'pki:issuing_cas' %}" class="tp-menu-item {% if page_name == 'issuing_cas' %}tp-menu-active{% endif %}">{% trans "Issuing CAs" %}</a>#}
-{#                    <a href="{% url 'pki:root_cas' %}" class="tp-menu-item {% if page_name == 'root_cas' %}tp-menu-active{% endif %}">{% trans "Root CAs" %}</a>#}
                     <a href="{% url 'pki:certificates' %}" class="tp-menu-item {% if page_name == 'certificates' %}tp-menu-active{% endif %}">{% trans "Certificates" %}</a>
-                    <a href="{% url 'pki:credentials' %}" class="tp-menu-item {% if page_name == 'credentials' %}tp-menu-active{% endif %}">{% trans "Credentials" %}</a>
-
-                    <a href="{% url 'pki:truststores' %}" class="tp-menu-item {% if page_name == 'truststores' %}tp-menu-active{% endif %}">{% trans "Truststores" %}</a>
                 </div>
             </div>
 

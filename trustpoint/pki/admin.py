@@ -7,8 +7,7 @@ from .models import (
     KeyUsageExtension,
     AttributeTypeAndValue,
     IssuerAlternativeNameExtension,
-    SubjectAlternativeNameExtension,
-    TrustStore)
+    SubjectAlternativeNameExtension)
 
 
 class TrustStoreAdmin(admin.ModelAdmin):
@@ -69,8 +68,8 @@ class CertificateAdmin(admin.ModelAdmin):
         'certificate_hierarchy_type',
         'certificate_hierarchy_depth',
 
-        'common_name',
         'sha256_fingerprint',
+        'common_name',
 
         'signature_algorithm_oid',
         'signature_algorithm',
@@ -106,7 +105,6 @@ class CertificateAdmin(admin.ModelAdmin):
     )
 
 
-admin.site.register(TrustStore, TrustStoreAdmin)
 admin.site.register(SubjectAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(IssuerAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(AttributeTypeAndValue, AttributeTypeAndValueAdmin)

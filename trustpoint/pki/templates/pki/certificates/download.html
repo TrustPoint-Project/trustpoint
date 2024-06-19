@@ -1,0 +1,52 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load crispy_forms_filters %}
+{% block content %}
+
+    <form method="GET">
+        {% csrf_token %}
+
+        <div class="card tp-card-centered">
+
+                <div class="card-header">
+                    <div class="">
+                        <h1>{% trans "Download Certificates" %}</h1>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="tp-card-centered-content">
+                    <div class="tp-card-split">
+                        <div>Number of selected Certificates</div>
+                        <div id="cert-count">{{ cert_count }}</div>
+                    </div>
+                    <hr>
+
+                    {% for cert in certs %}
+                        <div class="tp-card-split">
+                            <div>Certificate {{ forloop.counter }}</div>
+                            <div><a class="btn btn-primary" href="{% url 'pki:certificates-details' pks=cert.id %}">Details</a></div>
+                        </div>
+                        <br>
+                        <div class="tp-card-split">
+                            <div>Common Name</div>
+                            <div>{{ cert.common_name }}</div>
+                        </div>
+                        <div class="tp-card-split">
+                            <div>Serial Number</div>
+                            <div>{{ cert.serial_number }}</div>
+                        </div>
+                        <hr>
+
+                    {% endfor %}
+                        {{ form|crispy }}
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="tp-card-btn-footer">
+                        <a href="{% url 'pki:certificates' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                        <button type="submit" class="btn btn-primary">{% trans "Download" %}</button>
+                    </div>
+                </div>
+        </div>
+    </form>
+{% endblock content %}

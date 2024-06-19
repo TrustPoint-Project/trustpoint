@@ -8,6 +8,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 import abc
 
 from ipaddress import IPv4Address, IPv6Address, IPv4Network, IPv6Network
@@ -23,6 +25,9 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
 from .oid import SignatureAlgorithmOid, PublicKeyAlgorithmOid, EllipticCurveOid, CertificateExtensionOid, NameOid
+
+if TYPE_CHECKING:
+    from typing import Any
 
 
 # ----------------------------------------- Subject / Issuer Field Structures ------------------------------------------
@@ -739,14 +744,15 @@ class Certificate(models.Model):
 
     certificate_hierarchy_depth = models.PositiveSmallIntegerField(verbose_name=_('Hierarchy Depth'), editable=False)
 
-    @property
-    def common_name(self) -> str:
-        cn = self.subject.filter(oid=NameOid.COMMON_NAME.dotted_string).first()
-        if cn:
-            return cn.value
-        return ''
-    common_name.fget.short_description = _('Common Name')
-
+    # TODO: This is kind of a hack.
+    # TODO: This information is already available through the subject relation
+    # TODO: Property would not be sortable.
+    # TODO: We may want to resolve this later by modifying the queryset within the view
+    common_name = models.CharField(
+        verbose_name=_('Common Name'),
+        max_length=256,
+        default=''
+    )
     sha256_fingerprint = models.CharField(verbose_name=_('Fingerprint (SHA256)'), max_length=256, editable=False)
 
     # ------------------------------------------ Certificate Fields (Header) -------------------------------------------
@@ -820,27 +826,31 @@ class Certificate(models.Model):
         choices=PUBLIC_KEY_ALGORITHM_OID)
 
     # Subject Public Key Info - Algorithm Name
-    @property
-    def spki_algorithm(self) -> str:
-        return PublicKeyAlgorithmOid(self.spki_algorithm_oid).verbose_name
-    spki_algorithm.fget.short_description = _('Public Key Algorithm')
+    spki_algorithm = models.CharField(
+        verbose_name=_('Public Key Algorithm'),
+        max_length=256,
+        editable=False,
+        choices=PUBLIC_KEY_ALGORITHM_OID
+    )
 
     # Subject Public Key Info - Key Size
     spki_key_size = models.PositiveIntegerField(_('Public Key Size'), editable=False)
 
     # Subject Public Key Info - Curve OID if ECC, None otherwise
     spki_ec_curve_oid = models.CharField(
-        _('Public Key Curve OID (ECC)'),
+        verbose_name=_('Public Key Curve OID (ECC)'),
         max_length=256,
         editable=False,
         choices=PUBLIC_KEY_EC_CURVE_OID,
         default=EllipticCurveOid.NONE.dotted_string)
 
     # Subject Public Key Info - Curve Name if ECC, None otherwise
-    @property
-    def spki_ec_curve(self) -> str:
-        return EllipticCurveOid(self.spki_ec_curve_oid).name
-    spki_ec_curve.fget.short_description = _('Public Key Curve (ECC)')
+    spki_ec_curve = models.CharField(
+        verbose_name=_('Public Key Curve (ECC)'),
+        max_length=256,
+        editable=False,
+        choices=PUBLIC_KEY_EC_CURVE_OID,
+        default=EllipticCurveOid.NONE.name)
 
     # ---------------------------------------------------- Raw Data ----------------------------------------------------
 
@@ -858,13 +868,13 @@ class Certificate(models.Model):
 
     # --------------------------------------------- Data Retrieval Methods ---------------------------------------------
 
-    def get_cert_as_pem(self) -> str:
+    def get_cert_as_pem(self) -> bytes:
         """Retrieves the certificate as PEM string.
 
         Returns:
-            str: Certificate as PEM string.
+            bytes: Certificate as PEM string.
         """
-        return self.cert_pem
+        return self.cert_pem.encode()
 
     def get_cert_as_der(self) -> bytes:
         """Retrieves the certificate as DER bytes.
@@ -1015,7 +1025,7 @@ class Certificate(models.Model):
         return certs_crypto
 
     def get_issued_certs(self) -> list[Certificate]:
-        return self.issued_certs
+        return self.issued_certs.all()
 
     def get_issued_certs_as_pem(self) -> list[str]:
         return [cert.get_cert_as_pem() for cert in self.get_issued_certs()]
@@ -1093,8 +1103,7 @@ class Certificate(models.Model):
     # ext_subject_information_access = None
 
     def __str__(self) -> str:
-        subject_common_name = self.common_name
-        return f'Certificate(CN={subject_common_name})'
+        return f'Certificate(CN={self.common_name})'
 
     @classmethod
     def _cert_in_db(cls, cert: x509.Certificate) -> None | Certificate:
@@ -1166,13 +1175,13 @@ class Certificate(models.Model):
         return subject
 
     @staticmethod
-    def _get_spki_info(cert: x509.Certificate) -> tuple[str, int, str]:
+    def _get_spki_info(cert: x509.Certificate) -> tuple[PublicKeyAlgorithmOid, int, EllipticCurveOid]:
         if isinstance(cert.public_key(), rsa.RSAPublicKey):
-            spki_algorithm_oid = PublicKeyAlgorithmOid.RSA.dotted_string
-            spki_ec_curve_oid = EllipticCurveOid.NONE.dotted_string
+            spki_algorithm_oid = PublicKeyAlgorithmOid.RSA
+            spki_ec_curve_oid = EllipticCurveOid.NONE
         elif isinstance(cert.public_key(), ec.EllipticCurvePublicKey):
-            spki_algorithm_oid = PublicKeyAlgorithmOid.EC.dotted_string
-            spki_ec_curve_oid = EllipticCurveOid[cert.public_key().curve.name.upper()].dotted_string
+            spki_algorithm_oid = PublicKeyAlgorithmOid.ECC
+            spki_ec_curve_oid = EllipticCurveOid[cert.public_key().curve.name.upper()]
         else:
             raise ValueError('Subject Public Key Info contains an unsupported key type.')
 
@@ -1259,9 +1268,11 @@ class Certificate(models.Model):
             not_valid_before=not_valid_before,
             not_valid_after=not_valid_after,
             subject_public_bytes=subject_public_bytes,
-            spki_algorithm_oid=spki_algorithm_oid,
+            spki_algorithm_oid=spki_algorithm_oid.dotted_string,
+            spki_algorithm=spki_algorithm_oid.name,
             spki_key_size=spki_key_size,
             spki_ec_curve_oid=spki_ec_curve_oid,
+            spki_ec_curve=spki_ec_curve_oid.verbose_name,
             cert_pem=cert_pem,
             public_key_pem=public_key_pem,
             private_key_pem=priv_key_pem
@@ -1308,6 +1319,9 @@ class Certificate(models.Model):
             subject: list[tuple[str, str]]) -> 'Certificate':
 
         cert_model._save()
+        for oid, value in subject:
+            if oid == NameOid.COMMON_NAME.dotted_string:
+                cert_model.common_name = value
         cls._save_subject(cert_model, subject)
         cls._save_extensions(cert_model, cert)
         cert_model._save()
@@ -1418,59 +1432,59 @@ class Certificate(models.Model):
         raise NotImplementedError('TODO: Implement this method.')
 
 
-class TrustStore(models.Model):
-    unique_name = models.CharField(max_length=30, editable=False)
-    leaf_certs = models.ManyToManyField(Certificate, related_name='truststores', verbose_name='Leaf Certificates')
-
-    def __str__(self) -> str:
-        return f'TrustStore(name={self.unique_name})'
-
-    @classmethod
-    def save_trust_store(cls, unique_name, trust_store: list[x509.Certificate]) -> None:
-        if cls.objects.filter(unique_name=unique_name).exists():
-            raise ValueError(f'A Trust-Store with the unique name {unique_name} already exists.')
-
-        subjects = [cert.subject.public_bytes() for cert in trust_store]
-        issuers = [cert.issuer.public_bytes() for cert in trust_store]
-        last_cert_subjects_in_chains = [subject for subject in subjects if subject not in issuers]
-        leaf_certs = [
-            cert for cert in trust_store if cert.subject.public_bytes() in last_cert_subjects_in_chains]
-        cert_chains = []
-
-        for leaf_cert in leaf_certs:
-            cert_chain = [leaf_cert]
-            while True:
-                if leaf_cert.subject.public_bytes() == leaf_cert.issuer.public_bytes():
-                    break
-                for cert in trust_store:
-                    if cert.subject.public_bytes() == leaf_cert.issuer.public_bytes():
-                        cert_chain.append(cert)
-                        leaf_cert = cert
-                        break
-                else:
-                    raise ValueError('Trust-Store contains orphaned certificates.')
-
-            cert_chains.append(cert_chain)
-
-        cls._save_trust_store(unique_name=unique_name, cert_chains=cert_chains)
-
-    @classmethod
-    @transaction.atomic
-    def _save_trust_store(
-            cls,
-            unique_name,
-            cert_chains: list[list[x509.Certificate]]) -> None:
-
-        trust_store = TrustStore(unique_name=unique_name)
-        trust_store.save()
-
-        # TODO: check via sha256 fingerprint instead of subject
-        for cert_chain in cert_chains:
-            c = None
-            for cert in reversed(cert_chain):
-                if Certificate.objects.filter(subject_public_bytes=cert.subject.public_bytes().hex().upper()).exists():
-                    continue
-                c = Certificate.save_certificate(cert=cert)
-            trust_store.leaf_certs.add(c)
-
-        trust_store.save()
+# class TrustStore(models.Model):
+#     unique_name = models.CharField(max_length=30, editable=False)
+#     leaf_certs = models.ManyToManyField(Certificate, related_name='truststores', verbose_name='Leaf Certificates')
+# 
+#     def __str__(self) -> str:
+#         return f'TrustStore(name={self.unique_name})'
+# 
+#     @classmethod
+#     def save_trust_store(cls, unique_name, trust_store: list[x509.Certificate]) -> None:
+#         if cls.objects.filter(unique_name=unique_name).exists():
+#             raise ValueError(f'A Trust-Store with the unique name {unique_name} already exists.')
+# 
+#         subjects = [cert.subject.public_bytes() for cert in trust_store]
+#         issuers = [cert.issuer.public_bytes() for cert in trust_store]
+#         last_cert_subjects_in_chains = [subject for subject in subjects if subject not in issuers]
+#         leaf_certs = [
+#             cert for cert in trust_store if cert.subject.public_bytes() in last_cert_subjects_in_chains]
+#         cert_chains = []
+# 
+#         for leaf_cert in leaf_certs:
+#             cert_chain = [leaf_cert]
+#             while True:
+#                 if leaf_cert.subject.public_bytes() == leaf_cert.issuer.public_bytes():
+#                     break
+#                 for cert in trust_store:
+#                     if cert.subject.public_bytes() == leaf_cert.issuer.public_bytes():
+#                         cert_chain.append(cert)
+#                         leaf_cert = cert
+#                         break
+#                 else:
+#                     raise ValueError('Trust-Store contains orphaned certificates.')
+# 
+#             cert_chains.append(cert_chain)
+# 
+#         cls._save_trust_store(unique_name=unique_name, cert_chains=cert_chains)
+# 
+#     @classmethod
+#     @transaction.atomic
+#     def _save_trust_store(
+#             cls,
+#             unique_name,
+#             cert_chains: list[list[x509.Certificate]]) -> None:
+# 
+#         trust_store = TrustStore(unique_name=unique_name)
+#         trust_store.save()
+# 
+#         # TODO: check via sha256 fingerprint instead of subject
+#         for cert_chain in cert_chains:
+#             c = None
+#             for cert in reversed(cert_chain):
+#                 if Certificate.objects.filter(subject_public_bytes=cert.subject.public_bytes().hex().upper()).exists():
+#                     continue
+#                 c = Certificate.save_certificate(cert=cert)
+#             trust_store.leaf_certs.add(c)
+# 
+#         trust_store.save()

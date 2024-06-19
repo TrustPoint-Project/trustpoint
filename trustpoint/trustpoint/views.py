@@ -49,7 +49,7 @@ class ContextDataMixin:
         prefix = 'context_'
         for attr in dir(self):
             if attr.startswith(prefix) and len(attr) > len(prefix):
-                kwargs.setdefault(attr[len(prefix) :], getattr(self, attr))
+                kwargs.setdefault(attr[len(prefix):], getattr(self, attr))
 
         super_get_context_method = getattr(super(), 'get_context_data', None)
         if super_get_context_method is None:

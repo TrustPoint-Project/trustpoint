@@ -243,7 +243,7 @@ class EllipticCurveOid(Enum):
 
     # OID, verbose_name, key_size
 
-    NONE = ('None', _('None (Not applicable)'), 0)
+    NONE = ('None', '', 0)
     SECP192R1 = ('1.2.840.10045.3.1.1', _('SECP192R1'), 192)
     SECP224R1 = ('1.3.132.0.33', _('SECP224R1'), 224)
     SECP256K1 = ('1.3.132.0.10', _('SECP256K1'), 256)
@@ -286,7 +286,7 @@ class RsaPaddingScheme(Enum):
 
 
 class PublicKeyAlgorithmOid(Enum):
-    EC = ('1.2.840.10045.2.1', _('Elliptic Curve Cryptography (ECC)'))
+    ECC = ('1.2.840.10045.2.1', _('ECC'))
     RSA = ('1.2.840.113549.1.1.1', _('RSA'))
     ED25519 = ('1.3.101.112', _('ED25519'))
     ED448 = ('1.3.101.113', _('ED448'))
@@ -322,19 +322,19 @@ class SignatureAlgorithmOid(Enum):
     RSASSA_PSS = (
         '1.2.840.113549.1.1.10', _('RSA (RSASSA-PSS), Padding: PSS'), PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PSS)
 
-    ECDSA_SHA1 = ('1.2.840.10045.4.1', _('ECDSA with SHA1'), PublicKeyAlgorithmOid.EC, RsaPaddingScheme.NONE)
-    ECDSA_SHA224 = ('1.2.840.10045.4.3.1', _('ECDSA with SHA224'), PublicKeyAlgorithmOid.EC, RsaPaddingScheme.NONE)
-    ECDSA_SHA256 = ('1.2.840.10045.4.3.2', _('ECDSA with SHA256'), PublicKeyAlgorithmOid.EC, RsaPaddingScheme.NONE)
-    ECDSA_SHA384 = ('1.2.840.10045.4.3.3', _('ECDSA with SHA384'), PublicKeyAlgorithmOid.EC, RsaPaddingScheme.NONE)
-    ECDSA_SHA512 = ('1.2.840.10045.4.3.4', _('ECDSA with SHA512'), PublicKeyAlgorithmOid.EC, RsaPaddingScheme.NONE)
+    ECDSA_SHA1 = ('1.2.840.10045.4.1', _('ECDSA with SHA1'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
+    ECDSA_SHA224 = ('1.2.840.10045.4.3.1', _('ECDSA with SHA224'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
+    ECDSA_SHA256 = ('1.2.840.10045.4.3.2', _('ECDSA with SHA256'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
+    ECDSA_SHA384 = ('1.2.840.10045.4.3.3', _('ECDSA with SHA384'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
+    ECDSA_SHA512 = ('1.2.840.10045.4.3.4', _('ECDSA with SHA512'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
     ECDSA_SHA3_224 = (
-        '2.16.840.1.101.3.4.3.9', _('ECDSA with SHA3-224'), PublicKeyAlgorithmOid.EC, RsaPaddingScheme.NONE)
+        '2.16.840.1.101.3.4.3.9', _('ECDSA with SHA3-224'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
     ECDSA_SHA3_256 = (
-        '2.16.840.1.101.3.4.3.10', _('ECDSA with SHA3-256'), PublicKeyAlgorithmOid.EC, RsaPaddingScheme.NONE)
+        '2.16.840.1.101.3.4.3.10', _('ECDSA with SHA3-256'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
     ECDSA_SHA3_384 = (
-        '2.16.840.1.101.3.4.3.11', _('ECDSA with SHA3-384'), PublicKeyAlgorithmOid.EC, RsaPaddingScheme.NONE)
+        '2.16.840.1.101.3.4.3.11', _('ECDSA with SHA3-384'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
     ECDSA_SHA3_512 = (
-        '2.16.840.1.101.3.4.3.12', _('ECDSA with SHA3-512'), PublicKeyAlgorithmOid.EC, RsaPaddingScheme.NONE)
+        '2.16.840.1.101.3.4.3.12', _('ECDSA with SHA3-512'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
 
     def __new__(cls, dotted_string, verbose_name, public_key_algo_oid, padding_scheme):
         obj = object.__new__(cls)
