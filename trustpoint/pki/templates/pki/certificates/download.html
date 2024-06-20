@@ -24,7 +24,7 @@
                     {% for cert in certs %}
                         <div class="tp-card-split">
                             <div>Certificate {{ forloop.counter }}</div>
-                            <div><a class="btn btn-primary" href="{% url 'pki:certificates-details' pks=cert.id %}">Details</a></div>
+                            <div><a class="btn btn-primary min-width-15" href="{% url 'pki:certificate-detail' pk=cert.id %}">Details</a></div>
                         </div>
                         <br>
                         <div class="tp-card-split">
@@ -43,6 +43,7 @@
                 </div>
                 <div class="card-footer">
                     <div class="tp-card-btn-footer">
+                        <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
                         <a href="{% url 'pki:certificates' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
                         <button type="submit" class="btn btn-primary">{% trans "Download" %}</button>
                     </div>

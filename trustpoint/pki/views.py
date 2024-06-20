@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING
 from trustpoint.views import ContextDataMixin, Form, MultiFormView, TpLoginRequiredMixin
 from django.views.generic.base import RedirectView
 from django.views.generic.list import ListView
+from django.views.generic.detail import DetailView
 from django_tables2 import SingleTableView
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
@@ -49,6 +50,14 @@ class CertificateTableView(CertificatesContextMixin, TpLoginRequiredMixin, Singl
     model = Certificate
     table_class = CertificateTable
     template_name = 'pki/certificates/certificates.html'
+
+
+class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
+    model = Certificate
+    success_url = reverse_lazy('pki:certificates')
+    ignore_url = reverse_lazy('pki:certificates')
+    template_name = 'pki/certificates/details.html'
+    context_object_name = 'cert'
 
 
 class CertificateDownloadView(TpLoginRequiredMixin, ListView):

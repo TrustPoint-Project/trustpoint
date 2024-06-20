@@ -262,7 +262,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 }
 
 .tp-card-centered {
-    max-width: 50rem;
+
     margin: 0 auto;
 }
 
@@ -273,7 +273,6 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 .tp-card-split {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    align-items: center;
 }
 
 .tp-card-btn-footer > * {
@@ -523,10 +522,26 @@ svg.theme-icon {
     background-color: var(--bs-tertiary-bg);
 }
 
+.min-width-5 {
+    min-width: 5rem;
+}
+
+.min-width-10 {
+    min-width: 10rem;
+}
+
+.min-width-15 {
+    min-width: 15rem;
+}
+
+.min-width-20 {
+    min-width: 20rem;
+}
+
 .tp-grid { /* unused class */
     display: grid !important;
     grid-template-columns: 1fr;
-    justify-items: center;
+    justify-items: start;
 }
 
 .nested-card-wrapper { /* unused class */

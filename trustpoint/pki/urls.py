@@ -13,9 +13,5 @@ urlpatterns = [
         views.CertificateDownloadView.as_view(),
         name='certificates-download',
     ),
-    re_path(
-        r'^certificates/details/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
-        views.CertificateDownloadView.as_view(),
-        name='certificates-details',
-    ),
+    path('certificates/detail/<pk>/', views.CertificateDetailView.as_view(), name='certificate-detail'),
 ]

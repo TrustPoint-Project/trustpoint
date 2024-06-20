@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 
 class NameOid(Enum):
 
-    # OID, abbreviation, full name, verbose, is common in certificates
+    # OID, abbreviation, full_name, verbose_name, is common in certificates
 
     # ITU
     OBJECT_CLASS = ('2.5.4.0', '', 'objectClass', _('Object Class'), False)

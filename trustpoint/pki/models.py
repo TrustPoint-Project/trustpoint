@@ -54,6 +54,14 @@ class AttributeTypeAndValue(models.Model):
             name_oid = self.oid
         return f'{name_oid}={self.value}'
 
+    @property
+    def abbreviation(self) -> str:
+        return NameOid(self.oid).abbreviation
+
+    @property
+    def verbose_name(self) -> str:
+        return NameOid(self.oid).verbose_name
+
 
 class GeneralNameRFC822Name(models.Model):
     """GeneralNameRFC822Name Model.
@@ -165,7 +173,7 @@ class GeneralNameOtherName(models.Model):
     value = models.CharField(max_length=16384, editable=False, verbose_name='Value')
 
     def __str__(self) -> str:
-        return f'{self.type_id} : {self.value[:10]}...'
+        return f'OID: {self.type_id}, DER: {self.value[:10]}...'
 
 
 class CertificateExtension:
@@ -288,7 +296,7 @@ class KeyUsageExtension(CertificateExtension, models.Model):
     key_cert_sign = models.BooleanField(verbose_name=_('Key Cert Sign'), default=False, editable=False)
     crl_sign = models.BooleanField(verbose_name=_('CRL Sign'), default=False, editable=False)
     encipher_only = models.BooleanField(verbose_name=_('Encipher Only'), default=False, editable=False)
-    decipher_only = models.BooleanField(verbose_name=_('Encipher Only'), default=False, editable=False)
+    decipher_only = models.BooleanField(verbose_name=_('Decipher Only'), default=False, editable=False)
 
     def __str__(self) -> str:
         return (
@@ -358,7 +366,7 @@ class AlternativeNameExtensionModel(models.Model):
 
     @property
     def extension_oid(self) -> str:
-        return CertificateExtensionOid.KEY_USAGE.dotted_string
+        raise NotImplementedError('This base class (AlternativeNameExtensionModel) does not have an extension_oid.')
 
     extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
 
@@ -553,6 +561,11 @@ class IssuerAlternativeNameExtension(CertificateExtension, AlternativeNameExtens
 
     _alternative_name_extension_type = 'issuer'
 
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.ISSUER_ALTERNATIVE_NAME.dotted_string
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
     @classmethod
     def save_from_crypto_extensions(cls, crypto_basic_constraints_extension: x509.Extension) \
             -> None | IssuerAlternativeNameExtension:
@@ -588,6 +601,11 @@ class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExten
     """
 
     _alternative_name_extension_type = 'subject'
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.SUBJECT_ALTERNATIVE_NAME.dotted_string
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
 
     @classmethod
     def save_from_crypto_extensions(cls, crypto_basic_constraints_extension: x509.Extension) \
@@ -829,9 +847,7 @@ class Certificate(models.Model):
     spki_algorithm = models.CharField(
         verbose_name=_('Public Key Algorithm'),
         max_length=256,
-        editable=False,
-        choices=PUBLIC_KEY_ALGORITHM_OID
-    )
+        editable=False)
 
     # Subject Public Key Info - Key Size
     spki_key_size = models.PositiveIntegerField(_('Public Key Size'), editable=False)
@@ -849,7 +865,6 @@ class Certificate(models.Model):
         verbose_name=_('Public Key Curve (ECC)'),
         max_length=256,
         editable=False,
-        choices=PUBLIC_KEY_EC_CURVE_OID,
         default=EllipticCurveOid.NONE.name)
 
     # ---------------------------------------------------- Raw Data ----------------------------------------------------
@@ -938,7 +953,7 @@ class Certificate(models.Model):
         """
         return self.issuer
 
-    def get_issuer_cert_as_pem(self) -> None | str:
+    def get_issuer_cert_as_pem(self) -> None | bytes:
         """Retrieves the issuer certificate as PEM encoded string.
 
         Returns:
@@ -988,7 +1003,11 @@ class Certificate(models.Model):
                 return cert
             cert = cert.issuer
 
-    def get_root_ca_cert_as_pem(self) -> str:
+    @property
+    def root_ca_cert(self) -> Certificate:
+        return self.get_root_ca_cert()
+
+    def get_root_ca_cert_as_pem(self) -> bytes:
         return self.get_root_ca_cert().get_cert_as_pem()
 
     def get_root_ca_cert_as_der(self) -> bytes:
@@ -1006,7 +1025,7 @@ class Certificate(models.Model):
             certs.append(cert)
             cert = cert.issuer
 
-    def get_cert_chain_as_pem(self) -> list[str]:
+    def get_cert_chain_as_pem(self) -> list[bytes]:
         return [cert.get_cert_as_pem() for cert in self.get_cert_chain()]
 
     def get_cert_chain_as_crypto(self) -> list[x509.Certificate]:
@@ -1027,7 +1046,7 @@ class Certificate(models.Model):
     def get_issued_certs(self) -> list[Certificate]:
         return self.issued_certs.all()
 
-    def get_issued_certs_as_pem(self) -> list[str]:
+    def get_issued_certs_as_pem(self) -> list[bytes]:
         return [cert.get_cert_as_pem() for cert in self.get_issued_certs()]
 
     def get_issued_certs_as_der(self) -> list[bytes]:
@@ -1243,6 +1262,9 @@ class Certificate(models.Model):
 
         spki_algorithm_oid, spki_key_size, spki_ec_curve_oid = cls._get_spki_info(cert=cert)
 
+        print(type(spki_algorithm_oid))
+        print(spki_ec_curve_oid.verbose_name)
+
         # -------------------------------------------------- Raw Data --------------------------------------------------
 
         cert_pem = cert.public_bytes(encoding=serialization.Encoding.PEM).decode()
@@ -1271,7 +1293,7 @@ class Certificate(models.Model):
             spki_algorithm_oid=spki_algorithm_oid.dotted_string,
             spki_algorithm=spki_algorithm_oid.name,
             spki_key_size=spki_key_size,
-            spki_ec_curve_oid=spki_ec_curve_oid,
+            spki_ec_curve_oid=spki_ec_curve_oid.dotted_string,
             spki_ec_curve=spki_ec_curve_oid.verbose_name,
             cert_pem=cert_pem,
             public_key_pem=public_key_pem,

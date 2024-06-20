@@ -63,7 +63,7 @@ class CertificateTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
                            record.pk, _('Details'))
 
     # @staticmethod
