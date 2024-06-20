@@ -9,6 +9,7 @@
             <div>Critical</div>
             <div>{{ cert.issuer_alternative_name_extension.critical }}</div>
         </div>
+        <hr>
         {% if cert.issuer_alternative_name_extension.rfc822_names and cert.issuer_alternative_name_extension.rfc822_names.all %}
             <div class="tp-card-split">
                 <div>RFC822 Names (IAN)</div>

@@ -1,0 +1,18 @@
+{% load i18n %}
+{% block general %}
+    <br><br><h3>General</h3>
+    <hr>
+    <div class="tp-card-split">
+        <div>Certificate Version</div>
+        <div>{{ cert.get_version_display }}</div>
+    </div>
+    <div class="tp-card-split">
+        <div>{% trans 'Serial Number' %}</div>
+        <div>{{ cert.serial_number }}</div>
+    </div>
+
+    <div class="tp-card-split">
+        <div>Fingerprint (SHA256)</div>
+        <div>{{ cert.sha256_fingerprint }}</div>
+    </div>
+{% endblock general %}

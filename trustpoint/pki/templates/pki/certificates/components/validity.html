@@ -1,0 +1,14 @@
+{% load i18n %}
+{% block validity %}
+    <br><br><h3>{% trans 'Validity' %}</h3>
+    <hr>
+
+    <div class="tp-card-split">
+        <div>{% trans 'Not valid before' %}</div>
+        <div>{{ cert.not_valid_before }}</div>
+    </div>
+    <div class="tp-card-split">
+        <div>{% trans 'Not valid after' %}</div>
+        <div>{{ cert.not_valid_after }}</div>
+    </div>
+{% endblock validity %}
