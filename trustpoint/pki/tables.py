@@ -8,7 +8,7 @@ from django.utils.functional import lazy
 from django.utils.translation import gettext_lazy as _
 
 
-from .models import Certificate
+from .models import Certificate, IssuingCa
 
 
 if TYPE_CHECKING:
@@ -91,3 +91,70 @@ class CertificateTable(tables.Table):
         """
         return format_html('<a href="download/{}/" class="btn btn-primary tp-table-btn">{}</a>',
                            record.pk, _('Download'))
+
+
+class IssuingCaTable(tables.Table):
+    """Table representation of the Issuing CA model."""
+
+    # common_name = tables.Column(verbose_name=_('Common Name'), accessor='certificate__subject__')
+
+    class Meta:
+        """Table meta class configurations."""
+
+        model = IssuingCa
+        template_name = 'django_tables2/bootstrap5.html'
+        # order_by = '-created_at'
+        empty_values = ()
+        _msg = _('There are no Certificates available.')
+        empty_text = format_html_lazy('<div class="text-center">{}</div>', _msg)
+
+        fields = (
+            'row_checkbox',
+            'unique_name',
+            'cert',
+            'details',
+            'download'
+        )
+
+    row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
+    details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
+    download = tables.Column(empty_values=(), orderable=False, verbose_name=_('Download'))
+
+    @staticmethod
+    def render_details(record: Certificate) -> SafeString:
+        """Creates the html hyperlink for the details-view.
+
+        Args:
+            record (Truststore): The current record of the RootCa model.
+
+        Returns:
+            SafeString: The html hyperlink for the details-view.
+        """
+        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+                           record.pk, _('Details'))
+
+    @staticmethod
+    def render_download(record: Certificate) -> SafeString:
+        """Creates the html hyperlink for the delete-view.
+
+        Args:
+            record (Truststore): The current record of the RootCa model.
+
+        Returns:
+            SafeString: The html hyperlink for the delete-view.
+        """
+        return format_html('<a href="download/{}/" class="btn btn-primary tp-table-btn">{}</a>',
+                           record.pk, _('Download'))
+
+    @staticmethod
+    def render_delete(record: Certificate) -> SafeString:
+        """Creates the html hyperlink for the delete-view.
+
+        Args:
+            record (Truststore): The current record of the RootCa model.
+
+        Returns:
+            SafeString: The html hyperlink for the delete-view.
+        """
+        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
+                           record.pk, _('Delete'))

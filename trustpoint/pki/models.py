@@ -23,7 +23,9 @@ from cryptography.x509.extensions import ExtensionNotFound
 from django.db import models
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import MinLengthValidator
 
+from trustpoint import validators
 from .oid import SignatureAlgorithmOid, PublicKeyAlgorithmOid, EllipticCurveOid, CertificateExtensionOid, NameOid
 
 if TYPE_CHECKING:
@@ -1454,59 +1456,90 @@ class Certificate(models.Model):
         raise NotImplementedError('TODO: Implement this method.')
 
 
-# class TrustStore(models.Model):
-#     unique_name = models.CharField(max_length=30, editable=False)
-#     leaf_certs = models.ManyToManyField(Certificate, related_name='truststores', verbose_name='Leaf Certificates')
-# 
-#     def __str__(self) -> str:
-#         return f'TrustStore(name={self.unique_name})'
-# 
-#     @classmethod
-#     def save_trust_store(cls, unique_name, trust_store: list[x509.Certificate]) -> None:
-#         if cls.objects.filter(unique_name=unique_name).exists():
-#             raise ValueError(f'A Trust-Store with the unique name {unique_name} already exists.')
-# 
-#         subjects = [cert.subject.public_bytes() for cert in trust_store]
-#         issuers = [cert.issuer.public_bytes() for cert in trust_store]
-#         last_cert_subjects_in_chains = [subject for subject in subjects if subject not in issuers]
-#         leaf_certs = [
-#             cert for cert in trust_store if cert.subject.public_bytes() in last_cert_subjects_in_chains]
-#         cert_chains = []
-# 
-#         for leaf_cert in leaf_certs:
-#             cert_chain = [leaf_cert]
-#             while True:
-#                 if leaf_cert.subject.public_bytes() == leaf_cert.issuer.public_bytes():
-#                     break
-#                 for cert in trust_store:
-#                     if cert.subject.public_bytes() == leaf_cert.issuer.public_bytes():
-#                         cert_chain.append(cert)
-#                         leaf_cert = cert
-#                         break
-#                 else:
-#                     raise ValueError('Trust-Store contains orphaned certificates.')
-# 
-#             cert_chains.append(cert_chain)
-# 
-#         cls._save_trust_store(unique_name=unique_name, cert_chains=cert_chains)
-# 
-#     @classmethod
-#     @transaction.atomic
-#     def _save_trust_store(
-#             cls,
-#             unique_name,
-#             cert_chains: list[list[x509.Certificate]]) -> None:
-# 
-#         trust_store = TrustStore(unique_name=unique_name)
-#         trust_store.save()
-# 
-#         # TODO: check via sha256 fingerprint instead of subject
-#         for cert_chain in cert_chains:
-#             c = None
-#             for cert in reversed(cert_chain):
-#                 if Certificate.objects.filter(subject_public_bytes=cert.subject.public_bytes().hex().upper()).exists():
-#                     continue
-#                 c = Certificate.save_certificate(cert=cert)
-#             trust_store.leaf_certs.add(c)
-# 
-#         trust_store.save()
+class IssuingCa(models.Model):
+    """Issuing CA model."""
+
+    class Localization(models.TextChoices):
+        """Determines if the Issuing CA is locally or remotely available.
+
+        Note:
+            L:  Certificate, certificate chain and key-pair are locally available.
+                Certificates can be issued locally.
+            R:  The Issuing CA is external.
+                Certificate request messages are generated and send to the CA to issue certificates.
+        """
+
+        L = 'L', _('Local')
+        R = 'R', _('Remote')
+
+    class ConfigType(models.TextChoices):
+        """Confing."""
+
+        F_P12 = 'F_P12', _('File Import - PKCS#12')
+        F_PEM = 'F_PEM', _('File Import - PEM')
+        F_SELF = 'F_SELF', _('Locally signed')
+        F_EST = 'F_EST', _('Import - EST')
+        F_CMP = 'C_CMP', _('Import - CMP')
+
+    unique_name = models.CharField(
+        verbose_name=_('Unique Name'),
+        max_length=100,
+        validators=[MinLengthValidator(3), validators.validate_isidentifer],
+        unique=True
+    )
+
+    issuing_ca_certificate = models.OneToOneField(
+        to=Certificate,
+        verbose_name='Issuing CA Certificate',
+        on_delete=models.CASCADE,
+        primary_key=False,
+        related_name='issuing_ca')
+
+    def __str__(self) -> str:
+        return f'IssuingCa({self.unique_name})'
+
+    # TODO: save method, checking if a genuine issuing ca cert was selected.
+
+
+class DomainProfile(models.Model):
+    """Endpoint Profile model."""
+
+    unique_name = models.CharField(
+        _('Unique Name'),
+        max_length=100,
+        validators=[MinLengthValidator(3),
+                    validators.validate_isidentifer], unique=True
+    )
+
+    issuing_ca = models.ForeignKey(
+        IssuingCa,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        verbose_name=_('Issuing CA'),
+        related_name='domain_profiles'
+    )
+
+    def __str__(self) -> str:
+        """Human-readable representation of the EndpointProfile model instance.
+
+        Returns:
+            str:
+                Human-readable representation of the EndpointProfile model instance.
+        """
+        if self.issuing_ca:
+            return f'DomainProfile({self.unique_name}, {self.issuing_ca.unique_name})'
+        return f'DomainProfile({self.unique_name}, None)'
+
+    def save(self, *args: Any, **kwargs: Any) -> Any:
+        """Save hook - transform unique_endpoint to all lower case letters
+
+        Args:
+            *args (Any): Arguments passed to the super().save() method.
+            **kwargs (Any): Keyword arguments passed to the super().save() method.
+
+        Returns:
+            Any
+        """
+        self.unique_endpoint = self.unique_name.lower()
+        return super().save(*args, **kwargs)

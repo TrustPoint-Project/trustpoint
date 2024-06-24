@@ -14,4 +14,15 @@ urlpatterns = [
         name='certificates-download',
     ),
     path('certificates/detail/<pk>/', views.CertificateDetailView.as_view(), name='certificate-detail'),
+    path('issuing-cas/', views.IssuingCaTableView.as_view(), name='issuing_cas'),
+    path(
+        'issuing-cas/add/method-select/',
+        views.IssuingCaAddMethodSelectView.as_view(),
+        name='issuing_cas-add-method_select'),
+    path(
+        'issuing-cas/add/file-import/',
+        views.IssuingCaAddFileImportView.as_view(),
+        name='issuing_cas-add-file_import'
+    )
 ]
+

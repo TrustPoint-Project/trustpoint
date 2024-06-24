@@ -43,7 +43,7 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
     """Device Create View."""
 
     model = Device
-    fields = ['device_name', 'onboarding_protocol', 'endpoint_profile']  # noqa: RUF012
+    fields = ['device_name', 'onboarding_protocol', 'domain_profile']  # noqa: RUF012
     template_name = 'devices/add.html'
     success_url = reverse_lazy('devices:devices')
 
@@ -52,10 +52,9 @@ class UpdateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
     """Device Update View."""
 
     model = Device
-    fields = ['device_name', 'onboarding_protocol', 'endpoint_profile']  # noqa: RUF012
+    fields = ['device_name', 'onboarding_protocol', 'domain_profile']  # noqa: RUF012
     template_name = 'devices/update.html'
     success_url = reverse_lazy('devices:devices')
-
 
 
 class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):

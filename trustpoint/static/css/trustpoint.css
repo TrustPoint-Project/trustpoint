@@ -296,11 +296,11 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 /*    border-radius: 0.5rem;*/
 /*}*/
 
-/*.tp-card-header {*/
-/*    background: #272B2F;*/
-/*    border-bottom: 0.1rem solid #424549;*/
-/*    padding: 0.75rem;*/
-/*}*/
+.tp-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
 
 /*.tp-card-body {*/
 /*    padding: 0.75rem;*/

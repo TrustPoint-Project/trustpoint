@@ -2,19 +2,20 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from trustpoint.views import ContextDataMixin, Form, MultiFormView, TpLoginRequiredMixin
+from trustpoint.views import ContextDataMixin, TpLoginRequiredMixin
 from django.views.generic.base import RedirectView
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
+from django.views.generic.edit import FormView
 from django_tables2 import SingleTableView
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.http import HttpResponse
 
 
-from .models import Certificate
-from .tables import CertificateTable
-from .forms import CertificateDownloadForm
+from .models import Certificate, IssuingCa
+from .tables import CertificateTable, IssuingCaTable
+from .forms import CertificateDownloadForm, IssuingCaAddMethodSelectForm, IssuingCaAddFileImportForm
 from .files import (
     CertificateFileContainer,
     CertificateChainIncluded,
@@ -30,18 +31,19 @@ if TYPE_CHECKING:
 
 # -------------------------------------------------- Certificate Views -------------------------------------------------
 
-class CertificatesContextMixin(TpLoginRequiredMixin, ContextDataMixin):
-    """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
-
-    context_page_category = 'pki'
-    context_page_name = 'certificates'
-
 
 class CertificatesRedirectView(TpLoginRequiredMixin, RedirectView):
     """View that redirects to the index of the PKI Issuing CA application: Issuing CAs."""
 
     permanent = False
     pattern_name = 'pki:certificates'
+
+
+class CertificatesContextMixin(TpLoginRequiredMixin, ContextDataMixin):
+    """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
+
+    context_page_category = 'pki'
+    context_page_name = 'certificates'
 
 
 class CertificateTableView(CertificatesContextMixin, TpLoginRequiredMixin, SingleTableView):
@@ -60,7 +62,7 @@ class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, Deta
     context_object_name = 'cert'
 
 
-class CertificateDownloadView(TpLoginRequiredMixin, ListView):
+class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, ListView):
     model = Certificate
     success_url = reverse_lazy('pki:certificates')
     ignore_url = reverse_lazy('pki:certificates')
@@ -178,3 +180,37 @@ class CertificateDownloadView(TpLoginRequiredMixin, ListView):
 
         self.queryset = queryset
         return queryset
+
+
+class IssuingCaContextMixin(TpLoginRequiredMixin, ContextDataMixin):
+    """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
+
+    context_page_category = 'pki'
+    context_page_name = 'issuing_cas'
+
+
+class IssuingCaTableView(IssuingCaContextMixin, TpLoginRequiredMixin, SingleTableView):
+    """Issuing CA Table View."""
+
+    model = IssuingCa
+    table_class = IssuingCaTable
+    template_name = 'pki/issuing_cas/issuing_cas.html'
+
+
+class IssuingCaAddMethodSelectView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
+    template_name = 'pki/issuing_cas/add/method_select.html'
+    form_class = IssuingCaAddMethodSelectForm
+
+
+class IssuingCaAddFileImportView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
+    template_name = 'pki/issuing_cas/add/file_import.html'
+    form_class = IssuingCaAddFileImportForm
+
+    def post(self, request, *args, **kwargs):
+
+        form = IssuingCaAddFileImportForm(request.POST, request.FILES)
+        if form.clean():
+            print('clean')
+
+
+        return HttpResponse('hello')

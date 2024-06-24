@@ -3,11 +3,16 @@ from django.contrib import admin
 
 from .models import (
     Certificate,
+    IssuingCa,
     BasicConstraintsExtension,
     KeyUsageExtension,
     AttributeTypeAndValue,
     IssuerAlternativeNameExtension,
     SubjectAlternativeNameExtension)
+
+
+class IssuingCaAdmin(admin.ModelAdmin):
+    pass
 
 
 class TrustStoreAdmin(admin.ModelAdmin):
@@ -105,6 +110,7 @@ class CertificateAdmin(admin.ModelAdmin):
     )
 
 
+admin.site.register(IssuingCa, IssuingCaAdmin)
 admin.site.register(SubjectAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(IssuerAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(AttributeTypeAndValue, AttributeTypeAndValueAdmin)
