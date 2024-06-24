@@ -1455,6 +1455,19 @@ class Certificate(models.Model):
     def save_pkcs12(cls, pkcs12_obj: pkcs12, password: None | bytes = None) -> Certificate:
         raise NotImplementedError('TODO: Implement this method.')
 
+    def delete(self, **kwargs):
+        if self.issued_certs.all():
+            raise RuntimeError(
+                'Deletion Failed. There are still issued certificates in the DB (issued by this ca certificates.')
+
+        super().delete()
+
+        if self.issuer:
+            try:
+                self.issuer.delete()
+            except RuntimeError:
+                pass
+
 
 class IssuingCa(models.Model):
     """Issuing CA model."""
@@ -1504,16 +1517,11 @@ class IssuingCa(models.Model):
 class DomainProfile(models.Model):
     """Endpoint Profile model."""
 
-    unique_name = models.CharField(
-        _('Unique Name'),
-        max_length=100,
-        validators=[MinLengthValidator(3),
-                    validators.validate_isidentifer], unique=True
-    )
+    unique_name = models.CharField(_('Unique Name'), max_length=100, unique=True)
 
     issuing_ca = models.ForeignKey(
         IssuingCa,
-        on_delete=models.SET_NULL,
+        on_delete=models.CASCADE,
         blank=True,
         null=True,
         verbose_name=_('Issuing CA'),
@@ -1530,16 +1538,3 @@ class DomainProfile(models.Model):
         if self.issuing_ca:
             return f'DomainProfile({self.unique_name}, {self.issuing_ca.unique_name})'
         return f'DomainProfile({self.unique_name}, None)'
-
-    def save(self, *args: Any, **kwargs: Any) -> Any:
-        """Save hook - transform unique_endpoint to all lower case letters
-
-        Args:
-            *args (Any): Arguments passed to the super().save() method.
-            **kwargs (Any): Keyword arguments passed to the super().save() method.
-
-        Returns:
-            Any
-        """
-        self.unique_endpoint = self.unique_name.lower()
-        return super().save(*args, **kwargs)

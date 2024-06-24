@@ -42,7 +42,7 @@ class IssuingCaAddMethodSelectForm(forms.Form):
     method_select = forms.ChoiceField(
         label='Select Method',
         choices=[
-            ('local_file_pem', _('Import an new Issuing CA from file')),
+            ('local_file_pem', _('Import a new Issuing CA from file')),
             ('local_request', _('Generate a key-pair and request an Issuing CA certificate')),
             ('remote_est', _('Configure a remote Issuing CA')),
         ],
@@ -59,7 +59,7 @@ class IssuingCaAddFileImportForm(forms.Form):
         label='Unique Name (Issuing CA)',
         widget=forms.TextInput(attrs={'autocomplete': 'nope'}))
     private_key_file = forms.FileField(
-        label=_('Private Key File (Formats: DER, PEM, PKCS#8, PKCS#12)'), required=True)
+        label=_('Private Key File (Formats: DER, PEM, PKCS#1, PKCS#8, PKCS#12)'), required=True)
     private_key_password = forms.CharField(
         # hack, force autocomplete off in chrome with: one-time-code
         widget=forms.PasswordInput(attrs={'autocomplete': 'one-time-code'}),
