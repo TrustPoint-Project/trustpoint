@@ -12,6 +12,7 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.db import transaction
+from django.http import HttpResponse
 
 
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
@@ -34,7 +35,6 @@ from .files import (
 if TYPE_CHECKING:
     from typing import Any
     from django.db.models import QuerySet
-    from django.http import HttpResponse
 
 
 # -------------------------------------------------- Certificate Views -------------------------------------------------
