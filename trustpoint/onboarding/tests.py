@@ -6,8 +6,9 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from devices.models import Device
 from django.test import TestCase
-from pki.management.commands.init_demo import Command as InitDemoCommand
-from pki.models import EndpointProfile
+from pki.management.commands.reset_db import Command as ResetDBCommand
+from pki.management.commands.test_ts import Command as TestTSCommand
+from pki.models import DomainProfile
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
 from onboarding.crypto_backend import OnboardingError
@@ -27,7 +28,7 @@ class CryptoBackendTests(TestCase):
         # init DB for testing (this runs against the test DB so not necessary to clear first)
         # TODO(Air): Consider demo init outside of command when also using for unit tests
         print('Initializing test DB with demo data...')
-        InitDemoCommand().handle()
+        ResetDBCommand().handle()
 
 
     def test_pbkdf2_hmac_sha256(self):
@@ -52,20 +53,20 @@ class CryptoBackendTests(TestCase):
         result = Crypt.pbkdf2_hmac_sha256(hexpass, hexsalt)
         self.assertEqual(result, expected)
 
-    def test__get_ca_p12_missingdata(self):
-        """Tests the _get_ca_p12 method raising onboarding error if there is no endpoint profile or issuing CA."""
+    def test__get_ca_missingdata(self):
+        """Tests the _get_ca method raising onboarding error if there is no endpoint profile or issuing CA."""
         device = Device() # no endpoint profile
         with self.assertRaises(OnboardingError):
-            Crypt._get_ca_p12(device)
-        ep = EndpointProfile(unique_endpoint='test_endpoint')
-        device.endpoint_profile = ep # endpoint profile without issuing CA
+            Crypt._get_ca(device)
+        ep = DomainProfile(unique_endpoint='test_endpoint')
+        device.domain_profile = ep # endpoint profile without issuing CA
         with self.assertRaises(OnboardingError):
-            Crypt._get_ca_p12(device)
+            Crypt._get_ca(device)
 
     def test__sign_ldevid_no_serialno(self):
         """Tests the _sign_ldevid method if the device has no serial number set."""
         device = Device()
-        device.endpoint_profile = EndpointProfile(unique_endpoint='test_endpoint')
+        device.domain_profile = DomainProfile(unique_endpoint='test_endpoint')
         private_key = Crypt._gen_private_key()
         with self.assertRaises(OnboardingError):
             Crypt._sign_ldevid(private_key.public_key(), device)
@@ -73,7 +74,7 @@ class CryptoBackendTests(TestCase):
     def test__sign_ldevid(self):
         """Tests the _sign_ldevid method."""
         device = Device(serial_number='1234567890abcdef')
-        device.endpoint_profile = EndpointProfile.objects.get(unique_endpoint='default')
+        device.domain_profile = DomainProfile.objects.get(unique_endpoint='default')
         private_key = Crypt._gen_private_key()
         ldevid = Crypt._sign_ldevid(private_key.public_key(), device)
         self.assertIsInstance(ldevid, x509.Certificate, 'LDevID is not an instance of x509.Certificate.')
@@ -92,7 +93,7 @@ class CryptoBackendTests(TestCase):
     def test_sign_ldevid_from_csr(self):
         """Tests the sign_ldevid_from_csr method."""
         device = Device(serial_number='1234567890abcdef')
-        device.endpoint_profile = EndpointProfile.objects.get(unique_endpoint='default')
+        device.domain_profile = DomainProfile.objects.get(unique_endpoint='default')
         csr = self._gen_test_csr(device).public_bytes(serialization.Encoding.PEM)
         ldevid = Crypt.sign_ldevid_from_csr(csr, device)
         try :

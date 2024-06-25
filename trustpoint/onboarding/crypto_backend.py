@@ -17,10 +17,11 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.serialization import NoEncryption, pkcs12
 from django.core.files.base import ContentFile
 from util.strings import StringValidator
+from pki.models import Certificate
 
 if TYPE_CHECKING:
     from cryptography.hazmat.primitives.asymmetric.types import CertificatePublicKeyTypes, PrivateKeyTypes
-    from cryptography.x509 import Certificate
+    from cryptography.x509 import Certificate as X509Certificate
     from devices.models import Device
 
 PBKDF2_ITERATIONS = 1000000
@@ -70,47 +71,40 @@ class CryptoBackend:
             return certfile.read()
 
     @staticmethod
-    def _get_ca_p12(device: Device) -> tuple[PrivateKeyTypes | None, Certificate | None, list[Certificate]]:
+    def _get_ca(device: Device) -> Certificate:
         """Returns the CA private key, certificate and the CA certificate chain for a given device.
 
         Args:
             device (Device):
-                The Device, whose endpoint profile to obtain the CA from.
+                The Device, whose domain profile to obtain the CA from.
 
         Returns:
             tuple[PrivateKeyTypes | None, Certificate | None, list[Certificate]]:
                 The CA private key, certificate and the CA certificate chain.
         """
-        if not device.endpoint_profile:
-            msg = 'No endpoint profile configured for device.'
+        if not device.domain_profile:
+            msg = 'No domain profile configured for device.'
             raise OnboardingError(msg)
 
         try:
-            signing_ca = device.endpoint_profile.issuing_ca
+            signing_ca = device.domain_profile.issuing_ca
         except AttributeError as e:
-            msg = 'Could not obtain issuing CA from endpoint profile.'
+            msg = 'Could not obtain issuing CA from domain profile.'
             raise OnboardingError(msg) from e
 
         if not signing_ca:
-            msg = 'No CA configured in endpoint profile.'
+            msg = 'No CA configured in domain profile.'
             raise OnboardingError(msg)
 
-        if not signing_ca.p12 or not signing_ca.p12.path:
-            msg = 'CA is not associated with a .p12 file.'
+        if not signing_ca.issuing_ca_certificate:
+            msg = 'CA does not have issuing CA certificate.'
             raise OnboardingError(msg)
+        
+        return signing_ca.issuing_ca_certificate
 
-        with Path.open(signing_ca.p12.path, 'rb') as ca_file:
-            ca_p12 = pkcs12.load_key_and_certificates(
-                ca_file.read(), b''  # TODO(Air): get password here if .p12 stored in media is password-protected
-            )
-            private_ca_key = ca_p12[0]
-            ca_cert = ca_p12[1]
-            ca_chain = ca_p12[2:]
-
-        return private_ca_key, ca_cert, ca_chain
 
     @staticmethod
-    def _sign_ldevid(pub_key: CertificatePublicKeyTypes, device: Device) -> Certificate:
+    def _sign_ldevid(pub_key: CertificatePublicKeyTypes, device: Device) -> X509Certificate:
         if not device.serial_number:
             exc_msg = 'No serial number provided.'
             raise OnboardingError(exc_msg)
@@ -120,7 +114,9 @@ class CryptoBackend:
             x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.serial_number)
         ])
 
-        private_ca_key, ca_cert, _ = CryptoBackend._get_ca_p12(device)
+        ca_certificate = CryptoBackend._get_ca(device)
+        private_ca_key = ca_certificate.get_private_key_as_crypto()
+        ca_cert = ca_certificate.get_cert_as_crypto()
 
         cert = (
             x509.CertificateBuilder()
@@ -136,8 +132,12 @@ class CryptoBackend:
                 datetime.now(timezone.utc) + timedelta(days=365)
                 # Sign our certificate with our private key
             )
+            .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
             .sign(private_ca_key, hashes.SHA256())
         )
+
+        device_cert = Certificate()
+        device_cert.save_certificate(cert)
 
         device.ldevid = ContentFile(cert.public_bytes(serialization.Encoding.PEM), name='ldevid.pem')
         # need to keep track of the device once we send out a cert, even if onboarding fails afterwards
@@ -192,9 +192,9 @@ class CryptoBackend:
         Raises:
             OnboardingError: If the onboarding CA is not configured or not available.
         """
-        __, ca_cert, __ = CryptoBackend._get_ca_p12(device)
+        ca_certificate = CryptoBackend._get_ca(device)
 
-        return ca_cert.public_bytes(serialization.Encoding.PEM)
+        return ca_certificate.get_cert_chain_as_crypto()
 
     @staticmethod
     def _gen_private_key() -> PrivateKeyTypes:
@@ -221,7 +221,8 @@ class CryptoBackend:
 
         ldevid = CryptoBackend._sign_ldevid(private_key.public_key(), device)
 
-        __, ca_cert, __ = CryptoBackend._get_ca_p12(device)
+        ca_certificate = CryptoBackend._get_ca(device)
+        ca_cert = ca_certificate.get_cert_as_crypto()
 
         pkcs12 = serialization.pkcs12.serialize_key_and_certificates(
             name=device.serial_number.encode(),
