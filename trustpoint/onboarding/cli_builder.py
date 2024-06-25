@@ -26,7 +26,7 @@ class CliCommandBuilder:
                 return ''
 
             if short_flags and short_flag:
-              return f' -{short_flag} {val}'
+                return f' -{short_flag} {val}'
             return f' --{key} {val}'
 
         cmd = 'python -m trustpoint_client provision'
@@ -58,9 +58,9 @@ class CliCommandBuilder:
 
         Returns (str): The CLI command.
         """
-        return ('curl -k -X GET https://'
-               f'{ctx.get('host','')}/onboarding/api/trust-store/{ctx.get('url','')}'
-               ' -o tp-trust-store.pem -D tp-headers.txt')
+        return (
+            f'curl -k -X GET https://{ctx.get("host", "")}/onboarding/api/trust-store/{ctx.get("url", "")}'
+            f' -o tp-trust-store.pem -D tp-headers.txt')
 
     @staticmethod
     def cli_get_header_hmac() -> str:
@@ -80,13 +80,14 @@ class CliCommandBuilder:
 
         Returns (str): The CLI command.
         """
-        return (f'openssl kdf -keylen { PBKDF2_DKLEN } \\\n'
-                '\t\t\t-kdfopt digest:SHA256 \\\n'
-                f'\t\t\t-kdfopt pass:{ctx.get('tsotp','')} \\\n'
-                f'\t\t\t-kdfopt salt:{ctx.get('tssalt','')} \\\n'
-                f'\t\t\t-kdfopt iter:{ PBKDF2_ITERATIONS } \\\n'
-                '\t\t\t-binary \\\n'
-                '\t\t\t-out tp-key.bin PBKDF2')
+        return (
+            f'openssl kdf -keylen {PBKDF2_DKLEN} \\\n'
+            '\t\t\t-kdfopt digest:SHA256 \\\n'
+            f'\t\t\t-kdfopt pass:{ctx.get("tsotp", "")} \\\n'
+            f'\t\t\t-kdfopt salt:{ctx.get("tssalt", "")} \\\n'
+            f'\t\t\t-kdfopt iter:{PBKDF2_ITERATIONS} \\\n'
+            '\t\t\t-binary \\\n'
+            '\t\t\t-out tp-key.bin PBKDF2')
 
     @staticmethod
     def cli_calc_hmac() -> str:
@@ -94,8 +95,9 @@ class CliCommandBuilder:
 
         Returns (str): The CLI command.
         """
-        return ('cat tp-trust-store.pem | openssl dgst -sha256 -mac hmac -macopt hexkey:$(xxd -p -c 32 tp-key.bin) '
-                '| tail -c 65 > tp.hmac')
+        return (
+            'cat tp-trust-store.pem | openssl dgst -sha256 -mac hmac -macopt hexkey:$(xxd -p -c 32 tp-key.bin) '
+            '| tail -c 65 > tp.hmac')
 
     @staticmethod
     def cli_compare_hmac() -> str:
@@ -111,9 +113,10 @@ class CliCommandBuilder:
 
         Returns (str): The CLI command.
         """
-        return ('openssl  req -nodes -outform PEM -new -out ldevid.csr \\\n'
-                '-keyform PEM -keyout ldevid-private-key.pem \\\n'
-                '-subj "/" -sha256 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1')
+        return (
+            'openssl  req -nodes -outform PEM -new -out ldevid.csr \\\n'
+            '-keyform PEM -keyout ldevid-private-key.pem \\\n'
+            '-subj "/" -sha256 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1')
 
     @staticmethod
     def cli_get_ldevid(ctx: dict) -> str:
@@ -125,10 +128,11 @@ class CliCommandBuilder:
 
         Returns (str): The CLI command.
         """
-        return (f'curl -X POST https://{ctx.get('host','')}/onboarding/api/ldevid/{ctx.get('url','')} \\\n'
-                f'--user {ctx.get('salt','')}:{ctx.get('otp','')} \\\n'
-                 '-F "ldevid.csr=@ldevid.csr" \\\n'
-                 '--cacert trust-store.pem > ldevid.pem')
+        return (
+            f'curl -X POST https://{ctx.get("host", "")}/onboarding/api/ldevid/{ctx.get("url", "")} \\\n'
+            f'--user {ctx.get("salt", "")}:{ctx.get("otp", "")} \\\n'
+            '-F "ldevid.csr=@ldevid.csr" \\\n'
+            '--cacert trust-store.pem > ldevid.pem')
 
     @staticmethod
     def cli_rm_csr() -> str:
@@ -148,6 +152,7 @@ class CliCommandBuilder:
 
         Returns (str): The CLI command.
         """
-        return (f'curl -X GET https://{ctx.get('host','')}/onboarding/api/ldevid/cert-chain/{ctx.get('url','')} \\\n'
-                '--cert ldevid.pem --key ldevid-private-key.pem \\\n'
-                '--cacert trust-store.pem > ldevid-cert-chain.pem')
+        return (
+            f'curl -X GET https://{ctx.get("host", "")}/onboarding/api/ldevid/cert-chain/{ctx.get("url", "")} \\\n'
+            '--cert ldevid.pem --key ldevid-private-key.pem \\\n'
+            '--cacert trust-store.pem > ldevid-cert-chain.pem')
