@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'django_tables2',
     # 'ninja',
+    'auditlog',
     # TODO(Aircoookie): Required only for HTTPS testing with Django runserver_plus, remove for production
     'django_extensions',
     # use "python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server.crt
@@ -68,6 +69,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'auditlog.middleware.AuditlogMiddleware',
 ]
 
 ROOT_URLCONF = 'trustpoint.urls'

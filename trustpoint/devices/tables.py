@@ -222,3 +222,17 @@ class DeviceTable(tables.Table):
         """
         return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
                            record.pk, _('Delete'))
+
+
+class DeviceAuditlogTable(tables.Table):
+    #items = tables.Column(empty_values=(), orderable=False, verbose_name=_('Log Entries'))
+    timestamp = tables.Column(empty_values=(), orderable=True, verbose_name=_('Timestamp'))
+    actor = tables.Column(empty_values=(), orderable=True, verbose_name=_('Actor'))
+
+    class Meta:
+        """Table meta class configurations."""
+
+        template_name = 'django_tables2/bootstrap5.html'
+        empty_values = ()
+        _msg = _('There are no log entries.')
+        empty_text = format_html('<div class="text-center">{}</div>', _msg)

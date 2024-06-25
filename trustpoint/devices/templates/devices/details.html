@@ -1,5 +1,5 @@
 {% extends 'trustpoint/base.html' %}
-
+{% load render_table from django_tables2 %}
 {% block content %}
 
     <form method="POST">
@@ -11,6 +11,51 @@
             <div class="card-body tp-main-centered pt-3 pb-4">
 
                 {% include 'devices/sub_details.html' %}
+
+                <h2 class="pt-5 text-start">Log</h2>
+                <hr>
+
+                <div class="table-responsive">
+                    <table class="table table-bordered">
+                        {% for entry in object.history.all %}
+                        {% if forloop.first %}
+                        <thead>
+                            <tr>
+                                <th>Timestamp</th>
+                                <th>Actor</th>
+                                <th>Field</th>
+                                <th>From</th>
+                                <th>To</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        {% endif %}
+                            <tr class="{% cycle 'table-striped-bg' 'n' %}">
+                                <td>{{ entry.timestamp }}</td>
+                                <td>{{ entry.actor }}</td>
+                            {% for key, value in entry.changes_display_dict.items %}
+                                {% if not forloop.first %}
+                                <tr>
+                                    {% if forloop.last %}
+                                    <td>&#9492;&#9472;</td>
+                                    {% else %}
+                                    <td>&#9500;&#9472;</td>
+                                    {% endif %}
+                                <td></td>
+                                {% endif %}
+                                <td>{{ key }}</td>
+                                <td>{{ value.0|default:"&mdash;" }}</td>
+                                <td>{{ value.1|default:"&mdash;" }}</td>
+                            </tr>
+                            {% endfor %}
+                        {% empty %}
+                        <p>No history for this item has been logged yet.</p>
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                  </div>
+
+                  {% render_table table %}
 
                 <div class="tp-form-btn-group tp-form-btn-group mt-5">
                     <a href="{% url 'devices:devices' %}" class="btn btn-primary">Back</a>

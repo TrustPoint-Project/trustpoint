@@ -444,6 +444,10 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     column-gap: 1rem;
 }
 
+.table-striped-bg {
+    background-color: var(--bs-table-striped-bg) !important;
+}
+
 /* ----- General layout utility classes ----- */
 
 .tp-d-none {

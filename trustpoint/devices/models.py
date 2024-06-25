@@ -9,6 +9,9 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 from pki.models import Certificate, DomainProfile, RevokedCertificate
 
+from auditlog.models import AuditlogHistoryField
+from auditlog.registry import auditlog
+
 from .exceptions import UnknownOnboardingStatusError
 
 log = logging.getLogger('tp.devices')
@@ -61,6 +64,7 @@ class Device(models.Model):
     )
     domain_profile = models.ForeignKey(DomainProfile, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
+    history = AuditlogHistoryField()
 
     def __str__(self: Device) -> str:
         """Returns a Device object in human-readable format."""
@@ -137,3 +141,6 @@ class Device(models.Model):
             log.warning('Re-onboarding device %s which is already onboarded.', device.device_name)
 
         return True, None
+
+
+auditlog.register(Device)

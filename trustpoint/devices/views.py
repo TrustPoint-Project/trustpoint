@@ -3,6 +3,8 @@
 
 from __future__ import annotations
 
+from icecream import ic
+
 from typing import TYPE_CHECKING
 
 from django.shortcuts import redirect
@@ -15,7 +17,7 @@ from django_tables2 import SingleTableView
 from trustpoint.views import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
 
 from .models import Device
-from .tables import DeviceTable
+from .tables import DeviceTable, DeviceAuditlogTable
 
 if TYPE_CHECKING:
     from typing import Any
@@ -59,7 +61,24 @@ class UpdateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
 
 class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
     """Detail view for Devices."""
+    
+    def get_context_data(self, **kwargs):          
+        context = super().get_context_data(**kwargs)
+        hist = self.get_object().history.all()
+        history = []
+        for entry in hist:
+            entry_dict = {}
+            entry_dict["timestamp"] = entry.timestamp
+            entry_dict["actor"] = entry.actor
 
+            history.append(entry_dict)
+    
+
+        ic(history)
+        table = DeviceAuditlogTable(history)
+        context["table"] = table
+        return context
+    
     model = Device
     pk_url_kwarg = 'pk'
     template_name = 'devices/details.html'
