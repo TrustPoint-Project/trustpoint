@@ -1,0 +1,70 @@
+{% load i18n %}
+
+{% block certificate_hierarchy %}
+    <br><br><h2>Hierarchy</h2>
+    <hr>
+
+    <div class="tp-card-split">
+        <div>Certificate Type</div>
+        <div>{{ cert.get_certificate_hierarchy_type_display }}</div>
+    </div>
+
+    <div class="tp-card-split">
+        <div>Hierarchy Depth</div>
+        <div>{{ cert.certificate_hierarchy_depth }}</div>
+    </div>
+
+    <div class="tp-card-split">
+        <div>Issuer Certificate</div>
+        <div>
+            {% if cert.issuer %}
+                <a href="{% url 'pki:certificate-detail' pk=cert.issuer.id %}">
+                    {% if cert.issuer.common_name %}
+                        CN: {{ cert.issuer.common_name }}
+                    {% else %}
+                        {% trans 'Issuer CA Certificate' %}
+                    {% endif %}
+                </a>
+            {% elif cert.certificate_hierarchy_type == 'R' and not cert.issuer %}
+               <a href="{% url 'pki:certificate-detail' pk=cert.id %}">
+                   {% if cert.common_name %}
+                       CN: {{ cert.common_name }}
+                    {% else %}
+                        {% trans 'Issuer CA Certificate' %}
+                    {% endif %}
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="tp-card-split">
+        <div>Root CA Certificate</div>
+        <div>
+            <a href="{% url 'pki:certificate-detail' pk=cert.root_ca_cert.id %}">
+                {% if cert.root_ca_cert.common_name %}
+                    CN: {{ cert.root_ca_cert.common_name }}
+                {% else %}
+                    {% trans 'Root CA Certificate' %}
+                {% endif %}
+            </a>
+        </div>
+    </div>
+
+    {% if cert.certificate_hierarchy_type != 'E' %}
+        <div class="tp-card-split">
+            <div>Issued Certificates</div>
+            <div>
+                {% for cert in cert.issued_certs.all %}
+                    <a href="{% url 'pki:certificate-detail' pk=cert.id %}">
+                        {% if cert.common_name %}
+                            CN: {{ cert.common_name }}
+                        {% else %}
+                            Serial: {{ cert.serial_number }}
+                        {% endif %}
+                    </a>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+{% endblock certificate_hierarchy %}

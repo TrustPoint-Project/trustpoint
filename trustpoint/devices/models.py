@@ -6,7 +6,7 @@ from __future__ import annotations
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from pki.models import EndpointProfile, CertificateRevocationList
+from pki.models import Certificate, CertificateRevocationList, DomainProfile
 
 from .exceptions import UnknownOnboardingStatusError
 
@@ -50,14 +50,14 @@ class Device(models.Model):
 
     device_name = models.CharField(max_length=100, unique=True, default='test')
     device_serial_number = models.CharField(max_length=100, blank=True)
-    ldevid = models.FileField(blank=True, null=True)
+    ldevid = models.ForeignKey(Certificate, on_delete=models.SET_NULL, blank=True, null=True)
     onboarding_protocol = models.CharField(
         max_length=2, choices=OnboardingProtocol, default=OnboardingProtocol.MANUAL, blank=True
     )
     device_onboarding_status = models.CharField(
         max_length=1, choices=DeviceOnboardingStatus, default=DeviceOnboardingStatus.NOT_ONBOARDED, blank=True
     )
-    endpoint_profile = models.ForeignKey(EndpointProfile, on_delete=models.SET_NULL, blank=True, null=True)
+    domain_profile = models.ForeignKey(DomainProfile, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self: Device) -> str:
@@ -83,7 +83,7 @@ class Device(models.Model):
                 cert_serial_number=123,
                 revocation_datetime=timezone.now(),
                 revocation_reason='Requested by user',
-                issuingCa=self.endpoint_profile.issuing_ca
+                issuingCa=self.domain_profile.issuing_ca
             )
         self.ldevid.delete()
         self.ldevid = None
@@ -99,30 +99,30 @@ class Device(models.Model):
             return None
 
     @classmethod
-    def check_onboarding_prerequisites(cls: Device, device_id: int,
-                                       allowed_onboarding_protocols: list[Device.OnboardingProtocol]
-                                        ) -> tuple[bool, str | None]:
+    def check_onboarding_prerequisites(
+            cls: Device, device_id: int,
+            allowed_onboarding_protocols: list[Device.OnboardingProtocol]) -> tuple[bool, str | None]:
         """Checks if criteria for starting the onboarding process are met."""
         device = cls.get_by_id(device_id)
 
         if not device:
-            return (False, f'Onboarding: Device with ID {device_id} not found.')
+            return False, f'Onboarding: Device with ID {device_id} not found.'
 
-        if not device.endpoint_profile:
-            return (False, f'Onboarding: Please select an endpoint profile for device {device.device_name} first.')
+        if not device.domain_profile:
+            return False, f'Onboarding: Please select an domain profile for device {device.device_name} first.'
 
-        if not device.endpoint_profile.issuing_ca:
-            return (False, f'Onboarding: Endpoint profile {device.endpoint_profile.unique_name} has no issuing CA set.')
+        if not device.domain_profile.issuing_ca:
+            return False, f'Onboarding: domain profile {device.domain_profile.unique_name} has no issuing CA set.'
 
         if device.onboarding_protocol not in allowed_onboarding_protocols:
             try:
                 label = Device.OnboardingProtocol(device.onboarding_protocol).label
             except ValueError:
-                return (False, _('Onboarding: Please select a valid onboarding protocol.'))
+                return False, _('Onboarding: Please select a valid onboarding protocol.')
 
-            return (False, f'Onboarding protocol {label} is not implemented.')
+            return False, f'Onboarding protocol {label} is not implemented.'
 
         # TODO(Air): check that device is not already onboarded
         # Re-onboarding might be a valid use case, e.g. to renew a certificate
 
-        return (True, None)
+        return True, None

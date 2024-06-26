@@ -1,0 +1,18 @@
+{% block subject_and_names %}
+    <h2>Certificate Subject and Names</h2>
+    <hr>
+
+    <div class="tp-card-split">
+        <div>Subject</div>
+        <div>
+            {% for entry in cert.subject.all %}
+                {{ entry }}<br>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="tp-card-split">
+        <div>Common Name</div>
+        <div>{{ cert.common_name }}</div>
+    </div>
+{% endblock subject_and_names %}

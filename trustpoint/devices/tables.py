@@ -36,7 +36,7 @@ class DeviceTable(tables.Table):
             'row_checkbox',
             'device_name',
             'device_serial_number',
-            'endpoint_profile',
+            'domain_profile',
             'onboarding_protocol',
             'device_onboarding_status',
             'onboarding_action',
@@ -50,11 +50,11 @@ class DeviceTable(tables.Table):
     serial_number = tables.Column(empty_values=(), orderable=True, verbose_name=_('Serial Number'))
     onboarding_protocol = tables.Column(empty_values=(), orderable=True, verbose_name=_('Onboarding Protocol'))
     device_onboarding_status = tables.Column(empty_values=(), orderable=True, verbose_name=_('Onboarding Status'))
-    endpoint_profile = tables.Column(
+    domain_profile = tables.Column(
         empty_values=(None, ''),
         orderable=True,
-        accessor='endpoint_profile.unique_endpoint',
-        verbose_name=_('Endpoint Profile'),
+        accessor='domain_profile.unique_name',
+        verbose_name=_('Domain Profile'),
     )
     onboarding_action = tables.Column(empty_values=(), orderable=False, verbose_name=_('Onboarding Action'))
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
@@ -71,8 +71,8 @@ class DeviceTable(tables.Table):
         Returns:
             str: The html hyperlink for the details-view.
         """
-        if not record.endpoint_profile:
-            return format_html('<span class="text-danger">' + _('Select Endpoint Profile') + '</span>')
+        if not record.domain_profile:
+            return format_html('<span class="text-danger">' + _('Select Domain Profile') + '</span>')
         return format_html(
             f'<span class="text-{Device.DeviceOnboardingStatus.get_color(record.device_onboarding_status)}">'
             f'{record.get_device_onboarding_status_display()}'
@@ -154,7 +154,7 @@ class DeviceTable(tables.Table):
             UnknownOnboardingProtocolError:
                 Raised when an unknown onboarding protocol was found and thus cannot be rendered appropriately.
         """
-        if not record.endpoint_profile:
+        if not record.domain_profile:
             return ''
 
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:

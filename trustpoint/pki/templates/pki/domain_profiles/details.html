@@ -1,0 +1,53 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+
+        <div class="card tp-card-centered">
+
+                <div class="card-header">
+                    <div class="">
+                        <h2>{% trans "Domain Profile - Details" %}</h2>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="tp-card-centered-content">
+                        <h2>{% trans 'Domain Profile' %}: {{ domain_profile.unique_name }}</h2>
+                        <hr>
+                        <div class="tp-card-split">
+                            <div>{% trans 'Unique Name' %}</div>
+                            <div>{{ domain_profile.unique_name }}</div>
+                        </div>
+                        <div class="tp-card-split">
+                            <div>{% trans 'Issuing CA - Unique Name' %}</div>
+                            <div>
+                            <a href="{% url 'pki:issuing_cas-detail' pk=domain_profile.issuing_ca.id %}">
+                                    {{ domain_profile.unique_name }}
+                                </a>
+                            </div>
+                        </div>
+                        <div class="tp-card-split">
+                            <div>{% trans 'Issuing CA Certificate' %}</div>
+                            <div>
+                                <a href="{% url 'pki:certificate-detail' pk=domain_profile.issuing_ca.issuing_ca_certificate.id %}">
+                                    {% if domain_profile.issuing_ca.issuing_ca_certificate.common_name %}
+                                        CN: {{ domain_profile.issuing_ca.issuing_ca_certificate.common_name }}
+                                    {% else %}
+                                        {% trans 'Issuing CA Certificate' %}
+                                    {% endif %}
+                                </a>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="tp-card-btn-footer">
+                        <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                        <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
+                    </div>
+                </div>
+        </div>
+
+{% endblock content %}

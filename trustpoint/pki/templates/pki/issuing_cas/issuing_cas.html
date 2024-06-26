@@ -1,110 +1,28 @@
 {% extends 'trustpoint/base.html' %}
-{% load render_table from django_tables2 %}
 {% load i18n %}
+{% load render_table from django_tables2 %}
+
 {% block content %}
 
-    <div class="card card-main text-center">
+    <div class="card card-main">
         <div class="card-header tp-card-header">
-            <h1>{% trans "Issuing CAs" %}</h1>
-            <div></div>
-            <!-- Button trigger modal -->
-            <button id="modal-button" type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCaModal">
-                {% trans "Add new Issuing CA" %}
-            </button>
+            <h1>{% trans 'Issuing CAs' %}</h1>
+
+            <div>
+                <!-- Button trigger modal -->
+                <a class="btn btn-primary" href="{% url 'pki:issuing_cas-add-method_select' %}">
+                    {% trans "Add new Issuing CA" %}
+                </a>
+            </div>
         </div>
         <div class="card-body text-start">
-            
+
             {% render_table table %}
 
         </div>
         <div class="card-footer tp-table-footer-btn-group">
-            <button id="tp-table-delete-selected" type="button" class="btn btn-secondary">{% trans "Delete selected" %}</button>
+            <button type="button" id="tp-table-select-btn" class="btn btn-primary" data-tp-url="delete">{% trans "Delete selected" %}</button>
         </div>
-
-                    <!-- Modal -->
-                    <div class="modal fade" id="addCaModal" tabindex="-1" aria-labelledby="addCaModalLabel"
-                         aria-hidden="true">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h1 class="modal-title" id="addCaModalLabel">{% trans "Choose Issuing CA Type" %}</h1>
-                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                </div>
-                                <div class="modal-body">
-
-                                    <div class="tp-form-group-grid">
-
-                                        <input class="form-check-input cursor" type="radio" name="issuing-ca-radio" id="remote-issuing-ca-radio" checked>
-                                        <label class="form-check-label cursor" for="remote-issuing-ca-radio" data-bs-toggle="tooltip"
-                                               data-bs-placement="right"
-                                               title="{% trans "Trustpoint will act as a Registration Authority (RA)." %}">
-                                            {% trans "Remote Issuing CA" %}
-                                        </label>
-
-                                        <input class="form-check-input cursor" type="radio" name="issuing-ca-radio" id="local-issuing-ca-radio">
-                                        <label class="form-check-label cursor" for="local-issuing-ca-radio" data-bs-toggle="tooltip"
-                                               data-bs-placement="right"
-                                               title="{% trans "Installs, requests or generates a local Issuing CA Certificate." %}">
-                                            {% trans "Local Issuing CA" %}
-                                        </label>
-
-                                    </div>
-
-                                    <div id="tp-form-remote-issuing-ca" class="tp-form-group-grid">
-
-                                        <hr class="local-issuing-ca">
-                                        <h2>{% trans "Choose PKI Protocol" %}</h2>
-                                        <hr class="local-issuing-ca">
-
-                                        <input class="form-check-input cursor remote-issuing-ca" type="radio" name="remote-issuing-ca" id="remote-issuing-ca-est" value="{% url 'pki:issuing_cas-add_remote_est' %}" checked>
-                                        <label class="form-check-label cursor remote-issuing-ca" for="remote-issuing-ca-est">
-                                            EST - Enrollment over Secure Transport
-                                        </label>
-
-                                        <input class="form-check-input cursor remote-issuing-ca" type="radio" name="remote-issuing-ca" id="remote-issuing-ca-cmp" value="{% url 'pki:issuing_cas-add_remote_cmp' %}">
-                                        <label class="form-check-label cursor remote-issuing-ca" for="remote-issuing-ca-cmp">
-                                            CMP - Certificate Management Protocol
-                                        </label>
-
-                                    </div>
-
-                                    <div id="tp-form-local-issuing-ca" class="tp-form-group-grid" hidden>
-
-                                        <hr class="local-issuing-ca">
-                                        <h2>{% trans "Choose Import Method" %}</h2>
-                                        <hr class="local-issuing-ca">
-
-                                        <input class="form-check-input cursor local-issuing-ca" type="radio" name="local-issuing-ca" id="local-issuing-ca-import-files" value="{% url 'pki:issuing_cas-add_local_file' %}" checked>
-                                        <label class="form-check-label cursor local-issuing-ca" for="local-issuing-ca-import-files" data-bs-toggle="tooltip"
-                                               data-bs-placement="right"
-                                               title="{% trans "Allows to import the Issuing CA from file, e.g. from PKCS#12 or PEM files." %}">
-                                            {% trans "Import Issuing CA from file" %}
-                                        </label>
-
-                                        <input class="form-check-input cursor local-issuing-ca" type="radio" name="local-issuing-ca" id="local-issuing-ca-request" value="{% url 'pki:issuing_cas-add_local_request' %}">
-                                        <label class="form-check-label cursor local-issuing-ca" for="local-issuing-ca-request" data-bs-toggle="tooltip"
-                                               data-bs-placement="right"
-                                               title="{% trans "Generates a key-pair and requests an Issuing CA Certificate, e.g. using EST or CMP." %}">
-                                            {% trans "Generate a key-pair and request the CA Certificate" %}
-                                        </label>
-
-                                        <input class="form-check-input cursor local-issuing-ca" type="radio" name="local-issuing-ca" id="local-issuing-ca-local-signed-ca" value="{% url 'pki:issuing_cas-add_local_signed_ca' %}">
-                                        <label class="form-check-label cursor local-issuing-ca" for="local-issuing-ca-local-signed-ca" data-bs-toggle="tooltip"
-                                               data-bs-placement="right"
-                                               title="{% trans "Generate a local Issuing CA which is signed by a local Root CA." %}">
-                                               {% trans "Generate a locally signed Issuing CA" %}
-                                        </label>
-
-                                    </div>
-
-                                </div>
-                                <div class="modal-footer tp-form-btn-group">
-                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">{% trans "Close" %}</button>
-                                    <button type="button" class="btn btn-primary" onclick="redirectAddIssuingCa()">{% trans "Add new Issuing CA" %}</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
     </div>
 {% endblock content %}

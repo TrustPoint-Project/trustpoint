@@ -1,5 +1,5 @@
-#FROM python:3.12
-FROM python:3.12-slim-bookworm
+#FROM python:3.12.2
+FROM python:3.12.2-slim-bookworm
 
 ENV PYTHONUNBUFFERED 1
 
@@ -28,5 +28,5 @@ EXPOSE 8000
 
 # Run development server with HTTPS when the container launches
 # CMD python manage.py runserver_plus 0.0.0.0:8000 --cert-file ../tests/data/x509/https_server.crt --key-file ../tests/data/x509/https_server.pem
-CMD ["python", "manage.py", "runserver_plus", "0.0.0.0:8000", "--cert-file", "../tests/data/x509/https_server.crt", "--key-file", "../tests/data/x509/https_server.pem"]
-# CMD ["python", "trustpoint/manage.py", "runserver", "0.0.0.0:8000"]
+#CMD ["python", "manage.py", "runserver_plus", "8000", "--cert-file", "../tests/data/x509/https_server.crt", "--key-file", "../tests/data/x509/https_server.pem"]
+CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]

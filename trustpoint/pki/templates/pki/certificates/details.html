@@ -1,0 +1,51 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+
+        <div class="card tp-card-centered">
+
+                <div class="card-header">
+                    <div class="">
+                        <h2>{% trans "Certificate Details" %}</h2>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="tp-card-centered-content">
+
+                        {% include 'pki/certificates/components/subject_and_names.html' %}
+
+                        {% include 'pki/certificates/components/extensions/subject_alternative_name_extension_content.html' %}
+
+                        {% include 'pki/certificates/components/general.html' %}
+
+                        {% include 'pki/certificates/components/hierarchy.html' %}
+
+                        {% include 'pki/certificates/components/validity.html' %}
+
+                        {% include 'pki/certificates/components/subject_public_key_info.html' %}
+
+                        {% include 'pki/certificates/components/signature.html' %}
+
+                        {% include 'pki/certificates/components/extensions/subject_alternative_name_extension.html' %}
+
+                        {% include 'pki/certificates/components/extensions/issuer_alternative_name_extension.html' %}
+
+                        {% include 'pki/certificates/components/extensions/basic_constraints_extension.html' %}
+
+                        {% include 'pki/certificates/components/extensions/key_usage_extension.html' %}
+
+
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="tp-card-btn-footer">
+                        <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                        <a href="{% url 'pki:certificates' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
+                        <a href="{% url 'pki:certificates-download' pks=cert.id %}" class="btn btn-primary">{% trans 'Download' %}</a>
+                    </div>
+                </div>
+        </div>
+
+{% endblock content %}
