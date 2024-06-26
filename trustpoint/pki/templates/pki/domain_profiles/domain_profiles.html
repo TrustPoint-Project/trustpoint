@@ -1,0 +1,28 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load render_table from django_tables2 %}
+
+{% block content %}
+
+    <div class="card card-main">
+        <div class="card-header tp-card-header">
+            <h1>{% trans 'Domain Profiles' %}</h1>
+
+            <div>
+                <!-- Button trigger modal -->
+                <a class="btn btn-primary" href="{% url 'pki:domain_profiles-add' %}">
+                    {% trans "Add new Domain Profile" %}
+                </a>
+            </div>
+        </div>
+        <div class="card-body text-start">
+
+            {% render_table table %}
+
+        </div>
+        <div class="card-footer tp-table-footer-btn-group">
+            <button type="button" id="tp-table-select-btn" class="btn btn-primary" data-tp-url="delete">{% trans "Delete selected" %}</button>
+        </div>
+
+    </div>
+{% endblock content %}

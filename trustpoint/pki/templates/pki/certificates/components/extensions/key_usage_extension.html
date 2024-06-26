@@ -1,0 +1,52 @@
+{% block key_usage_extension %}
+    {% if cert.key_usage_extension %}
+        <br><br><h2>Key Usage Extension</h2><hr>
+        <div class="tp-card-split">
+            <div>Extension OID</div>
+            <div>{{ cert.key_usage_extension.extension_oid }}</div>
+        </div>
+        <div class="tp-card-split">
+            <div>Critical</div>
+            <div>{{ cert.key_usage_extension.critical }}</div>
+        </div>
+        <hr>
+        <div class="tp-card-split">
+            <div>Digital Signature</div>
+            <div>{{ cert.key_usage_extension.digital_signature }}</div>
+        </div>
+        <div class="tp-card-split">
+            <div>Content Commitment</div>
+            <div>{{ cert.key_usage_extension.content_commitment }}</div>
+        </div>
+        <div class="tp-card-split">
+            <div>Key Encipherment</div>
+            <div>{{ cert.key_usage_extension.key_encipherment }}</div>
+        </div>
+        <div class="tp-card-split">
+            <div>Data Encipherment</div>
+            <div>{{ cert.key_usage_extension.data_encipherment }}</div>
+        </div>
+        <div class="tp-card-split">
+            <div>Key Agreement</div>
+            <div>{{ cert.key_usage_extension.key_agreement }}</div>
+        </div>
+        <div class="tp-card-split">
+            <div>Key Cert Sign</div>
+            <div>{{ cert.key_usage_extension.key_cert_sign }}</div>
+        </div>
+        <div class="tp-card-split">
+            <div>CRL Sign</div>
+            <div>{{ cert.key_usage_extension.crl_sign }}</div>
+        </div>
+        <div class="tp-card-split">
+            <div>Encipher Only</div>
+            <div>{{ cert.key_usage_extension.encipher_only }}</div>
+        </div>
+        <div class="tp-card-split">
+            <div>Decipher Only</div>
+            <div>{{ cert.key_usage_extension.decipher_only }}</div>
+        </div>
+
+
+    {% endif %}
+{% endblock key_usage_extension %}

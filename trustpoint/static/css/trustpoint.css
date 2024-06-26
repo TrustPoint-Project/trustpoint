@@ -256,29 +256,71 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     overflow-y: auto;
 }
 
-.card > div {
-    padding: 0.75rem;
+.card-header, .card-footer {
+    min-height: 2rem;
+    padding: 0.5rem;
 }
+
+.tp-card-centered {
+
+    margin: 0 auto;
+}
+
+.tp-card-btn-footer {
+    display: flex;
+}
+
+.tp-card-split {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+}
+
+.tp-card-btn-footer > * {
+    flex-grow: 1;
+    margin: 0 0.5rem;
+}
+
+.tp-card-btn-footer > *:first-child {
+    margin-left: 0;
+}
+
+.tp-card-btn-footer > *:last-child {
+    margin-right: 0;
+}
+
+
+/*.tp-card {*/
+/*    border: 0.1rem solid #424549;*/
+/*    padding: 0;*/
+/*    margin: 0;*/
+/*    border-radius: 0.5rem;*/
+/*}*/
 
 .tp-card-header {
     display: flex;
     justify-content: space-between;
-    flex-wrap: wrap;
     align-items: center;
 }
 
-.tp-card-header > .btn {
-    margin-left: auto;
-    width: 15rem;
-    min-width: max-content;
-}
+/*.tp-card-body {*/
+/*    padding: 0.75rem;*/
+/*}*/
 
-.card > .tp-main-centered {
-    width: 100%;
-    max-width: 50rem;
-    margin: auto;
-    padding: 0.75rem 1rem;
-}
+/*.tp-card-footer {*/
+/*    background: #272B2F;*/
+/*    border-top: 0.1rem solid #424549;*/
+/*    padding: 0.75rem;*/
+/*}*/
+
+/*.tp-card-center {*/
+/*    display: flex;*/
+/*    flex-grow: 1;*/
+/*    flex-basis: 50rem;*/
+/*}*/
+
+/*.tp-card-centered-content {*/
+/*    border: 1px solid red;*/
+/*}*/
 
 .tp-main-users {
     width: max-content;
@@ -480,10 +522,26 @@ svg.theme-icon {
     background-color: var(--bs-tertiary-bg);
 }
 
+.min-width-5 {
+    min-width: 5rem;
+}
+
+.min-width-10 {
+    min-width: 10rem;
+}
+
+.min-width-15 {
+    min-width: 15rem;
+}
+
+.min-width-20 {
+    min-width: 20rem;
+}
+
 .tp-grid { /* unused class */
     display: grid !important;
     grid-template-columns: 1fr;
-    justify-items: center;
+    justify-items: start;
 }
 
 .nested-card-wrapper { /* unused class */
@@ -570,6 +628,27 @@ svg.theme-icon {
     .menu-icon {
         display: flex;
     }
+}
+
+pre {
+  background-color: var(--bs-secondary-bg);
+  padding: 10px 0px;
+  text-align: left;
+}
+
+code {
+  padding: 10px;
+  tab-size: 4;
+}
+
+.breathing-anim {
+  animation: breathing 1.8s 0s infinite ease;
+}
+
+@keyframes breathing {
+  0% {filter: saturate(100%);}
+  50% {filter: saturate(30%);}
+  0% {filter: saturate(100%);}
 }
 
 /* ----- Testing ----- */

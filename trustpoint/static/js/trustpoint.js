@@ -87,11 +87,11 @@ function chooseFileFormatForm() {
 
 const checkboxColumn = document.querySelector('#checkbox-column > input');
 const checkboxes = document.querySelectorAll('.row_checkbox > input');
-const deleteSelectedBtn = document.getElementById('tp-table-delete-selected');
+const tableSelectBtn = document.getElementById('tp-table-select-btn');
 
-if (checkboxColumn && deleteSelectedBtn) {
+if (checkboxColumn && tableSelectBtn) {
     checkboxColumn.addEventListener('change', toggleAllCheckboxes);
-    deleteSelectedBtn.addEventListener('click', deleteSelected);
+    tableSelectBtn.addEventListener('click', urlRedirect);
 }
 
 function toggleAllCheckboxes() {
@@ -106,12 +106,12 @@ function toggleAllCheckboxes() {
     }
 }
 
-function deleteSelected() {
-    let url_path = 'delete/'
+function urlRedirect() {
+    let url_path = tableSelectBtn.getAttribute('data-tp-url') + '/';
     let at_least_one_checked = false;
     checkboxes.forEach(function(el) {
         if (el.checked) {
-            url_path += el.value + '/'
+            url_path += el.value + '/';
             at_least_one_checked = true;
         }
     });
@@ -151,11 +151,11 @@ window.addEventListener('load', function(e) {
 const collapseButtons = document.querySelectorAll('.btn-collapse');
 collapseButtons.forEach(function(button) {
     button.addEventListener('click', toggleCollapse);
-    if (button.ariaExpanded == "true") {
+    if (button.ariaExpanded === "true") {
         setMenuCollapsed(button, false); // to set explicit scroll height for CSS transition
     }
     // if the menu was manually expanded, keep it expanded upon navigation
-    if (button.dataset.category && sessionStorage.getItem('tp-menu-expanded-manually-' + button.dataset.category) == 'true') {
+    if (button.dataset.category && sessionStorage.getItem('tp-menu-expanded-manually-' + button.dataset.category) === 'true') {
         setMenuCollapsed(button, false, false);
     }
 });
@@ -190,10 +190,35 @@ function toggleCollapse(event) {
     // stop propagation to prevent the event from loading the page
     event.preventDefault();
 
-    let collapse = this.ariaExpanded == "true";
+    let collapse = this.ariaExpanded === "true";
     setMenuCollapsed(this, collapse);
 
     if (this.dataset.category) {
         sessionStorage.setItem('tp-menu-expanded-manually-' + this.dataset.category, !collapse);
+    }
+}
+
+// ---------------------------------------- Certificate Download Format Options ----------------------------------------
+
+const derSelect = document.querySelector('#id_cert_file_format > option[value=der]');
+const certCount = document.querySelector('#cert-count');
+const certFileContainerSelect = document.getElementById('id_cert_file_container');
+const certChainInclSelect = document.getElementById('id_cert_chain_incl');
+const certFileFormatSelect = document.getElementById('id_cert_file_format');
+
+if (derSelect && certCount && certFileContainerSelect && certChainInclSelect && certFileFormatSelect) {
+    togglePemSelectDisable()
+    certFileContainerSelect.addEventListener('change', togglePemSelectDisable);
+    certChainInclSelect.addEventListener('change', togglePemSelectDisable);
+    certFileFormatSelect.addEventListener('change', togglePemSelectDisable);
+}
+
+function togglePemSelectDisable() {
+    if (certChainInclSelect.value === 'chain_incl') {
+        derSelect.disabled = true;
+    } else derSelect.disabled = !(certCount.innerText !== '1' && certFileContainerSelect.value !== 'single_file');
+
+    if (derSelect.disabled && certFileFormatSelect.value === 'der') {
+            certFileFormatSelect.value = 'pem';
     }
 }
