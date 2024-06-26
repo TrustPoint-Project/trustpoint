@@ -6,7 +6,7 @@ from __future__ import annotations
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from pki.models import DomainProfile
+from pki.models import Certificate, DomainProfile
 
 from .exceptions import UnknownOnboardingStatusError
 
@@ -47,7 +47,7 @@ class Device(models.Model):
 
     device_name = models.CharField(max_length=100, unique=True, default='test')
     serial_number = models.CharField(max_length=100, blank=True)
-    ldevid = models.FileField(blank=True, null=True)
+    ldevid = models.ForeignKey(Certificate, on_delete=models.SET_NULL, blank=True, null=True)
     onboarding_protocol = models.CharField(
         max_length=2, choices=OnboardingProtocol, default=OnboardingProtocol.MANUAL, blank=True
     )

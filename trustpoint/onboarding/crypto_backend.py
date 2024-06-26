@@ -79,8 +79,8 @@ class CryptoBackend:
                 The Device, whose domain profile to obtain the CA from.
 
         Returns:
-            tuple[PrivateKeyTypes | None, Certificate | None, list[Certificate]]:
-                The CA private key, certificate and the CA certificate chain.
+            Certificate:
+                The CA certificate, incl. private key, certificate and the CA certificate chain.
         """
         if not device.domain_profile:
             msg = 'No domain profile configured for device.'
@@ -137,9 +137,8 @@ class CryptoBackend:
         )
 
         device_cert = Certificate()
-        device_cert.save_certificate(cert)
+        device.ldevid = device_cert.save_certificate(cert)
 
-        device.ldevid = ContentFile(cert.public_bytes(serialization.Encoding.PEM), name='ldevid.pem')
         # need to keep track of the device once we send out a cert, even if onboarding fails afterwards
         # TODO(Air): but do it here?
         device.save()
