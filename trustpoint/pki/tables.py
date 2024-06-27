@@ -146,6 +146,18 @@ class IssuingCaTable(tables.Table):
         """
         return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
                            record.pk, _('Delete'))
+    
+    @staticmethod
+    def render_crl(record: IssuingCa) -> SafeString:
+        """Creates the html hyperlink for the details-view.
+
+        Args:
+            record (IssuingCa): The current record of the IssuingCa model.
+
+        Returns:
+            SafeString: The html hyperlink for the details-view.
+        """
+        return format_html('<a href="/pki/download-crl/{}/" class="btn btn-primary tp-table-btn" download>Download CRL</a>', record.pk)
 
 
 class DomainProfileTable(tables.Table):

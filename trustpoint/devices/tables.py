@@ -109,8 +109,9 @@ class DeviceTable(tables.Table):
             )
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.REVOKED:
             return format_html(
-                '<a href="{}" class="btn btn btn-info tp-onboarding-btn">Revoked</a>',
-                reverse('onboarding:revoke', kwargs={'device_id': record.pk}),
+                '<a href="{}" class="btn btn btn-info tp-onboarding-btn">{}</a>',
+                reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
+                _('Onboard again')
             )
         raise UnknownOnboardingStatusError
 

@@ -7,19 +7,9 @@ import datetime
 
 class CRLManager:
     """Manager to build and update crls"""
-    def __init__(self, ca_cert_path, ca_private_key_path, pr_key_passphrase=None):
-        self.ca_cert = self.load_certificate(ca_cert_path)
-        self.ca_private_key = self.load_private_key(ca_private_key_path, pr_key_passphrase)
-
-    @staticmethod
-    def load_certificate(cert_path):
-        with open(cert_path, "rb") as cert_file:
-            return x509.load_pem_x509_certificate(cert_file.read(), default_backend())
-
-    @staticmethod
-    def load_private_key(key_path, pr_key_passphrase):
-        with open(key_path, "rb") as key_file:
-            return load_pem_private_key(key_file.read(), password=pr_key_passphrase, backend=default_backend())
+    def __init__(self, ca_cert, ca_private_key):
+        self.ca_cert = ca_cert
+        self.ca_private_key = ca_private_key
 
     def create_crl(self, revoked_certificates):
         # TODO @Dominik. After Alex rebuild the Database structure,
@@ -35,21 +25,24 @@ class CRLManager:
         builder = builder.issuer_name(self.ca_cert.subject)
         builder = builder.last_update(datetime.datetime.today())
         builder = builder.next_update(datetime.datetime.today() + datetime.timedelta(days=30))
-        revoked_certs = []
+        # revoked_certs = []
 
-        x = 0
-        for entry in revoked_certificates:
-            x += 1
-            revoked_certs.append({
-                "serial_number": x,
-                "revocation_date": entry.revocation_datetime
-                })
+        # x = 0
+        # for entry in revoked_certificates:
+        #     x += 1
+        #     revoked_certs.append({
+        #         "serial_number": x,
+        #         "revocation_date": entry.revocation_datetime
+        #         })
+        print('ERROR: CRLs are presently not correct! Fix hardcoded serial number in CRLManager.create_crl()!')
 
         for cert in revoked_certificates:
             revoked_cert = x509.RevokedCertificateBuilder().serial_number(
-                cert['serial_number']
+                123
+                # TODO (Air): RevokedCertificateBuilder expects an integer, but actual certificate serial is a hex string?
+                #cert.cert_serial_number
             ).revocation_date(
-                cert['revocation_date']
+                cert.revocation_datetime
             ).build()
             builder = builder.add_revoked_certificate(revoked_cert)
 

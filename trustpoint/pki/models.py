@@ -1518,15 +1518,15 @@ class IssuingCa(models.Model):
         """generate CRL."""
         # TODO Dominik: After Alex rebuilds the Databases, rebuild the CRLManager paths.
         manager = CRLManager(
-            ca_cert_path="<path/to/ca/certificate>",
-            ca_private_key_path="<path/to/ca/private_key>",
-            pr_key_passphrase=None)
+            ca_cert=self.issuing_ca_certificate.get_cert_as_crypto(),
+            ca_private_key=self.issuing_ca_certificate.get_private_key_as_crypto(),
+            )
         crl_entries = self.revoked_certificates.all()
         return manager.create_crl(crl_entries)
 
     def get_crl():
         # TODO Implement the saving and retrieval of CRL
-        # from databse after restruction from Alex.
+        # from database after restruction from Alex.
         pass
 
 
@@ -1559,10 +1559,10 @@ class DomainProfile(models.Model):
 class CertificateRevocationList(models.Model):
     """Certificate Revocation model."""
     device_name = models.CharField(max_length=50, unique=True, help_text="Device name")
-    device_serial_number = models.CharField(max_length=50, unique=True, help_text="Unique serial numer of device.", primary_key=True)
-    cert_serial_number = models.CharField(max_length=50, unique=True, help_text="Unique serial numer of revoked certificate.")
-    revocation_datetime = models.DateTimeField(help_text="Timestamp when certificate got revoked.")
-    revocation_reason = models.CharField(max_length=255, blank=True, help_text="Reason of revoation.")
+    device_serial_number = models.CharField(max_length=50, unique=True, help_text="Unique serial number of device.", primary_key=True)
+    cert_serial_number = models.CharField(max_length=50, unique=True, help_text="Unique serial number of revoked certificate.")
+    revocation_datetime = models.DateTimeField(help_text="Timestamp when certificate was revoked.")
+    revocation_reason = models.CharField(max_length=255, blank=True, help_text="Reason of revocation.")
     issuingCa = models.ForeignKey(IssuingCa, on_delete=models.CASCADE, related_name='revoked_certificates', help_text="Name of Issuing CA.")
 
     def __str__(self):

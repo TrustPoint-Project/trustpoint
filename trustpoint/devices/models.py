@@ -34,7 +34,7 @@ class Device(models.Model):
             if choice == cls.ONBOARDED.value:
                 return 'success'
             if choice == cls.REVOKED.value:
-                return 'revoked'
+                return 'info'
             if choice == cls.ONBOARDING_FAILED.value:
                 return 'danger'
             raise UnknownOnboardingStatusError
@@ -74,18 +74,17 @@ class Device(models.Model):
             return False
 
         if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
-            # TODO(Air): Perhaps extra status for revoked devices?
             self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
 
         CertificateRevocationList.objects.create(
                 device_name=self.device_name,
                 device_serial_number=self.device_serial_number,
-                cert_serial_number=123,
+                cert_serial_number=self.ldevid.serial_number,
                 revocation_datetime=timezone.now(),
                 revocation_reason='Requested by user',
                 issuingCa=self.domain_profile.issuing_ca
             )
-        self.ldevid.delete()
+        #self.ldevid.delete()
         self.ldevid = None
         self.save()
         return True
