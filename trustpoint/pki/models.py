@@ -1558,8 +1558,8 @@ class DomainProfile(models.Model):
 
 class CertificateRevocationList(models.Model):
     """Certificate Revocation model."""
-    device_name = models.CharField(max_length=50, unique=True, help_text="Device name")
-    device_serial_number = models.CharField(max_length=50, unique=True, help_text="Unique serial number of device.", primary_key=True)
+    device_name = models.CharField(max_length=50, help_text="Device name")
+    device_serial_number = models.CharField(max_length=50, help_text="Serial number of device.", primary_key=True)
     cert_serial_number = models.CharField(max_length=50, unique=True, help_text="Unique serial number of revoked certificate.")
     revocation_datetime = models.DateTimeField(help_text="Timestamp when certificate was revoked.")
     revocation_reason = models.CharField(max_length=255, blank=True, help_text="Reason of revocation.")
