@@ -41,6 +41,7 @@ class CertificateTable(tables.Table):
             'spki_algorithm',
             'spki_key_size',
             'spki_ec_curve',
+            'certificate_status',
             'details',
             'download',
             # 'delete',

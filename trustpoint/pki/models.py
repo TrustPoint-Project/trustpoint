@@ -25,6 +25,8 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MinLengthValidator
 
+from pki.crypto_backend import CRLManager
+
 from trustpoint import validators
 from .oid import SignatureAlgorithmOid, PublicKeyAlgorithmOid, EllipticCurveOid, CertificateExtensionOid, NameOid
 
@@ -723,7 +725,6 @@ class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExten
 # class MsCertificateTemplateExtension(CertificateExtension, models.Model):
 #     pass
 
-from pki.crypto_backend import CRLManager
 
 class Certificate(models.Model):
     """X509 Certificate Model.
@@ -738,6 +739,12 @@ class Certificate(models.Model):
         INTERMEDIATE_CA = 'N', _('Intermediate CA')
         ISSUING_CA = 'I', _('Issuing CA')
         END_ENTITY_CERT = 'E', _('End-Entity Certificate')
+
+    class CertificateStatus(models.TextChoices):
+        OK = 'O', _('OK')
+        REVOKED = 'R', _('Revoked')
+        #EXPIRED = 'E', _('Expired')
+        #NOT_YET_VALID = 'N', _('Not Yet Valid')
 
     class Version(models.IntegerChoices):
         """X509 RFC 5280 - Certificate Version."""
@@ -762,6 +769,9 @@ class Certificate(models.Model):
         max_length=2,
         choices=CertificateHierarchyType,
         editable=False)
+    
+    certificate_status = models.CharField(verbose_name=_('Status'), max_length=2, choices=CertificateStatus,
+                                          editable=False, default=CertificateStatus.OK)
 
     certificate_hierarchy_depth = models.PositiveSmallIntegerField(verbose_name=_('Hierarchy Depth'), editable=False)
 
@@ -1455,6 +1465,11 @@ class Certificate(models.Model):
     @classmethod
     def save_pkcs12(cls, pkcs12_obj: pkcs12, password: None | bytes = None) -> Certificate:
         raise NotImplementedError('TODO: Implement this method.')
+    
+    def revoke(self) -> None:
+        """Revokes the certificate."""
+        self.certificate_status = self.CertificateStatus.REVOKED
+        self._save()
 
     def delete(self, **kwargs):
         if self.issued_certs.all():
@@ -1559,8 +1574,9 @@ class DomainProfile(models.Model):
 class CertificateRevocationList(models.Model):
     """Certificate Revocation model."""
     device_name = models.CharField(max_length=50, help_text="Device name")
-    device_serial_number = models.CharField(max_length=50, help_text="Serial number of device.", primary_key=True)
-    cert_serial_number = models.CharField(max_length=50, unique=True, help_text="Unique serial number of revoked certificate.")
+    device_serial_number = models.CharField(max_length=50, help_text="Serial number of device.")
+    cert_serial_number = models.CharField(max_length=50, unique=True,
+                                          help_text="Unique serial number of revoked certificate.", primary_key=True)
     revocation_datetime = models.DateTimeField(help_text="Timestamp when certificate was revoked.")
     revocation_reason = models.CharField(max_length=255, blank=True, help_text="Reason of revocation.")
     issuingCa = models.ForeignKey(IssuingCa, on_delete=models.CASCADE, related_name='revoked_certificates', help_text="Name of Issuing CA.")

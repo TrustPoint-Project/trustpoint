@@ -85,6 +85,7 @@ class Device(models.Model):
                 issuingCa=self.domain_profile.issuing_ca
             )
         #self.ldevid.delete()
+        self.ldevid.revoke()
         self.ldevid = None
         self.save()
         return True
