@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
 
+from trustpoint.logging import logging_config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -163,3 +165,7 @@ DJANGO_TABLES2_TABLE_ATTRS = {'class': 'table', 'td': {'class': 'v-middle'}}
 
 LOGIN_REDIRECT_URL = 'home:dashboard'
 LOGIN_URL = 'users:login'
+
+DJANGO_LOG_LEVEL = 'INFO'
+
+LOGGING = logging_config
