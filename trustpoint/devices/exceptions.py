@@ -12,11 +12,6 @@ if TYPE_CHECKING:
 class DisplayError(ValueError):
     """Raised when some entry in the table cannot be rendered appropriately."""
 
-    def __init__(self: DisplayError, *args: Any) -> None:
-        """Add the error message by passing it to constructor of the parent class."""
-        exc_msg = 'Unique name is already taken. Try another one.'
-        super().__init__(exc_msg, *args)
-
 
 class UnknownOnboardingStatusError(DisplayError):
     """Raised when an unknown onboarding status was found and thus cannot be rendered appropriately."""
