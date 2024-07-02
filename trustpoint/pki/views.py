@@ -23,7 +23,7 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography import x509
 
 
-from .models import Certificate, CertificateRevocationList, IssuingCa, DomainProfile
+from .models import Certificate, RevokedCertificates, IssuingCa, DomainProfile
 from .tables import CertificateTable, IssuingCaTable, DomainProfileTable
 from .forms import CertificateDownloadForm, IssuingCaAddMethodSelectForm, IssuingCaAddFileImportForm
 from .files import (
@@ -400,17 +400,30 @@ class CRLListView(TpLoginRequiredMixin, SingleTableView):
 
     #from onboarding.crypto_backend import CryptoBackend # ?
 
-    model = CertificateRevocationList
+    model = RevokedCertificates
     table_class = None
     template_name = 'pki/revoked_certificates/revoked_certificates.html'
 
     @staticmethod
-    def download_crl(self: IssuingCa, ca_id):
+    def download_ca_crl(self: IssuingCa, ca_id):
         try:
             issuing_ca = IssuingCa.objects.get(pk=ca_id)
-            crl_data = issuing_ca.generate_crl()
-            response = HttpResponse(crl_data, content_type='text/plain')
-            response['Content-Disposition'] = f'attachment; filename="{quote('a')}"'
-            return response
         except IssuingCa.DoesNotExist:
-            return HttpResponse("Issuing CA not found", status=404)
+            return HttpResponse('Issuing CA not found', status=404)
+
+        crl_data = issuing_ca.get_crl()
+        response = HttpResponse(crl_data, content_type='text/plain')
+        response['Content-Disposition'] = f'attachment; filename="{issuing_ca.unique_name}.crl"'
+        return response
+
+    @staticmethod
+    def download_domain_profile_crl(self: DomainProfile, id):
+        try:
+            domain_profile = DomainProfile.objects.get(pk=id)
+        except IssuingCa.DoesNotExist:
+            return HttpResponse('Domain profile not found', status=404)
+
+        crl_data = domain_profile.get_crl()
+        response = HttpResponse(crl_data, content_type='text/plain')
+        response['Content-Disposition'] = f'attachment; filename="{domain_profile.unique_name}.crl"'
+        return response

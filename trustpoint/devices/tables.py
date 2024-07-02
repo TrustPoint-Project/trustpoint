@@ -162,7 +162,7 @@ class DeviceTable(tables.Table):
             return format_html(
                 '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
                 reverse('onboarding:revoke', kwargs={'device_id': record.pk}),
-                _('Revoke Certificates')
+                _('Revoke Certificate')
             )
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
             return format_html(
@@ -218,6 +218,6 @@ class DeviceTable(tables.Table):
 
         Returns:
             SafeString: The html hyperlink for the delete-view.
-        # """
+        """
         return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
                            record.pk, _('Delete'))

@@ -3,13 +3,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import django_tables2 as tables
-from django.utils.html import format_html
 from django.utils.functional import lazy
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-
-from .models import Certificate, IssuingCa, DomainProfile
-
+from .models import Certificate, DomainProfile, IssuingCa
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
@@ -147,7 +145,7 @@ class IssuingCaTable(tables.Table):
         """
         return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
                            record.pk, _('Delete'))
-    
+
     @staticmethod
     def render_crl(record: IssuingCa) -> SafeString:
         """Creates the html hyperlink for the details-view.
@@ -158,7 +156,7 @@ class IssuingCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="/pki/download-crl/{}/" class="btn btn-primary tp-table-btn" download>Download CRL</a>', record.pk)
+        return format_html('<a href="/pki/ca-crl/{}/" class="btn btn-primary tp-table-btn" download>Download CRL</a>', record.pk)
 
 
 class DomainProfileTable(tables.Table):
@@ -184,13 +182,15 @@ class DomainProfileTable(tables.Table):
             'issuing_ca',
             'details',
             'edit',
-            'delete'
+            'delete',
+            'crl'
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
     edit = tables.Column(empty_values=(), orderable=False, verbose_name=_('Edit'))
     delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
+    crl = tables.Column(empty_values=(), orderable=False, verbose_name=_('CRL'))
 
     @staticmethod
     def render_details(record: Certificate) -> SafeString:
@@ -222,3 +222,17 @@ class DomainProfileTable(tables.Table):
         """
         return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
                            record.pk, _('Delete'))
+
+    @staticmethod
+    def render_crl(record: IssuingCa) -> SafeString:
+        """Creates the html hyperlink for the details-view.
+
+        Args:
+            record (IssuingCa): The current record of the IssuingCa model.
+
+        Returns:
+            SafeString: The html hyperlink for the details-view.
+        """
+        return format_html(
+            '<a href="/pki/domain-profile-crl/{}/" class="btn btn-primary tp-table-btn" download>Download CRL</a>',
+            record.pk)
