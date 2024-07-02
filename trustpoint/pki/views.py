@@ -401,8 +401,6 @@ class CRLListView(TpLoginRequiredMixin, SingleTableView):
     #from onboarding.crypto_backend import CryptoBackend # ?
 
     model = RevokedCertificates
-    table_class = None
-    template_name = 'pki/revoked_certificates/revoked_certificates.html'
 
     @staticmethod
     def download_ca_crl(self: IssuingCa, ca_id):

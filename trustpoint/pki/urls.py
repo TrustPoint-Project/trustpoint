@@ -31,10 +31,6 @@ urlpatterns = [
         views.IssuingCaBulkDeleteConfirmView.as_view(),
         name='issuing_cas-delete_confirm',
     ),
-    path('revoked-certificates/',
-         views.CRLListView.as_view(),
-         name='revoked_certificates'
-    ),
     path('ca-crl/<int:ca_id>/',
          views.CRLListView.download_ca_crl,
          name='crl'),
