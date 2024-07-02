@@ -69,7 +69,6 @@ class DevicesBulkDeleteView(
     DeviceContextMixin,
     MultipleObjectTemplateResponseMixin,
     BulkDeletionMixin,
-    FormMixin,
     TpLoginRequiredMixin,
     BaseListView,
 ):
