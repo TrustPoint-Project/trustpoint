@@ -1532,7 +1532,7 @@ class IssuingCa(models.Model):
             ca_private_key=self.issuing_ca_certificate.get_private_key_as_crypto(),
             )
 
-        revoked_certificates = RevokedCertificates.objects.filter(issuingCa=self)
+        revoked_certificates = RevokedCertificates.objects.filter(issuing_ca=self)
         crl = manager.create_crl(revoked_certificates).decode('utf-8')
         CertificateRevocationlist.objects.update_or_create(
             crl_content = crl,
@@ -1583,7 +1583,7 @@ class DomainProfile(models.Model):
             ca_private_key=self.issuing_ca.issuing_ca_certificate.get_private_key_as_crypto(),
             )
 
-        revoked_certificates = RevokedCertificates.objects.filter(domainProfile=self)
+        revoked_certificates = RevokedCertificates.objects.filter(domain_profile=self)
         crl = manager.create_crl(revoked_certificates).decode('utf-8')
         CertificateRevocationlist.objects.update_or_create(
             crl_content = crl,

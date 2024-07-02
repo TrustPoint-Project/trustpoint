@@ -82,10 +82,10 @@ class Device(models.Model):
                 cert_serial_number=self.ldevid.serial_number,
                 revocation_datetime=timezone.now(),
                 revocation_reason='Requested by user',
-                issuingCa=self.domain_profile.issuing_ca,
-                domainProfile=self.domain_profile
+                issuing_ca=self.domain_profile.issuing_ca,
+                domain_profile=self.domain_profile
             )
-        #self.ldevid.delete()
+        # self.ldevid.delete()
         self.ldevid.revoke()
         self.ldevid = None
         self.save()
