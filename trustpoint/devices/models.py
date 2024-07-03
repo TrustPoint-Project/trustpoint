@@ -6,7 +6,7 @@ from __future__ import annotations
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from pki.models import Certificate, DomainProfile, RevokedCertificates
+from pki.models import Certificate, DomainProfile, RevokedCertificate
 
 from .exceptions import UnknownOnboardingStatusError
 
@@ -76,7 +76,7 @@ class Device(models.Model):
         if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
             self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
 
-        RevokedCertificates.objects.create(
+        RevokedCertificate.objects.create(
                 device_name=self.device_name,
                 device_serial_number=self.device_serial_number,
                 cert_serial_number=self.ldevid.serial_number,

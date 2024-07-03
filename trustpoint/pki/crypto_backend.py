@@ -6,7 +6,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 
 
 class CRLManager:
-    """Manager to build and update crls"""
+    """Manager to build and update CRLs"""
     def __init__(self, ca_cert, ca_private_key) -> None:
         self.ca_cert = ca_cert
         self.ca_private_key = ca_private_key
@@ -16,7 +16,7 @@ class CRLManager:
 
         Args: revoked_certificates (List): List of revoked certificates.
 
-        Returns: crl in pem format.
+        Returns: CRL in PEM format.
         """
         builder = x509.CertificateRevocationListBuilder()
         builder = builder.issuer_name(self.ca_cert.subject)

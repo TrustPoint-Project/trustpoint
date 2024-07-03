@@ -32,10 +32,10 @@ urlpatterns = [
         name='issuing_cas-delete_confirm',
     ),
     path('ca-crl/<int:ca_id>/',
-         views.CRLListView.download_ca_crl,
+         views.CRLDownloadView.download_ca_crl,
          name='crl'),
     path('domain-profile-crl/<int:id>/',
-         views.CRLListView.download_domain_profile_crl,
+         views.CRLDownloadView.download_domain_profile_crl,
          name='crl'),
     path('domain-profiles/', views.DomainProfileTableView.as_view(), name='domain_profiles'),
     path(

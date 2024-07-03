@@ -156,7 +156,7 @@ class IssuingCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="/pki/ca-crl/{}/" class="btn btn-primary tp-table-btn" download>Download CRL</a>', record.pk)
+        return format_html('<a href="/pki/ca-crl/{}/" class="btn btn-primary tp-table-btn">Download CRL</a>', record.pk)
 
 
 class DomainProfileTable(tables.Table):
@@ -234,5 +234,5 @@ class DomainProfileTable(tables.Table):
             SafeString: The html hyperlink for the details-view.
         """
         return format_html(
-            '<a href="/pki/domain-profile-crl/{}/" class="btn btn-primary tp-table-btn" download>Download CRL</a>',
+            '<a href="/pki/domain-profile-crl/{}/" class="btn btn-primary tp-table-btn">Download CRL</a>',
             record.pk)

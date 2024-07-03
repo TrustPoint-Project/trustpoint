@@ -1530,24 +1530,29 @@ class IssuingCa(models.Model):
         manager = CRLManager(
             ca_cert=self.issuing_ca_certificate.get_cert_as_crypto(),
             ca_private_key=self.issuing_ca_certificate.get_private_key_as_crypto(),
-            )
+        )
 
-        revoked_certificates = RevokedCertificates.objects.filter(issuing_ca=self)
+        revoked_certificates = RevokedCertificate.objects.filter(issuing_ca=self)
         crl = manager.create_crl(revoked_certificates).decode('utf-8')
-        CertificateRevocationlist.objects.update_or_create(
+        CertificateRevocationList.objects.update_or_create(
             crl_content = crl,
             ca = self,
             domain_profile = None
         )
 
-    def get_crl(self) -> CertificateRevocationlist:
+    def get_crl(self) -> CertificateRevocationList | None:
         """Retrieves latest crl from database.
 
         Returns:
-            CertificateRevocationlist:
+            CertificateRevocationList:
                 CRL as PEM.
         """
-        return CertificateRevocationlist.objects.filter(ca=self).latest('issued_at')
+        try:
+            current_crl = CertificateRevocationList.objects.filter(ca=self).latest('issued_at')
+        except CertificateRevocationList.DoesNotExist:
+            current_crl = None
+
+        return current_crl
 
 
 class DomainProfile(models.Model):
@@ -1583,25 +1588,30 @@ class DomainProfile(models.Model):
             ca_private_key=self.issuing_ca.issuing_ca_certificate.get_private_key_as_crypto(),
             )
 
-        revoked_certificates = RevokedCertificates.objects.filter(domain_profile=self)
+        revoked_certificates = RevokedCertificate.objects.filter(domain_profile=self)
         crl = manager.create_crl(revoked_certificates).decode('utf-8')
-        CertificateRevocationlist.objects.update_or_create(
+        CertificateRevocationList.objects.update_or_create(
             crl_content = crl,
             ca = self.issuing_ca,
             domain_profile = self
         )
 
-    def get_crl(self) -> CertificateRevocationlist:
+    def get_crl(self) -> CertificateRevocationList | None:
         """Retrieves latest CRL from database.
 
         Returns:
-            CertificateRevocationlist:
+            CertificateRevocationList:
                 CRL as PEM.
         """
-        return CertificateRevocationlist.objects.filter(domain_profile=self).latest('issued_at')
+        try:
+            current_crl = CertificateRevocationList.objects.filter(domain_profile=self).latest('issued_at')
+        except CertificateRevocationList.DoesNotExist:
+            current_crl = None
+
+        return current_crl
 
 
-class RevokedCertificates(models.Model):
+class RevokedCertificate(models.Model):
     """Certificate Revocation model."""
     device_name = models.CharField(max_length=50, help_text='Device name')
     device_serial_number = models.CharField(max_length=50, help_text='Serial number of device.')
@@ -1622,7 +1632,7 @@ class RevokedCertificates(models.Model):
         """
         return f"{self.serial_number} - Revoked on {self.revocation_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
 
-class CertificateRevocationlist(models.Model):
+class CertificateRevocationList(models.Model):
     """Storage of CRLs."""
 
     crl_content = models.TextField()

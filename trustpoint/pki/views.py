@@ -3,6 +3,8 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 from urllib.parse import quote
 
+from django.views import View
+
 from trustpoint.views import ContextDataMixin, TpLoginRequiredMixin, BulkDeleteView
 from django.views.generic.base import RedirectView
 from django.views.generic.list import ListView
@@ -13,6 +15,7 @@ from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
 from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.contrib import messages
 from django.db import transaction
 from django.http import HttpResponse
 
@@ -23,7 +26,7 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography import x509
 
 
-from .models import Certificate, RevokedCertificates, IssuingCa, DomainProfile
+from .models import Certificate, RevokedCertificate, IssuingCa, DomainProfile
 from .tables import CertificateTable, IssuingCaTable, DomainProfileTable
 from .forms import CertificateDownloadForm, IssuingCaAddMethodSelectForm, IssuingCaAddFileImportForm
 from .files import (
@@ -395,33 +398,37 @@ class DomainProfilesBulkDeleteConfirmView(IssuingCaContextMixin, TpLoginRequired
 # -------------------------------------------------- Certificate revocation list  --------------------------------------------------
 
 
-class CRLListView(TpLoginRequiredMixin, SingleTableView):
-    """Revoked Certificates List View."""
-
-    #from onboarding.crypto_backend import CryptoBackend # ?
-
-    model = RevokedCertificates
+class CRLDownloadView(View):
+    """Revoked Certificates download view."""
 
     @staticmethod
-    def download_ca_crl(self: IssuingCa, ca_id):
+    def download_ca_crl(self: CRLDownloadView, ca_id):
         try:
             issuing_ca = IssuingCa.objects.get(pk=ca_id)
         except IssuingCa.DoesNotExist:
-            return HttpResponse('Issuing CA not found', status=404)
+            messages.error(self, _('Issuing CA not found.'))
+            return redirect('pki:issuing_cas')
 
         crl_data = issuing_ca.get_crl()
+        if not crl_data:
+            messages.warning(self, _('No CRL available for issuing CA %s.') % issuing_ca.unique_name)
+            return redirect('pki:issuing_cas')
         response = HttpResponse(crl_data, content_type='text/plain')
         response['Content-Disposition'] = f'attachment; filename="{issuing_ca.unique_name}.crl"'
         return response
 
     @staticmethod
-    def download_domain_profile_crl(self: DomainProfile, id):
+    def download_domain_profile_crl(self: CRLDownloadView, id):
         try:
             domain_profile = DomainProfile.objects.get(pk=id)
         except IssuingCa.DoesNotExist:
-            return HttpResponse('Domain profile not found', status=404)
+            messages.error(self, _('Domain Profile not found.'))
+            return redirect('pki:domain_profiles')
 
         crl_data = domain_profile.get_crl()
+        if not crl_data:
+            messages.warning(self, _('No CRL available for domain profile %s.') % domain_profile.unique_name)
+            return redirect('pki:domain_profiles')
         response = HttpResponse(crl_data, content_type='text/plain')
         response['Content-Disposition'] = f'attachment; filename="{domain_profile.unique_name}.crl"'
         return response
