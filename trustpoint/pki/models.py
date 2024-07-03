@@ -1630,7 +1630,7 @@ class RevokedCertificate(models.Model):
             str:
                 CRL as PEM String
         """
-        return f"{self.serial_number} - Revoked on {self.revocation_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
+        return f"{self.cert_serial_number} - Revoked on {self.revocation_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
 
 class CertificateRevocationList(models.Model):
     """Storage of CRLs."""
