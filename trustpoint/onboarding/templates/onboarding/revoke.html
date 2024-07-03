@@ -9,7 +9,6 @@
             </div>
             <div class="card-body tp-main-centered pt-3 pb-4">
 
-
                 <h2 class="pt-5 text-start">Device</h2>
                 <hr>
                 <ul class="list-group list-group-flush text-start tp-form-grid-2-2">
@@ -19,15 +18,16 @@
                     <li class="list-group-item"><span><strong>Device onboarding status:</strong></span><span>{{ device.get_device_onboarding_status_display }}</span></li>
                 </ul>
 
-
                 <hr>
 
-                {% if onboarded %}
                 <div class="tp-form-btn-group tp-form-btn-group pt-5">
                     <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Cancel</a>
-                    <input type="submit" class="btn btn-danger" value="Revoke certificate">
+                    <input type="submit" class="btn btn-danger" value="Revoke certificate"
+                    {% if not onboarded %}
+                        disabled
+                    {% endif %}
+                    >
                 </div>
-                {% endif %}
 
             </div>
         </div>
