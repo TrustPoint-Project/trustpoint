@@ -395,7 +395,7 @@ class DomainProfilesBulkDeleteConfirmView(IssuingCaContextMixin, TpLoginRequired
     context_object_name = 'domain_profiles'
 
 
-# -------------------------------------------------- Certificate revocation list  --------------------------------------------------
+# -------------------------------------------- Certificate revocation list  --------------------------------------------
 
 
 class CRLDownloadView(View):
@@ -432,3 +432,25 @@ class CRLDownloadView(View):
         response = HttpResponse(crl_data, content_type='text/plain')
         response['Content-Disposition'] = f'attachment; filename="{domain_profile.unique_name}.crl"'
         return response
+
+
+# ---------------------------------------------------- TrustStores  ----------------------------------------------------
+
+
+class TrustStoresContextMixin(TpLoginRequiredMixin, ContextDataMixin):
+    """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
+
+    context_page_category = 'pki'
+    context_page_name = 'truststores'
+
+
+class TrustStoresTableView(TrustStoresContextMixin, TpLoginRequiredMixin, SingleTableView):
+    """Certificates Table View."""
+
+    # TODO: Create Truststore Model and modify this
+    model = Certificate
+    table_class = CertificateTable
+    template_name = 'pki/truststores/truststores.html'
+
+
+

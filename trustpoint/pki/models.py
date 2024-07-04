@@ -1554,7 +1554,6 @@ class IssuingCa(models.Model):
 class DomainProfile(models.Model):
     """Endpoint Profile model."""
 
-    id = models.AutoField(primary_key=True)
     unique_name = models.CharField(_('Unique Name'), max_length=100, unique=True)
 
     issuing_ca = models.ForeignKey(
@@ -1645,3 +1644,28 @@ class CertificateRevocationList(models.Model):
                 CRL as PEM String
         """
         return self.crl_content
+
+
+class TrustStore(models.Model):
+    """TrustStores model."""
+
+    unique_name = models.CharField(_('Unique Name'), max_length=100, unique=True)
+    certificates = models.ManyToManyField(
+        Certificate,
+        verbose_name=_('Certificates'),
+        editable=False
+    )
+    domain_profiles = models.ManyToManyField(
+        DomainProfile,
+        verbose_name=_('DomainProfiles'),
+    )
+
+    def get_truststore_as_pem(self) -> list[bytes]:
+        # TODO
+        pass
+
+    def get_truststore_as_crypto(self) -> list[x509.Certificate]:
+        # TODO
+        pass
+
+
