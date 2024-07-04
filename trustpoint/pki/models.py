@@ -10,7 +10,6 @@ from __future__ import annotations
 
 import abc
 from ipaddress import IPv4Address, IPv4Network, IPv6Address, IPv6Network
-from typing import TYPE_CHECKING
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
@@ -25,9 +24,6 @@ from pki.crypto_backend import CRLManager
 from trustpoint import validators
 
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
-
-if TYPE_CHECKING:
-    from typing import Any
 
 
 # ----------------------------------------- Subject / Issuer Field Structures ------------------------------------------
@@ -739,8 +735,8 @@ class Certificate(models.Model):
     class CertificateStatus(models.TextChoices):
         OK = 'O', _('OK')
         REVOKED = 'R', _('Revoked')
-        #EXPIRED = 'E', _('Expired')
-        #NOT_YET_VALID = 'N', _('Not Yet Valid')
+        # EXPIRED = 'E', _('Expired')
+        # NOT_YET_VALID = 'N', _('Not Yet Valid')
 
     class Version(models.IntegerChoices):
         """X509 RFC 5280 - Certificate Version."""
@@ -1535,9 +1531,9 @@ class IssuingCa(models.Model):
         revoked_certificates = RevokedCertificate.objects.filter(issuing_ca=self)
         crl = manager.create_crl(revoked_certificates).decode('utf-8')
         CertificateRevocationList.objects.update_or_create(
-            crl_content = crl,
-            ca = self,
-            domain_profile = None
+            crl_content=crl,
+            ca=self,
+            domain_profile=None
         )
 
     def get_crl(self) -> CertificateRevocationList | None:
@@ -1591,9 +1587,9 @@ class DomainProfile(models.Model):
         revoked_certificates = RevokedCertificate.objects.filter(domain_profile=self)
         crl = manager.create_crl(revoked_certificates).decode('utf-8')
         CertificateRevocationList.objects.update_or_create(
-            crl_content = crl,
-            ca = self.issuing_ca,
-            domain_profile = self
+            crl_content=crl,
+            ca=self.issuing_ca,
+            domain_profile=self
         )
 
     def get_crl(self) -> CertificateRevocationList | None:
@@ -1632,6 +1628,7 @@ class RevokedCertificate(models.Model):
         """
         return f"{self.cert_serial_number} - Revoked on {self.revocation_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
 
+
 class CertificateRevocationList(models.Model):
     """Storage of CRLs."""
 
@@ -1648,4 +1645,3 @@ class CertificateRevocationList(models.Model):
                 CRL as PEM String
         """
         return self.crl_content
-
