@@ -38,7 +38,7 @@ def device_api_dict(dev: Device) -> dict:
     return {
         'id': dev.id,
         'name': dev.device_name,
-        'serial_number': dev.serial_number,
+        'serial_number': dev.device_serial_number,
         # TODO(Air): Prefer using the enum key instead of the label
         # (e.g. so that we can change the label for i18n without breaking the API)
         'onboarding_protocol': str(Device.OnboardingProtocol(dev.onboarding_protocol).label),

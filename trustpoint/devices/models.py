@@ -6,7 +6,7 @@ from __future__ import annotations
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from pki.models import Certificate, DomainProfile
+from pki.models import Certificate, DomainProfile, RevokedCertificate
 
 from .exceptions import UnknownOnboardingStatusError
 
@@ -19,8 +19,9 @@ class Device(models.Model):
 
         NOT_ONBOARDED = 'P', _('Pending')
         ONBOARDING_RUNNING = 'R', _('Running')
-        ONBOARDED = 'O', _('OK')
+        ONBOARDED = 'O', _('Onboarded')
         ONBOARDING_FAILED = 'F', _('Failed')
+        REVOKED = 'D', _('Revoked')
 
         @classmethod
         def get_color(cls: Device.DeviceOnboardingStatus, choice: Device.DeviceOnboardingStatus | str) -> str:
@@ -32,6 +33,8 @@ class Device(models.Model):
                 return 'warning'
             if choice == cls.ONBOARDED.value:
                 return 'success'
+            if choice == cls.REVOKED.value:
+                return 'info'
             if choice == cls.ONBOARDING_FAILED.value:
                 return 'danger'
             raise UnknownOnboardingStatusError
@@ -46,7 +49,7 @@ class Device(models.Model):
         FIDO = 'FI', _('FIDO FDO')
 
     device_name = models.CharField(max_length=100, unique=True, default='test')
-    serial_number = models.CharField(max_length=100, blank=True)
+    device_serial_number = models.CharField(max_length=100, blank=True)
     ldevid = models.ForeignKey(Certificate, on_delete=models.SET_NULL, blank=True, null=True)
     onboarding_protocol = models.CharField(
         max_length=2, choices=OnboardingProtocol, default=OnboardingProtocol.MANUAL, blank=True
@@ -59,23 +62,38 @@ class Device(models.Model):
 
     def __str__(self: Device) -> str:
         """Returns a Device object in human-readable format."""
-        return f'Device({self.device_name}, {self.serial_number})'
+        return f'Device({self.device_name}, {self.device_serial_number})'
 
     def revoke_ldevid(self: Device) -> bool:
         """Revokes the LDevID.
 
-        Deletes the LDevID file and sets the device status to NOT_ONBOARDED.
+        Deletes the LDevID file and sets the device status to REVOKED.
         Actual revocation (CRL, OCSP) is not yet implemented.
         """
         if not self.ldevid:
             return False
 
         if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
-            # TODO(Air): Perhaps extra status for revoked devices?
-            self.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
-        self.ldevid.delete()
+            self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
+
+        RevokedCertificate.objects.create(
+                device_name=self.device_name,
+                device_serial_number=self.device_serial_number,
+                cert_serial_number=self.ldevid.serial_number,
+                revocation_datetime=timezone.now(),
+                revocation_reason='Requested by user',
+                issuing_ca=self.domain_profile.issuing_ca,
+                domain_profile=self.domain_profile
+            )
+        # self.ldevid.delete()
+        self.ldevid.revoke()
         self.ldevid = None
         self.save()
+
+        # generate CRLs
+        self.domain_profile.generate_crl()
+        self.domain_profile.issuing_ca.generate_crl()
+
         return True
 
     @classmethod

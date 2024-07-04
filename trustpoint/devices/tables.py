@@ -35,7 +35,7 @@ class DeviceTable(tables.Table):
         fields = (
             'row_checkbox',
             'device_name',
-            'serial_number',
+            'device_serial_number',
             'domain_profile',
             'onboarding_protocol',
             'device_onboarding_status',
@@ -107,6 +107,12 @@ class DeviceTable(tables.Table):
                 reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
                 _('Retry Onboarding')
             )
+        if record.device_onboarding_status == Device.DeviceOnboardingStatus.REVOKED:
+            return format_html(
+                '<a href="{}" class="btn btn btn-info tp-onboarding-btn">{}</a>',
+                reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
+                _('Onboard again')
+            )
         raise UnknownOnboardingStatusError
 
     @staticmethod
@@ -156,7 +162,7 @@ class DeviceTable(tables.Table):
             return format_html(
                 '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
                 reverse('onboarding:revoke', kwargs={'device_id': record.pk}),
-                _('Revoke Certificates')
+                _('Revoke Certificate')
             )
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
             return format_html(

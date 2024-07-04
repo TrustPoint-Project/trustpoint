@@ -4,7 +4,6 @@ from django.urls import path, re_path
 
 from . import views
 
-
 app_name = 'pki'
 
 urlpatterns = [
@@ -32,7 +31,12 @@ urlpatterns = [
         views.IssuingCaBulkDeleteConfirmView.as_view(),
         name='issuing_cas-delete_confirm',
     ),
-
+    path('ca-crl/<int:ca_id>/',
+         views.CRLDownloadView.download_ca_crl,
+         name='crl'),
+    path('domain-profile-crl/<int:id>/',
+         views.CRLDownloadView.download_domain_profile_crl,
+         name='crl'),
     path('domain-profiles/', views.DomainProfileTableView.as_view(), name='domain_profiles'),
     path(
         'domain-profiles/add/',
