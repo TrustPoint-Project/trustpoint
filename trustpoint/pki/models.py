@@ -1267,9 +1267,6 @@ class Certificate(models.Model):
 
         spki_algorithm_oid, spki_key_size, spki_ec_curve_oid = cls._get_spki_info(cert=cert)
 
-        print(type(spki_algorithm_oid))
-        print(spki_ec_curve_oid.verbose_name)
-
         # -------------------------------------------------- Raw Data --------------------------------------------------
 
         cert_pem = cert.public_bytes(encoding=serialization.Encoding.PEM).decode()
