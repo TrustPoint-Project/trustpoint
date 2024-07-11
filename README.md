@@ -3,7 +3,7 @@
   <strong>The open source trust anchor software for machines and factories to manage digital identities.</strong><br/><br/>
   <a href="https://trustpoint.campus-schwarzwald.de/"><img src="https://img.shields.io/badge/Landing_Page_(german)-014BAD?style=flat"></a>
   <a href="https://github.com/orgs/TrustPoint-Project/discussions"><img src="https://img.shields.io/badge/GitHub-Discussions-014BAD?style=flat"></a>
-  <img src="https://img.shields.io/badge/License-None-red?style=flat">
+  <img src="https://img.shields.io/badge/License-MIT-014BAD?style=flat">
   <img src="https://img.shields.io/badge/Status-Early_technology_preview-red?style=flat">
 </p>
 
@@ -294,21 +294,3 @@ python manage.py migrate
   Successfully provisioned the Trustpoint-Client.
   ```
   - on trustpoint frontend device onboarding status will turned to `ok`
-
-## Where is the license?
-
-There is no explicit license yet. All rights reserved.
-
-Currently, Trustpoint is in an early technology preview state.  
-We are still deciding on the most appropriate open source license, as that is hard or impossible to change down the line. Potential candidates include the EUPL-1.2, a GPL flavor or a more permissive license like MPL or MIT.
-
-You may download, view, and use Trustpoint free of charge for testing and evaluation purposes, however you MUST NOT redistribute Trustpoint or a Derivative Work based on it. Use outside of testing and evaluation is heavily discouraged.  
-You may contribute to the project, however in doing so you accept your contributions to be re-licensed under any license of the author's choosing.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR  
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,  
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE  
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER  
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,  
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE  
-SOFTWARE.
