@@ -1,4 +1,4 @@
-[!IMPORTANT]
+> [!IMPORTANT]
 > Please read the Trustpoint Contributor License Agreement carefully before adding your name to the list.
 
 ## Trustpoint Contributor License Agreement[^1]
