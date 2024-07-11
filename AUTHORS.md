@@ -24,7 +24,7 @@ By adding my name to the authors list, with regard to my contribution(s) I certi
     source license(s) involved; and
     
 (e) I agree to notify the maintainers immediately in case I become aware of
-	circumstances that invalidate my certification of (a), (b), or (c).
+    circumstances that invalidate my certification of (a), (b), or (c).
 ```
 
 ## Syntax
