@@ -1,7 +1,6 @@
 """This module provides cryptographic operations for use during the onboarding process.
 
 This implementation is in testing stage and shall not be regarded as secure.
-TODO sign_ldevid is Dragons with Lasers in central Berlin levels of a security risk TODO
 """
 from __future__ import annotations
 
@@ -139,8 +138,7 @@ class CryptoBackend:
         device_cert = Certificate()
         device.ldevid = device_cert.save_certificate(cert)
 
-        # need to keep track of the device once we send out a cert, even if onboarding fails afterwards
-        # TODO(Air): but do it here?
+        # keep track of the device once we send out a cert, even if onboarding fails afterwards
         device.save()
 
         return cert
