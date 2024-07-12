@@ -1477,32 +1477,32 @@ class Certificate(models.Model):
 class IssuingCa(models.Model):
     """Issuing CA model."""
 
-    class Localization(models.TextChoices):
-        """Determines if the Issuing CA is locally or remotely available.
+    # class Localization(models.TextChoices):
+    #     """Determines if the Issuing CA is locally or remotely available.
+    #
+    #     Note:
+    #         L:  Certificate, certificate chain and key-pair are locally available.
+    #             Certificates can be issued locally.
+    #         R:  The Issuing CA is external.
+    #             Certificate request messages are generated and send to the CA to issue certificates.
+    #     """
+    #
+    #     L = 'L', _('Local')
+    #     R = 'R', _('Remote')
 
-        Note:
-            L:  Certificate, certificate chain and key-pair are locally available.
-                Certificates can be issued locally.
-            R:  The Issuing CA is external.
-                Certificate request messages are generated and send to the CA to issue certificates.
-        """
-
-        L = 'L', _('Local')
-        R = 'R', _('Remote')
-
-    class ConfigType(models.TextChoices):
-        """Confing."""
-
-        F_P12 = 'F_P12', _('File Import - PKCS#12')
-        F_PEM = 'F_PEM', _('File Import - PEM')
-        F_SELF = 'F_SELF', _('Locally signed')
-        F_EST = 'F_EST', _('Import - EST')
-        F_CMP = 'C_CMP', _('Import - CMP')
+    # class ConfigType(models.TextChoices):
+    #     """Confing."""
+    #
+    #     F_P12 = 'F_P12', _('File Import - PKCS#12')
+    #     F_PEM = 'F_PEM', _('File Import - PEM')
+    #     F_SELF = 'F_SELF', _('Locally signed')
+    #     F_EST = 'F_EST', _('Import - EST')
+    #     F_CMP = 'C_CMP', _('Import - CMP')
 
     unique_name = models.CharField(
         verbose_name=_('Unique Name'),
         max_length=100,
-        validators=[MinLengthValidator(3), validators.validate_isidentifer],
+        validators=[MinLengthValidator(3)],
         unique=True
     )
 
@@ -1511,7 +1511,9 @@ class IssuingCa(models.Model):
         verbose_name='Issuing CA Certificate',
         on_delete=models.CASCADE,
         primary_key=False,
-        related_name='issuing_ca')
+        related_name='issuing_ca',
+        blank=True,
+        null=True)
 
     def __str__(self) -> str:
         return f'IssuingCa({self.unique_name})'

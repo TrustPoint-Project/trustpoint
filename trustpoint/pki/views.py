@@ -9,7 +9,7 @@ from trustpoint.views import ContextDataMixin, TpLoginRequiredMixin, BulkDeleteV
 from django.views.generic.base import RedirectView
 from django.views.generic.list import ListView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import FormView, CreateView, UpdateView, DeleteView
+from django.views.generic.edit import FormView, CreateView, UpdateView
 from django_tables2 import SingleTableView
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
@@ -17,18 +17,17 @@ from django.utils.translation import gettext as _
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.contrib import messages
 from django.db import transaction
-from django.http import HttpResponse
-
-
-from cryptography.hazmat.primitives.asymmetric import rsa, ec
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.serialization import pkcs12
-from cryptography import x509
+from django.http import HttpResponse, HttpResponseRedirect
 
 
 from .models import Certificate, RevokedCertificate, IssuingCa, DomainProfile
 from .tables import CertificateTable, IssuingCaTable, DomainProfileTable
-from .forms import CertificateDownloadForm, IssuingCaAddMethodSelectForm, IssuingCaAddFileImportForm
+from .forms import (
+    CertificateDownloadForm,
+    IssuingCaAddMethodSelectForm,
+    IssuingCaFileTypeSelectForm,
+    IssuingCaAddFileImportPkcs12Form,
+    IssuingCaAddFileImportOtherForm)
 from .files import (
     CertificateFileContainer,
     CertificateChainIncluded,
@@ -172,161 +171,201 @@ class IssuingCaAddMethodSelectView(IssuingCaContextMixin, TpLoginRequiredMixin, 
     template_name = 'pki/issuing_cas/add/method_select.html'
     form_class = IssuingCaAddMethodSelectForm
 
+    def form_valid(self, form) -> HttpResponse:
+        method_select = form.cleaned_data.get('method_select')
+        if not method_select:
+            return HttpResponseRedirect(reverse_lazy('pki:issuing_cas-add-method_select'))
 
-class IssuingCaAddFileImportView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
+        if method_select and method_select == 'local_file_import':
+            return HttpResponseRedirect(reverse_lazy('pki:issuing_cas-add-file_import-file_type_select'))
 
-    template_name = 'pki/issuing_cas/add/file_import.html'
-    form_class = IssuingCaAddFileImportForm
-    success_url = reverse_lazy('pki:issuing_cas')
+        return HttpResponseRedirect(reverse_lazy('pki:issuing_cas-add-method_select'))
+
+
+class IssuingCaAddFileTypeSelectView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
+    template_name = 'pki/issuing_cas/add/file_type_select.html'
+    form_class = IssuingCaFileTypeSelectForm
 
     def form_valid(self, form) -> HttpResponse:
-        unique_name = form.cleaned_data['unique_name']
+        method_select = form.cleaned_data.get('method_select')
+        if not method_select:
+            return HttpResponseRedirect(reverse_lazy('pki:issuing_cas-add-file_import-file_type_select'))
 
-        private_key_password = form.cleaned_data['private_key_password'].encode()
-        if not private_key_password:
-            private_key_password = None
+        if method_select == 'pkcs_12':
+            return HttpResponseRedirect(reverse_lazy('pki:issuing_cas-add-file_import-pkcs12'))
+        elif method_select == 'other':
+            return HttpResponseRedirect(reverse_lazy('pki:issuing_cas-add-file_import-other'))
 
-        private_key_file = self.request.FILES['private_key_file']
-        if not isinstance(private_key_file, InMemoryUploadedFile):
-            return self.form_invalid(form=form)
-        private_key_file = private_key_file.read()
+        return HttpResponseRedirect(reverse_lazy('pki:issuing_cas-add-file_import-file_type_select'))
 
-        loaded_private_key, loaded_certificates = self._load_keyfile(private_key_file, private_key_password)
 
-        if 'cert_chain' in self.request.FILES:
-            cert_chain = self.request.FILES['cert_chain']
-            if not isinstance(cert_chain, InMemoryUploadedFile):
-                return self.form_invalid(form=form)
+class IssuingCaAddFileImportPkcs12View(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
 
-            loaded_certificates.extend(self._load_cert_chain(cert_chain.read()))
+    template_name = 'pki/issuing_cas/add/file_import.html'
+    form_class = IssuingCaAddFileImportPkcs12Form
+    success_url = reverse_lazy('pki:issuing_cas')
 
-        if 'issuing_ca_certificate' in self.request.FILES:
-            issuing_ca_certificate = self.request.FILES['issuing_ca_certificate']
-            if not isinstance(issuing_ca_certificate, InMemoryUploadedFile):
-                return self.form_invalid(form=form)
 
-            loaded_certificates.append(self._load_issuing_ca_certificate(issuing_ca_certificate.read()))
+class IssuingCaAddFileImportOtherView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
 
-        issuing_ca_cert = self._get_issuing_ca_certificate(
-            loaded_private_key=loaded_private_key,
-            loaded_certificates=loaded_certificates)
-        full_cert_chain = self._get_cert_chain(issuing_ca_cert=issuing_ca_cert, certs=loaded_certificates)
+    template_name = 'pki/issuing_cas/add/file_import.html'
+    form_class = IssuingCaAddFileImportOtherForm
+    success_url = reverse_lazy('pki:issuing_cas')
 
-        self._save_to_db(unique_name=unique_name, certs=full_cert_chain, private_key=loaded_private_key)
 
-        return super().form_valid(form=form)
-
-    @staticmethod
-    @transaction.atomic
-    def _save_to_db(
-            unique_name: str,
-            certs: list[x509.Certificate],
-            private_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey) -> None:
-
-        # TODO: create method, make atomic transaction
-        issuing_ca_cert_db = Certificate.save_certificate_chain_and_key(
-            certs=certs,
-            priv_key=private_key)
-
-        issuing_ca_db = IssuingCa(issuing_ca_certificate=issuing_ca_cert_db, unique_name=unique_name)
-        issuing_ca_db.save()
-
-    @staticmethod
-    def _get_issuing_ca_certificate(
-            loaded_private_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey,
-            loaded_certificates: list[x509.Certificate]) -> x509.Certificate:
-        loaded_public_key_spki = loaded_private_key.public_key().public_bytes(
-            encoding=serialization.Encoding.DER,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo)
-
-        for cert in loaded_certificates:
-            cert_public_key_spki = cert.public_key().public_bytes(
-                encoding=serialization.Encoding.DER,
-                format=serialization.PublicFormat.SubjectPublicKeyInfo)
-            if cert_public_key_spki == loaded_public_key_spki:
-                return cert
-            raise RuntimeError('Failed to find an Issuing CA certificate.')
-
-    @staticmethod
-    def _check_certificate_is_issuing_ca(cert: x509.Certificate) -> None:
-        # TODO: check extensions etc.
-        pass
-
-    @staticmethod
-    def _get_cert_chain(issuing_ca_cert: x509.Certificate, certs: list[x509.Certificate]) -> list[x509.Certificate]:
-        # TODO: proper path validation
-        cert_chain = [issuing_ca_cert]
-
-        if issuing_ca_cert.subject.public_bytes() == issuing_ca_cert.issuer.public_bytes():
-            return cert_chain
-
-        current_issued_cert = issuing_ca_cert
-        for cert in certs:
-            if cert.subject.public_bytes() == cert.issuer.public_bytes():
-                cert_chain.append(cert)
-                break
-            if current_issued_cert.issuer.public_bytes() == cert.subject.public_bytes():
-                cert_chain.append(cert)
-                current_issued_cert = cert
-        else:
-            raise RuntimeError('Failed to construct full certificate chain.')
-
-        return cert_chain
-
-    @staticmethod
-    def _load_cert_chain(cert_chain_bytes: bytes) -> list[x509.Certificate]:
-        try:
-            return x509.load_pem_x509_certificates(cert_chain_bytes)
-        except Exception:
-            pass
-
-        raise RuntimeError('Failed to load certificate chain file.')
-
-    @staticmethod
-    def _load_issuing_ca_certificate(cert_bytes: bytes) -> x509.Certificate:
-        try:
-            return x509.load_pem_x509_certificate(cert_bytes)
-        except Exception:
-            pass
-
-        raise RuntimeError('Failed to load Issuing CA certificate.')
-
-    @staticmethod
-    def _load_keyfile(
-            private_key_file: bytes,
-            private_key_password: None | bytes = None
-    ) -> tuple[rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey, list[x509.Certificate]]:
-
-        certs = []
-        # try loading PKCS#12 file
-        try:
-            p12 = pkcs12.load_pkcs12(private_key_file, private_key_password)
-            private_key = p12.key
-            if p12.cert:
-                certs.append(p12.cert.certificate)
-            if p12.additional_certs:
-                for cert in p12.additional_certs:
-                    certs.append(cert.certificate)
-
-            return private_key, certs
-
-        except Exception:
-            # TODO: check what could be raised and catch it
-            pass
-
-        try:
-            private_key = serialization.load_pem_private_key(private_key_file, password=private_key_password)
-            return private_key, []
-        except Exception:
-            pass
-
-        try:
-            private_key = serialization.load_der_private_key(private_key_file, password=private_key_password)
-            return private_key, []
-        except Exception:
-            pass
-
-        raise RuntimeError(f'Unable to load private key.')
+# class IssuingCaAddFileImportView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
+#
+#     template_name = 'pki/issuing_cas/add/file_import.html'
+#     form_class = IssuingCaAddFileImportForm
+#     success_url = reverse_lazy('pki:issuing_cas')
+#
+#     def form_valid(self, form) -> HttpResponse:
+#         unique_name = form.cleaned_data['unique_name']
+#
+#         private_key_password = form.cleaned_data['private_key_password'].encode()
+#         if not private_key_password:
+#             private_key_password = None
+#
+#         private_key_file = self.request.FILES['private_key_file']
+#         if not isinstance(private_key_file, InMemoryUploadedFile):
+#             return self.form_invalid(form=form)
+#         private_key_file = private_key_file.read()
+#
+#         loaded_private_key, loaded_certificates = self._load_keyfile(private_key_file, private_key_password)
+#
+#         if 'cert_chain' in self.request.FILES:
+#             cert_chain = self.request.FILES['cert_chain']
+#             if not isinstance(cert_chain, InMemoryUploadedFile):
+#                 return self.form_invalid(form=form)
+#             loaded_certificates.extend(self._load_cert_chain(cert_chain.read()))
+#
+#         if 'issuing_ca_certificate' in self.request.FILES:
+#             issuing_ca_certificate = self.request.FILES['issuing_ca_certificate']
+#             if not isinstance(issuing_ca_certificate, InMemoryUploadedFile):
+#                 return self.form_invalid(form=form)
+#
+#             loaded_certificates.append(self._load_issuing_ca_certificate(issuing_ca_certificate.read()))
+#
+#         issuing_ca_cert = self._get_issuing_ca_certificate(
+#             loaded_private_key=loaded_private_key,
+#             loaded_certificates=loaded_certificates)
+#         full_cert_chain = self._get_cert_chain(issuing_ca_cert=issuing_ca_cert, certs=loaded_certificates)
+#
+#         self._save_to_db(unique_name=unique_name, certs=full_cert_chain, private_key=loaded_private_key)
+#
+#         return super().form_valid(form=form)
+#
+#     @staticmethod
+#     @transaction.atomic
+#     def _save_to_db(
+#             unique_name: str,
+#             certs: list[x509.Certificate],
+#             private_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey) -> None:
+#
+#         # TODO: create method, make atomic transaction
+#         issuing_ca_cert_db = Certificate.save_certificate_chain_and_key(
+#             certs=certs,
+#             priv_key=private_key)
+#
+#         issuing_ca_db = IssuingCa(issuing_ca_certificate=issuing_ca_cert_db, unique_name=unique_name)
+#         issuing_ca_db.save()
+#
+#     @staticmethod
+#     def _get_issuing_ca_certificate(
+#             loaded_private_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey,
+#             loaded_certificates: list[x509.Certificate]) -> x509.Certificate:
+#         loaded_public_key_spki = loaded_private_key.public_key().public_bytes(
+#             encoding=serialization.Encoding.DER,
+#             format=serialization.PublicFormat.SubjectPublicKeyInfo)
+#
+#         for cert in loaded_certificates:
+#             cert_public_key_spki = cert.public_key().public_bytes(
+#                 encoding=serialization.Encoding.DER,
+#                 format=serialization.PublicFormat.SubjectPublicKeyInfo)
+#             if cert_public_key_spki == loaded_public_key_spki:
+#                 return cert
+#             raise RuntimeError('Failed to find an Issuing CA certificate.')
+#
+#     @staticmethod
+#     def _check_certificate_is_issuing_ca(cert: x509.Certificate) -> None:
+#         # TODO: check extensions etc.
+#         pass
+#
+#     @staticmethod
+#     def _get_cert_chain(issuing_ca_cert: x509.Certificate, certs: list[x509.Certificate]) -> list[x509.Certificate]:
+#         # TODO: proper path validation
+#         cert_chain = [issuing_ca_cert]
+#
+#         if issuing_ca_cert.subject.public_bytes() == issuing_ca_cert.issuer.public_bytes():
+#             return cert_chain
+#
+#         current_issued_cert = issuing_ca_cert
+#         for cert in certs:
+#             if cert.subject.public_bytes() == cert.issuer.public_bytes():
+#                 cert_chain.append(cert)
+#                 break
+#             if current_issued_cert.issuer.public_bytes() == cert.subject.public_bytes():
+#                 cert_chain.append(cert)
+#                 current_issued_cert = cert
+#         else:
+#             raise RuntimeError('Failed to construct full certificate chain.')
+#
+#         return cert_chain
+#
+#     @staticmethod
+#     def _load_cert_chain(cert_chain_bytes: bytes) -> list[x509.Certificate]:
+#         try:
+#             return x509.load_pem_x509_certificates(cert_chain_bytes)
+#         except Exception:
+#             pass
+#
+#         raise RuntimeError('Failed to load certificate chain file.')
+#
+#     @staticmethod
+#     def _load_issuing_ca_certificate(cert_bytes: bytes) -> x509.Certificate:
+#         try:
+#             return x509.load_pem_x509_certificate(cert_bytes)
+#         except Exception:
+#             pass
+#
+#         raise RuntimeError('Failed to load Issuing CA certificate.')
+#
+#     @staticmethod
+#     def _load_keyfile(
+#             private_key_file: bytes,
+#             private_key_password: None | bytes = None
+#     ) -> tuple[rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey, list[x509.Certificate]]:
+#
+#         certs = []
+#         # try loading PKCS#12 file
+#         try:
+#             p12 = pkcs12.load_pkcs12(private_key_file, private_key_password)
+#             private_key = p12.key
+#             if p12.cert:
+#                 certs.append(p12.cert.certificate)
+#             if p12.additional_certs:
+#                 for cert in p12.additional_certs:
+#                     certs.append(cert.certificate)
+#
+#             return private_key, certs
+#
+#         except Exception:
+#             # TODO: check what could be raised and catch it
+#             pass
+#
+#         try:
+#             private_key = serialization.load_pem_private_key(private_key_file, password=private_key_password)
+#             return private_key, []
+#         except Exception:
+#             pass
+#
+#         try:
+#             private_key = serialization.load_der_private_key(private_key_file, password=private_key_password)
+#             return private_key, []
+#         except Exception:
+#             pass
+#
+#         raise RuntimeError(f'Unable to load private key.')
 
 
 class IssuingCaDetailView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):

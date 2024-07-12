@@ -22,4 +22,10 @@ def validate_isidentifer(value: str) -> None:
 
     """
     if not value.isidentifier():
-        raise ValidationError(_('Must start with a letter and only contain letters, numbers and underscores.'))
+        if not value[0].isalpha():
+            raise ValidationError(
+                _('Unique names must start with a letter.'),
+                code='invalid-first-symbol')
+        raise ValidationError(
+            _('Must only contain letters, numbers and underscores.'),
+            code='contains-invalid-symbols')

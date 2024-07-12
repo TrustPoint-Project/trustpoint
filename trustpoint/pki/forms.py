@@ -3,6 +3,14 @@ from __future__ import annotations
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
+from cryptography.hazmat.primitives.asymmetric import rsa, ec
+from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.serialization import pkcs12
+from cryptography import x509
+
+from pki.models import IssuingCa
+from django.core.exceptions import ValidationError
+
 
 class CertificateDownloadForm(forms.Form):
     cert_file_container = forms.ChoiceField(
@@ -40,38 +48,135 @@ class CertificateDownloadForm(forms.Form):
 class IssuingCaAddMethodSelectForm(forms.Form):
 
     method_select = forms.ChoiceField(
-        label='Select Method',
+        label=_('Select Method'),
         choices=[
-            ('local_file_pem', _('Import a new Issuing CA from file')),
+            ('local_file_import', _('Import a new Issuing CA from file')),
             ('local_request', _('Generate a key-pair and request an Issuing CA certificate')),
             ('remote_est', _('Configure a remote Issuing CA')),
         ],
-        initial='single_file',
+        initial='local_file_import',
         required=True)
 
 
-class IssuingCaAddFileImportForm(forms.Form):
-    # Disables crispy alert header (msg of ValidationError in clean())
-    # non_field_errors: bool = False
+class IssuingCaFileTypeSelectForm(forms.Form):
+
+    # TODO: do we need .jks? Java Keystore
+    method_select = forms.ChoiceField(
+        label=_('File Type'),
+        choices=[
+            ('pkcs_12', _('PKCS#12')),
+            ('other', _('PEM, PKCS#1, PKCS#7, PKCS#8')),
+        ],
+        initial='pkcs_12',
+        required=True)
+
+
+class IssuingCaAddFileImportPkcs12Form(forms.Form):
+
+    unique_name = forms.CharField(
+        max_length=256,
+        label='Unique Name (Issuing CA)',
+        widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
+        required=True)
+
+    pkcs12_file = forms.FileField(label=_('PKCS#12 File (.p12, .pfx)'), required=True)
+    pkcs12_password = forms.CharField(
+        # hack, force autocomplete off in chrome with: one-time-code
+        widget=forms.PasswordInput(attrs={'autocomplete': 'one-time-code'}),
+        label=_('[Optional] PKCS#12 password'),
+        required=False)
+
+    def clean_unique_name(self) -> str:
+        unique_name = self.cleaned_data['unique_name']
+        if IssuingCa.objects.filter(unique_name=unique_name).exists():
+            raise ValidationError('abc')
+        return unique_name
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+        try:
+            # This should not throw any exceptions, even if invalid data was sent via HTTP POST request.
+            # However, just in case.
+            pkcs12_raw = cleaned_data.get('pkcs12_file').read()
+            pkcs12_password = cleaned_data.get('pkcs12_password')
+        except Exception:
+            raise ValidationError(
+                _('Unexpected error occurred while trying to get file contents. Please see logs for further details.'),
+                code='unexpected-error')
+
+        if pkcs12_password:
+            try:
+                pkcs12_password = pkcs12_password.encode()
+            except Exception:
+                raise ValidationError('The PKCS#12 password contains invalid data, that cannot be encoded in UTF-8.')
+        else:
+            pkcs12_password = None
+
+        try:
+            private_key, certificate, additional_certificates = pkcs12.load_key_and_certificates(
+                pkcs12_raw, pkcs12_password)
+        except Exception:
+            raise ValidationError(
+                'Failed to load PKCS#12 file. Either malformed file or wrong password.',
+                code='pkcs12-loading-failed')
+
+        if private_key is None:
+            raise ValidationError(
+                'PKCS#12 file does not contain any private key.',
+                code='pkcs12-missing-private-key'
+            )
+
+        # TODO: check supported key type
+
+        if certificate is None:
+            raise ValidationError(
+                'PKCS#12 file is missing the Issuing CA certificate corresponding to the private key.',
+                code='pkcs12-missing-issuing-ca-cert')
+
+
+
+class IssuingCaAddFileImportOtherForm(forms.Form):
 
     unique_name = forms.CharField(
         max_length=256,
         label='Unique Name (Issuing CA)',
         widget=forms.TextInput(attrs={'autocomplete': 'nope'}))
     private_key_file = forms.FileField(
-        label=_('Private Key File (Formats: DER, PEM, PKCS#1, PKCS#8, PKCS#12)'), required=True)
+        label=_('Private key file (.key, .pem, .keystore)'), required=True)
     private_key_password = forms.CharField(
         # hack, force autocomplete off in chrome with: one-time-code
         widget=forms.PasswordInput(attrs={'autocomplete': 'one-time-code'}),
-        label=_('[Optional] Private Key File Password, if the private key file is encrypted.'),
+        label=_('[Optional] Private key file password'),
         required=False)
     cert_chain = forms.FileField(
-        label=_('[Optional] Certificate Chain, if not contained in private key file. (Formats: PEM, PKCS#7)'),
-        required=False)
-    issuing_ca_certificate = forms.FileField(
         label=_(
-            '[Optional] Issuing CA Certificate, if not contained in private key file or certificate chain. '
-            '(Formats: PEM, PKCS#7)'),
-        required=False)
+            'Certificate chain (.pem, .p7b, .p7c)'),
+        required=True)
+
+
+# class IssuingCaAddFileImportForm(forms.Form):
+#     # Disables crispy alert header (msg of ValidationError in clean())
+#     # non_field_errors: bool = False
+#
+#     unique_name = forms.CharField(
+#         max_length=256,
+#         label='Unique Name (Issuing CA)',
+#         widget=forms.TextInput(attrs={'autocomplete': 'nope'}))
+#     private_key_file = forms.FileField(
+#         label=_('Private Key File (Formats: DER, PEM, PKCS#1, PKCS#8, PKCS#12)'), required=True)
+#     private_key_password = forms.CharField(
+#         # hack, force autocomplete off in chrome with: one-time-code
+#         widget=forms.PasswordInput(attrs={'autocomplete': 'one-time-code'}),
+#         label=_('[Optional] Private Key File Password, if the private key file is encrypted.'),
+#         required=False)
+#     cert_chain = forms.FileField(
+#         label=_('[Optional] Certificate Chain, if not contained in private key file. (Formats: PEM, PKCS#7)'),
+#         required=False)
+#     issuing_ca_certificate = forms.FileField(
+#         label=_(
+#             '[Optional] Issuing CA Certificate, if not contained in private key file or certificate chain. '
+#             '(Formats: PEM, PKCS#7)'),
+#         required=False)
 
 

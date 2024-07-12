@@ -1,8 +1,15 @@
 from __future__ import annotations
 
 from enum import Enum
+
+from cryptography.hazmat.primitives import serialization
+
 from .models import Certificate
 from cryptography.hazmat.primitives.serialization import pkcs7, Encoding
+from cryptography.hazmat.primitives.serialization.pkcs7 import load_der_pkcs7_certificates, load_pem_pkcs7_certificates
+from cryptography.hazmat.primitives.asymmetric import rsa, ec
+from cryptography.hazmat.primitives.serialization import pkcs12
+from cryptography import exceptions
 from cryptography import x509
 import zipfile
 import tarfile
@@ -221,3 +228,185 @@ class CertificateFileGenerator:
     def _generate_pkcs7_der(cls, certs: Certificate | list[Certificate]) -> bytes:
         new_certs = cls._get_crypto_certs(certs=certs)
         return pkcs7.serialize_certificates(new_certs, encoding=Encoding.DER)
+
+
+class X509CredentialFileSerializer:
+
+    _private_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey
+    _certificate_chain: list[x509.Certificate] = []
+    _certificates:  list[x509.Certificate] = []
+
+    # def __init__(
+    #         self,
+    #         private_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey,
+    #         certificates: None | list[x509.Certificate]
+    #         ) -> None:
+    #
+    #     self._private_key = private_key
+    #     self._certificates = certificates
+    #
+    #     self._get_cert_chain_from_certificates()
+
+
+    @property
+    def private_key(self) -> rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey:
+        return self._private_key
+
+    @property
+    def certificate_chain(self) -> list[x509.Certificate]:
+        return self._certificate_chain
+    #
+    # def from_key_and_certificate_bytes(
+    #     self,
+    #     private_key_file: None | bytes = None,
+    #     private_key_password: None | bytes = None,
+    #     certificates_and_chains: None | list[bytes] = None) -> X509CredentialFileSerializer:
+
+
+
+    # def from_crypto(
+    #     self,
+    #     private_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey,
+    #     certificate_chain: None | list[x509.Certificate]):
+    #
+    #     self._private_key = private_key
+    #     self._certificate_chain = certificate_chain
+
+    def _load_pkcs12_key_and_certs(self, private_key_file: bytes, private_key_password: None | bytes) -> None:
+
+        try:
+            p12 = pkcs12.load_pkcs12(private_key_file, private_key_password)
+        except Exception:
+            raise ValueError('Invalid private key file.')
+
+        # TODO: Supported key type abstraction
+        if isinstance(p12.key, rsa.RSAPrivateKey) or isinstance(p12.key, ec.EllipticCurvePrivateKey):
+            self._private_key = p12.key
+        else:
+            raise ValueError(f'Key type is not supported. Please choose an RSA or EC key.')
+
+        if p12.cert:
+            self._certificates.append(p12.cert.certificate)
+        if p12.additional_certs:
+            for cert in p12.additional_certs:
+                self._certificates.append(cert.certificate)
+
+    def _load_der_certificate(self, cert_raw: bytes) -> None:
+        try:
+            cert = x509.load_der_x509_certificate(cert_raw)
+            self._certificates.append(cert)
+        except ValueError:
+            raise ValueError('Failed to load DER certificate.')
+
+    def _load_pem_certificate(self, cert_raw: bytes) -> None:
+        try:
+            cert = x509.load_pem_x509_certificate(cert_raw)
+            self._certificates.append(cert)
+        except ValueError:
+            raise ValueError('Failed to load PEM certificate.')
+
+    def _load_pem_cert_chain(self, cert_chain_raw: bytes) -> None:
+        try:
+            certs = x509.load_pem_x509_certificates(cert_chain_raw)
+            self._certificates.extend(certs)
+        except ValueError:
+            raise ValueError('Failed to load PEM certificate chain.')
+
+    def _load_der_certificates_from_pkcs7(self, pkcs7_raw: bytes) -> None:
+        try:
+            certs = load_der_pkcs7_certificates(pkcs7_raw)
+            self._certificates.extend(certs)
+        except ValueError:
+            raise ValueError('Failed to load DER certificates from PKCS#7.')
+
+    def _load_pem_certificates_from_pkcs7(self, pkcs7_raw: bytes) -> None:
+        try:
+            certs = load_pem_pkcs7_certificates(pkcs7_raw)
+            self._certificates.extend(certs)
+        except (ValueError, exceptions.UnsupportedAlgorithm):
+            raise ValueError('Failed to load PEM certificates from PKCS#7.')
+
+    def _load_certificates_from_bytes(self, certificate_or_cer_chain: bytes) -> None:
+        try:
+            self._load_der_certificate(certificate_or_cer_chain)
+            return
+        except ValueError:
+            pass
+
+        try:
+            self._load_pem_certificate(certificate_or_cer_chain)
+            return
+        except ValueError:
+            pass
+
+        try:
+            self._load_pem_cert_chain(certificate_or_cer_chain)
+            return
+        except ValueError:
+            pass
+
+        try:
+            self._load_der_certificates_from_pkcs7(certificate_or_cer_chain)
+            return
+        except ValueError:
+            pass
+
+        try:
+            self._load_pem_certificates_from_pkcs7(certificate_or_cer_chain)
+            return
+        except ValueError:
+            pass
+
+        raise ValueError('Failed to load certificates from bytes.')
+
+    def _load_certificates(self, certificates_and_chains: list[bytes]) -> None:
+        for entry in certificates_and_chains:
+            self._load_certificates_from_bytes(entry)
+
+    def _remove_duplicates_from_certificates(self) -> None:
+        self._certificates = list(set(self._certificates))
+
+    def _get_cert_by_subject(self, subject: bytes) -> None | x509.Certificate:
+        for cert in self._certificates:
+            if cert.subject == subject:
+                return cert
+
+    def _get_cert_chain_from_certificates(self) -> None:
+        # TODO: use Authority Key Identifier and check signature
+        public_key_spki = self._private_key.public_key().public_bytes(
+            encoding=Encoding.DER,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo)
+
+        for cert in self._certificates:
+            if public_key_spki != cert.public_key().public_bytes(
+                    encoding=Encoding.DER,
+                    format=serialization.PublicFormat.SubjectPublicKeyInfo):
+
+                issuing_ca_cert = cert
+                break
+        else:
+            raise ValueError('No certificate found that matches the given private key.')
+
+        cert_chain = [issuing_ca_cert]
+        current_issuer = issuing_ca_cert.issuer.public_bytes()
+
+        while True:
+            next_cert = self._get_cert_by_subject(current_issuer)
+            cert_chain.append(next_cert)
+            if next_cert.subject.public_bytes() == next_cert.issuer.public_bytes():
+                break
+
+        cert_chain.reverse()
+        self._certificate_chain = cert_chain
+
+
+    # def _validate_credential(self):
+    #     # TODO: validate certificate chain including certificate extensions
+    #     pass
+
+
+
+
+
+
+
