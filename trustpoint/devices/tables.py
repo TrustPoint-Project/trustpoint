@@ -113,7 +113,8 @@ class DeviceTable(tables.Table):
                 reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
                 _('Onboard again')
             )
-        raise UnknownOnboardingStatusError
+        exc_msg = f'Unknown onboarding status {record.device_onboarding_status}. Failed to render entry in table.'
+        raise UnknownOnboardingStatusError(record.device_onboarding_status)
 
     @staticmethod
     def _render_zero_touch_onboarding_action(record: Device) -> str:
@@ -140,7 +141,7 @@ class DeviceTable(tables.Table):
                 '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn">{}</a>',
                 record.pk, _('Reset Context')
             )
-        raise UnknownOnboardingStatusError
+        raise UnknownOnboardingStatusError(record.device_onboarding_status)
 
     def render_onboarding_action(self: DeviceTable, record: Device) -> str:
         """Creates the html hyperlink for the details-view.
@@ -182,7 +183,7 @@ class DeviceTable(tables.Table):
         if is_brski or is_fido:
             return self._render_zero_touch_onboarding_action(record)
 
-        raise UnknownOnboardingProtocolError
+        raise UnknownOnboardingProtocolError(record.onboarding_protocol)
 
     @staticmethod
     def render_details(record: Device) -> SafeString:

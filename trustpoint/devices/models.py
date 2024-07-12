@@ -39,7 +39,7 @@ class Device(models.Model):
                 return 'info'
             if choice == cls.ONBOARDING_FAILED.value:
                 return 'danger'
-            raise UnknownOnboardingStatusError(f'Unknown onboarding status {choice}')
+            raise UnknownOnboardingStatusError(choice)
 
     class OnboardingProtocol(models.TextChoices):
         """Supported Onboarding Protocols."""

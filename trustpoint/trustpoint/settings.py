@@ -12,7 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
 
-from trustpoint.logging import logging_config
+from log.config import logging_config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
+    'log.apps.LogConfig',
     'onboarding.apps.OnboardingConfig',
     'pki.apps.PkiConfig',
     'sysconf.apps.SysconfConfig',

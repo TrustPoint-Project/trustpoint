@@ -1,7 +1,9 @@
+import logging
 from .models import Certificate, KeyUsageExtension, BasicConstraintsExtension, IssuingCa
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 
+log = logging.getLogger('tp.pki')
 
 # TODO:
 # @receiver([post_delete], sender=Certificate)
@@ -17,4 +19,6 @@ def update_delete_student(sender, instance, **kwargs):
     try:
         instance.issuing_ca_certificate.delete()
     except RuntimeError:
+        log.warning(
+            f'Issuing CA certificate {instance.issuing_ca_certificate} remains in DB as it has issued certificates.')
         pass
