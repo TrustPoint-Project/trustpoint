@@ -199,15 +199,11 @@ class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
             messages.error(request, _('Onboarding: Device with ID %s not found.') % device_id)
             return
 
-        # TODO(Air): We also need to remove the onboarding process automatically without calling this view
-
         state, onboarding_process = OnboardingProcess.cancel_for_device(device)
 
         if state == OnboardingProcessState.COMPLETED:
             messages.success(request, _('Onboarding: Device %s onboarded successfully.') % device.device_name)
         elif state == OnboardingProcessState.FAILED:
-            # TODO(Air): what to do if timeout occurs after valid LDevID is issued?
-            # TODO(Air): Delete device and add to CRL.
             reason = onboarding_process.error_reason if onboarding_process else ''
             messages.error(request, _('Onboarding process for device %(name)s failed. %(reason)s')
                                     % {"name": device.device_name, "reason": reason})

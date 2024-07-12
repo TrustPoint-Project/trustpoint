@@ -1,0 +1,19 @@
+{% block sub_details %}
+    <h2 class="pt-5 text-start">Device</h2>
+    <hr>
+    <ul class="list-group list-group-flush text-start tp-form-grid-2-2">
+        <li class="list-group-item"><span><strong>Device Name:</strong></span><span>{{ device.device_name }}</span></li>
+        <li class="list-group-item"><span><strong>Serial Number:</strong></span><span>{{ device.device_serial_number }}</span></li>
+        <li class="list-group-item"><span><strong>Certificate serial number:</strong></span>
+        <span>
+            {% if device.ldevid %}
+                <a href="{% url 'pki:certificate-detail' pk=object.ldevid.id %}">
+                    {{ device.ldevid.serial_number }}
+                </a>
+            {% else %}
+                No certificate associated with this device.
+            {% endif %}
+        </span></li>
+        <li class="list-group-item"><span><strong>Device onboarding status:</strong></span><span>{{ device.get_device_onboarding_status_display }}</span></li>
+    </ul>
+{% endblock sub_details %}

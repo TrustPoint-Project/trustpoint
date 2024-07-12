@@ -188,8 +188,6 @@ def stop(request: HttpRequest, device_id: int):
     if state == OnboardingProcessState.COMPLETED:
         return 200, {'success':True, 'message': f'Device {device.device_name} onboarded successfully.'}
     if state == OnboardingProcessState.FAILED:
-        # TODO(Air): what to do if timeout occurs after valid LDevID is issued?
-        # TODO(Air): Delete device and add to CRL.
         reason = onboarding_process.error_reason if onboarding_process else ''
         return 422, {'error': f'Onboarding process for device {device.device_name} failed.', 'detail': reason}
     if state == OnboardingProcessState.CANCELED:

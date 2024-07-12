@@ -137,6 +137,7 @@ class OnboardingProcess:
             return process.cancel()
         if device and device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
             device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+            device.revoke_ldevid()
             device.save()
             return (OnboardingProcessState.CANCELED, None)
 
@@ -150,6 +151,7 @@ class OnboardingProcess:
         if self.device and self.device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
             # actual cancellation (cancel() may be called just to remove the process from onboarding_processes)
             self.device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+            self.device.revoke_ldevid()
             self.device.save()
             self.state = OnboardingProcessState.CANCELED
 
@@ -162,6 +164,7 @@ class OnboardingProcess:
         self.error_reason = reason
         self.timer.cancel()
         self.device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_FAILED
+        self.device.revoke_ldevid()
         self.device.save()
 
     def _success(self) -> None:
