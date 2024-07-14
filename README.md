@@ -144,6 +144,10 @@ python manage.py migrate
 python manage.py createsuperuser
 ```
 
+Use any database client to connect to the database. you need to configure two settings
+- database type : SQLite
+- database file path: path to `db.sqlite3` file in trustpoint folder
+
 #### Running the development server
 
 ```bash
