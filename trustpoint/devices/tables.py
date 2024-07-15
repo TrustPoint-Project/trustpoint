@@ -47,7 +47,7 @@ class DeviceTable(tables.Table):
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
     device_name = tables.Column(empty_values=(), orderable=True, verbose_name=_('Device Name'))
-    serial_number = tables.Column(empty_values=(), orderable=True, verbose_name=_('Serial Number'))
+    device_serial_number = tables.Column(empty_values=(), orderable=True, verbose_name=_('Serial Number'))
     onboarding_protocol = tables.Column(empty_values=(), orderable=True, verbose_name=_('Onboarding Protocol'))
     device_onboarding_status = tables.Column(empty_values=(), orderable=True, verbose_name=_('Onboarding Status'))
     domain_profile = tables.Column(
