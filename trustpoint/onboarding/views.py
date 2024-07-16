@@ -10,23 +10,25 @@ from django.http import Http404, HttpResponse
 from django.http.request import HttpRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.views.generic import DetailView, RedirectView, TemplateView, View
 from django.utils.translation import gettext as _
+from django.views.generic import DetailView, RedirectView, TemplateView, View
 
 from trustpoint.views import TpLoginRequiredMixin
 
 from .cli_builder import CliCommandBuilder
+from .forms import RevokeCertificateForm
 from .models import (
     DownloadOnboardingProcess,
     ManualOnboardingProcess,
     OnboardingProcess,
     OnboardingProcessState,
-)
+    )
 
 if TYPE_CHECKING:
     from typing import Any
 
     from django.http import HttpRequest
+
 
 class OnboardingUtilMixin:
     """Mixin for checking onboarding prerequisits."""
@@ -45,8 +47,9 @@ class OnboardingUtilMixin:
             return False
         return True
 
-    def check_onboarding_prerequisites(self, request: HttpRequest,
-                                       allowed_onboarding_protocols: list[Device.OnboardingProtocol]) -> bool:
+    def check_onboarding_prerequisites(
+        self, request: HttpRequest, allowed_onboarding_protocols: list[Device.OnboardingProtocol]
+    ) -> bool:
         """Checks if criteria for starting the onboarding process are met."""
         ok, msg = Device.check_onboarding_prerequisites(self.kwargs['device_id'], allowed_onboarding_protocols)
 
@@ -67,11 +70,11 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
     redirection_view = 'devices:devices'
     context_object_name = 'device'
 
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:  # noqa: ARG002
         """Renders a template view for downloading certificate data."""
-        if (not self.get_device(request)
-            or not self.check_onboarding_prerequisites(request, [Device.OnboardingProtocol.MANUAL])
-           ):
+        if not self.get_device(request) or not self.check_onboarding_prerequisites(
+            request, [Device.OnboardingProtocol.MANUAL]
+        ):
             return redirect(self.redirection_view)
 
         device = self.device
@@ -91,12 +94,13 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
 
         return render(request, self.template_name, context)
 
+
 class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
     """View for downloading the PKCS12 file of a device."""
 
     redirection_view = 'devices:devices'
 
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:  # noqa: ARG002
         """GET method that returns the PKCS12 file of a device."""
         if not self.get_device(request) or self.device.onboarding_protocol != Device.OnboardingProtocol.MANUAL:
             return HttpResponse('Not found.', status=404)
@@ -107,6 +111,7 @@ class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             return HttpResponse('Not found.', status=404)
 
         return HttpResponse(onboarding_process.get_pkcs12(), content_type='application/x-pkcs12')
+
 
 class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
     """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
@@ -120,11 +125,10 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
 
         Returns: The rendered view for the onboarding process.
         """
-        if (not self.get_device(request) or not self.check_onboarding_prerequisites(request,
-                [Device.OnboardingProtocol.CLI,
-                 Device.OnboardingProtocol.TP_CLIENT,
-                 Device.OnboardingProtocol.MANUAL])
-           ):
+        if not self.get_device(request) or not self.check_onboarding_prerequisites(
+            request,
+            [Device.OnboardingProtocol.CLI, Device.OnboardingProtocol.TP_CLIENT, Device.OnboardingProtocol.MANUAL],
+        ):
             return redirect(self.redirection_view)
         device = self.device
 
@@ -178,8 +182,9 @@ class Detail404RedirectionMessageView(DetailView):
         except Http404:
             if not hasattr(self, 'category'):
                 self.category = _('Error')
-            messages.error(self.request,
-                           f'{self.category}: {self.model.__name__} with ID {kwargs[self.pk_url_kwarg]} not found.')
+            messages.error(
+                self.request, f'{self.category}: {self.model.__name__} with ID {kwargs[self.pk_url_kwarg]} not found.'
+            )
             return redirect(self.redirection_view)
 
 
@@ -188,7 +193,7 @@ class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
 
     category = 'Onboarding'
 
-    def get_redirect_url(self, **kwargs: Any) -> str: # noqa: ARG002
+    def get_redirect_url(self, **kwargs: Any) -> str:  # noqa: ARG002
         """Redirects to the devices page after canceling the onboarding process."""
         return reverse('devices:devices')
 
@@ -205,14 +210,19 @@ class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
             messages.success(request, _('Onboarding: Device %s onboarded successfully.') % device.device_name)
         elif state == OnboardingProcessState.FAILED:
             reason = onboarding_process.error_reason if onboarding_process else ''
-            messages.error(request, _('Onboarding process for device %(name)s failed. %(reason)s')
-                                    % {"name": device.device_name, "reason": reason})
+            messages.error(
+                request,
+                _('Onboarding process for device %(name)s failed. %(reason)s')
+                % {'name': device.device_name, 'reason': reason},
+            )
         elif state == OnboardingProcessState.CANCELED:
             messages.warning(request, _('Onboarding process for device %s canceled.') % device.device_name)
         elif state != OnboardingProcessState.NO_SUCH_PROCESS:
-            messages.error(request,
-                           _('Onboarding process for device %(name)s is in unexpected state %(state)s.')
-                           % {"name": device.device_name, "state": state})
+            messages.error(
+                request,
+                _('Onboarding process for device %(name)s is in unexpected state %(state)s.')
+                % {'name': device.device_name, 'state': state},
+            )
 
         if not onboarding_process:
             messages.error(request, _('No active onboarding process for device %s found.') % device.device_name)
@@ -221,6 +231,7 @@ class OnboardingExitView(TpLoginRequiredMixin, RedirectView):
         """Overrides the dispatch method to additionally call the _cancel method."""
         self._cancel(request, kwargs['device_id'])
         return super().dispatch(request, *args, **kwargs)
+
 
 class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessageView):
     """View for revoking LDevID certificates."""
@@ -235,20 +246,26 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         device = self.get_object()
-        context['onboarded'] = (device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED)
+        context['onboarded'] = device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED
+        context['form'] = RevokeCertificateForm()
         return context
 
-    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         """Revokes the LDevID certificate for a device.
 
         Input: device_id (int kwarg, optional): The ID of the device whose certificate to revoke.
 
         Redirects to the device details view.
         """
-        device = self.get_object() # don't need error handling, will return 404 if missing
+        device = self.get_object()  # don't need error handling, will return 404 if missing
 
-        if device.revoke_ldevid():
-            messages.success(request, _('LDevID certificate for device %s revoked.') % device.device_name)
+        form = RevokeCertificateForm(request.POST)
+        if form.is_valid() and form.cleaned_data['revocation_reason'] != '':
+            revocation_reason = form.cleaned_data['revocation_reason']
+            if device.revoke_ldevid(revocation_reason):
+                messages.success(request, _('LDevID certificate for device %s revoked.') % device.device_name)
+            else:
+                messages.warning(request, _('Device %s has no LDevID certificate to revoke.') % device.device_name)
+            return redirect(self.redirection_view)
         else:
-            messages.warning(request, _('Device %s has no LDevID certificate to revoke.') % device.device_name)
-        return redirect(self.redirection_view)
+            return redirect(self.redirection_view)

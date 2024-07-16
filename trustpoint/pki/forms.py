@@ -73,5 +73,6 @@ class IssuingCaAddFileImportForm(forms.Form):
             '[Optional] Issuing CA Certificate, if not contained in private key file or certificate chain. '
             '(Formats: PEM, PKCS#7)'),
         required=False)
+    auto_crl = forms.BooleanField(label='Generate CRL upon certificate revocation.', initial=True, required=False)
 
 

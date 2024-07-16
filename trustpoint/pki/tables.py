@@ -111,7 +111,7 @@ class IssuingCaTable(tables.Table):
             'signature_algorithm',
             'details',
             'delete',
-            'crl'
+            'crl',
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
@@ -156,7 +156,9 @@ class IssuingCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="/pki/ca-crl/{}/" class="btn btn-primary tp-table-btn">Download CRL</a>', record.pk)
+        generate_button = format_html('<a href="/pki/generate-ca-crl/{}/" class="btn btn-primary tp-table-btn">Generate CRL</a>', record.pk)
+        download_button = format_html('<a href="/pki/ca-crl/{}/" class="btn btn-primary tp-table-btn mb-2">Download CRL</a>', record.pk)
+        return format_html('{}<br>{}', generate_button, download_button)
 
 
 class DomainProfileTable(tables.Table):
@@ -233,6 +235,7 @@ class DomainProfileTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html(
-            '<a href="/pki/domain-profile-crl/{}/" class="btn btn-primary tp-table-btn">Download CRL</a>',
-            record.pk)
+        generate_button = format_html('<a href="/pki/generate-domain-profile-crl/{}/" class="btn btn-primary tp-table-btn">Generate CRL</a>', record.pk)
+        download_button = format_html('<a href="/pki/domain-profile-crl/{}/" class="btn btn-primary tp-table-btn">Download CRL</a>', record.pk)
+        return format_html('{}<br>{}', generate_button, download_button)
+

@@ -3,6 +3,7 @@ import datetime
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.x509 import ReasonFlags
 
 
 class CRLManager:
@@ -28,6 +29,8 @@ class CRLManager:
                 int(cert.cert_serial_number, 16)
             ).revocation_date(
                 cert.revocation_datetime
+            ).add_extension(
+                x509.CRLReason(ReasonFlags(cert.revocation_reason)), critical=False
             ).build()
             builder = builder.add_revoked_certificate(revoked_cert)
 
