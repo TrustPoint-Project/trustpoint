@@ -12,7 +12,7 @@
 
                 {% include 'devices/sub_details.html' %}
 
-                <h2 class="pt-5 text-start">Log</h2>
+                <h2 class="pt-5 text-start">Change Log</h2>
                 <hr>
 
                 <div class="table-responsive">
@@ -36,11 +36,7 @@
                             {% for key, value in entry.changes_display_dict.items %}
                                 {% if not forloop.first %}
                                 <tr>
-                                    {% if forloop.last %}
                                     <td>&#9492;&#9472;</td>
-                                    {% else %}
-                                    <td>&#9500;&#9472;</td>
-                                    {% endif %}
                                 <td></td>
                                 {% endif %}
                                 <td>{{ key }}</td>
@@ -54,8 +50,6 @@
                         </tbody>
                     </table>
                   </div>
-
-                  {% render_table table %}
 
                 <div class="tp-form-btn-group tp-form-btn-group mt-5">
                     <a href="{% url 'devices:devices' %}" class="btn btn-primary">Back</a>

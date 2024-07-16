@@ -3,8 +3,6 @@
 
 from __future__ import annotations
 
-from icecream import ic
-
 from typing import TYPE_CHECKING
 
 from django.shortcuts import redirect
@@ -17,7 +15,7 @@ from django_tables2 import SingleTableView
 from trustpoint.views import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
 
 from .models import Device
-from .tables import DeviceTable, DeviceAuditlogTable
+from .tables import DeviceTable
 
 if TYPE_CHECKING:
     from typing import Any
@@ -72,11 +70,7 @@ class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
             entry_dict["actor"] = entry.actor
 
             history.append(entry_dict)
-    
 
-        ic(history)
-        table = DeviceAuditlogTable(history)
-        context["table"] = table
         return context
     
     model = Device
