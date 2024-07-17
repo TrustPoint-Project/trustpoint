@@ -1,3 +1,4 @@
+import logging
 import threading
 import time
 from datetime import timedelta
@@ -11,8 +12,10 @@ from .models import DomainProfile, IssuingCa
 # Min-Heap für Timestamps und CA-Instanzen
 crl_schedule = []
 
+log = logging.getLogger('tp.pki')
 
-def _initialize_crl_schedule(issuing_instances):
+
+def _initialize_crl_schedule(issuing_instances) -> None:
     """Initialize the CRL schedule for the given issuing instances.
 
     Args:
@@ -32,14 +35,14 @@ def initialize_crl_schedule() -> None:
     """Initialize the CRL schedule for all IssuingCa and DomainProfile instances."""
     _initialize_crl_schedule(IssuingCa.objects.all())
     _initialize_crl_schedule(DomainProfile.objects.all())
-    print(f'all CRLs initialized: {crl_schedule}.')
+    log.debug('All CRLs initialized: %s', crl_schedule)
 
 
 def add_crl_to_schedule(instance) -> bool:
     """Adds new CRL instance to scheduler"""
     if isinstance(instance, (IssuingCa, DomainProfile)):
         schedule_next_crl(instance)
-        print(f'{instance} added to CRL schedule.')
+        log.debug('%s added to CRL schedule.', instance)
         return True
     raise TypeError
 
@@ -52,7 +55,7 @@ def remove_crl_from_schedule(instance) -> bool:
         crl_schedule = [(time, inst) for time, inst in crl_schedule if inst != instance]
         heapify(crl_schedule)
         if len(crl_schedule) < original_length:
-            print(f'{instance} removed from CRL schedule.')
+            log.debug('%s removed from CRL schedule.', instance)
         return True
     raise TypeError
 
@@ -80,26 +83,26 @@ def generate_crl(issuing_instance) -> None:
 
 def crl_scheduler() -> None:
     """Scheduler function that runs in a separate thread to manage CRL generation."""
-    print('CRL scheduler started.')
+    log.debug('CRL scheduler started.')
     while True:
         if crl_schedule:
             next_crl_time, issuing_instance = crl_schedule[0]
             sleep_time = (next_crl_time - timezone.now()).total_seconds()
 
             if sleep_time > 0:
-                print(f'Sleeping for {sleep_time} seconds')
+                log.debug('CLR scheduler sleeping for %s seconds', sleep_time)
                 time.sleep(sleep_time)
             else:
                 heappop(crl_schedule)
                 generate_crl(issuing_instance)
         else:
-            print('No CRL scheduled, sleeping for 1 hour')
+            log.debug('No CRL scheduled, sleeping for 1 hour')
             time.sleep(60 * 60)
 
 
-def start_crl_generation_thread():
+def start_crl_generation_thread() -> None:
     """Start the CRL generation thread."""
-    print('CRL thread started.')
+    log.info('CRL thread started.')
     initialize_crl_schedule()
     crl_thread = threading.Thread(target=crl_scheduler, daemon=True)
     crl_thread.start()

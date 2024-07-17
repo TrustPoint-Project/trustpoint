@@ -23,7 +23,7 @@ def update_delete_student(sender, instance, **kwargs):
         instance.issuing_ca_certificate.delete()
     except RuntimeError:
         log.warning(
-            f'Issuing CA certificate {instance.issuing_ca_certificate} remains in DB as it has issued certificates.')
+            'Issuing CA certificate %s remains in DB as it has issued certificates.', instance.issuing_ca_certificate)
 
 
 @receiver(post_save, sender=IssuingCa)
