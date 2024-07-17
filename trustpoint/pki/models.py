@@ -9,6 +9,7 @@
 from __future__ import annotations
 
 import abc
+import logging
 from ipaddress import IPv4Address, IPv4Network, IPv6Address, IPv6Network
 
 from cryptography import x509
@@ -28,6 +29,7 @@ from trustpoint import validators
 from .files import ReasonCode
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
 
+log = logging.getLogger('tp.pki')
 
 class AttributeTypeAndValue(models.Model):
     """AttributeTypeAndValue Model.
@@ -1230,6 +1232,7 @@ class Certificate(models.Model):
         if cert_in_db and exist_ok:
             return cert_in_db
         if cert_in_db and not exist_ok:
+            log.error(f'Attempted to save certificate {cert_in_db.common_name} already stored in the database.')
             raise ValueError('Certificate already stored in the database.')
 
         # Tries to get the issuer of the certificate to be saved.
@@ -1349,7 +1352,7 @@ class Certificate(models.Model):
         cls._save_subject(cert_model, subject)
         cls._save_extensions(cert_model, cert)
         cert_model._save()
-
+        log.info(f'Saved certificate {cert_model.common_name} in the database.')
         return cert_model
 
     # ------------------------------------------------------ Util ------------------------------------------------------
