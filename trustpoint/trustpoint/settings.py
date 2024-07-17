@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
     'log.apps.LogConfig',
+    'discovery.apps.DiscoveryConfig',
     'onboarding.apps.OnboardingConfig',
     'pki.apps.PkiConfig',
     'sysconf.apps.SysconfConfig',
