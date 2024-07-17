@@ -2,6 +2,7 @@
 
 
 from __future__ import annotations
+import logging
 
 from django.db import models
 from django.utils import timezone
@@ -10,6 +11,7 @@ from pki.models import Certificate, DomainProfile, RevokedCertificate
 
 from .exceptions import UnknownOnboardingStatusError
 
+log = logging.getLogger('tp.devices')
 
 class Device(models.Model):
     """Device Model."""
@@ -37,7 +39,7 @@ class Device(models.Model):
                 return 'info'
             if choice == cls.ONBOARDING_FAILED.value:
                 return 'danger'
-            raise UnknownOnboardingStatusError
+            raise UnknownOnboardingStatusError(choice)
 
     class OnboardingProtocol(models.TextChoices):
         """Supported Onboarding Protocols."""
@@ -94,6 +96,7 @@ class Device(models.Model):
         self.domain_profile.generate_crl()
         self.domain_profile.issuing_ca.generate_crl()
 
+        log.info('Revoked LDevID for device %s', self.device_name)
         return True
 
     @classmethod
@@ -130,5 +133,7 @@ class Device(models.Model):
 
         # TODO(Air): check that device is not already onboarded
         # Re-onboarding might be a valid use case, e.g. to renew a certificate
+        if device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+            log.warning('Re-onboarding device %s which is already onboarded.', device.device_name)
 
         return True, None
