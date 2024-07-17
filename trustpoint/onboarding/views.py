@@ -260,12 +260,11 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
         device = self.get_object()  # don't need error handling, will return 404 if missing
 
         form = RevokeCertificateForm(request.POST)
-        if form.is_valid() and form.cleaned_data['revocation_reason'] != '':
+        if form.is_valid():
             revocation_reason = form.cleaned_data['revocation_reason']
             if device.revoke_ldevid(revocation_reason):
                 messages.success(request, _('LDevID certificate for device %s revoked.') % device.device_name)
             else:
                 messages.warning(request, _('Device %s has no LDevID certificate to revoke.') % device.device_name)
             return redirect(self.redirection_view)
-        else:
-            return redirect(self.redirection_view)
+        return redirect(self.redirection_view)

@@ -7,3 +7,6 @@ class PkiConfig(AppConfig):
 
     def ready(self):
         import pki.signals
+
+        from .tasks import start_crl_generation_thread
+        start_crl_generation_thread()

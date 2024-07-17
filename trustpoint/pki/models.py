@@ -16,6 +16,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509.extensions import ExtensionNotFound
+from django.conf import settings
 from django.contrib import messages
 from django.core.validators import MinLengthValidator
 from django.db import models, transaction
@@ -1519,37 +1520,21 @@ class IssuingCa(models.Model):
 
     # TODO: save method, checking if a genuine issuing ca cert was selected.
 
-    def generate_crl(self) -> None:
+    def generate_crl(self) -> bool:
         """Generate CRL."""
         manager = CRLManager(
             ca_cert=self.issuing_ca_certificate.get_cert_as_crypto(),
             ca_private_key=self.issuing_ca_certificate.get_private_key_as_crypto(),
         )
-
-        revoked_certificates = RevokedCertificate.objects.filter(issuing_ca=self)
-        crl = manager.create_crl(revoked_certificates).decode('utf-8')
-        if crl:
-            CertificateRevocationList.objects.update_or_create(
-                crl_content=crl,
-                ca=self,
-                domain_profile=None
-            )
-            return True
-        return False
+        return manager.generate_crl(self)
 
     def get_crl(self) -> CertificateRevocationList | None:
-        """Retrieves latest crl from database.
+        """Retrieve the latest CRL from the database.
 
         Returns:
-            CertificateRevocationList:
-                CRL as PEM.
+            CertificateRevocationList or None: The latest CRL if exists, None otherwise.
         """
-        try:
-            current_crl = CertificateRevocationList.objects.filter(ca=self, domain_profile=None).latest('issued_at')
-        except CertificateRevocationList.DoesNotExist:
-            current_crl = None
-
-        return current_crl
+        return CRLManager.get_latest_crl(self)
 
 
 class DomainProfile(models.Model):
@@ -1579,37 +1564,21 @@ class DomainProfile(models.Model):
             return f'DomainProfile({self.unique_name}, {self.issuing_ca.unique_name})'
         return f'DomainProfile({self.unique_name}, None)'
 
-    def generate_crl(self) -> None:
+    def generate_crl(self) -> bool:
         """Generate CRL."""
         manager = CRLManager(
             ca_cert=self.issuing_ca.issuing_ca_certificate.get_cert_as_crypto(),
             ca_private_key=self.issuing_ca.issuing_ca_certificate.get_private_key_as_crypto(),
-            )
-
-        revoked_certificates = RevokedCertificate.objects.filter(domain_profile=self)
-        crl = manager.create_crl(revoked_certificates).decode('utf-8')
-        if crl:
-            CertificateRevocationList.objects.update_or_create(
-                crl_content=crl,
-                ca=self.issuing_ca,
-                domain_profile=self
-            )
-            return True
-        return False
+        )
+        return manager.generate_crl(self)
 
     def get_crl(self) -> CertificateRevocationList | None:
-        """Retrieves latest CRL from database.
+        """Retrieve the latest CRL from the database.
 
         Returns:
-            CertificateRevocationList:
-                CRL as PEM.
+            CertificateRevocationList or None: The latest CRL if exists, None otherwise.
         """
-        try:
-            current_crl = CertificateRevocationList.objects.filter(domain_profile=self).latest('issued_at')
-        except CertificateRevocationList.DoesNotExist:
-            current_crl = None
-
-        return current_crl
+        return CRLManager.get_latest_crl(self)
 
 
 class RevokedCertificate(models.Model):
@@ -1637,7 +1606,7 @@ class RevokedCertificate(models.Model):
 class CertificateRevocationList(models.Model):
     """Storage of CRLs."""
     crl_content = models.TextField()
-    issued_at = models.DateTimeField(auto_now_add=True)
+    issued_at = models.DateTimeField(auto_now_add=True, editable=False)
     ca = models.ForeignKey(IssuingCa, on_delete=models.CASCADE)
     domain_profile = models.ForeignKey(DomainProfile, on_delete=models.CASCADE, null=True, blank=True)
 
