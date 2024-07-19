@@ -2,6 +2,7 @@
 
 import logging
 import signal
+import os
 from django.apps import AppConfig
 
 log = logging.getLogger('tp')
@@ -13,6 +14,10 @@ class LogConfig(AppConfig):
     def ready(self) -> None:
         """Django startup hook, log startup and shutdown."""
         super().ready()
+
+        if not os.environ.get('RUN_MAIN') and not os.environ.get('WERKZEUG_RUN_MAIN'):
+            # Just helper process, not running startup code
+            return
     
         log.info('--- Trustpoint Server Startup ---')
 
