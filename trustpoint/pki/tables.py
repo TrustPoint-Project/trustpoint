@@ -7,7 +7,7 @@ from django.utils.functional import lazy
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from .models import Certificate, DomainProfile, IssuingCa
+from .models import CertificateModel, DomainProfile, IssuingCa
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
@@ -24,7 +24,7 @@ class CertificateTable(tables.Table):
     class Meta:
         """Table meta class configurations."""
 
-        model = Certificate
+        model = CertificateModel
         template_name = 'django_tables2/bootstrap5.html'
         order_by = '-created_at'
         empty_values = ()
@@ -50,7 +50,7 @@ class CertificateTable(tables.Table):
     download = tables.Column(empty_values=(), orderable=False, verbose_name=_('Download'))
 
     @staticmethod
-    def render_details(record: Certificate) -> SafeString:
+    def render_details(record: CertificateModel) -> SafeString:
         """Creates the html hyperlink for the details-view.
 
         Args:
@@ -63,7 +63,7 @@ class CertificateTable(tables.Table):
                            record.pk, _('Details'))
 
     @staticmethod
-    def render_download(record: Certificate) -> SafeString:
+    def render_download(record: CertificateModel) -> SafeString:
         """Creates the html hyperlink for the delete-view.
 
         Args:
@@ -121,7 +121,7 @@ class IssuingCaTable(tables.Table):
 
 
     @staticmethod
-    def render_details(record: Certificate) -> SafeString:
+    def render_details(record: CertificateModel) -> SafeString:
         """Creates the html hyperlink for the details-view.
 
         Args:
@@ -134,7 +134,7 @@ class IssuingCaTable(tables.Table):
                            record.pk, _('Details'))
 
     @staticmethod
-    def render_delete(record: Certificate) -> SafeString:
+    def render_delete(record: CertificateModel) -> SafeString:
         """Creates the html hyperlink for the delete-view.
 
         Args:
@@ -193,7 +193,7 @@ class DomainProfileTable(tables.Table):
     crl = tables.Column(empty_values=(), orderable=False, verbose_name=_('CRL'))
 
     @staticmethod
-    def render_details(record: Certificate) -> SafeString:
+    def render_details(record: CertificateModel) -> SafeString:
         """Creates the html hyperlink for the details-view.
 
         Args:
@@ -206,12 +206,12 @@ class DomainProfileTable(tables.Table):
                            record.pk, _('Details'))
 
     @staticmethod
-    def render_edit(record: Certificate) -> SafeString:
+    def render_edit(record: CertificateModel) -> SafeString:
         return format_html('<a href="edit/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
                            record.pk, _('Edit'))
 
     @staticmethod
-    def render_delete(record: Certificate) -> SafeString:
+    def render_delete(record: CertificateModel) -> SafeString:
         """Creates the html hyperlink for the delete-view.
 
         Args:

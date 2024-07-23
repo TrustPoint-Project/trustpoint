@@ -1,10 +1,5 @@
 """Module that contains all models corresponding to the PKI app."""
 
-# TODO: Unit Tests!
-# TODO: Unique Identifiers (even if deprecated in X.509 v3)
-# TODO: Proper path validations
-# TODO: Porper check if root ca cert / self-signed cert
-
 
 from __future__ import annotations
 
@@ -12,16 +7,13 @@ import abc
 from ipaddress import IPv4Address, IPv4Network, IPv6Address, IPv6Network
 
 from cryptography import x509
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
-from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509.extensions import ExtensionNotFound
 from django.core.validators import MinLengthValidator
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
-
-from pki.crypto_backend import CRLManager
-from trustpoint import validators
 
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
 
@@ -718,19 +710,13 @@ class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExten
 #     pass
 
 
-class Certificate(models.Model):
+class CertificateModel(models.Model):
     """X509 Certificate Model.
 
     See RFC5280 for more information.
     """
 
     # ------------------------------------------------- Django Choices -------------------------------------------------
-
-    class CertificateHierarchyType(models.TextChoices):
-        ROOT_CA = 'R', _('Root CA')
-        INTERMEDIATE_CA = 'N', _('Intermediate CA')
-        ISSUING_CA = 'I', _('Issuing CA')
-        END_ENTITY_CERT = 'E', _('End-Entity Certificate')
 
     class CertificateStatus(models.TextChoices):
         OK = 'O', _('OK')
@@ -755,17 +741,9 @@ class Certificate(models.Model):
     )
 
     # ----------------------------------------------- Custom Data Fields -----------------------------------------------
-
-    certificate_hierarchy_type = models.CharField(
-        verbose_name=_('Certificate Type'),
-        max_length=2,
-        choices=CertificateHierarchyType,
-        editable=False)
     
     certificate_status = models.CharField(verbose_name=_('Status'), max_length=2, choices=CertificateStatus,
                                           editable=False, default=CertificateStatus.OK)
-
-    certificate_hierarchy_depth = models.PositiveSmallIntegerField(verbose_name=_('Hierarchy Depth'), editable=False)
 
     # TODO: This is kind of a hack.
     # TODO: This information is already available through the subject relation
@@ -810,17 +788,19 @@ class Certificate(models.Model):
 
     # X.509 Certificate Serial Number (RFC5280)
     # This is not part of the subject. It is the serial number of the certificate itself.
-    serial_number = models.CharField(verbose_name=_('Serial Number'), unique=True, max_length=256, editable=False)
+    serial_number = models.CharField(verbose_name=_('Serial Number'), max_length=256, editable=False)
 
-    # Reference to the issuer certificate object in the model.
-    # If the certificate is self-signed / root-ca-certificate it is set to None
-    issuer = models.ForeignKey(
+    issuer_references = models.ManyToManyField(
         'self',
+        verbose_name=_('Issuers'),
+        symmetrical=False,
+        related_name='issued_certificate_references')
+
+    issuer = models.ManyToManyField(
+        AttributeTypeAndValue,
         verbose_name=_('Issuer'),
-        on_delete=models.CASCADE,
-        null=True,
-        editable=False,
-        related_name='issued_certs')
+        related_name='issuer',
+        editable=False)
 
     # The DER encoded issuer as hex string. Without prefix, all uppercase, no whitespace / trimmed.
     issuer_public_bytes = models.CharField(verbose_name=_('Issuer Public Bytes'), max_length=2048, editable=False)
@@ -836,6 +816,7 @@ class Certificate(models.Model):
     subject = models.ManyToManyField(
         AttributeTypeAndValue,
         verbose_name=_('Subject'),
+        related_name='subject',
         editable=False)
 
     # The DER encoded subject as hex string. Without prefix, all uppercase, no whitespace / trimmed.
@@ -875,16 +856,7 @@ class Certificate(models.Model):
     # ---------------------------------------------------- Raw Data ----------------------------------------------------
 
     cert_pem = models.CharField(verbose_name=_('Certificate (PEM)'), max_length=65536, editable=False, unique=True)
-
     public_key_pem = models.CharField(verbose_name=_('Public Key (PEM, SPKI)'), max_length=65536, editable=False)
-
-    private_key_pem = models.CharField(
-        verbose_name=_('Private Key (PEM)'),
-        max_length=65536,
-        editable=False,
-        null=True,
-        blank=True,
-        unique=True)
 
     # --------------------------------------------- Data Retrieval Methods ---------------------------------------------
 
@@ -912,14 +884,14 @@ class Certificate(models.Model):
         """
         return x509.load_pem_x509_certificate(self.cert_pem.encode())
 
-    def get_public_key_as_pem(self) -> str:
+    def get_public_key_as_pem(self) -> bytes:
         """Retrieves the public key as PEM string.
 
         Returns:
             str: Public key as PEM string.
 
         """
-        return self.public_key_pem
+        return self.public_key_pem.encode()
 
     def get_public_key_as_der(self) -> bytes:
         """Retrieves the public key as DER encoded bytes.
@@ -939,133 +911,6 @@ class Certificate(models.Model):
             rsa.RSAPublicKey | ec.EllipticCurvePublicKey: Public key as cryptography public key object.
         """
         return serialization.load_pem_public_key(self.public_key_pem.encode())
-
-    def get_private_key_as_crypto(self) -> rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey:
-        """Retrieves the private key as cryptography public key object.
-
-        Returns:
-            rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey: Public key as cryptography private key object.
-        """
-        return serialization.load_pem_private_key(self.private_key_pem.encode(), password=None)
-
-    def get_issuer_cert(self) -> None | Certificate:
-        """Retrieves the issuer certificate as django Certificate model object.
-
-        Returns:
-            trustpoint.pki.models.Certificate:
-                Issuer certificate as cryptography.x509.Certificate object.
-                None, if the current certificate is self-signed.
-        """
-        return self.issuer
-
-    def get_issuer_cert_as_pem(self) -> None | bytes:
-        """Retrieves the issuer certificate as PEM encoded string.
-
-        Returns:
-            None | str:
-                Issuer certificate PEM encoded string.
-                None, if the current certificate is self-signed.
-        """
-        if self.issuer is None:
-            return None
-        return self.issuer.get_cert_as_pem()
-
-    def get_issuer_cert_as_der(self) -> None | bytes:
-        """Retrieves the issuer certificate as DER encoded bytes.
-
-        Returns:
-            None | bytes:
-                Issuer certificate DER encoded bytes.
-                None, if the current certificate is self-signed.
-        """
-        if self.issuer is None:
-            return None
-        return self.issuer.get_cert_as_der()
-
-    def get_issuer_cert_as_crypto(self) -> None | x509.Certificate:
-        """Retrieves the issuer certificate as cryptography.x509.Certificate object
-
-        Returns:
-            cryptography.x509.Certificate:
-                Issuer certificate as cryptography.x509.Certificate object.
-                None, if the current certificate is self-signed.
-        """
-        if self.issuer is None:
-            return None
-        return self.issuer.get_cert_as_crypto()
-
-    def get_root_ca_cert(self) -> Certificate:
-        """Retrieves the root ca certificate as django Certificate model object.
-
-        Returns:
-            trustpoint.pki.models.Certificate:
-                Root CA certificate as cryptography.x509.Certificate object.
-                Returns self, if the current certificate is a Root CA or self-signed certificate.
-        """
-        cert = self
-        while True:
-            if cert.issuer is None:
-                return cert
-            cert = cert.issuer
-
-    # @property
-    # def root_ca_cert(self) -> Certificate:
-    #     return self.get_root_ca_cert()
-
-    def get_root_ca_cert_as_pem(self) -> bytes:
-        return self.get_root_ca_cert().get_cert_as_pem()
-
-    def get_root_ca_cert_as_der(self) -> bytes:
-        return self.get_root_ca_cert().get_cert_as_der()
-
-    def get_root_ca_cert_as_crypto(self) -> x509.Certificate:
-        return self.get_root_ca_cert().get_cert_as_crypto()
-
-    def get_cert_chain(self) -> list[Certificate]:
-        certs = [self]
-        cert = self.issuer
-        while True:
-            if cert is None:
-                return list(reversed(certs))
-            certs.append(cert)
-            cert = cert.issuer
-
-    def get_cert_chain_as_pem(self) -> list[bytes]:
-        return [cert.get_cert_as_pem() for cert in self.get_cert_chain()]
-
-    def get_cert_chain_as_crypto(self) -> list[x509.Certificate]:
-        """Retrieves the certificate as cryptography.x509.Certificate objects.
-
-        Returns:
-            list[cryptography.x509.Certificate]:
-                Certificate chain as cryptography.x509.Certificate object.
-                The first element will be the Root CA certificate.
-                The last element will be the certificate on which this method was called on.
-        """
-        certs = self.get_cert_chain()
-        certs_crypto = []
-        for cert in certs:
-            certs_crypto.append(cert.get_cert_as_crypto())
-        return certs_crypto
-
-    def get_issued_certs(self) -> list[Certificate]:
-        return self.issued_certs.all()
-
-    def get_issued_certs_as_pem(self) -> list[bytes]:
-        return [cert.get_cert_as_pem() for cert in self.get_issued_certs()]
-
-    def get_issued_certs_as_der(self) -> list[bytes]:
-        return [cert.get_cert_as_der() for cert in self.get_issued_certs()]
-
-    def get_issued_certs_as_crypto(self) -> list[x509.Certificate]:
-        """Retrieves all certificates that were issued by this certificate as cryptography.x509.Certificate objects.
-
-        Returns:
-            list[cryptography.x509.Certificate]:
-                Certificates that have been issued by the certificate on which this method was called on.
-                There is no particular order of these.
-        """
-        return [cert.get_cert_as_crypto() for cert in self.get_issued_certs()]
 
     # --------------------------------------------------- Extensions ---------------------------------------------------
     # order of extensions follows RFC5280
@@ -1130,63 +975,9 @@ class Certificate(models.Model):
         return f'Certificate(CN={self.common_name})'
 
     @classmethod
-    def _cert_in_db(cls, cert: x509.Certificate) -> None | Certificate:
-        sha256_fingerprint = cert.fingerprint(algorithm=hashes.SHA256()).hex().upper()
+    def _get_cert_by_sha256_fingerprint(cls, sha256_fingerprint: str) -> None | CertificateModel:
+        sha256_fingerprint = sha256_fingerprint.upper()
         return cls.objects.filter(sha256_fingerprint=sha256_fingerprint).first()
-
-    @staticmethod
-    def _cert_is_root_ca(cert: x509.Certificate) -> bool:
-        # TODO: proper validation of signature, ...
-        return cert.subject.public_bytes() == cert.issuer.public_bytes()
-
-    @classmethod
-    def _get_issuer(cls, cert: x509.Certificate) -> Certificate:
-        # TODO: utilize extensions Key Identifier
-        # TODO: verify signature
-        # TODO: handle multiple certificate with equal subjects
-        # if len(possible_issuers) > 1:
-        #     pass
-
-        possible_issuers = cls.objects.filter(subject_public_bytes=cert.issuer.public_bytes().hex().upper())
-        if not possible_issuers:
-            raise ValueError(f'No issuers found for {cert.subject.rfc4514_string()}.')
-
-        return possible_issuers[0]
-
-    @staticmethod
-    def _get_private_key_value(priv_key: None | rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey) -> None | str:
-        if priv_key is None:
-            return None
-        else:
-            return priv_key.private_bytes(
-                encoding=serialization.Encoding.PEM,
-                format=serialization.PrivateFormat.PKCS8,
-                encryption_algorithm=serialization.NoEncryption()
-            ).decode()
-
-    @classmethod
-    def _get_certificate_hierarchy_type_and_depth(
-            cls,
-            cert: x509.Certificate,
-            issuer: None | Certificate) -> tuple[CertificateHierarchyType, int]:
-        if issuer is None:
-            return cls.CertificateHierarchyType.ROOT_CA, 0
-
-        certificate_hierarchy_depth = issuer.certificate_hierarchy_depth + 1
-
-        try:
-            basic_constraints_ext = cert.extensions.get_extension_for_class(x509.BasicConstraints)
-        except x509.ExtensionNotFound:
-            # TODO: Handle the case where the Certificate does not have a BasicConstraints Extension
-            raise ValueError('Certificate does not have a BasicConstraints Extension.')
-
-        if basic_constraints_ext.value.ca:
-            if basic_constraints_ext.value.path_length == 0:
-                return cls.CertificateHierarchyType.ISSUING_CA, certificate_hierarchy_depth
-            else:
-                return cls.CertificateHierarchyType.INTERMEDIATE_CA, certificate_hierarchy_depth
-
-        return cls.CertificateHierarchyType.END_ENTITY_CERT, certificate_hierarchy_depth
 
     @staticmethod
     def _get_subject(cert: x509.Certificate) -> list[tuple[str, str]]:
@@ -1197,6 +988,16 @@ class Certificate(models.Model):
                     (attr_type_and_value.oid.dotted_string, attr_type_and_value.value)
                 )
         return subject
+
+    @staticmethod
+    def _get_issuer(cert: x509.Certificate) -> list[tuple[str, str]]:
+        issuer = []
+        for rdn in cert.issuer.rdns:
+            for attr_type_and_value in rdn:
+                issuer.append(
+                    (attr_type_and_value.oid.dotted_string, attr_type_and_value.value)
+                )
+        return issuer
 
     @staticmethod
     def _get_spki_info(cert: x509.Certificate) -> tuple[PublicKeyAlgorithmOid, int, EllipticCurveOid]:
@@ -1217,77 +1018,58 @@ class Certificate(models.Model):
         return super().save(*args, **kwargs)
 
     @classmethod
-    def _save_certificate_and_key(
-            cls,
-            cert: x509.Certificate,
-            priv_key: None | rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey,
-            exist_ok: bool = False) -> 'Certificate':
+    def _save_certificate(cls, certificate: x509.Certificate, exist_ok: bool = False) -> 'CertificateModel':
 
         # ------------------------------------------------ Exist Checks ------------------------------------------------
 
         # Handles the case in which the certificate is already stored in the database
-        cert_in_db = cls._cert_in_db(cert=cert)
+        cert_in_db = cls._get_cert_by_sha256_fingerprint(certificate.fingerprint(algorithm=hashes.SHA256()).hex())
         if cert_in_db and exist_ok:
             return cert_in_db
         if cert_in_db and not exist_ok:
             raise ValueError('Certificate already stored in the database.')
 
-        # Tries to get the issuer of the certificate to be saved.
-        if cls._cert_is_root_ca(cert=cert):
-            issuer = None
-        else:
-            issuer = cls._get_issuer(cert=cert)
-
         # --------------------------------------------- Custom Data Fields ---------------------------------------------
 
-        certificate_hierarchy_type, certificate_hierarchy_depth = cls._get_certificate_hierarchy_type_and_depth(
-            cert=cert, issuer=issuer)
-        certificate_hierarchy_type = certificate_hierarchy_type.value
-
-        sha256_fingerprint = cert.fingerprint(algorithm=hashes.SHA256()).hex().upper()
+        sha256_fingerprint = certificate.fingerprint(algorithm=hashes.SHA256()).hex().upper()
 
         # ---------------------------------------- Certificate Fields (Header) -----------------------------------------
 
-        signature_algorithm_oid = cert.signature_algorithm_oid.dotted_string
-        signature_value = cert.signature.hex().upper()
+        signature_algorithm_oid = certificate.signature_algorithm_oid.dotted_string
+        signature_value = certificate.signature.hex().upper()
 
         # ---------------------------------------- TBSCertificate Fields (Body) ----------------------------------------
 
-        version = cert.version.value
-        serial_number = hex(cert.serial_number)[2:].upper()
+        version = certificate.version.value
+        serial_number = hex(certificate.serial_number)[2:].upper()
 
-        # issuer is set in section 'Exist Checks'
-        issuer_public_bytes = cert.issuer.public_bytes().hex().upper()
+        issuer = cls._get_issuer(certificate)
+        issuer_public_bytes = certificate.issuer.public_bytes().hex().upper()
 
-        not_valid_before = cert.not_valid_before_utc
-        not_valid_after = cert.not_valid_after_utc
+        not_valid_before = certificate.not_valid_before_utc
+        not_valid_after = certificate.not_valid_after_utc
 
-        subject = cls._get_subject(cert=cert)
-        subject_public_bytes = cert.subject.public_bytes().hex().upper()
+        subject = cls._get_subject(certificate)
+        subject_public_bytes = certificate.subject.public_bytes().hex().upper()
 
-        spki_algorithm_oid, spki_key_size, spki_ec_curve_oid = cls._get_spki_info(cert=cert)
+        spki_algorithm_oid, spki_key_size, spki_ec_curve_oid = cls._get_spki_info(certificate)
 
         # -------------------------------------------------- Raw Data --------------------------------------------------
 
-        cert_pem = cert.public_bytes(encoding=serialization.Encoding.PEM).decode()
+        cert_pem = certificate.public_bytes(encoding=serialization.Encoding.PEM).decode()
 
-        public_key_pem = cert.public_key().public_bytes(
+        public_key_pem = certificate.public_key().public_bytes(
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo).decode()
 
-        priv_key_pem = cls._get_private_key_value(priv_key=priv_key)
-
         # ----------------------------------------- Certificate Model Instance -----------------------------------------
 
-        cert_model = Certificate(
-            certificate_hierarchy_type=certificate_hierarchy_type,
-            certificate_hierarchy_depth=certificate_hierarchy_depth,
+        cert_model = CertificateModel(
             sha256_fingerprint=sha256_fingerprint,
             signature_algorithm_oid=signature_algorithm_oid,
             signature_value=signature_value,
             version=version,
             serial_number=serial_number,
-            issuer=issuer,
             issuer_public_bytes=issuer_public_bytes,
             not_valid_before=not_valid_before,
             not_valid_after=not_valid_after,
@@ -1299,15 +1081,14 @@ class Certificate(models.Model):
             spki_ec_curve=spki_ec_curve_oid.verbose_name,
             cert_pem=cert_pem,
             public_key_pem=public_key_pem,
-            private_key_pem=priv_key_pem
         )
 
         # --------------------------------------------- Store in DataBase ----------------------------------------------
 
-        return cls._atomic_save(cert_model=cert_model, cert=cert, subject=subject)
+        return cls._atomic_save(cert_model=cert_model, certificate=certificate, subject=subject, issuer=issuer)
 
     @staticmethod
-    def _save_subject(cert_model: Certificate, subject: list[tuple[str, str]]) -> None:
+    def _save_subject(cert_model: CertificateModel, subject: list[tuple[str, str]]) -> None:
         for entry in subject:
             oid, value = entry
             existing_attr_type_and_val = AttributeTypeAndValue.objects.filter(oid=oid, value=value).first()
@@ -1319,7 +1100,19 @@ class Certificate(models.Model):
                 cert_model.subject.add(attr_type_and_val)
 
     @staticmethod
-    def _save_extensions(cert_model: Certificate, cert: x509.Certificate) -> None:
+    def _save_issuer(cert_model: CertificateModel, issuer: list[tuple[str, str]]) -> None:
+        for entry in issuer:
+            oid, value = entry
+            existing_attr_type_and_val = AttributeTypeAndValue.objects.filter(oid=oid, value=value).first()
+            if existing_attr_type_and_val:
+                cert_model.subject.add(existing_attr_type_and_val)
+            else:
+                attr_type_and_val = AttributeTypeAndValue(oid=oid, value=value)
+                attr_type_and_val.save()
+                cert_model.issuer.add(attr_type_and_val)
+
+    @staticmethod
+    def _save_extensions(cert_model: CertificateModel, cert: x509.Certificate) -> None:
         for extension in cert.extensions:
             if isinstance(extension.value, x509.BasicConstraints):
                 cert_model.basic_constraints_extension = \
@@ -1338,63 +1131,45 @@ class Certificate(models.Model):
     @transaction.atomic
     def _atomic_save(
             cls,
-            cert_model: Certificate,
-            cert: x509.Certificate,
-            subject: list[tuple[str, str]]) -> 'Certificate':
+            cert_model: CertificateModel,
+            certificate: x509.Certificate,
+            subject: list[tuple[str, str]],
+            issuer: list[tuple[str, str]]) -> 'CertificateModel':
 
         cert_model._save()
         for oid, value in subject:
             if oid == NameOid.COMMON_NAME.dotted_string:
                 cert_model.common_name = value
         cls._save_subject(cert_model, subject)
-        cls._save_extensions(cert_model, cert)
+
+        cls._save_issuer(cert_model, issuer)
+
+        cls._save_extensions(cert_model, certificate)
         cert_model._save()
 
+        # ------------------------------------------ Adding issuer references ------------------------------------------
+
+        issuer_candidates = cls.objects.filter(subject_public_bytes=cert_model.issuer_public_bytes)
+
+        for issuer_candidate in issuer_candidates:
+            try:
+                certificate.verify_directly_issued_by(issuer_candidate.get_cert_as_crypto())
+                cert_model.issuer_references.add(issuer_candidate)
+            except (ValueError, TypeError, InvalidSignature):
+                pass
+
+        # ------------------------------------ Adding issuer references on children ------------------------------------
+
+        issued_candidates = cls.objects.filter(issuer_public_bytes=cert_model.subject_public_bytes)
+
+        for issued_candidate in issued_candidates:
+            try:
+                issued_candidate.get_cert_as_crypto().verify_directly_issued_by(certificate)
+                issued_candidate.issuer_references.add(cert_model)
+            except (ValueError, TypeError, InvalidSignature):
+                pass
+
         return cert_model
-
-    # ------------------------------------------------------ Util ------------------------------------------------------
-
-    @staticmethod
-    def _sort_cert_chain(certs: list[x509.Certificate]) -> list[x509.Certificate]:
-        """Sorts a list of x509.Certificate objects.
-
-        This expects certificates all being part of a single certificate chain.
-
-        Args:
-            certs (list[x509.Certificate]):
-            Expects all certificates to be part of single certificate chain.
-            If one or more certificates are included, that are not part of the chain, a ValueError is raised.
-
-        Returns:
-            list[x509.Certificate]:
-                Sorted list of x509.Certificate objects. The first element is the Root CA Certificate.
-                If the list contains more than a single Root CA Certificate,
-                the last element will be an Intermediate CA, Issuing CA or End-Entity Certificate.
-
-        Raises:
-            ValueError: If the list cannot be sorted.
-        """
-
-        sorted_certs = []
-        for cert in certs:
-            # TODO: proper validation
-            if cert.subject.public_bytes() == cert.issuer.public_bytes():
-                sorted_certs.append(cert)
-                break
-        else:
-            raise ValueError('Failed to sort list. No Root CA Certificate found.')
-
-        while True:
-            for cert in certs:
-                # TODO: proper path validation
-                if cert != sorted_certs[0] and cert.issuer.public_bytes() == sorted_certs[-1].subject.public_bytes():
-                    sorted_certs.append(cert)
-                    break
-            else:
-                if len(certs) != len(sorted_certs):
-                    raise ValueError(
-                        'Failed to sort list. Contains certificates that are not part of the same certificate chain.')
-                return sorted_certs
 
     # ---------------------------------------------- Public save methods -----------------------------------------------
 
@@ -1406,98 +1181,31 @@ class Certificate(models.Model):
         Raises:
             NotImplementedError
         """
+
         raise NotImplementedError(
             '.save() must not be called directly on a Certificate instance to protect the integrity of the database. '
             'Use .save_certificate() or .save_certificate_and_key() passing the required cryptography objects.'
         )
 
     @classmethod
-    def save_certificate_and_key(
-            cls,
-            cert: x509.Certificate,
-            priv_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey) -> Certificate:
-        """Store the certificate and corresponding private key in the database and / or secure storage.
-
-        Returns:
-            trustpoint.pki.models.Certificate: The certificate object that has just been saved.
-        """
-        return cls._save_certificate_and_key(cert=cert, priv_key=priv_key)
-
-    @classmethod
-    def save_certificate(cls, cert: x509.Certificate, exist_ok: bool = False) -> Certificate:
+    def save_certificate(cls, certificate: x509.Certificate, exist_ok: bool = False) -> CertificateModel:
         """Store the certificate in the database.
 
         Returns:
             trustpoint.pki.models.Certificate: The certificate object that has just been saved.
         """
-        return cls._save_certificate_and_key(cert=cert, priv_key=None, exist_ok=exist_ok)
-
-    @classmethod
-    def save_certificate_chain(cls, certs: list[x509.Certificate]) -> Certificate:
-        sorted_certs = cls._sort_cert_chain(certs)
-        last_cert = sorted_certs.pop(-1)
-        for cert in sorted_certs:
-            cls._save_certificate_and_key(cert, priv_key=None, exist_ok=True)
-        return cls._save_certificate_and_key(last_cert, priv_key=None)
-
-    @classmethod
-    def save_certificate_chain_and_key(
-            cls,
-            certs: list[x509.Certificate],
-            priv_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey) -> Certificate:
-        sorted_certs = cls._sort_cert_chain(certs)
-        last_cert = sorted_certs.pop(-1)
-        for cert in sorted_certs:
-            cls.save_certificate(cert=cert, exist_ok=True)
-        return cls.save_certificate_and_key(cert=last_cert, priv_key=priv_key)
-
-    @classmethod
-    def save_pkcs12(cls, pkcs12_obj: pkcs12, password: None | bytes = None) -> Certificate:
-        raise NotImplementedError('TODO: Implement this method.')
+        return cls._save_certificate(certificate=certificate, exist_ok=exist_ok)
     
     def revoke(self) -> None:
         """Revokes the certificate."""
         self.certificate_status = self.CertificateStatus.REVOKED
         self._save()
 
-    def delete(self, **kwargs):
-        if self.issued_certs.all():
-            raise RuntimeError(
-                'Deletion Failed. There are still issued certificates in the DB (issued by this ca certificates.')
 
-        super().delete()
-
-        if self.issuer:
-            try:
-                self.issuer.delete()
-            except RuntimeError:
-                pass
-
+# ------------------------------------------------- Issuing CA Models --------------------------------------------------
 
 class IssuingCa(models.Model):
     """Issuing CA model."""
-
-    # class Localization(models.TextChoices):
-    #     """Determines if the Issuing CA is locally or remotely available.
-    #
-    #     Note:
-    #         L:  Certificate, certificate chain and key-pair are locally available.
-    #             Certificates can be issued locally.
-    #         R:  The Issuing CA is external.
-    #             Certificate request messages are generated and send to the CA to issue certificates.
-    #     """
-    #
-    #     L = 'L', _('Local')
-    #     R = 'R', _('Remote')
-
-    # class ConfigType(models.TextChoices):
-    #     """Confing."""
-    #
-    #     F_P12 = 'F_P12', _('File Import - PKCS#12')
-    #     F_PEM = 'F_PEM', _('File Import - PEM')
-    #     F_SELF = 'F_SELF', _('Locally signed')
-    #     F_EST = 'F_EST', _('Import - EST')
-    #     F_CMP = 'C_CMP', _('Import - CMP')
 
     unique_name = models.CharField(
         verbose_name=_('Unique Name'),
@@ -1506,48 +1214,25 @@ class IssuingCa(models.Model):
         unique=True
     )
 
-    issuing_ca_certificate = models.OneToOneField(
-        to=Certificate,
-        verbose_name='Issuing CA Certificate',
-        on_delete=models.CASCADE,
-        primary_key=False,
-        related_name='issuing_ca',
-        blank=True,
-        null=True)
+    certificates = models.ManyToManyField(
+        to=CertificateModel, verbose_name=_('Certificates'),
+        through='CertificateChainOrder')
 
     def __str__(self) -> str:
         return f'IssuingCa({self.unique_name})'
 
-    # TODO: save method, checking if a genuine issuing ca cert was selected.
 
-    def generate_crl(self) -> None:
-        """Generate CRL."""
-        manager = CRLManager(
-            ca_cert=self.issuing_ca_certificate.get_cert_as_crypto(),
-            ca_private_key=self.issuing_ca_certificate.get_private_key_as_crypto(),
-        )
+class CertificateChainOrder(models.Model):
 
-        revoked_certificates = RevokedCertificate.objects.filter(issuing_ca=self)
-        crl = manager.create_crl(revoked_certificates).decode('utf-8')
-        CertificateRevocationList.objects.update_or_create(
-            crl_content=crl,
-            ca=self,
-            domain_profile=None
-        )
+    class Meta:
+        unique_together = ('order', 'issuing_ca')
 
-    def get_crl(self) -> CertificateRevocationList | None:
-        """Retrieves latest crl from database.
+    order = models.PositiveSmallIntegerField()
+    certificate = models.ForeignKey(CertificateModel, on_delete=models.CASCADE)
+    issuing_ca = models.ForeignKey(IssuingCa, on_delete=models.CASCADE)
 
-        Returns:
-            CertificateRevocationList:
-                CRL as PEM.
-        """
-        try:
-            current_crl = CertificateRevocationList.objects.filter(ca=self).latest('issued_at')
-        except CertificateRevocationList.DoesNotExist:
-            current_crl = None
-
-        return current_crl
+    def __str__(self):
+        return f'CertificateChainOrder({self.certificate.common_name})'
 
 
 class DomainProfile(models.Model):
@@ -1574,97 +1259,3 @@ class DomainProfile(models.Model):
         if self.issuing_ca:
             return f'DomainProfile({self.unique_name}, {self.issuing_ca.unique_name})'
         return f'DomainProfile({self.unique_name}, None)'
-
-    def generate_crl(self) -> None:
-        """Generate CRL."""
-        manager = CRLManager(
-            ca_cert=self.issuing_ca.issuing_ca_certificate.get_cert_as_crypto(),
-            ca_private_key=self.issuing_ca.issuing_ca_certificate.get_private_key_as_crypto(),
-            )
-
-        revoked_certificates = RevokedCertificate.objects.filter(domain_profile=self)
-        crl = manager.create_crl(revoked_certificates).decode('utf-8')
-        CertificateRevocationList.objects.update_or_create(
-            crl_content=crl,
-            ca=self.issuing_ca,
-            domain_profile=self
-        )
-
-    def get_crl(self) -> CertificateRevocationList | None:
-        """Retrieves latest CRL from database.
-
-        Returns:
-            CertificateRevocationList:
-                CRL as PEM.
-        """
-        try:
-            current_crl = CertificateRevocationList.objects.filter(domain_profile=self).latest('issued_at')
-        except CertificateRevocationList.DoesNotExist:
-            current_crl = None
-
-        return current_crl
-
-
-class RevokedCertificate(models.Model):
-    """Certificate Revocation model."""
-    device_name = models.CharField(max_length=50, help_text='Device name')
-    device_serial_number = models.CharField(max_length=50, help_text='Serial number of device.')
-    cert_serial_number = models.CharField(max_length=50, unique=True,
-                                          help_text='Unique serial number of revoked certificate.', primary_key=True)
-    revocation_datetime = models.DateTimeField(help_text='Timestamp when certificate was revoked.')
-    revocation_reason = models.CharField(max_length=255, blank=True, help_text='Reason of revocation.')
-    issuing_ca = models.ForeignKey(
-        IssuingCa, on_delete=models.CASCADE, related_name='revoked_certificates', help_text='Name of Issuing CA.')
-    domain_profile = models.ForeignKey(DomainProfile, on_delete=models.CASCADE, related_name='revoked_certificates')
-
-    def __str__(self) -> str:
-        """Human-readable string when Certificate got revoked
-
-        Returns:
-            str:
-                CRL as PEM String
-        """
-        return f"{self.cert_serial_number} - Revoked on {self.revocation_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
-
-
-class CertificateRevocationList(models.Model):
-    """Storage of CRLs."""
-
-    crl_content = models.TextField()
-    issued_at = models.DateTimeField(auto_now_add=True)
-    ca = models.ForeignKey(IssuingCa, on_delete=models.CASCADE)
-    domain_profile = models.ForeignKey(DomainProfile, on_delete=models.CASCADE, null=True, blank=True)
-
-    def __str__(self) -> str:
-        """PEM representation of CRL
-
-        Returns:
-            str:
-                CRL as PEM String
-        """
-        return self.crl_content
-
-
-class TrustStore(models.Model):
-    """TrustStores model."""
-
-    unique_name = models.CharField(_('Unique Name'), max_length=100, unique=True)
-    certificates = models.ManyToManyField(
-        Certificate,
-        verbose_name=_('Certificates'),
-        editable=False
-    )
-    domain_profiles = models.ManyToManyField(
-        DomainProfile,
-        verbose_name=_('DomainProfiles'),
-    )
-
-    def get_truststore_as_pem(self) -> list[bytes]:
-        # TODO
-        pass
-
-    def get_truststore_as_crypto(self) -> list[x509.Certificate]:
-        # TODO
-        pass
-
-

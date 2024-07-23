@@ -4,7 +4,7 @@ from enum import Enum
 
 from cryptography.hazmat.primitives import serialization
 
-from .models import Certificate
+from .models import CertificateModel
 from cryptography.hazmat.primitives.serialization import pkcs7, Encoding
 from cryptography.hazmat.primitives.serialization.pkcs7 import load_der_pkcs7_certificates, load_pem_pkcs7_certificates
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
@@ -65,7 +65,7 @@ class CertificateFileGenerator:
     @classmethod
     def generate(
             cls,
-            certs: list[Certificate],
+            certs: list[CertificateModel],
             cert_file_container: CertificateFileContainer,
             cert_chain_incl: CertificateChainIncluded,
             cert_file_format: CertificateFileFormat) -> tuple[bytes, str]:
@@ -87,24 +87,24 @@ class CertificateFileGenerator:
             )
 
     @staticmethod
-    def _get_certs_with_chains(certs: list[Certificate]) -> list[Certificate]:
+    def _get_certs_with_chains(certs: list[CertificateModel]) -> list[CertificateModel]:
         new_certs = []
         for cert in certs:
-            new_certs.extend(cert.get_cert_chain())
+            new_certs.extend([cert])
         # removes duplicates
         return list(set(new_certs))
 
     @staticmethod
-    def _get_certs_with_chains_nested(certs: list[Certificate]) -> list[list[Certificate]]:
+    def _get_certs_with_chains_nested(certs: list[CertificateModel]) -> list[list[CertificateModel]]:
         new_certs = []
         for cert in certs:
-            new_certs.append(cert.get_cert_chain())
+            new_certs.append([cert])
         return new_certs
 
     @classmethod
     def _generate_single_file(
             cls,
-            certs: list[Certificate],
+            certs: list[CertificateModel],
             cert_file_format: CertificateFileFormat,
             cert_chain_included: CertificateChainIncluded) -> tuple[bytes, str]:
 
@@ -133,7 +133,7 @@ class CertificateFileGenerator:
     @classmethod
     def _generate_separate_files(
             cls,
-            certs: list[Certificate],
+            certs: list[CertificateModel],
             cert_file_container: CertificateFileContainer,
             cert_file_format: CertificateFileFormat,
             cert_chain_included: CertificateChainIncluded) -> tuple[bytes, str]:
@@ -188,13 +188,13 @@ class CertificateFileGenerator:
         return bytes_io.getvalue(), 'certificates.tar.gz'
 
     @staticmethod
-    def _check_certs_not_empty(certs: list[Certificate]) -> None:
+    def _check_certs_not_empty(certs: list[CertificateModel]) -> None:
         if len(certs) == 0:
             raise ValueError('No certificates found. Nothing to generate.')
 
     @staticmethod
-    def _generate_pem(certs: Certificate | list[Certificate]) -> bytes:
-        if isinstance(certs, Certificate):
+    def _generate_pem(certs: CertificateModel | list[CertificateModel]) -> bytes:
+        if isinstance(certs, CertificateModel):
             return certs.get_cert_as_pem()
         pem = b''
         for cert in certs:
@@ -202,8 +202,8 @@ class CertificateFileGenerator:
         return pem
 
     @staticmethod
-    def _generate_der(certs: Certificate | list[Certificate]) -> bytes:
-        if isinstance(certs, Certificate):
+    def _generate_der(certs: CertificateModel | list[CertificateModel]) -> bytes:
+        if isinstance(certs, CertificateModel):
             return certs.get_cert_as_der()
         if len(certs) != 1:
             raise ValueError(
@@ -211,8 +211,8 @@ class CertificateFileGenerator:
         return certs[0].get_cert_as_der()
 
     @staticmethod
-    def _get_crypto_certs(certs: Certificate | list[Certificate]) -> list[x509.Certificate]:
-        if isinstance(certs, Certificate):
+    def _get_crypto_certs(certs: CertificateModel | list[CertificateModel]) -> list[x509.Certificate]:
+        if isinstance(certs, CertificateModel):
             return [certs.get_cert_as_crypto()]
         crypto_certs = []
         for cert in certs:
@@ -220,12 +220,12 @@ class CertificateFileGenerator:
         return crypto_certs
 
     @classmethod
-    def _generate_pkcs7_pem(cls, certs: Certificate | list[Certificate]) -> bytes:
+    def _generate_pkcs7_pem(cls, certs: CertificateModel | list[CertificateModel]) -> bytes:
         new_certs = cls._get_crypto_certs(certs=certs)
         return pkcs7.serialize_certificates(new_certs, encoding=Encoding.PEM)
 
     @classmethod
-    def _generate_pkcs7_der(cls, certs: Certificate | list[Certificate]) -> bytes:
+    def _generate_pkcs7_der(cls, certs: CertificateModel | list[CertificateModel]) -> bytes:
         new_certs = cls._get_crypto_certs(certs=certs)
         return pkcs7.serialize_certificates(new_certs, encoding=Encoding.DER)
 
@@ -399,10 +399,6 @@ class X509CredentialFileSerializer:
         cert_chain.reverse()
         self._certificate_chain = cert_chain
 
-
-    # def _validate_credential(self):
-    #     # TODO: validate certificate chain including certificate extensions
-    #     pass
 
 
 

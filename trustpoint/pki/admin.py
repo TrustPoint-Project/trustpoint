@@ -2,7 +2,7 @@ from django.contrib import admin
 
 
 from .models import (
-    Certificate,
+    CertificateModel,
     IssuingCa,
     BasicConstraintsExtension,
     KeyUsageExtension,
@@ -70,8 +70,8 @@ class KeyUsageExtensionAdmin(admin.ModelAdmin):
 
 class CertificateAdmin(admin.ModelAdmin):
     readonly_fields = (
-        'certificate_hierarchy_type',
-        'certificate_hierarchy_depth',
+        # 'certificate_hierarchy_type',
+        # 'certificate_hierarchy_depth',
 
         'sha256_fingerprint',
         'common_name',
@@ -101,7 +101,7 @@ class CertificateAdmin(admin.ModelAdmin):
 
         'cert_pem',
         'public_key_pem',
-        'private_key_pem',
+        # 'private_key_pem',
 
         'key_usage_extension',
         'subject_alternative_name_extension',
@@ -116,4 +116,4 @@ admin.site.register(IssuerAlternativeNameExtension, AlternativeNameExtensionAdmi
 admin.site.register(AttributeTypeAndValue, AttributeTypeAndValueAdmin)
 admin.site.register(BasicConstraintsExtension, BasicConstraintsExtensionAdmin)
 admin.site.register(KeyUsageExtension, KeyUsageExtensionAdmin)
-admin.site.register(Certificate, CertificateAdmin)
+admin.site.register(CertificateModel, CertificateAdmin)

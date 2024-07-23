@@ -1,4 +1,4 @@
-from .models import Certificate, KeyUsageExtension, BasicConstraintsExtension, IssuingCa
+from .models import CertificateModel, KeyUsageExtension, BasicConstraintsExtension, IssuingCa
 from django.db.models.signals import post_delete
 from django.dispatch import receiver
 

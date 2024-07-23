@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from urllib.parse import quote
+# from urllib.parse import quote
 
 from django.views import View
 
@@ -14,13 +14,15 @@ from django_tables2 import SingleTableView
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
-from django.core.files.uploadedfile import InMemoryUploadedFile
+# from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.contrib import messages
-from django.db import transaction
+# from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect
 
 
-from .models import Certificate, RevokedCertificate, IssuingCa, DomainProfile
+from .models import CertificateModel, IssuingCa, DomainProfile
+# RevokedCertificate
+
 from .tables import CertificateTable, IssuingCaTable, DomainProfileTable
 from .forms import (
     CertificateDownloadForm,
@@ -61,13 +63,14 @@ class CertificatesContextMixin(TpLoginRequiredMixin, ContextDataMixin):
 class CertificateTableView(CertificatesContextMixin, TpLoginRequiredMixin, SingleTableView):
     """Certificates Table View."""
 
-    model = Certificate
+    model = CertificateModel
     table_class = CertificateTable
     template_name = 'pki/certificates/certificates.html'
+    context_object_name = 'certificates'
 
 
 class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
-    model = Certificate
+    model = CertificateModel
     success_url = reverse_lazy('pki:certificates')
     ignore_url = reverse_lazy('pki:certificates')
     template_name = 'pki/certificates/details.html'
@@ -75,7 +78,7 @@ class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, Deta
 
 
 class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, ListView):
-    model = Certificate
+    model = CertificateModel
     success_url = reverse_lazy('pki:certificates')
     ignore_url = reverse_lazy('pki:certificates')
     template_name = 'pki/certificates/download.html'
@@ -94,7 +97,7 @@ class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, Li
 
     @staticmethod
     def get_download_response(
-            certs: list[Certificate],
+            certs: list[CertificateModel],
             cert_file_container: str,
             cert_chain_incl: str,
             cert_file_format: str) -> HttpResponse:
@@ -116,7 +119,7 @@ class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, Li
         form = CertificateDownloadForm(request.GET)
         if form.is_valid():
             form.clean()
-            certs = Certificate.objects.filter(id__in=self.get_pks())
+            certs = CertificateModel.objects.filter(id__in=self.get_pks())
             cert_file_container = form.cleaned_data['cert_file_container']
             cert_chain_incl = form.cleaned_data['cert_chain_incl']
             cert_file_format = form.cleaned_data['cert_file_format']
@@ -487,7 +490,7 @@ class TrustStoresTableView(TrustStoresContextMixin, TpLoginRequiredMixin, Single
     """Certificates Table View."""
 
     # TODO: Create Truststore Model and modify this
-    model = Certificate
+    model = CertificateModel
     table_class = CertificateTable
     template_name = 'pki/truststores/truststores.html'
 

@@ -10,7 +10,11 @@
         </div>
         <div class="card-body text-start">
 
-            {% render_table table %}
+{#            {% render_table table %}#}
+
+            {% for certificate in certificates %}
+                {{ certificate }}
+            {% endfor %}
 
         </div>
         <div class="card-footer tp-table-footer-btn-group">
