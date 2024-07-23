@@ -741,16 +741,16 @@ class Certificate(models.Model):
     class Version(models.IntegerChoices):
         """X509 RFC 5280 - Certificate Version."""
         # We only allow version 3 or later if any are available in the future.
-        v3 = 2, _('Version 3')
+        V3 = 2, _('Version 3')
 
-    SIGNATURE_ALGORITHM_OID = models.TextChoices(
+    SignatureAlgorithmOidChoices = models.TextChoices(
         'SIGNATURE_ALGORITHM_OID', [(x.dotted_string, x.dotted_string) for x in SignatureAlgorithmOid])
 
-    PUBLIC_KEY_ALGORITHM_OID = models.TextChoices(
+    PublicKeyAlgorithmOidChoices = models.TextChoices(
         'PUBLIC_KEY_ALGORITHM_OID', [(x.dotted_string, x.dotted_string) for x in PublicKeyAlgorithmOid]
     )
 
-    PUBLIC_KEY_EC_CURVE_OID = models.TextChoices(
+    PublicKeyEcCurveOidChoices = models.TextChoices(
         'PUBLIC_KEY_EC_CURVE_OID', [(x.dotted_string, x.dotted_string) for x in EllipticCurveOid]
     )
 
@@ -785,7 +785,7 @@ class Certificate(models.Model):
         _('Signature Algorithm OID'),
         max_length=256,
         editable=False,
-        choices=SIGNATURE_ALGORITHM_OID)
+        choices=SignatureAlgorithmOidChoices)
 
     # Name of the signature algorithm
     @property
@@ -846,7 +846,7 @@ class Certificate(models.Model):
         _('Public Key Algorithm OID'),
         max_length=256,
         editable=False,
-        choices=PUBLIC_KEY_ALGORITHM_OID)
+        choices=PublicKeyAlgorithmOidChoices)
 
     # Subject Public Key Info - Algorithm Name
     spki_algorithm = models.CharField(
@@ -862,7 +862,7 @@ class Certificate(models.Model):
         verbose_name=_('Public Key Curve OID (ECC)'),
         max_length=256,
         editable=False,
-        choices=PUBLIC_KEY_EC_CURVE_OID,
+        choices=PublicKeyEcCurveOidChoices,
         default=EllipticCurveOid.NONE.dotted_string)
 
     # Subject Public Key Info - Curve Name if ECC, None otherwise
@@ -1008,9 +1008,9 @@ class Certificate(models.Model):
                 return cert
             cert = cert.issuer
 
-    @property
-    def root_ca_cert(self) -> Certificate:
-        return self.get_root_ca_cert()
+    # @property
+    # def root_ca_cert(self) -> Certificate:
+    #     return self.get_root_ca_cert()
 
     def get_root_ca_cert_as_pem(self) -> bytes:
         return self.get_root_ca_cert().get_cert_as_pem()

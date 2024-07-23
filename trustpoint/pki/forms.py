@@ -135,7 +135,6 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
                 code='pkcs12-missing-issuing-ca-cert')
 
 
-
 class IssuingCaAddFileImportOtherForm(forms.Form):
 
     unique_name = forms.CharField(

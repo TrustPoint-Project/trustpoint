@@ -23,7 +23,8 @@ release = '0.1.0'
 
 extensions = [
     'sphinx.ext.autodoc',
-    'sphinx.ext.napoleon'
+    'sphinx.ext.napoleon',
+    'sphinxcontrib.plantuml'
 ]
 
 templates_path = ['_templates']
@@ -35,3 +36,5 @@ exclude_patterns = []
 
 html_theme = 'furo'
 html_static_path = ['_static']
+
+plantuml = 'java -jar plantuml-mit-1.2024.6.jar'

@@ -10,15 +10,11 @@ Welcome to Trustpoint's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   devices
-   home
-   manage
-   onboarding
-   pki
-   sysconf
-   trustpoint
-   users
-   util
+   pki_models
+   validators
+   pki_issuing_ca
+   domains
+
 
 
 
