@@ -17,6 +17,8 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.x509.extensions import ExtensionNotFound
+from django.conf import settings
+from django.contrib import messages
 from django.core.validators import MinLengthValidator
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
@@ -27,9 +29,6 @@ from trustpoint import validators
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
 
 log = logging.getLogger('tp.pki')
-
-# ----------------------------------------- Subject / Issuer Field Structures ------------------------------------------
-
 
 class AttributeTypeAndValue(models.Model):
     """AttributeTypeAndValue Model.
@@ -1516,39 +1515,28 @@ class IssuingCa(models.Model):
         primary_key=False,
         related_name='issuing_ca')
 
+    auto_crl = models.BooleanField(default=True, verbose_name='generate CRL upon certificate revocation')
+
     def __str__(self) -> str:
         return f'IssuingCa({self.unique_name})'
 
     # TODO: save method, checking if a genuine issuing ca cert was selected.
 
-    def generate_crl(self) -> None:
+    def generate_crl(self) -> bool:
         """Generate CRL."""
         manager = CRLManager(
             ca_cert=self.issuing_ca_certificate.get_cert_as_crypto(),
             ca_private_key=self.issuing_ca_certificate.get_private_key_as_crypto(),
         )
-
-        revoked_certificates = RevokedCertificate.objects.filter(issuing_ca=self)
-        crl = manager.create_crl(revoked_certificates).decode('utf-8')
-        CertificateRevocationList.objects.update_or_create(
-            crl_content=crl,
-            ca=self,
-            domain_profile=None
-        )
+        return manager.generate_crl(self)
 
     def get_crl(self) -> CertificateRevocationList | None:
-        """Retrieves latest crl from database.
+        """Retrieve the latest CRL from the database.
 
         Returns:
-            CertificateRevocationList:
-                CRL as PEM.
+            CertificateRevocationList or None: The latest CRL if exists, None otherwise.
         """
-        try:
-            current_crl = CertificateRevocationList.objects.filter(ca=self).latest('issued_at')
-        except CertificateRevocationList.DoesNotExist:
-            current_crl = None
-
-        return current_crl
+        return CRLManager.get_latest_crl(self)
 
 
 class DomainProfile(models.Model):
@@ -1565,6 +1553,8 @@ class DomainProfile(models.Model):
         related_name='domain_profiles'
     )
 
+    auto_crl = models.BooleanField(default=True, verbose_name='Generate CRL upon certificate revocation.')
+
     def __str__(self) -> str:
         """Human-readable representation of the DomainProfile model instance.
 
@@ -1576,34 +1566,35 @@ class DomainProfile(models.Model):
             return f'DomainProfile({self.unique_name}, {self.issuing_ca.unique_name})'
         return f'DomainProfile({self.unique_name}, None)'
 
-    def generate_crl(self) -> None:
+    def generate_crl(self) -> bool:
         """Generate CRL."""
         manager = CRLManager(
             ca_cert=self.issuing_ca.issuing_ca_certificate.get_cert_as_crypto(),
             ca_private_key=self.issuing_ca.issuing_ca_certificate.get_private_key_as_crypto(),
-            )
-
-        revoked_certificates = RevokedCertificate.objects.filter(domain_profile=self)
-        crl = manager.create_crl(revoked_certificates).decode('utf-8')
-        CertificateRevocationList.objects.update_or_create(
-            crl_content=crl,
-            ca=self.issuing_ca,
-            domain_profile=self
         )
+        return manager.generate_crl(self)
 
     def get_crl(self) -> CertificateRevocationList | None:
-        """Retrieves latest CRL from database.
+        """Retrieve the latest CRL from the database.
 
         Returns:
-            CertificateRevocationList:
-                CRL as PEM.
+            CertificateRevocationList or None: The latest CRL if exists, None otherwise.
         """
-        try:
-            current_crl = CertificateRevocationList.objects.filter(domain_profile=self).latest('issued_at')
-        except CertificateRevocationList.DoesNotExist:
-            current_crl = None
+        return CRLManager.get_latest_crl(self)
+    
 
-        return current_crl
+class ReasonCode(models.TextChoices):
+    """Revocation reasons per RFC 5280"""
+    UNSPECIFIED = 'unspecified', _('Unspecified')
+    KEY_COMPROMISE = 'keyCompromise', _('Key Compromise')
+    CA_COMPROMISE = 'cACompromise', _('CA Compromise')
+    AFFILIATION_CHANGED = 'affiliationChanged', _('Affiliation Changed')
+    SUPERSEDED = 'superseded', _('Superseded')
+    CESSATION = 'cessationOfOperation', _('Cessation of Operation')
+    CERTIFICATE_HOLD = 'certificateHold', _('Certificate Hold')
+    PRIVILEGE_WITHDRAWN = 'privilegeWithdrawn', _('Privilege Withdrawn')
+    AA_COMPROMISE = 'aACompromise', _('AA Compromise')
+    REMOVE_FROM_CRL = 'removeFromCRL', _('Remove from CRL')
 
 
 class RevokedCertificate(models.Model):
@@ -1613,7 +1604,7 @@ class RevokedCertificate(models.Model):
     cert_serial_number = models.CharField(max_length=50, unique=True,
                                           help_text='Unique serial number of revoked certificate.', primary_key=True)
     revocation_datetime = models.DateTimeField(help_text='Timestamp when certificate was revoked.')
-    revocation_reason = models.CharField(max_length=255, blank=True, help_text='Reason of revocation.')
+    revocation_reason = models.CharField(max_length=255, choices=ReasonCode, default=ReasonCode.UNSPECIFIED, help_text='Reason of revocation.')
     issuing_ca = models.ForeignKey(
         IssuingCa, on_delete=models.CASCADE, related_name='revoked_certificates', help_text='Name of Issuing CA.')
     domain_profile = models.ForeignKey(DomainProfile, on_delete=models.CASCADE, related_name='revoked_certificates')
@@ -1630,9 +1621,8 @@ class RevokedCertificate(models.Model):
 
 class CertificateRevocationList(models.Model):
     """Storage of CRLs."""
-
     crl_content = models.TextField()
-    issued_at = models.DateTimeField(auto_now_add=True)
+    issued_at = models.DateTimeField(auto_now_add=True, editable=False)
     ca = models.ForeignKey(IssuingCa, on_delete=models.CASCADE)
     domain_profile = models.ForeignKey(DomainProfile, on_delete=models.CASCADE, null=True, blank=True)
 

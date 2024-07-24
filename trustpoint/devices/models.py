@@ -66,7 +66,7 @@ class Device(models.Model):
         """Returns a Device object in human-readable format."""
         return f'Device({self.device_name}, {self.device_serial_number})'
 
-    def revoke_ldevid(self: Device) -> bool:
+    def revoke_ldevid(self: Device, revocation_reason) -> bool:
         """Revokes the LDevID.
 
         Deletes the LDevID file and sets the device status to REVOKED.
@@ -83,7 +83,7 @@ class Device(models.Model):
                 device_serial_number=self.device_serial_number,
                 cert_serial_number=self.ldevid.serial_number,
                 revocation_datetime=timezone.now(),
-                revocation_reason='Requested by user',
+                revocation_reason=revocation_reason,
                 issuing_ca=self.domain_profile.issuing_ca,
                 domain_profile=self.domain_profile
             )
@@ -93,8 +93,10 @@ class Device(models.Model):
         self.save()
 
         # generate CRLs
-        self.domain_profile.generate_crl()
-        self.domain_profile.issuing_ca.generate_crl()
+        if self.domain_profile.auto_crl:
+            self.domain_profile.generate_crl()
+        if self.domain_profile.issuing_ca.auto_crl:
+            self.domain_profile.issuing_ca.generate_crl()
 
         log.info('Revoked LDevID for device %s', self.device_name)
         return True

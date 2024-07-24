@@ -167,6 +167,9 @@ DJANGO_TABLES2_TABLE_ATTRS = {'class': 'table', 'td': {'class': 'v-middle'}}
 LOGIN_REDIRECT_URL = 'home:dashboard'
 LOGIN_URL = 'users:login'
 
+# CRL interval in hours
+CRL_INTERVAL = 24
+
 DJANGO_LOG_LEVEL = 'INFO'
 
 LOGGING = logging_config

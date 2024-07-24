@@ -212,7 +212,9 @@ class IssuingCaAddFileImportView(IssuingCaContextMixin, TpLoginRequiredMixin, Fo
             loaded_certificates=loaded_certificates)
         full_cert_chain = self._get_cert_chain(issuing_ca_cert=issuing_ca_cert, certs=loaded_certificates)
 
-        self._save_to_db(unique_name=unique_name, certs=full_cert_chain, private_key=loaded_private_key)
+        auto_crl = form.cleaned_data['auto_crl']
+
+        self._save_to_db(unique_name=unique_name, certs=full_cert_chain, private_key=loaded_private_key, auto_crl=auto_crl)
 
         return super().form_valid(form=form)
 
@@ -221,14 +223,15 @@ class IssuingCaAddFileImportView(IssuingCaContextMixin, TpLoginRequiredMixin, Fo
     def _save_to_db(
             unique_name: str,
             certs: list[x509.Certificate],
-            private_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey) -> None:
+            private_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey,
+            auto_crl: bool) -> None:
 
         # TODO: create method, make atomic transaction
         issuing_ca_cert_db = Certificate.save_certificate_chain_and_key(
             certs=certs,
             priv_key=private_key)
 
-        issuing_ca_db = IssuingCa(issuing_ca_certificate=issuing_ca_cert_db, unique_name=unique_name)
+        issuing_ca_db = IssuingCa(issuing_ca_certificate=issuing_ca_cert_db, unique_name=unique_name, auto_crl=auto_crl)
         issuing_ca_db.save()
 
     @staticmethod
@@ -365,7 +368,7 @@ class DomainProfileCreateView(DomainProfilesContextMixin, TpLoginRequiredMixin, 
 
     model = DomainProfile
     template_name = 'pki/domain_profiles/add.html'
-    fields = ['unique_name', 'issuing_ca']
+    fields = ['unique_name', 'issuing_ca', 'auto_crl']
     success_url = reverse_lazy('pki:domain_profiles')
     ignore_url = reverse_lazy('pki:domain_profiles')
 
@@ -374,7 +377,7 @@ class DomainProfileUpdateView(DomainProfilesContextMixin, TpLoginRequiredMixin, 
 
     model = DomainProfile
     template_name = 'pki/domain_profiles/add.html'
-    fields = ['unique_name', 'issuing_ca']
+    fields = ['unique_name', 'issuing_ca', 'auto_crl']
     success_url = reverse_lazy('pki:domain_profiles')
     ignore_url = reverse_lazy('pki:domain_profiles')
 
@@ -418,6 +421,21 @@ class CRLDownloadView(View):
         return response
 
     @staticmethod
+    def generate_ca_crl(self: CRLDownloadView, ca_id):
+        try:
+            issuing_ca = IssuingCa.objects.get(pk=ca_id)
+        except IssuingCa.DoesNotExist:
+            messages.error(self, _('Issuing CA not found.'))
+            return redirect('pki:issuing_cas')
+
+        if issuing_ca.generate_crl():
+            messages.info(self, _('CRL generated'))
+        else:
+            messages.warning(self, _('CRL could not be generated'))
+        return redirect('pki:issuing_cas')
+
+
+    @staticmethod
     def download_domain_profile_crl(self: CRLDownloadView, id):
         try:
             domain_profile = DomainProfile.objects.get(pk=id)
@@ -432,6 +450,20 @@ class CRLDownloadView(View):
         response = HttpResponse(crl_data, content_type='text/plain')
         response['Content-Disposition'] = f'attachment; filename="{domain_profile.unique_name}.crl"'
         return response
+
+    @staticmethod
+    def generate_domain_profile_crl(self: CRLDownloadView, id):
+        try:
+            domain_profile = DomainProfile.objects.get(pk=id)
+        except IssuingCa.DoesNotExist:
+            messages.error(self, _('Domain Profile not found.'))
+            return redirect('pki:domain_profiles')
+
+        if domain_profile.generate_crl():
+            messages.info(self, _('CRL generated'))
+        else:
+            messages.warning(self, _('CRL could not be generated'))
+        return redirect('pki:domain_profiles')
 
 
 # ---------------------------------------------------- TrustStores  ----------------------------------------------------

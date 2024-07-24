@@ -1,12 +1,12 @@
 from __future__ import annotations
 
-from enum import Enum
-from .models import Certificate
-from cryptography.hazmat.primitives.serialization import pkcs7, Encoding
-from cryptography import x509
-import zipfile
-import tarfile
 import io
+import tarfile
+import zipfile
+from enum import Enum
+
+from cryptography import x509
+from cryptography.hazmat.primitives.serialization import Encoding, pkcs7
 
 
 class CertificateFileContainer(Enum):
