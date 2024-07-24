@@ -26,7 +26,6 @@ from django.utils.translation import gettext_lazy as _
 from pki.crypto_backend import CRLManager
 from trustpoint import validators
 
-from .files import ReasonCode
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
 
 log = logging.getLogger('tp.pki')
@@ -1582,6 +1581,20 @@ class DomainProfile(models.Model):
             CertificateRevocationList or None: The latest CRL if exists, None otherwise.
         """
         return CRLManager.get_latest_crl(self)
+    
+
+class ReasonCode(models.TextChoices):
+    """Revocation reasons per RFC 5280"""
+    UNSPECIFIED = 'unspecified', _('Unspecified')
+    KEY_COMPROMISE = 'keyCompromise', _('Key Compromise')
+    CA_COMPROMISE = 'cACompromise', _('CA Compromise')
+    AFFILIATION_CHANGED = 'affiliationChanged', _('Affiliation Changed')
+    SUPERSEDED = 'superseded', _('Superseded')
+    CESSATION = 'cessationOfOperation', _('Cessation of Operation')
+    CERTIFICATE_HOLD = 'certificateHold', _('Certificate Hold')
+    PRIVILEGE_WITHDRAWN = 'privilegeWithdrawn', _('Privilege Withdrawn')
+    AA_COMPROMISE = 'aACompromise', _('AA Compromise')
+    REMOVE_FROM_CRL = 'removeFromCRL', _('Remove from CRL')
 
 
 class RevokedCertificate(models.Model):
@@ -1591,7 +1604,7 @@ class RevokedCertificate(models.Model):
     cert_serial_number = models.CharField(max_length=50, unique=True,
                                           help_text='Unique serial number of revoked certificate.', primary_key=True)
     revocation_datetime = models.DateTimeField(help_text='Timestamp when certificate was revoked.')
-    revocation_reason = models.CharField(max_length=255, choices=ReasonCode.choices(), default=ReasonCode.unspecified, help_text='Reason of revocation.')
+    revocation_reason = models.CharField(max_length=255, choices=ReasonCode, default=ReasonCode.UNSPECIFIED, help_text='Reason of revocation.')
     issuing_ca = models.ForeignKey(
         IssuingCa, on_delete=models.CASCADE, related_name='revoked_certificates', help_text='Name of Issuing CA.')
     domain_profile = models.ForeignKey(DomainProfile, on_delete=models.CASCADE, related_name='revoked_certificates')

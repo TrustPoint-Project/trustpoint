@@ -90,7 +90,7 @@ def crl_scheduler() -> None:
             sleep_time = (next_crl_time - timezone.now()).total_seconds()
 
             if sleep_time > 0:
-                log.debug('CLR scheduler sleeping for %s seconds', sleep_time)
+                log.debug('CRL scheduler sleeping for %s seconds', sleep_time)
                 time.sleep(sleep_time)
             else:
                 heappop(crl_schedule)

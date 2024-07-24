@@ -1,10 +1,13 @@
 import datetime
+import logging
 
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.x509 import ReasonFlags
 from django.conf import settings
+
+log = logging.getLogger('tp.pki')
 
 class CRLManager:
     """Manager to build and update CRLs"""
@@ -26,15 +29,29 @@ class CRLManager:
         builder = builder.last_update(datetime.datetime.today())
         builder = builder.next_update(datetime.datetime.today() + datetime.timedelta(hours=settings.CRL_INTERVAL))
 
+        invalid_revocation_reasons = {}
+
         for cert in revoked_certificates:
+            try:
+                revocation_reason = x509.CRLReason(ReasonFlags(cert.revocation_reason))
+            except ValueError:
+                revocation_reason = x509.CRLReason(ReasonFlags.unspecified)
+                invalid_revocation_reasons[cert.cert_serial_number] = cert.revocation_reason
+
             revoked_cert = x509.RevokedCertificateBuilder().serial_number(
                 int(cert.cert_serial_number, 16)
             ).revocation_date(
                 cert.revocation_datetime
             ).add_extension(
-                x509.CRLReason(ReasonFlags(cert.revocation_reason)), critical=False
+                revocation_reason, critical=False
             ).build()
             builder = builder.add_revoked_certificate(revoked_cert)
+
+        if invalid_revocation_reasons:
+            log.error(
+                f"{len(invalid_revocation_reasons)} invalid revocation reasons encountered "
+                f"while building CRL: {invalid_revocation_reasons}"
+            )
 
         crl = builder.sign(private_key=self.ca_private_key, algorithm=hashes.SHA256(), backend=default_backend())
         return crl.public_bytes(encoding=serialization.Encoding.PEM)
@@ -60,6 +77,12 @@ class CRLManager:
                 issuing_ca=issuing_instance if isinstance(issuing_instance, IssuingCa) else issuing_instance.issuing_ca,
                 domain_profile=None if isinstance(issuing_instance, IssuingCa) else issuing_instance
             )
+            if isinstance(issuing_instance, IssuingCa):
+                log.info('Generating CRL for Issuing CA %s', issuing_instance.unique_name)
+            else:
+                log.info('Generating CRL for Domain Profile %s (CA %s)',
+                         issuing_instance.unique_name,
+                         issuing_instance.issuing_ca.unique_name)
             crl = self.create_crl(revoked_certificates).decode('utf-8')
             if crl:
                 CertificateRevocationList.objects.update_or_create(

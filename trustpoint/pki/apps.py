@@ -1,4 +1,4 @@
-import sys
+import os
 
 from django.apps import AppConfig
 
@@ -8,10 +8,8 @@ class PkiConfig(AppConfig):
     name = 'pki'
 
     def ready(self):
-        if 'runserver' not in sys.argv and 'shell' not in sys.argv:
+        if not os.environ.get('RUN_MAIN') and not os.environ.get('WERKZEUG_RUN_MAIN'):
+            # Just helper process, not running startup code
             return
 
         import pki.signals
-
-        from .tasks import start_crl_generation_thread
-        start_crl_generation_thread()

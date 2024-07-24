@@ -1,5 +1,6 @@
 import logging
 
+from django.db.backends.signals import connection_created
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
@@ -36,3 +37,17 @@ def handle_post_save(sender, instance, created, **kwargs) -> None:
 @receiver(post_delete, sender=DomainProfile)
 def handle_post_delete(sender, instance, **kwargs) -> None:
     remove_crl_from_schedule(instance)
+
+crl_thread_started = False
+
+@receiver(connection_created)
+def initial_database_connection(sender, connection, **kwargs):
+    global crl_thread_started
+    if crl_thread_started:
+        return
+    crl_thread_started = True
+
+    log.info('Initial database connection established: %s', connection.alias)
+
+    from .tasks import start_crl_generation_thread
+    start_crl_generation_thread()

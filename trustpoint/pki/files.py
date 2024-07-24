@@ -9,24 +9,6 @@ from cryptography import x509
 from cryptography.hazmat.primitives.serialization import Encoding, pkcs7
 
 
-class ReasonCode(Enum):
-    """Revocation reasons by RFC 5280"""
-    unspecified = 'unspecified'
-    key_compromise = 'keyCompromise'
-    ca_compromise = 'cACompromise'
-    affiliation_changed = 'affiliationChanged'
-    superseded = 'superseded'
-    cessation_of_operation = 'cessationOfOperation'
-    certificate_hold = 'certificateHold'
-    privilege_withdrawn = 'privilegeWithdrawn'
-    aa_compromise = 'aACompromise'
-    remove_from_crl = 'removeFromCRL'
-
-    @classmethod
-    def choices(cls):
-        return [(key.value, key.name.replace('_', ' ')) for key in cls]
-
-
 class CertificateFileContainer(Enum):
     SINGLE_FILE = 'single_file'
     ZIP = 'zip'
