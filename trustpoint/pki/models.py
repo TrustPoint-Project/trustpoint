@@ -858,6 +858,10 @@ class CertificateModel(models.Model):
     cert_pem = models.CharField(verbose_name=_('Certificate (PEM)'), max_length=65536, editable=False, unique=True)
     public_key_pem = models.CharField(verbose_name=_('Public Key (PEM, SPKI)'), max_length=65536, editable=False)
 
+    # ------------------------------------------ Trustpoint Creation Data ------------------------------------------
+
+    added_at = models.DateTimeField(verbose_name=_('Added at'), auto_now_add=True)
+
     # --------------------------------------------- Data Retrieval Methods ---------------------------------------------
 
     def get_cert_as_pem(self) -> bytes:
@@ -970,6 +974,14 @@ class CertificateModel(models.Model):
     # Private Internet Access
     # ext_authority_information_access = None
     # ext_subject_information_access = None
+
+    # --------------------------------------------------- Properties ---------------------------------------------------
+
+    @property
+    def is_cross_signed(self) -> bool:
+        if len(self.issuer_references.all()) > 1:
+            return True
+        return False
 
     def __str__(self) -> str:
         return f'Certificate(CN={self.common_name})'
@@ -1087,6 +1099,7 @@ class CertificateModel(models.Model):
 
         return cls._atomic_save(cert_model=cert_model, certificate=certificate, subject=subject, issuer=issuer)
 
+    # TODO: remove code duplication
     @staticmethod
     def _save_subject(cert_model: CertificateModel, subject: list[tuple[str, str]]) -> None:
         for entry in subject:
@@ -1105,7 +1118,7 @@ class CertificateModel(models.Model):
             oid, value = entry
             existing_attr_type_and_val = AttributeTypeAndValue.objects.filter(oid=oid, value=value).first()
             if existing_attr_type_and_val:
-                cert_model.subject.add(existing_attr_type_and_val)
+                cert_model.issuer.add(existing_attr_type_and_val)
             else:
                 attr_type_and_val = AttributeTypeAndValue(oid=oid, value=value)
                 attr_type_and_val.save()
@@ -1141,7 +1154,7 @@ class CertificateModel(models.Model):
             if oid == NameOid.COMMON_NAME.dotted_string:
                 cert_model.common_name = value
         cls._save_subject(cert_model, subject)
-
+        print(issuer)
         cls._save_issuer(cert_model, issuer)
 
         cls._save_extensions(cert_model, certificate)

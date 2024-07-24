@@ -162,7 +162,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     font-weight: var(--tp-font-weight);
     background-color: transparent;
     border-radius: 0.5rem;
-    border: 0px solid black;
+    border: 0 solid black;
     color: var(--bs-emphasis-color);
     text-decoration: none;
     text-align: left;
@@ -225,7 +225,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 }
 
 .tp-menu-collapse {
-    height: 0px;
+    height: 0;
     overflow: hidden;
 }
 
@@ -288,19 +288,12 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     margin-right: 0;
 }
 
-
 /*.tp-card {*/
 /*    border: 0.1rem solid #424549;*/
 /*    padding: 0;*/
 /*    margin: 0;*/
 /*    border-radius: 0.5rem;*/
 /*}*/
-
-.tp-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
 
 /*.tp-card-body {*/
 /*    padding: 0.75rem;*/
@@ -606,7 +599,7 @@ svg.theme-icon {
         transform: translateX(-101%);
         position: fixed;
         top: 4rem;
-        bottom: 0px;
+        bottom: 0;
         z-index: 10;
     }
 
@@ -632,7 +625,7 @@ svg.theme-icon {
 
 pre {
   background-color: var(--bs-secondary-bg);
-  padding: 10px 0px;
+  padding: 10px 0;
   text-align: left;
 }
 

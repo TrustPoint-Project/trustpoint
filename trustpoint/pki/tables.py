@@ -34,15 +34,14 @@ class CertificateTable(tables.Table):
         fields = (
             'row_checkbox',
             'common_name',
-            'certificate_hierarchy_type',
             'not_valid_after',
             'spki_algorithm',
             'spki_key_size',
             'spki_ec_curve',
             'certificate_status',
+            'added_at',
             'details',
             'download',
-            # 'delete',
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
