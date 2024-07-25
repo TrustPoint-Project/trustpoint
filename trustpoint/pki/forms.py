@@ -3,13 +3,10 @@ from __future__ import annotations
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
-from cryptography.hazmat.primitives.asymmetric import rsa, ec
-from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.serialization import pkcs12
-from cryptography import x509
-
-from pki.models import IssuingCa
 from django.core.exceptions import ValidationError
+
+from .initializer import LocalUnprotectedIssuingCaFromP12FileInitializer
+from .models import IssuingCaModel
 
 
 class CertificateDownloadForm(forms.Form):
@@ -88,12 +85,15 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
 
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']
-        if IssuingCa.objects.filter(unique_name=unique_name).exists():
-            raise ValidationError('abc')
+        if IssuingCaModel.objects.filter(unique_name=unique_name).exists():
+            raise ValidationError('Unique name is already taken. Choose another one.')
         return unique_name
 
     def clean(self):
         cleaned_data = super().clean()
+        unique_name = cleaned_data.get('unique_name')
+        if unique_name is None:
+            return
 
         try:
             # This should not throw any exceptions, even if invalid data was sent via HTTP POST request.
@@ -114,25 +114,21 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
             pkcs12_password = None
 
         try:
-            private_key, certificate, additional_certificates = pkcs12.load_key_and_certificates(
-                pkcs12_raw, pkcs12_password)
-        except Exception:
+            initializer = LocalUnprotectedIssuingCaFromP12FileInitializer(
+                unique_name=cleaned_data['unique_name'],
+                p12=pkcs12_raw,
+                password=pkcs12_password)
+        except Exception as e:
+            print(e)
+            print(type(e))
             raise ValidationError(
                 'Failed to load PKCS#12 file. Either malformed file or wrong password.',
                 code='pkcs12-loading-failed')
 
-        if private_key is None:
-            raise ValidationError(
-                'PKCS#12 file does not contain any private key.',
-                code='pkcs12-missing-private-key'
-            )
-
-        # TODO: check supported key type
-
-        if certificate is None:
-            raise ValidationError(
-                'PKCS#12 file is missing the Issuing CA certificate corresponding to the private key.',
-                code='pkcs12-missing-issuing-ca-cert')
+        try:
+            initializer.save()
+        except Exception:
+            raise ValidationError('Unexpected Error. Failed to save validated Issuing CA in DB.')
 
 
 class IssuingCaAddFileImportOtherForm(forms.Form):

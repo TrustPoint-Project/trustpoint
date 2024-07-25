@@ -2,6 +2,8 @@
 
 
 from __future__ import annotations
+from typing import TYPE_CHECKING
+
 
 import abc
 from ipaddress import IPv4Address, IPv4Network, IPv6Address, IPv6Network
@@ -9,13 +11,20 @@ from ipaddress import IPv4Address, IPv4Network, IPv6Address, IPv6Network
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import ec, rsa
+from cryptography.hazmat.primitives.asymmetric import ec, rsa, ed448, ed25519
 from cryptography.x509.extensions import ExtensionNotFound
 from django.core.validators import MinLengthValidator
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
+from .serializer import CertificateSerializer, PublicKeySerializer
+
+
+if TYPE_CHECKING:
+    from typing import Union
+    PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
+    PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
 
 
 # ----------------------------------------- Subject / Issuer Field Structures ------------------------------------------
@@ -872,21 +881,23 @@ class CertificateModel(models.Model):
         """
         return self.cert_pem.encode()
 
-    def get_cert_as_der(self) -> bytes:
+    def get_cert_as_der(self, certificate_serializer: type(CertificateSerializer) = CertificateSerializer) -> bytes:
         """Retrieves the certificate as DER bytes.
 
         Returns:
             bytes: Certificate as DER bytes.
         """
-        return x509.load_pem_x509_certificate(self.cert_pem.encode()).public_bytes(encoding=serialization.Encoding.DER)
+        return certificate_serializer(self.cert_pem).get_as_der()
 
-    def get_cert_as_crypto(self) -> x509.Certificate:
+    def get_cert_as_crypto(
+            self,
+            certificate_serializer: type(CertificateSerializer) = CertificateSerializer) -> x509.Certificate:
         """Retrieves the certificate as cryptography.x509.Certificate object
 
         Returns:
             cryptography.x509.Certificate: Certificate as cryptography.x509.Certificate object.
         """
-        return x509.load_pem_x509_certificate(self.cert_pem.encode())
+        return certificate_serializer(self.cert_pem).get_as_crypto()
 
     def get_public_key_as_pem(self) -> bytes:
         """Retrieves the public key as PEM string.
@@ -897,24 +908,35 @@ class CertificateModel(models.Model):
         """
         return self.public_key_pem.encode()
 
-    def get_public_key_as_der(self) -> bytes:
+    def get_public_key_as_der(self, public_key_serializer: type(PublicKeySerializer) = PublicKeySerializer) -> bytes:
         """Retrieves the public key as DER encoded bytes.
 
         Returns:
             bytes: Public key as DER encoded bytes.
         """
-        return serialization.load_pem_public_key(self.public_key_pem.encode()).public_bytes(
-            encoding=serialization.Encoding.DER,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo
-        )
+        return public_key_serializer(self.public_key_pem).get_as_der()
 
-    def get_public_key_as_crypto(self) -> rsa.RSAPublicKey | ec.EllipticCurvePublicKey:
+    def get_public_key_as_crypto(
+            self, public_key_serializer: type(PublicKeySerializer) = PublicKeySerializer) -> PublicKey:
         """Retrieves the public key as cryptography public key object.
 
         Returns:
             rsa.RSAPublicKey | ec.EllipticCurvePublicKey: Public key as cryptography public key object.
         """
-        return serialization.load_pem_public_key(self.public_key_pem.encode())
+        return public_key_serializer(self.public_key_pem).get_as_crypto()
+
+    def get_certificate_chains(self) -> list[list[CertificateModel]]:
+        if self.is_root_ca:
+            return [[self]]
+
+        cert_chains = []
+        for issuer_reference in self.issuer_references.all():
+            cert_chains.extend(issuer_reference.get_certificate_chains())
+
+        for cert_chain in cert_chains:
+            cert_chain.append(self)
+
+        return cert_chains
 
     # --------------------------------------------------- Extensions ---------------------------------------------------
     # order of extensions follows RFC5280
@@ -980,6 +1002,18 @@ class CertificateModel(models.Model):
     @property
     def is_cross_signed(self) -> bool:
         if len(self.issuer_references.all()) > 1:
+            return True
+        return False
+
+    @property
+    def is_self_signed(self) -> bool:
+        if len(self.issuer_references.all()) == 1 and self.issuer_references.first() == self:
+            return True
+        return False
+
+    @property
+    def is_root_ca(self) -> bool:
+        if self.is_self_signed and self.basic_constraints_extension and self.basic_constraints_extension.ca:
             return True
         return False
 
@@ -1154,7 +1188,6 @@ class CertificateModel(models.Model):
             if oid == NameOid.COMMON_NAME.dotted_string:
                 cert_model.common_name = value
         cls._save_subject(cert_model, subject)
-        print(issuer)
         cls._save_issuer(cert_model, issuer)
 
         cls._save_extensions(cert_model, certificate)
@@ -1217,7 +1250,7 @@ class CertificateModel(models.Model):
 
 # ------------------------------------------------- Issuing CA Models --------------------------------------------------
 
-class IssuingCa(models.Model):
+class IssuingCaModel(models.Model):
     """Issuing CA model."""
 
     unique_name = models.CharField(
@@ -1227,25 +1260,63 @@ class IssuingCa(models.Model):
         unique=True
     )
 
-    certificates = models.ManyToManyField(
-        to=CertificateModel, verbose_name=_('Certificates'),
-        through='CertificateChainOrder')
+    root_ca_certificate = models.ForeignKey(
+        to=CertificateModel,
+        verbose_name=_('Root CA Certificate'),
+        on_delete=models.CASCADE,
+        related_name='root_ca_certificate',
+        editable=False
+    )
+
+    intermediate_ca_certificates = models.ManyToManyField(
+        to=CertificateModel,
+        verbose_name=_('Intermediate CA Certificates'),
+        through='CertificateChainOrderModel')
+
+    issuing_ca_certificate = models.ForeignKey(
+        to=CertificateModel,
+        verbose_name=_('Issuing CA Certificate'),
+        on_delete=models.CASCADE,
+        related_name='issuing_ca_certificate',
+        editable=False)
+
+    private_key_pem = models.CharField(
+        verbose_name=_('Private Key (PEM)'),
+        max_length=65536,
+        editable=False,
+        null=True,
+        blank=True,
+        unique=True)
+
+    added_at = models.DateTimeField(verbose_name=_('Added at'), auto_now_add=True)
+
+    # TODO: pkcs11_private_key_access -> Foreignkey
+
+    # TODO: remote_ca_config -> ForeignKey
 
     def __str__(self) -> str:
         return f'IssuingCa({self.unique_name})'
 
+    # --------------------------------------------- Data extraction methods --------------------------------------------
 
-class CertificateChainOrder(models.Model):
+    def get_cert_chain_as_crypto(self) -> list[x509.Certificate]:
+        pass
+
+    def get_key_as_crypto(self) -> PrivateKey:
+        pass
+
+
+class CertificateChainOrderModel(models.Model):
 
     class Meta:
         unique_together = ('order', 'issuing_ca')
 
-    order = models.PositiveSmallIntegerField()
-    certificate = models.ForeignKey(CertificateModel, on_delete=models.CASCADE)
-    issuing_ca = models.ForeignKey(IssuingCa, on_delete=models.CASCADE)
+    order = models.PositiveSmallIntegerField(verbose_name=_('Intermediate CA Index (Order)'), editable=False)
+    certificate = models.ForeignKey(CertificateModel, on_delete=models.CASCADE, editable=False)
+    issuing_ca = models.ForeignKey(IssuingCaModel, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
-        return f'CertificateChainOrder({self.certificate.common_name})'
+        return f'CertificateChainOrderModel({self.certificate.common_name})'
 
 
 class DomainProfile(models.Model):
@@ -1254,7 +1325,7 @@ class DomainProfile(models.Model):
     unique_name = models.CharField(_('Unique Name'), max_length=100, unique=True)
 
     issuing_ca = models.ForeignKey(
-        IssuingCa,
+        IssuingCaModel,
         on_delete=models.CASCADE,
         blank=True,
         null=True,

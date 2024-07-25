@@ -80,22 +80,6 @@ Saving certificates in the database must only be invoked by the following object
         +get_public_key_as_pem() : str
         +get_public_key_as_der() : bytes
         +get_public_key_as_crypto() : rsa.RSAPublicKey | ec.EllipticCurvePublicKey
-        +get_private_key_as_crypto() : None | rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey
-        +get_issuer_cert() : None | CertificateModel
-        +get_issuer_cert_as_pem() : None | bytes
-        +get_issuer_cert_as_der() : None | bytes
-        +get_issuer_cert_as_crypto() : None | x509.Certificate
-        +get_root_ca_cert() : None | CertificateModel
-        +get_root_ca_cert_as_pem() : None | bytes
-        +get_root_ca_cert_as_der() : None | bytes
-        +get_root_ca_cert_as_crypto() : None | x509.Certificate
-        +get_cert_chain() : list[CertificateModel]
-        +get_cert_chain_as_pem() : list[bytes]
-        +get_cert_chain_as_crypto() : list[x509.Certificate]
-        +get_issued_certs() : list[CertificateModel]
-        +get_issued_certs_as_pem() : list[bytes]
-        +get_issued_certs_as_der() : list[bytes]
-        +get_issued_certs_as_crypto() : list[x509.Certificate]
     }
 
     CertificateModel --o CertificateStatus

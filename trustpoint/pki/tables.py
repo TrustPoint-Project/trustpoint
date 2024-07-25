@@ -7,7 +7,7 @@ from django.utils.functional import lazy
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from .models import CertificateModel, DomainProfile, IssuingCa
+from .models import CertificateModel, DomainProfile, IssuingCaModel
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
@@ -40,6 +40,8 @@ class CertificateTable(tables.Table):
             'spki_ec_curve',
             'certificate_status',
             'added_at',
+            'is_self_signed',
+            'is_root_ca',
             'details',
             'download',
         )
@@ -95,7 +97,7 @@ class IssuingCaTable(tables.Table):
     class Meta:
         """Table meta class configurations."""
 
-        model = IssuingCa
+        model = IssuingCaModel
         template_name = 'django_tables2/bootstrap5.html'
         # order_by = '-created_at'
         empty_values = ()
@@ -146,7 +148,7 @@ class IssuingCaTable(tables.Table):
                            record.pk, _('Delete'))
 
     @staticmethod
-    def render_crl(record: IssuingCa) -> SafeString:
+    def render_crl(record: IssuingCaModel) -> SafeString:
         """Creates the html hyperlink for the details-view.
 
         Args:
@@ -223,7 +225,7 @@ class DomainProfileTable(tables.Table):
                            record.pk, _('Delete'))
 
     @staticmethod
-    def render_crl(record: IssuingCa) -> SafeString:
+    def render_crl(record: IssuingCaModel) -> SafeString:
         """Creates the html hyperlink for the details-view.
 
         Args:

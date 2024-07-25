@@ -20,7 +20,7 @@ from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect
 
 
-from .models import CertificateModel, IssuingCa, DomainProfile
+from .models import CertificateModel, IssuingCaModel, DomainProfile
 # RevokedCertificate
 
 from .tables import CertificateTable, IssuingCaTable, DomainProfileTable
@@ -165,7 +165,7 @@ class IssuingCaContextMixin(TpLoginRequiredMixin, ContextDataMixin):
 class IssuingCaTableView(IssuingCaContextMixin, TpLoginRequiredMixin, SingleTableView):
     """Issuing CA Table View."""
 
-    model = IssuingCa
+    model = IssuingCaModel
     table_class = IssuingCaTable
     template_name = 'pki/issuing_cas/issuing_cas.html'
 
@@ -372,7 +372,7 @@ class IssuingCaAddFileImportOtherView(IssuingCaContextMixin, TpLoginRequiredMixi
 
 
 class IssuingCaDetailView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):
-    model = IssuingCa
+    model = IssuingCaModel
     success_url = reverse_lazy('pki:issuing_cas')
     ignore_url = reverse_lazy('pki:issuing_cas')
     template_name = 'pki/issuing_cas/details.html'
@@ -381,7 +381,7 @@ class IssuingCaDetailView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailVie
 
 class IssuingCaBulkDeleteConfirmView(IssuingCaContextMixin, TpLoginRequiredMixin, BulkDeleteView):
 
-    model = IssuingCa
+    model = IssuingCaModel
     success_url = reverse_lazy('pki:issuing_cas')
     ignore_url = reverse_lazy('pki:issuing_cas')
     template_name = 'pki/issuing_cas/confirm_delete.html'
@@ -446,8 +446,8 @@ class CRLDownloadView(View):
     @staticmethod
     def download_ca_crl(self: CRLDownloadView, ca_id):
         try:
-            issuing_ca = IssuingCa.objects.get(pk=ca_id)
-        except IssuingCa.DoesNotExist:
+            issuing_ca = IssuingCaModel.objects.get(pk=ca_id)
+        except IssuingCaModel.DoesNotExist:
             messages.error(self, _('Issuing CA not found.'))
             return redirect('pki:issuing_cas')
 
@@ -463,7 +463,7 @@ class CRLDownloadView(View):
     def download_domain_profile_crl(self: CRLDownloadView, id):
         try:
             domain_profile = DomainProfile.objects.get(pk=id)
-        except IssuingCa.DoesNotExist:
+        except IssuingCaModel.DoesNotExist:
             messages.error(self, _('Domain Profile not found.'))
             return redirect('pki:domain_profiles')
 

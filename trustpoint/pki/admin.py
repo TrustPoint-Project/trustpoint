@@ -1,9 +1,11 @@
 from django.contrib import admin
-
+from django.utils.html import format_html
+from django.urls import reverse
 
 from .models import (
     CertificateModel,
-    IssuingCa,
+    IssuingCaModel,
+    CertificateChainOrderModel,
     BasicConstraintsExtension,
     KeyUsageExtension,
     AttributeTypeAndValue,
@@ -12,7 +14,22 @@ from .models import (
 
 
 class IssuingCaAdmin(admin.ModelAdmin):
-    pass
+    readonly_fields = [
+        'unique_name',
+        'root_ca_certificate',
+        'intermediate_ca_certificates',
+        'issuing_ca_certificate',
+        'private_key_pem',
+        'added_at'
+    ]
+
+
+class CertificateChainOrderModelAdmin(admin.ModelAdmin):
+    readonly_fields = [
+        'order',
+        'certificate',
+        'issuing_ca'
+    ]
 
 
 class TrustStoreAdmin(admin.ModelAdmin):
@@ -110,10 +127,11 @@ class CertificateAdmin(admin.ModelAdmin):
     )
 
 
-admin.site.register(IssuingCa, IssuingCaAdmin)
+admin.site.register(IssuingCaModel, IssuingCaAdmin)
 admin.site.register(SubjectAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(IssuerAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(AttributeTypeAndValue, AttributeTypeAndValueAdmin)
 admin.site.register(BasicConstraintsExtension, BasicConstraintsExtensionAdmin)
 admin.site.register(KeyUsageExtension, KeyUsageExtensionAdmin)
 admin.site.register(CertificateModel, CertificateAdmin)
+admin.site.register(CertificateChainOrderModel, CertificateChainOrderModelAdmin)
