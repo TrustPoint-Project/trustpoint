@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from .models import CertificateModel, IssuingCaModel
 from .serializer import CertificateSerializer, CertificateChainSerializer, PublicKeySerializer
 
 
@@ -11,20 +10,21 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from typing import Any
     from typing import Union
+    from .models import CertificateModel, IssuingCaModel
     from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
 
 
-class IssuingCA(ABC):
+class IssuingCa(ABC):
     _issuing_ca_model: IssuingCaModel
 
-    @abstractmethod
-    def issue_certificate(self, *args, **kwargs) -> CertificateModel:
-        pass
-
-    @abstractmethod
-    def sign_crl(self, *args, **kwargs) -> Any:
-        pass
+    # @abstractmethod
+    # def issue_certificate(self, *args, **kwargs) -> CertificateModel:
+    #     pass
+    #
+    # @abstractmethod
+    # def sign_crl(self, *args, **kwargs) -> Any:
+    #     pass
 
     def get_issuing_ca_certificate(self) -> CertificateModel:
         return self._issuing_ca_model.issuing_ca_certificate
@@ -49,5 +49,13 @@ class IssuingCA(ABC):
             [cert.get_certificate_serializer().get_as_crypto() for cert in self.get_issuing_ca_certificate_chain()])
 
 
+class UnprotectedLocalIssuingCa(IssuingCa):
 
+    def __init__(self, issuing_ca_model: IssuingCaModel) -> None:
+        self._issuing_ca_model = issuing_ca_model
 
+    # def issue_certificate(self, *args, **kwargs) -> CertificateModel:
+    #     pass
+    #
+    # def sign_crl(self, *args, **kwargs) -> Any:
+    #     pass

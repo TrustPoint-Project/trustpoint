@@ -252,7 +252,7 @@ class DomainProfileCreateView(DomainProfilesContextMixin, TpLoginRequiredMixin, 
 
     model = DomainProfile
     template_name = 'pki/domain_profiles/add.html'
-    fields = ['unique_name', 'issuing_ca']
+    fields = ['unique_name', 'url_path_segment', 'issuing_ca']
     success_url = reverse_lazy('pki:domain_profiles')
     ignore_url = reverse_lazy('pki:domain_profiles')
 

@@ -19,9 +19,11 @@ from django.utils.translation import gettext_lazy as _
 
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
 from .serializer import CertificateSerializer, PublicKeySerializer, CertificateChainSerializer
+from .issuing_ca import UnprotectedLocalIssuingCa
 
 
 if TYPE_CHECKING:
+    from .issuing_ca import IssuingCa
     from typing import Union
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
@@ -725,6 +727,10 @@ class CertificateModel(models.Model):
     See RFC5280 for more information.
     """
 
+    # ------------------------------------ Reference Counter for delete operations  ------------------------------------
+
+    # TODO
+
     # ------------------------------------------------- Django Choices -------------------------------------------------
 
     class CertificateStatus(models.TextChoices):
@@ -1273,8 +1279,18 @@ class CertificateChainOrderModel(models.Model):
         unique_together = ('order', 'issuing_ca')
 
     order = models.PositiveSmallIntegerField(verbose_name=_('Intermediate CA Index (Order)'), editable=False)
-    certificate = models.ForeignKey(CertificateModel, on_delete=models.CASCADE, editable=False)
+    certificate = models.ForeignKey(
+        CertificateModel,
+        on_delete=models.CASCADE,
+        editable=False,
+        related_name='issuing_ca_cert_chains')
     issuing_ca = models.ForeignKey(IssuingCaModel, on_delete=models.CASCADE, editable=False)
+
+    def get_issuing_ca(
+            self,
+            unprotected_local_issuing_ca_class: type(UnprotectedLocalIssuingCa) = UnprotectedLocalIssuingCa
+    ) -> IssuingCa:
+        return unprotected_local_issuing_ca_class(self)
 
     def __str__(self):
         return f'CertificateChainOrderModel({self.certificate.common_name})'
@@ -1285,6 +1301,8 @@ class DomainProfile(models.Model):
 
     unique_name = models.CharField(_('Unique Name'), max_length=100, unique=True)
 
+    url_path_segment = models.CharField(_('URL Path Segment'), max_length=100, unique=True)
+
     issuing_ca = models.ForeignKey(
         IssuingCaModel,
         on_delete=models.CASCADE,
@@ -1293,6 +1311,13 @@ class DomainProfile(models.Model):
         verbose_name=_('Issuing CA'),
         related_name='domain_profiles'
     )
+
+    # est_config = models.ForeignKey
+    # cmp_config = models.ForeignKey
+    # scep_config = models.ForeignKey
+    # rest_config = models.ForeignKey
+
+    # def get_domain_profile
 
     def __str__(self) -> str:
         """Human-readable representation of the DomainProfile model instance.

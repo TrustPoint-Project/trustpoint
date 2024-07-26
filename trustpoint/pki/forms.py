@@ -150,28 +150,10 @@ class IssuingCaAddFileImportOtherForm(forms.Form):
         required=True)
 
 
-# class IssuingCaAddFileImportForm(forms.Form):
-#     # Disables crispy alert header (msg of ValidationError in clean())
-#     # non_field_errors: bool = False
-#
-#     unique_name = forms.CharField(
-#         max_length=256,
-#         label='Unique Name (Issuing CA)',
-#         widget=forms.TextInput(attrs={'autocomplete': 'nope'}))
-#     private_key_file = forms.FileField(
-#         label=_('Private Key File (Formats: DER, PEM, PKCS#1, PKCS#8, PKCS#12)'), required=True)
-#     private_key_password = forms.CharField(
-#         # hack, force autocomplete off in chrome with: one-time-code
-#         widget=forms.PasswordInput(attrs={'autocomplete': 'one-time-code'}),
-#         label=_('[Optional] Private Key File Password, if the private key file is encrypted.'),
-#         required=False)
-#     cert_chain = forms.FileField(
-#         label=_('[Optional] Certificate Chain, if not contained in private key file. (Formats: PEM, PKCS#7)'),
-#         required=False)
-#     issuing_ca_certificate = forms.FileField(
-#         label=_(
-#             '[Optional] Issuing CA Certificate, if not contained in private key file or certificate chain. '
-#             '(Formats: PEM, PKCS#7)'),
-#         required=False)
+class DomainModelForm(forms.ModelForm):
 
+    class Meta:
+        fields = ['unique_name', 'url_path_segment', 'issuing_ca']
 
+    # TODO: use form instead of CreateView and fields directly
+    # TODO: validate url_path_segment
