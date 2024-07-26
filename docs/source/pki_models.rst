@@ -74,12 +74,10 @@ Saving certificates in the database must only be invoked by the following object
         +public_key_pem : models.CharField {read only}
         +private_key_pem : None | models.CharField {read only}
         --
-        +get_cert_as_pem() : bytes
-        +get_cert_as_der() : bytes
-        +get_cert_as_crypto() : x509.Certificate
-        +get_public_key_as_pem() : str
-        +get_public_key_as_der() : bytes
-        +get_public_key_as_crypto() : rsa.RSAPublicKey | ec.EllipticCurvePublicKey
+        +get_certificate_serializer() : CertificateSerializer
+        +get_public_key_serializer() : PublicKeySerializer
+        +get_certificate_chains() : list[list[CertificateModel]]
+        +get_certificate_chain_serializers() : list[CertificateChainSerializer]
     }
 
     CertificateModel --o CertificateStatus
@@ -96,18 +94,24 @@ Issuing CA Model
     :align: center
 
     class IssuingCaModel {
-        +root_ca_cert : ForeignKey (CertificateModel)
-        +intermediate_ca_certs : ManyToManyField (CertificateModel : order - through)
-        +issuing_ca_cert : ForeignKey (CertificateModel)
+        +root_ca_cert : models.ForeignKey(CertificateModel)
+        +intermediate_ca_certs : models.ManyToManyField(CertificateChainOrderModel)
+        +issuing_ca_cert : models.ForeignKey(CertificateModel)
         +private_key : bytes | None (DER Format)
         +pkcs11_private_key_access : ForeignKey(Pkcs11PrivateKeyAccess)
         +remote_ca_config : ForeignKey(RemoteCaConfig)
         --
-        +get_issuing_ca() : IssuingCa
-        +get_cert_chain() : list[CertificateModel]
-        +get_cert_chain_as_pem() : list[bytes]
-        +get_cert_chain_as_crypto() : list[x509.Certificate]
     }
+
+    class CertificateChainOrderModel {
+        +order : models.PositiveSmallIntegerField
+        +certificate : models.Foreignkey(CertificateModel)
+        +certificate : models.Foreignkey(CertificateModel)
+        +issuing_ca : models.ForeignKey(IssuingCaModel)
+        --
+    }
+
+    IssuingCaModel --o CertificateChainOrderModel
 
 DB constraints
 ~~~~~~~~~~~~~~

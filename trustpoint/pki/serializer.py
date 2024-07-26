@@ -22,6 +22,8 @@ class CertificateSerializer(Serializer):
     _certificate: x509.Certificate
 
     def __init__(self, certificate: x509.Certificate) -> None:
+        if not isinstance(certificate, x509.Certificate):
+            raise TypeError('Certificate must be an instance of x509.Certificate')
         self._certificate = certificate
 
     @classmethod
@@ -68,6 +70,8 @@ class PublicKeySerializer:
     _public_key: PublicKey
 
     def __init__(self, public_key: PublicKey) -> None:
+        if not isinstance(public_key, PublicKey):
+            raise TypeError('Public key must be an instance of PublicKey.')
         self._public_key = public_key
 
     @classmethod
@@ -86,6 +90,19 @@ class PublicKeySerializer:
     def from_string(cls, public_key: str) -> PublicKeySerializer:
         return cls.from_bytes(public_key.encode())
 
+    def get_as_pem(self) -> bytes:
+        return self._public_key.public_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo)
+
+    def get_as_der(self) -> bytes:
+        return self._public_key.public_bytes(
+            encoding=serialization.Encoding.DER,
+            format=serialization.PublicFormat.SubjectPublicKeyInfo)
+
+    def get_as_crypto(self) -> PublicKey:
+        return self._public_key
+
     @staticmethod
     def _load_pem_public_key(public_key: bytes) -> PublicKey:
         try:
@@ -100,24 +117,18 @@ class PublicKeySerializer:
         except Exception:
             raise ValueError
 
-    def get_as_pem(self) -> bytes:
-        return self._public_key.public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo)
-
-    def get_as_der(self) -> bytes:
-        return self._public_key.public_bytes(
-            encoding=serialization.Encoding.DER,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo)
-
-    def get_as_crypto(self) -> PublicKey:
-        return self._public_key
-
 
 class CertificateChainSerializer:
     _certificate_chain: list[x509.Certificate]
 
     def __init__(self, certificate_chain: list[x509.Certificate]) -> None:
+        if not isinstance(certificate_chain, list):
+            raise TypeError('Certificate chain must be an instance of list[x509.CertificateChain].')
+
+        for element in certificate_chain:
+            if not isinstance(element, x509.Certificate):
+                raise TypeError('Found a certificate entry that is not an instance of x509.Certificate.')
+
         self._certificate_chain = certificate_chain
 
     @classmethod
@@ -149,6 +160,18 @@ class CertificateChainSerializer:
     def from_list_of_strings(cls, certificate_chain: list[str]) -> CertificateChainSerializer:
         return cls.from_list_of_bytes([entry.encode() for entry in certificate_chain])
 
+    def get_as_pem(self) -> bytes:
+        return b''.join([cert.public_bytes(encoding=serialization.Encoding.PEM) for cert in self._certificate_chain])
+
+    def get_as_der_pkcs7(self) -> bytes:
+        return pkcs7.serialize_certificates(self._certificate_chain, encoding=serialization.Encoding.DER)
+
+    def get_as_pem_pkcs7(self) -> bytes:
+        return pkcs7.serialize_certificates(self._certificate_chain, encoding=serialization.Encoding.PEM)
+
+    def get_as_crypto(self) -> list[x509.Certificate]:
+        return self._certificate_chain
+
     @staticmethod
     def _load_pem_certificate(certificate: bytes) -> x509.Certificate:
         try:
@@ -162,15 +185,3 @@ class CertificateChainSerializer:
             return x509.load_der_x509_certificate(certificate)
         except Exception:
             raise ValueError
-
-    def get_as_pem(self) -> bytes:
-        return b''.join([cert.public_bytes(encoding=serialization.Encoding.PEM) for cert in self._certificate_chain])
-
-    def get_as_pkcs7_der(self) -> bytes:
-        return pkcs7.serialize_certificates(self._certificate_chain, encoding=serialization.Encoding.DER)
-
-    def get_as_pkcs7_pem(self) -> bytes:
-        return pkcs7.serialize_certificates(self._certificate_chain, encoding=serialization.Encoding.PEM)
-
-    def get_as_crypto(self) -> list[x509.Certificate]:
-        return self._certificate_chain

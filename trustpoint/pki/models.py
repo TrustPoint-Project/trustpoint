@@ -18,7 +18,7 @@ from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
-from .serializer import CertificateSerializer, PublicKeySerializer
+from .serializer import CertificateSerializer, PublicKeySerializer, CertificateChainSerializer
 
 
 if TYPE_CHECKING:
@@ -873,57 +873,15 @@ class CertificateModel(models.Model):
 
     # --------------------------------------------- Data Retrieval Methods ---------------------------------------------
 
-    def get_cert_as_pem(self) -> bytes:
-        """Retrieves the certificate as PEM string.
-
-        Returns:
-            bytes: Certificate as PEM string.
-        """
-        return self.cert_pem.encode()
-
-    def get_cert_as_der(self, certificate_serializer: type(CertificateSerializer) = CertificateSerializer) -> bytes:
-        """Retrieves the certificate as DER bytes.
-
-        Returns:
-            bytes: Certificate as DER bytes.
-        """
-        return certificate_serializer(self.cert_pem).get_as_der()
-
-    def get_cert_as_crypto(
+    def get_certificate_serializer(
             self,
-            certificate_serializer: type(CertificateSerializer) = CertificateSerializer) -> x509.Certificate:
-        """Retrieves the certificate as cryptography.x509.Certificate object
+            certificate_serializer_class: type(CertificateSerializer) = CertificateSerializer) -> CertificateSerializer:
+        return certificate_serializer_class.from_string(self.cert_pem)
 
-        Returns:
-            cryptography.x509.Certificate: Certificate as cryptography.x509.Certificate object.
-        """
-        return certificate_serializer(self.cert_pem).get_as_crypto()
-
-    def get_public_key_as_pem(self) -> bytes:
-        """Retrieves the public key as PEM string.
-
-        Returns:
-            str: Public key as PEM string.
-
-        """
-        return self.public_key_pem.encode()
-
-    def get_public_key_as_der(self, public_key_serializer: type(PublicKeySerializer) = PublicKeySerializer) -> bytes:
-        """Retrieves the public key as DER encoded bytes.
-
-        Returns:
-            bytes: Public key as DER encoded bytes.
-        """
-        return public_key_serializer(self.public_key_pem).get_as_der()
-
-    def get_public_key_as_crypto(
-            self, public_key_serializer: type(PublicKeySerializer) = PublicKeySerializer) -> PublicKey:
-        """Retrieves the public key as cryptography public key object.
-
-        Returns:
-            rsa.RSAPublicKey | ec.EllipticCurvePublicKey: Public key as cryptography public key object.
-        """
-        return public_key_serializer(self.public_key_pem).get_as_crypto()
+    def get_public_key_serializer(
+            self,
+            public_key_serializer_class: type(PublicKeySerializer) = PublicKeySerializer) -> PublicKeySerializer:
+        return public_key_serializer_class.from_string(self.public_key_pem)
 
     def get_certificate_chains(self) -> list[list[CertificateModel]]:
         if self.is_root_ca:
@@ -937,6 +895,16 @@ class CertificateModel(models.Model):
             cert_chain.append(self)
 
         return cert_chains
+
+    def get_certificate_chain_serializers(
+            self,
+            certificate_chain_serializer_class: type(CertificateChainSerializer) = CertificateChainSerializer
+    ) -> list[CertificateChainSerializer]:
+        certificate_chain_serializers = []
+        for cert_chain in self.get_certificate_chains():
+            certificate_chain_serializers.append(certificate_chain_serializer_class(
+                [cert.get_certificate_serializer().get_as_crypto() for cert in cert_chain]))
+        return certificate_chain_serializers
 
     # --------------------------------------------------- Extensions ---------------------------------------------------
     # order of extensions follows RFC5280
@@ -1296,14 +1264,6 @@ class IssuingCaModel(models.Model):
 
     def __str__(self) -> str:
         return f'IssuingCa({self.unique_name})'
-
-    # --------------------------------------------- Data extraction methods --------------------------------------------
-
-    def get_cert_chain_as_crypto(self) -> list[x509.Certificate]:
-        pass
-
-    def get_key_as_crypto(self) -> PrivateKey:
-        pass
 
 
 class CertificateChainOrderModel(models.Model):

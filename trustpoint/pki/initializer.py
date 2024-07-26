@@ -1,4 +1,6 @@
 from __future__ import annotations
+
+import traceback
 from typing import TYPE_CHECKING
 
 
@@ -120,7 +122,6 @@ class LocalUnprotectedIssuingCaFromP12FileInitializer(LocalIssuingCaFromFileInit
 
     def _extract_full_cert_chain(self) -> None:
         current_cert = self._issuing_ca_cert
-        print(self._issuing_ca_cert)
         self._full_cert_chain = [self._issuing_ca_cert]
 
         if self._is_self_signed(current_cert):
@@ -152,20 +153,15 @@ class LocalUnprotectedIssuingCaFromP12FileInitializer(LocalIssuingCaFromFileInit
     @transaction.atomic
     def save(self):
 
-        print('saving')
         saved_certs = []
 
-        print('saving certs')
         for certificate in self._full_cert_chain:
             saved_certs.append(self._cert_model_class.save_certificate(certificate))
-        print('saved_certs')
-        print('saving issuing ca model')
+
         issuing_ca_model = self._issuing_ca_model_class(
             unique_name=self._unique_name,
             private_key_pem=self._private_key_pem,
             )
-
-        print('saved issuing ca model')
 
         issuing_ca_model.issuing_ca_certificate = saved_certs[-1]
         issuing_ca_model.root_ca_certificate = saved_certs[0]

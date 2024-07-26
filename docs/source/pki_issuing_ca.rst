@@ -55,14 +55,11 @@ These objects are meant to be utilized when using Issuing CAs to actually issue 
         --
         +issue_certificate() : CertificateModel {abstract}
         +sign_crl() : CrlModel {abstract}
-        +get_issuing_ca_certificate_model() : CertificateModel
-        +get_issuing_ca_certificate_as_pem() : bytes
-        +get_issuing_ca_certificate_as_der() : bytes
-        +get_issuing_ca_certificate_as_crypto() : x509.Certificate
-        +get_cert_chain() : list[CertificateModel]
-        +get_cert_chain_as_pem() : list[bytes]
-        +get_cert_chain_as_pkcs7() : bytes
-        +get_cert_chain_as_crypto() : list[x509.Certificate]
+        +get_issuing_ca_certificate() : CertificateModel
+        +get_issuing_ca_certificate_chain() : list[CertificateModel]
+        +get_issuing_ca_certificate_serializer() : CertificateSerializer
+        +get_issuing_ca_public_key_serializer() : PublicKeySerializer
+        +get_issuing_ca_certificate_chain_serializer() : CertificateSerializer
     }
 
     class UnprotectedLocalIssuingCa {
