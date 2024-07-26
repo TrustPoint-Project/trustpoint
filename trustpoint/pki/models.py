@@ -1167,7 +1167,8 @@ class CertificateModel(models.Model):
 
         for issuer_candidate in issuer_candidates:
             try:
-                certificate.verify_directly_issued_by(issuer_candidate.get_cert_as_crypto())
+                certificate.verify_directly_issued_by(
+                    issuer_candidate.get_certificate_serializer().get_as_crypto())
                 cert_model.issuer_references.add(issuer_candidate)
             except (ValueError, TypeError, InvalidSignature):
                 pass
@@ -1178,7 +1179,7 @@ class CertificateModel(models.Model):
 
         for issued_candidate in issued_candidates:
             try:
-                issued_candidate.get_cert_as_crypto().verify_directly_issued_by(certificate)
+                issued_candidate.get_certificate_serializer().get_as_crypto().verify_directly_issued_by(certificate)
                 issued_candidate.issuer_references.add(cert_model)
             except (ValueError, TypeError, InvalidSignature):
                 pass

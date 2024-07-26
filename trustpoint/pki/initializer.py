@@ -45,6 +45,8 @@ class LocalIssuingCaFromFileInitializer(IssuingCaInitializer, ABC):
 
 
 class LocalUnprotectedIssuingCaFromP12FileInitializer(LocalIssuingCaFromFileInitializer):
+    # TODO: check p12 edge cases
+    # TODO: -> no issuing ca certificate, no full chain, no key, ...
 
     _unique_name: str
     _p12: pkcs12
@@ -161,7 +163,7 @@ class LocalUnprotectedIssuingCaFromP12FileInitializer(LocalIssuingCaFromFileInit
         issuing_ca_model = self._issuing_ca_model_class(
             unique_name=self._unique_name,
             private_key_pem=self._private_key_pem,
-            )
+        )
 
         issuing_ca_model.issuing_ca_certificate = saved_certs[-1]
         issuing_ca_model.root_ca_certificate = saved_certs[0]
@@ -173,14 +175,3 @@ class LocalUnprotectedIssuingCaFromP12FileInitializer(LocalIssuingCaFromFileInit
             cert_chain_order_model.certificate = certificate
             cert_chain_order_model.issuing_ca = issuing_ca_model
             cert_chain_order_model.save()
-
-
-def abc():
-    base_path = Path(__file__).parent.parent.parent.resolve()
-    path = base_path / Path('trustpoint/pki')
-
-    with open(path / 'p12.p12', 'rb') as f:
-        p12_bytes = f.read()
-
-    le = LocalUnprotectedIssuingCaFromP12FileInitializer('hello', p12_bytes, b'testing321')
-    le.save()
