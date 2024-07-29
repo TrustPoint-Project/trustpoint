@@ -10,6 +10,7 @@ Welcome to Trustpoint's documentation!
    :maxdepth: 2
    :caption: Contents:
 
+   pki
    pki_models
    pki_issuing_ca
    domains
