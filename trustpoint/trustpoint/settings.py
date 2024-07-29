@@ -12,6 +12,8 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
 
+from log.config import logging_config
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -36,6 +38,7 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
+    'log.apps.LogConfig',
     'onboarding.apps.OnboardingConfig',
     'pki.apps.PkiConfig',
     'sysconf.apps.SysconfConfig',
@@ -163,3 +166,10 @@ DJANGO_TABLES2_TABLE_ATTRS = {'class': 'table', 'td': {'class': 'v-middle'}}
 
 LOGIN_REDIRECT_URL = 'home:dashboard'
 LOGIN_URL = 'users:login'
+
+# CRL interval in hours
+CRL_INTERVAL = 24
+
+DJANGO_LOG_LEVEL = 'INFO'
+
+LOGGING = logging_config

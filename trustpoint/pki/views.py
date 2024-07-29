@@ -252,7 +252,7 @@ class DomainProfileCreateView(DomainProfilesContextMixin, TpLoginRequiredMixin, 
 
     model = DomainProfile
     template_name = 'pki/domain_profiles/add.html'
-    fields = ['unique_name', 'url_path_segment', 'issuing_ca']
+    fields = ['unique_name', 'url_path_segment', 'issuing_ca', 'auto_crl']
     success_url = reverse_lazy('pki:domain_profiles')
     ignore_url = reverse_lazy('pki:domain_profiles')
 
@@ -261,7 +261,7 @@ class DomainProfileUpdateView(DomainProfilesContextMixin, TpLoginRequiredMixin, 
 
     model = DomainProfile
     template_name = 'pki/domain_profiles/add.html'
-    fields = ['unique_name', 'issuing_ca']
+    fields = ['unique_name', 'issuing_ca', 'auto_crl']
     success_url = reverse_lazy('pki:domain_profiles')
     ignore_url = reverse_lazy('pki:domain_profiles')
 
@@ -305,6 +305,20 @@ class CRLDownloadView(View):
         return response
 
     @staticmethod
+    def generate_ca_crl(self: CRLDownloadView, ca_id):
+        try:
+            issuing_ca = IssuingCaModel.objects.get(pk=ca_id)
+        except IssuingCaModel.DoesNotExist:
+            messages.error(self, _('Issuing CA not found.'))
+            return redirect('pki:issuing_cas')
+
+        if issuing_ca.generate_crl():
+            messages.info(self, _('CRL generated'))
+        else:
+            messages.warning(self, _('CRL could not be generated'))
+        return redirect('pki:issuing_cas')
+
+    @staticmethod
     def download_domain_profile_crl(self: CRLDownloadView, id):
         try:
             domain_profile = DomainProfile.objects.get(pk=id)
@@ -319,6 +333,20 @@ class CRLDownloadView(View):
         response = HttpResponse(crl_data, content_type='text/plain')
         response['Content-Disposition'] = f'attachment; filename="{domain_profile.unique_name}.crl"'
         return response
+
+    @staticmethod
+    def generate_domain_profile_crl(self: CRLDownloadView, id):
+        try:
+            domain_profile = DomainProfile.objects.get(pk=id)
+        except IssuingCaModel.DoesNotExist:
+            messages.error(self, _('Domain Profile not found.'))
+            return redirect('pki:domain_profiles')
+
+        if domain_profile.generate_crl():
+            messages.info(self, _('CRL generated'))
+        else:
+            messages.warning(self, _('CRL could not be generated'))
+        return redirect('pki:domain_profiles')
 
 
 # ---------------------------------------------------- TrustStores  ----------------------------------------------------

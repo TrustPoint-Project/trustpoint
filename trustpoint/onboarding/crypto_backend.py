@@ -1,12 +1,12 @@
 """This module provides cryptographic operations for use during the onboarding process.
 
 This implementation is in testing stage and shall not be regarded as secure.
-TODO sign_ldevid is Dragons with Lasers in central Berlin levels of a security risk TODO
 """
 from __future__ import annotations
 
 import hashlib
 import hmac
+import logging
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -26,6 +26,8 @@ if TYPE_CHECKING:
 PBKDF2_ITERATIONS = 1000000
 PBKDF2_DKLEN = 32
 
+log = logging.getLogger('tp.onboarding')
+
 class OnboardingError(Exception):
     """Exception raised for errors in the onboarding process."""
 
@@ -33,6 +35,7 @@ class OnboardingError(Exception):
         """Initializes a new OnboardingError with a given message."""
         self.message = message
         super().__init__(self.message)
+        log.exception(self.message, exc_info=True)
 
 
 class CryptoBackend:
@@ -81,6 +84,7 @@ class CryptoBackend:
             Certificate:
                 The CA certificate, incl. private key, certificate and the CA certificate chain.
         """
+        log.debug('Accessing CA for device %s', device.device_name)
         if not device.domain_profile:
             msg = 'No domain profile configured for device.'
             raise OnboardingError(msg)
@@ -109,6 +113,8 @@ class CryptoBackend:
         if not device.device_serial_number:
             exc_msg = 'No serial number provided.'
             raise OnboardingError(exc_msg)
+
+        pass
 
         # subject = x509.Name([
         #     x509.NameAttribute(x509.NameOID.COMMON_NAME, 'ldevid.trustpoint.local'),
@@ -145,6 +151,38 @@ class CryptoBackend:
         # device.save()
 
         # return cert
+        # ca_certificate = CryptoBackend._get_ca(device)
+        # private_ca_key = ca_certificate.get_private_key_as_crypto()
+        # ca_cert = ca_certificate.get_cert_as_crypto()
+        #
+        # log.debug('Issuing LDevID for device %s', device.device_name)
+        #
+        # cert = (
+        #     x509.CertificateBuilder()
+        #     .subject_name(subject)
+        #     .issuer_name(ca_cert.subject)
+        #     .public_key(pub_key)
+        #     .serial_number(x509.random_serial_number())  # This is NOT the device serial number
+        #     .not_valid_before(
+        #         datetime.now(timezone.utc) - timedelta(hours=1)  # backdate a bit in case of client clock skew
+        #     )
+        #     .not_valid_after(
+        #         # TODO(Air): configurable validity period
+        #         datetime.now(timezone.utc) + timedelta(days=365)
+        #         # Sign our certificate with our private key
+        #     )
+        #     .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+        #     .sign(private_ca_key, hashes.SHA256())
+        # )
+        #
+        # device_cert = CertificateModel()
+        # device.ldevid = device_cert.save_certificate(cert)
+        #
+        # # keep track of the device once we send out a cert, even if onboarding fails afterwards
+        # device.save()
+        # log.info('Issued and stored LDevID for device %s', device.device_name)
+        #
+        # return cert
 
 
     @staticmethod
@@ -162,6 +200,7 @@ class CryptoBackend:
         Raises:
             OnboardingError: If the onboarding CA is not configured or not available.
         """
+        log.debug('Received CSR for device %s', device.device_name)
         csr = x509.load_pem_x509_csr(csr_pem)
 
         try:
@@ -202,6 +241,7 @@ class CryptoBackend:
 
         Returns: The keypair as PrivateKeyType.
         """
+        log.debug('Generating new private key for manual device')
         # TODO (Air): Need to add configurable key type and size here
         private_key = ec.generate_private_key(
             ec.SECP256R1()
@@ -223,6 +263,8 @@ class CryptoBackend:
 
         ca_certificate = CryptoBackend._get_ca(device)
         ca_cert = ca_certificate.get_cert_as_crypto()
+
+        log.debug('Generating PKCS12 for device %s', device.device_name)
 
         pkcs12 = serialization.pkcs12.serialize_key_and_certificates(
             name=device.device_serial_number.encode(),

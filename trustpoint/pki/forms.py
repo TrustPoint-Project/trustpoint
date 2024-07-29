@@ -145,9 +145,8 @@ class IssuingCaAddFileImportOtherForm(forms.Form):
         label=_('[Optional] Private key file password'),
         required=False)
     cert_chain = forms.FileField(
-        label=_(
-            'Certificate chain (.pem, .p7b, .p7c)'),
-        required=True)
+        label=_('Certificate chain (.pem, .p7b, .p7c)'), required=True)
+    auto_crl = forms.BooleanField(label='Generate CRL upon certificate revocation.', initial=True, required=False)
 
 
 class DomainModelForm(forms.ModelForm):

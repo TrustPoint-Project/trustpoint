@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import secrets
+import logging
 import threading
 from enum import IntEnum
 from typing import TYPE_CHECKING
@@ -18,6 +19,7 @@ if TYPE_CHECKING:
 
 onboarding_timeout = 1800  # seconds, TODO: add to configuration
 
+log = logging.getLogger('tp.onboarding')
 
 class OnboardingProcessState(IntEnum):
     """Enum representing the state of an onboarding process.
@@ -70,6 +72,7 @@ class OnboardingProcess:
         self.timer.start()
         self.active = True
         OnboardingProcess.id_counter += 1
+        log.info(f'Onboarding process {self.id} started for device {self.device.device_name}.')
 
     def __str__(self) -> str:
         """Returns the onboarding process in human-readable format."""
@@ -137,7 +140,9 @@ class OnboardingProcess:
             return process.cancel()
         if device and device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
             device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+            device.revoke_ldevid()
             device.save()
+            log.info(f'Request to cancel non-existing onboarding process for device {device.device_name}.')
             return (OnboardingProcessState.CANCELED, None)
 
         return (OnboardingProcessState.NO_SUCH_PROCESS, None)
@@ -150,8 +155,12 @@ class OnboardingProcess:
         if self.device and self.device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
             # actual cancellation (cancel() may be called just to remove the process from onboarding_processes)
             self.device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+            self.device.revoke_ldevid()
             self.device.save()
             self.state = OnboardingProcessState.CANCELED
+            log.info(f'Onboarding process {self.id} for device {self.device.device_name} canceled.')
+        else:
+            log.info(f'Onboarding process {self.id} removed from list.')
 
         return (self.state, self)
 
@@ -162,7 +171,9 @@ class OnboardingProcess:
         self.error_reason = reason
         self.timer.cancel()
         self.device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_FAILED
+        self.device.revoke_ldevid()
         self.device.save()
+        log.error(f'Onboarding process {self.id} for device {self.device.device_name} failed: {reason}')
 
     def _success(self) -> None:
         """Completes the onboarding process."""
@@ -171,6 +182,7 @@ class OnboardingProcess:
         self.timer.cancel()
         self.device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDED
         self.device.save()
+        log.info(f'Onboarding process {self.id} for device {self.device.device_name} completed.')
 
     def _timeout(self) -> None:
         """Cancels the onboarding process due to timeout, called by timer thread."""
@@ -220,6 +232,7 @@ class ManualOnboardingProcess(OnboardingProcess):
             return False
         if uname == self.salt and passwd == self.otp:
             self.state = OnboardingProcessState.DEVICE_VALIDATED
+            log.debug(f'Device {self.device.device_name} validated for onboarding process {self.id}.')
             return True
 
         self._fail('Client provided invalid credentials.')
@@ -238,6 +251,7 @@ class ManualOnboardingProcess(OnboardingProcess):
             raise
         if ldevid:
             self.state = OnboardingProcessState.LDEVID_SENT
+            log.info(f'LDevID issued for device {self.device.device_name} in onboarding process {self.id}.')
         else:
             self._fail('No LDevID was generated.')
         return ldevid
@@ -275,6 +289,7 @@ class DownloadOnboardingProcess(OnboardingProcess):
                 self.device.device_serial_number = 'tpdl_' + secrets.token_urlsafe(12)
             self.pkcs12 = Crypt.gen_keypair_and_ldevid(self.device)
             self.state = OnboardingProcessState.LDEVID_SENT
+            log.info(f'LDevID issued for device {self.device.device_name} in onboarding process {self.id}.')
         except Exception as e:  # noqa: BLE001
             msg = 'Error generating device key or LDevID.'
             self._fail(msg)
@@ -282,6 +297,7 @@ class DownloadOnboardingProcess(OnboardingProcess):
 
     def get_pkcs12(self) -> bytes | None:
         """Returns the keypair and LDevID certificate as PKCS12 serialized bytes and ends the onboarding process."""
+        log.debug(f'PKCS12 requested for onboarding process {self.id}.')
         self.gen_thread.join()
         self._success()
         return self.pkcs12

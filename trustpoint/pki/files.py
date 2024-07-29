@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+
 from enum import Enum
 
 from cryptography.hazmat.primitives import serialization
@@ -13,6 +14,7 @@ from cryptography import exceptions
 from cryptography import x509
 import zipfile
 import tarfile
+
 import io
 
 
@@ -61,29 +63,26 @@ class CertificateFileFormat(Enum):
 
 
 class CertificateFileGenerator:
-
     @classmethod
     def generate(
-            cls,
-            certs: list[CertificateModel],
-            cert_file_container: CertificateFileContainer,
-            cert_chain_incl: CertificateChainIncluded,
-            cert_file_format: CertificateFileFormat) -> tuple[bytes, str]:
-
+        cls,
+        certs: list[CertificateModel],
+        cert_file_container: CertificateFileContainer,
+        cert_chain_incl: CertificateChainIncluded,
+        cert_file_format: CertificateFileFormat,
+    ) -> tuple[bytes, str]:
         cls._check_certs_not_empty(certs)
 
         if cert_file_container == CertificateFileContainer.SINGLE_FILE:
             return cls._generate_single_file(
-                certs=certs,
-                cert_chain_included=cert_chain_incl,
-                cert_file_format = cert_file_format
+                certs=certs, cert_chain_included=cert_chain_incl, cert_file_format=cert_file_format
             )
         else:
             return cls._generate_separate_files(
                 certs=certs,
                 cert_file_container=cert_file_container,
                 cert_chain_included=cert_chain_incl,
-                cert_file_format=cert_file_format
+                cert_file_format=cert_file_format,
             )
 
     @staticmethod
@@ -103,11 +102,11 @@ class CertificateFileGenerator:
 
     @classmethod
     def _generate_single_file(
-            cls,
-            certs: list[CertificateModel],
-            cert_file_format: CertificateFileFormat,
-            cert_chain_included: CertificateChainIncluded) -> tuple[bytes, str]:
-
+        cls,
+        certs: list[CertificateModel],
+        cert_file_format: CertificateFileFormat,
+        cert_chain_included: CertificateChainIncluded,
+    ) -> tuple[bytes, str]:
         if cert_chain_included == CertificateChainIncluded.CHAIN_INCL:
             certs = cls._get_certs_with_chains(certs=certs)
 
@@ -132,12 +131,12 @@ class CertificateFileGenerator:
 
     @classmethod
     def _generate_separate_files(
-            cls,
-            certs: list[CertificateModel],
-            cert_file_container: CertificateFileContainer,
-            cert_file_format: CertificateFileFormat,
-            cert_chain_included: CertificateChainIncluded) -> tuple[bytes, str]:
-
+        cls,
+        certs: list[CertificateModel],
+        cert_file_container: CertificateFileContainer,
+        cert_file_format: CertificateFileFormat,
+        cert_chain_included: CertificateChainIncluded,
+    ) -> tuple[bytes, str]:
         filenames = []
         for cert in certs:
             filenames.append(f'certificate_{cert.serial_number}')
@@ -195,28 +194,28 @@ class CertificateFileGenerator:
     @staticmethod
     def _generate_pem(certs: CertificateModel | list[CertificateModel]) -> bytes:
         if isinstance(certs, CertificateModel):
-            return certs.get_cert_as_pem()
+            return certs.get_certificate_serializer().get_as_pem()
         pem = b''
         for cert in certs:
-            pem += cert.get_cert_as_pem()
+            pem += cert.get_certificate_serializer().get_as_pem()
         return pem
 
     @staticmethod
     def _generate_der(certs: CertificateModel | list[CertificateModel]) -> bytes:
         if isinstance(certs, CertificateModel):
-            return certs.get_cert_as_der()
+            return certs.get_certificate_serializer().get_as_der()
+            # return certs.get_cert_as_der()
         if len(certs) != 1:
-            raise ValueError(
-                f'DER format can only store a single certificate, but found {len(certs)} certificates.')
-        return certs[0].get_cert_as_der()
+            raise ValueError(f'DER format can only store a single certificate, but found {len(certs)} certificates.')
+        return certs[0].get_certificate_serializer().get_as_der()
 
     @staticmethod
     def _get_crypto_certs(certs: CertificateModel | list[CertificateModel]) -> list[x509.Certificate]:
         if isinstance(certs, CertificateModel):
-            return [certs.get_cert_as_crypto()]
+            return [certs.get_certificate_serializer().get_as_crypto()]
         crypto_certs = []
         for cert in certs:
-            crypto_certs.append(cert.get_cert_as_crypto())
+            crypto_certs.append(cert.get_certificate_serializer().get_as_crypto())
         return crypto_certs
 
     @classmethod
@@ -231,10 +230,9 @@ class CertificateFileGenerator:
 
 
 class X509CredentialFileSerializer:
-
     _private_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey
     _certificate_chain: list[x509.Certificate] = []
-    _certificates:  list[x509.Certificate] = []
+    _certificates: list[x509.Certificate] = []
 
     # def __init__(
     #         self,
@@ -247,7 +245,6 @@ class X509CredentialFileSerializer:
     #
     #     self._get_cert_chain_from_certificates()
 
-
     @property
     def private_key(self) -> rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey:
         return self._private_key
@@ -255,14 +252,13 @@ class X509CredentialFileSerializer:
     @property
     def certificate_chain(self) -> list[x509.Certificate]:
         return self._certificate_chain
+
     #
     # def from_key_and_certificate_bytes(
     #     self,
     #     private_key_file: None | bytes = None,
     #     private_key_password: None | bytes = None,
     #     certificates_and_chains: None | list[bytes] = None) -> X509CredentialFileSerializer:
-
-
 
     # def from_crypto(
     #     self,
@@ -273,7 +269,6 @@ class X509CredentialFileSerializer:
     #     self._certificate_chain = certificate_chain
 
     def _load_pkcs12_key_and_certs(self, private_key_file: bytes, private_key_password: None | bytes) -> None:
-
         try:
             p12 = pkcs12.load_pkcs12(private_key_file, private_key_password)
         except Exception:
@@ -374,14 +369,13 @@ class X509CredentialFileSerializer:
     def _get_cert_chain_from_certificates(self) -> None:
         # TODO: use Authority Key Identifier and check signature
         public_key_spki = self._private_key.public_key().public_bytes(
-            encoding=Encoding.DER,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo)
+            encoding=Encoding.DER, format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
 
         for cert in self._certificates:
             if public_key_spki != cert.public_key().public_bytes(
-                    encoding=Encoding.DER,
-                    format=serialization.PublicFormat.SubjectPublicKeyInfo):
-
+                encoding=Encoding.DER, format=serialization.PublicFormat.SubjectPublicKeyInfo
+            ):
                 issuing_ca_cert = cert
                 break
         else:
@@ -398,11 +392,3 @@ class X509CredentialFileSerializer:
 
         cert_chain.reverse()
         self._certificate_chain = cert_chain
-
-
-
-
-
-
-
-

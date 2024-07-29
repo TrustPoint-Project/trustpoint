@@ -43,7 +43,6 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==1.0.7
 sphinxcontrib-serializinghtml==1.1.10
 sqlparse==0.5.0
--e git+ssh://gitolite-as-acsw/TrustPoint-Project/trustpoint.git@e5c9a43d4596f785a41e18c600ee98cce3011dd5#egg=trustpoint
 typing_extensions==4.12.0
 urllib3==2.2.1
 Werkzeug==3.0.3
