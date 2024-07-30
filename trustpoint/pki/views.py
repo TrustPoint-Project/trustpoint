@@ -20,10 +20,10 @@ from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect
 
 
-from .models import CertificateModel, IssuingCaModel, DomainProfile
+from .models import CertificateModel, IssuingCaModel, DomainModel
 # RevokedCertificate
 
-from .tables import CertificateTable, IssuingCaTable, DomainProfileTable
+from .tables import CertificateTable, IssuingCaTable, DomainTable
 from .forms import (
     CertificateDownloadForm,
     IssuingCaAddMethodSelectForm,
@@ -233,53 +233,53 @@ class IssuingCaBulkDeleteConfirmView(IssuingCaContextMixin, TpLoginRequiredMixin
     context_object_name = 'issuing_cas'
 
 
-class DomainProfilesContextMixin(ContextDataMixin):
+class DomainContextMixin(ContextDataMixin):
     """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
 
     context_page_category = 'pki'
-    context_page_name = 'domain_profiles'
+    context_page_name = 'domains'
 
 
-class DomainProfileTableView(DomainProfilesContextMixin, TpLoginRequiredMixin, SingleTableView):
-    """Domain Profile Table View."""
+class DomainTableView(DomainContextMixin, TpLoginRequiredMixin, SingleTableView):
+    """Domain Table View."""
 
-    model = DomainProfile
-    table_class = DomainProfileTable
-    template_name = 'pki/domain_profiles/domain_profiles.html'
+    model = DomainModel
+    table_class = DomainTable
+    template_name = 'pki/domains/domain.html'
 
 
-class DomainProfileCreateView(DomainProfilesContextMixin, TpLoginRequiredMixin, CreateView):
+class DomainCreateView(DomainContextMixin, TpLoginRequiredMixin, CreateView):
 
-    model = DomainProfile
-    template_name = 'pki/domain_profiles/add.html'
+    model = DomainModel
+    template_name = 'pki/domains/add.html'
     fields = ['unique_name', 'url_path_segment', 'issuing_ca', 'auto_crl']
-    success_url = reverse_lazy('pki:domain_profiles')
-    ignore_url = reverse_lazy('pki:domain_profiles')
+    success_url = reverse_lazy('pki:domains')
+    ignore_url = reverse_lazy('pki:domains')
 
 
-class DomainProfileUpdateView(DomainProfilesContextMixin, TpLoginRequiredMixin, UpdateView):
+class DomainUpdateView(DomainContextMixin, TpLoginRequiredMixin, UpdateView):
 
-    model = DomainProfile
-    template_name = 'pki/domain_profiles/add.html'
+    model = DomainModel
+    template_name = 'pki/domains/add.html'
     fields = ['unique_name', 'issuing_ca', 'auto_crl']
-    success_url = reverse_lazy('pki:domain_profiles')
-    ignore_url = reverse_lazy('pki:domain_profiles')
+    success_url = reverse_lazy('pki:domains')
+    ignore_url = reverse_lazy('pki:domains')
 
 
-class DomainProfileDetailView(DomainProfilesContextMixin, TpLoginRequiredMixin, DetailView):
+class DomainDetailView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
 
-    model = DomainProfile
-    template_name = 'pki/domain_profiles/details.html'
-    context_object_name = 'domain_profile'
+    model = DomainModel
+    template_name = 'pki/domains/details.html'
+    context_object_name = 'domain'
 
 
-class DomainProfilesBulkDeleteConfirmView(IssuingCaContextMixin, TpLoginRequiredMixin, BulkDeleteView):
+class DomainBulkDeleteConfirmView(IssuingCaContextMixin, TpLoginRequiredMixin, BulkDeleteView):
 
-    model = DomainProfile
-    success_url = reverse_lazy('pki:domain_profiles')
-    ignore_url = reverse_lazy('pki:domain_profiles')
-    template_name = 'pki/domain_profiles/confirm_delete.html'
-    context_object_name = 'domain_profiles'
+    model = DomainModel
+    success_url = reverse_lazy('pki:domains')
+    ignore_url = reverse_lazy('pki:domains')
+    template_name = 'pki/domains/confirm_delete.html'
+    context_object_name = 'domains'
 
 
 # -------------------------------------------- Certificate revocation list  --------------------------------------------
@@ -319,34 +319,34 @@ class CRLDownloadView(View):
         return redirect('pki:issuing_cas')
 
     @staticmethod
-    def download_domain_profile_crl(self: CRLDownloadView, id):
+    def download_domain_crl(self: CRLDownloadView, id):
         try:
-            domain_profile = DomainProfile.objects.get(pk=id)
+            domain = DomainModel.objects.get(pk=id)
         except IssuingCaModel.DoesNotExist:
-            messages.error(self, _('Domain Profile not found.'))
-            return redirect('pki:domain_profiles')
+            messages.error(self, _('Domain not found.'))
+            return redirect('pki:domains')
 
-        crl_data = domain_profile.get_crl()
+        crl_data = domain.get_crl()
         if not crl_data:
-            messages.warning(self, _('No CRL available for domain profile %s.') % domain_profile.unique_name)
-            return redirect('pki:domain_profiles')
+            messages.warning(self, _('No CRL available for domain %s.') % domain.unique_name)
+            return redirect('pki:domains')
         response = HttpResponse(crl_data, content_type='text/plain')
-        response['Content-Disposition'] = f'attachment; filename="{domain_profile.unique_name}.crl"'
+        response['Content-Disposition'] = f'attachment; filename="{domain.unique_name}.crl"'
         return response
 
     @staticmethod
-    def generate_domain_profile_crl(self: CRLDownloadView, id):
+    def generate_domain_crl(self: CRLDownloadView, id):
         try:
-            domain_profile = DomainProfile.objects.get(pk=id)
+            domain = DomainModel.objects.get(pk=id)
         except IssuingCaModel.DoesNotExist:
-            messages.error(self, _('Domain Profile not found.'))
-            return redirect('pki:domain_profiles')
+            messages.error(self, _('Domain not found.'))
+            return redirect('pki:domains')
 
-        if domain_profile.generate_crl():
+        if domain.generate_crl():
             messages.info(self, _('CRL generated'))
         else:
             messages.warning(self, _('CRL could not be generated'))
-        return redirect('pki:domain_profiles')
+        return redirect('pki:domains')
 
 
 # ---------------------------------------------------- TrustStores  ----------------------------------------------------

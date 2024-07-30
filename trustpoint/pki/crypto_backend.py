@@ -67,12 +67,12 @@ class CRLManager:
         """
         from .models import (  # Local import to avoid circular import
             CertificateRevocationList,
-            DomainProfile,
+            DomainModel,
             IssuingCa,
             RevokedCertificate,
         )
 
-        if isinstance(issuing_instance, (IssuingCa, DomainProfile)):
+        if isinstance(issuing_instance, (IssuingCa, DomainModel)):
             revoked_certificates = RevokedCertificate.objects.filter(
                 issuing_ca=issuing_instance if isinstance(issuing_instance, IssuingCa) else issuing_instance.issuing_ca,
                 domain_profile=None if isinstance(issuing_instance, IssuingCa) else issuing_instance
@@ -103,12 +103,12 @@ class CRLManager:
         Returns:
             CertificateRevocationList or None: The latest CRL if exists, None otherwise.
         """
-        from .models import CertificateRevocationList, DomainProfile, IssuingCa  # Local import to avoid circular import
+        from .models import CertificateRevocationList, DomainModel, IssuingCa  # Local import to avoid circular import
 
         try:
             if isinstance(issuing_instance, IssuingCa):
                 return CertificateRevocationList.objects.filter(ca=issuing_instance, domain_profile=None).latest('issued_at')
-            elif isinstance(issuing_instance, DomainProfile):
+            elif isinstance(issuing_instance, DomainModel):
                 return CertificateRevocationList.objects.filter(domain_profile=issuing_instance).latest('issued_at')
         except CertificateRevocationList.DoesNotExist:
             return None

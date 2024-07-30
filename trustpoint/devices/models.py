@@ -7,11 +7,12 @@ import logging
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
-from pki.models import CertificateModel, DomainProfile, RevokedCertificate
+from pki.models import CertificateModel, DomainModel, RevokedCertificate
 
 from .exceptions import UnknownOnboardingStatusError
 
 log = logging.getLogger('tp.devices')
+
 
 class Device(models.Model):
     """Device Model."""
@@ -59,7 +60,7 @@ class Device(models.Model):
     device_onboarding_status = models.CharField(
         max_length=1, choices=DeviceOnboardingStatus, default=DeviceOnboardingStatus.NOT_ONBOARDED, blank=True
     )
-    domain_profile = models.ForeignKey(DomainProfile, on_delete=models.SET_NULL, blank=True, null=True)
+    domain = models.ForeignKey(DomainModel, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self: Device) -> str:
@@ -84,8 +85,8 @@ class Device(models.Model):
                 cert_serial_number=self.ldevid.serial_number,
                 revocation_datetime=timezone.now(),
                 revocation_reason=revocation_reason,
-                issuing_ca=self.domain_profile.issuing_ca,
-                domain_profile=self.domain_profile
+                issuing_ca=self.domain.issuing_ca,
+                domain=self.domain
             )
 
         self.ldevid.revoke()
@@ -94,12 +95,12 @@ class Device(models.Model):
 
         # generate CRLs
 
-        if self.domain_profile.auto_crl:
+        if self.domain.auto_crl:
             pass
-            # self.domain_profile.generate_crl()
-        if self.domain_profile.issuing_ca.auto_crl:
+            # self.domain.generate_crl()
+        if self.domain.issuing_ca.auto_crl:
             pass
-            # self.domain_profile.issuing_ca.generate_crl()
+            # self.domain.issuing_ca.generate_crl()
 
         log.info('Revoked LDevID for device %s', self.device_name)
         return True
@@ -122,11 +123,11 @@ class Device(models.Model):
         if not device:
             return False, f'Onboarding: Device with ID {device_id} not found.'
 
-        if not device.domain_profile:
-            return False, f'Onboarding: Please select an domain profile for device {device.device_name} first.'
+        if not device.domain:
+            return False, f'Onboarding: Please select a domain for device {device.device_name} first.'
 
-        if not device.domain_profile.issuing_ca:
-            return False, f'Onboarding: domain profile {device.domain_profile.unique_name} has no issuing CA set.'
+        if not device.domain.issuing_ca:
+            return False, f'Onboarding: domain {device.domain.unique_name} has no issuing CA set.'
 
         if device.onboarding_protocol not in allowed_onboarding_protocols:
             try:

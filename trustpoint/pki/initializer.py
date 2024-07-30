@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import traceback
 from typing import TYPE_CHECKING
 
 
@@ -11,7 +10,6 @@ from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.serialization import pkcs12
 from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
-from pathlib import Path
 
 
 from django.db import transaction

@@ -34,6 +34,7 @@ if TYPE_CHECKING:
 
 log = logging.getLogger('tp.pki')
 
+
 class AttributeTypeAndValue(models.Model):
     """AttributeTypeAndValue Model.
 
@@ -1278,6 +1279,32 @@ class IssuingCaModel(models.Model):
     def __str__(self) -> str:
         return f'IssuingCa({self.unique_name})'
 
+    def get_issuing_ca_certificate(self) -> CertificateModel:
+        return self.issuing_ca_certificate
+
+    def get_issuing_ca_certificate_serializer(self) -> CertificateSerializer:
+        return self.issuing_ca_certificate.get_certificate_serializer()
+
+    def get_issuing_ca_public_key_serializer(self) -> PublicKeySerializer:
+        return self.issuing_ca_certificate.get_public_key_serializer()
+
+    def get_issuing_ca_certificate_chain(self) -> list[CertificateModel]:
+        cert_chain = [self.root_ca_certificate]
+        cert_chain.extend(self.intermediate_ca_certificates.all().order_by('order').asc())
+        cert_chain.append(self.issuing_ca_certificate)
+        return cert_chain
+
+    def get_issuing_ca_certificate_chain_serializer(
+            self,
+            certificate_chain_serializer: type(CertificateChainSerializer) = CertificateSerializer
+    ) -> CertificateChainSerializer:
+        return certificate_chain_serializer(
+            [cert.get_certificate_serializer().get_as_crypto() for cert in self.get_issuing_ca_certificate_chain()])
+
+    def get_issuing_ca(self) -> IssuingCa:
+        if self.private_key_pem:
+            return UnprotectedLocalIssuingCa(self)
+
     # def generate_crl(self) -> bool:
     #     """Generate CRL."""
     #     manager = CRLManager(
@@ -1318,7 +1345,7 @@ class CertificateChainOrderModel(models.Model):
         return f'CertificateChainOrderModel({self.certificate.common_name})'
 
 
-class DomainProfile(models.Model):
+class DomainModel(models.Model):
     """Endpoint Profile model."""
 
     unique_name = models.CharField(_('Unique Name'), max_length=100, unique=True)
@@ -1331,7 +1358,7 @@ class DomainProfile(models.Model):
         blank=True,
         null=True,
         verbose_name=_('Issuing CA'),
-        related_name='domain_profiles'
+        related_name='domain'
     )
 
     # est_config = models.ForeignKey
@@ -1339,20 +1366,20 @@ class DomainProfile(models.Model):
     # scep_config = models.ForeignKey
     # rest_config = models.ForeignKey
 
-    # def get_domain_profile
+    # def get_domain
 
     auto_crl = models.BooleanField(default=True, verbose_name='Generate CRL upon certificate revocation.')
 
     def __str__(self) -> str:
-        """Human-readable representation of the DomainProfile model instance.
+        """Human-readable representation of the Domain model instance.
 
         Returns:
             str:
                 Human-readable representation of the EndpointProfile model instance.
         """
         if self.issuing_ca:
-            return f'DomainProfile({self.unique_name}, {self.issuing_ca.unique_name})'
-        return f'DomainProfile({self.unique_name}, None)'
+            return f'Domain({self.unique_name}, {self.issuing_ca.unique_name})'
+        return f'Domain({self.unique_name}, None)'
 
     # def generate_crl(self) -> bool:
     #     """Generate CRL."""
@@ -1395,7 +1422,7 @@ class RevokedCertificate(models.Model):
     revocation_reason = models.CharField(max_length=255, choices=ReasonCode, default=ReasonCode.UNSPECIFIED, help_text='Reason of revocation.')
     issuing_ca = models.ForeignKey(
         IssuingCaModel, on_delete=models.CASCADE, related_name='revoked_certificates', help_text='Name of Issuing CA.')
-    domain_profile = models.ForeignKey(DomainProfile, on_delete=models.CASCADE, related_name='revoked_certificates')
+    domain = models.ForeignKey(DomainModel, on_delete=models.CASCADE, related_name='revoked_certificates')
 
     def __str__(self) -> str:
         """Human-readable string when Certificate got revoked
@@ -1412,7 +1439,7 @@ class CertificateRevocationList(models.Model):
     crl_content = models.TextField()
     issued_at = models.DateTimeField(auto_now_add=True, editable=False)
     ca = models.ForeignKey(IssuingCaModel, on_delete=models.CASCADE)
-    domain_profile = models.ForeignKey(DomainProfile, on_delete=models.CASCADE, null=True, blank=True)
+    domain = models.ForeignKey(DomainModel, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self) -> str:
         """PEM representation of CRL
@@ -1433,9 +1460,9 @@ class CertificateRevocationList(models.Model):
 #         verbose_name=_('Certificates'),
 #         editable=False
 #     )
-#     domain_profiles = models.ManyToManyField(
-#         DomainProfile,
-#         verbose_name=_('DomainProfiles'),
+#     domain = models.ManyToManyField(
+#         Domain,
+#         verbose_name=_('Domain'),
 #     )
 #
 #     def get_truststore_as_pem(self) -> list[bytes]:

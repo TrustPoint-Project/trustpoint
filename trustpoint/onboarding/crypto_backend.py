@@ -28,6 +28,7 @@ PBKDF2_DKLEN = 32
 
 log = logging.getLogger('tp.onboarding')
 
+
 class OnboardingError(Exception):
     """Exception raised for errors in the onboarding process."""
 
@@ -85,12 +86,12 @@ class CryptoBackend:
                 The CA certificate, incl. private key, certificate and the CA certificate chain.
         """
         log.debug('Accessing CA for device %s', device.device_name)
-        if not device.domain_profile:
+        if not device.domain:
             msg = 'No domain profile configured for device.'
             raise OnboardingError(msg)
 
         try:
-            signing_ca = device.domain_profile.issuing_ca
+            signing_ca = device.domain.issuing_ca
         except AttributeError as e:
             msg = 'Could not obtain issuing CA from domain profile.'
             raise OnboardingError(msg) from e
@@ -99,14 +100,7 @@ class CryptoBackend:
             msg = 'No CA configured in domain profile.'
             raise OnboardingError(msg)
 
-        # if not signing_ca.issuing_ca_certificate:
-        #     msg = 'CA does not have issuing CA certificate.'
-        #     raise OnboardingError(msg)
-        #
-        # return signing_ca.issuing_ca_certificate
-        # TODO
-        return signing_ca.certificates[0]
-
+        return signing_ca.issuing_ca_certificate
 
     @staticmethod
     def _sign_ldevid(pub_key: CertificatePublicKeyTypes, device: Device) -> X509Certificate:
@@ -114,41 +108,39 @@ class CryptoBackend:
             exc_msg = 'No serial number provided.'
             raise OnboardingError(exc_msg)
 
-        pass
+        subject = x509.Name([
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'ldevid.trustpoint.local'),
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.device_serial_number)
+        ])
 
-        # subject = x509.Name([
-        #     x509.NameAttribute(x509.NameOID.COMMON_NAME, 'ldevid.trustpoint.local'),
-        #     x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.device_serial_number)
-        # ])
-        #
-        # ca_certificate = CryptoBackend._get_ca(device)
-        # # private_ca_key = ca_certificate.get_private_key_as_crypto()
-        # ca_cert = ca_certificate.get_cert_as_crypto()
-        #
-        # cert = (
-        #     x509.CertificateBuilder()
-        #     .subject_name(subject)
-        #     .issuer_name(ca_cert.subject)
-        #     .public_key(pub_key)
-        #     .serial_number(x509.random_serial_number())  # This is NOT the device serial number
-        #     .not_valid_before(
-        #         datetime.now(timezone.utc) - timedelta(hours=1)  # backdate a bit in case of client clock skew
-        #     )
-        #     .not_valid_after(
-        #         # TODO(Air): configurable validity period
-        #         datetime.now(timezone.utc) + timedelta(days=365)
-        #         # Sign our certificate with our private key
-        #     )
-        #     .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
-        #     .sign(private_ca_key, hashes.SHA256())
-        # )
-        #
-        # device_cert = CertificateModel()
-        # device.ldevid = device_cert.save_certificate(cert)
-        #
-        # # need to keep track of the device once we send out a cert, even if onboarding fails afterwards
-        # # TODO(Air): but do it here?
-        # device.save()
+        ca_certificate = CryptoBackend._get_ca(device)
+        # private_ca_key = ca_certificate.get_private_key_as_crypto()
+        ca_cert = ca_certificate.get_cert_as_crypto()
+
+        cert = (
+            x509.CertificateBuilder()
+            .subject_name(subject)
+            .issuer_name(ca_cert.subject)
+            .public_key(pub_key)
+            .serial_number(x509.random_serial_number())  # This is NOT the device serial number
+            .not_valid_before(
+                datetime.now(timezone.utc) - timedelta(hours=1)  # backdate a bit in case of client clock skew
+            )
+            .not_valid_after(
+                # TODO(Air): configurable validity period
+                datetime.now(timezone.utc) + timedelta(days=365)
+                # Sign our certificate with our private key
+            )
+            .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
+            .sign(private_ca_key, hashes.SHA256())
+        )
+
+        device_cert = CertificateModel()
+        device.ldevid = device_cert.save_certificate(cert)
+
+        # need to keep track of the device once we send out a cert, even if onboarding fails afterwards
+        # TODO(Air): but do it here?
+        device.save()
 
         # return cert
         # ca_certificate = CryptoBackend._get_ca(device)
@@ -222,18 +214,18 @@ class CryptoBackend:
 
         return CryptoBackend._sign_ldevid(csr.public_key(), device).public_bytes(serialization.Encoding.PEM)
 
-    # @staticmethod
-    # def get_cert_chain(device: Device) -> bytes:
-    #     """Returns the certificate chain of the onboarding CA.
-    #
-    #     Returns: The certificate chain as bytes in PEM format.
-    #
-    #     Raises:
-    #         OnboardingError: If the onboarding CA is not configured or not available.
-    #     """
-    #     ca_certificate = CryptoBackend._get_ca(device)
-    #
-    #     return ca_certificate.get_cert_chain_as_crypto()
+    @staticmethod
+    def get_cert_chain(device: Device) -> bytes:
+        """Returns the certificate chain of the onboarding CA.
+
+        Returns: The certificate chain as bytes in PEM format.
+
+        Raises:
+            OnboardingError: If the onboarding CA is not configured or not available.
+        """
+        ca_certificate = CryptoBackend._get_ca(device)
+
+        return ca_certificate.get_certificate_serializer().get_as_pem()
 
     @staticmethod
     def _gen_private_key() -> PrivateKeyTypes:

@@ -6,7 +6,7 @@ from django.db.backends.signals import connection_created
 from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 
-from .models import BasicConstraintsExtension, CertificateModel, DomainProfile, IssuingCaModel, KeyUsageExtension
+from .models import BasicConstraintsExtension, CertificateModel, DomainModel, IssuingCaModel, KeyUsageExtension
 from .tasks import add_crl_to_schedule, remove_crl_from_schedule
 
 log = logging.getLogger('tp.pki')
@@ -33,14 +33,14 @@ def update_delete_student(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=IssuingCaModel)
-@receiver(post_save, sender=DomainProfile)
+@receiver(post_save, sender=DomainModel)
 def handle_post_save(sender, instance, created, **kwargs) -> None:
     if created:
         add_crl_to_schedule(instance)
 
 
 @receiver(post_delete, sender=IssuingCaModel)
-@receiver(post_delete, sender=DomainProfile)
+@receiver(post_delete, sender=DomainModel)
 def handle_post_delete(sender, instance, **kwargs) -> None:
     remove_crl_from_schedule(instance)
 

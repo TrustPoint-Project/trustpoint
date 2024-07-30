@@ -73,7 +73,7 @@ def create_device(request: HttpRequest, data: DeviceCreateSchema):
         device_name=data.name,
         serial_number=data.serial_number,
         onboarding_protocol=data.onboarding_protocol)
-    # TODO(Air): Set domain profile
+    # TODO(Air): Set domain
     # TODO(Air): String validation (e.g. not empty, max. length)
     dev.save()
     return 201, device_api_dict(dev)

@@ -113,6 +113,9 @@ class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
         return HttpResponse(onboarding_process.get_pkcs12(), content_type='application/x-pkcs12')
 
 
+# class ManualOnboardingView(TpLoginRequiredMixin, )
+
+
 class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
     """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
 

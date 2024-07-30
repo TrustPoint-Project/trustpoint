@@ -8,31 +8,31 @@
 
                 <div class="card-header">
                     <div class="">
-                        <h2>{% trans "Domain Profile - Details" %}</h2>
+                        <h2>{% trans "Domain - Details" %}</h2>
                     </div>
                 </div>
                 <div class="card-body">
                     <div class="tp-card-centered-content">
-                        <h2>{% trans 'Domain Profile' %}: {{ domain_profile.unique_name }}</h2>
+                        <h2>{% trans 'Domain' %}: {{ domain.unique_name }}</h2>
                         <hr>
                         <div class="tp-card-split">
                             <div>{% trans 'Unique Name' %}</div>
-                            <div>{{ domain_profile.unique_name }}</div>
+                            <div>{{ domain.unique_name }}</div>
                         </div>
                         <div class="tp-card-split">
                             <div>{% trans 'Issuing CA - Unique Name' %}</div>
                             <div>
-                            <a href="{% url 'pki:issuing_cas-detail' pk=domain_profile.issuing_ca.id %}">
-                                    {{ domain_profile.unique_name }}
+                            <a href="{% url 'pki:issuing_cas-detail' pk=domain.issuing_ca.id %}">
+                                    {{ domain.unique_name }}
                                 </a>
                             </div>
                         </div>
                         <div class="tp-card-split">
                             <div>{% trans 'Issuing CA Certificate' %}</div>
                             <div>
-                                <a href="{% url 'pki:certificate-detail' pk=domain_profile.issuing_ca.issuing_ca_certificate.id %}">
-                                    {% if domain_profile.issuing_ca.issuing_ca_certificate.common_name %}
-                                        CN: {{ domain_profile.issuing_ca.issuing_ca_certificate.common_name }}
+                                <a href="{% url 'pki:certificate-detail' pk=domain.issuing_ca.issuing_ca_certificate.id %}">
+                                    {% if domain.issuing_ca.issuing_ca_certificate.common_name %}
+                                        CN: {{ domain.issuing_ca.issuing_ca_certificate.common_name }}
                                     {% else %}
                                         {% trans 'Issuing CA Certificate' %}
                                     {% endif %}

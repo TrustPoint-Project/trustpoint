@@ -7,7 +7,7 @@ from django.utils.functional import lazy
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from .models import CertificateModel, DomainProfile, IssuingCaModel
+from .models import CertificateModel, DomainModel, IssuingCaModel
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
@@ -162,8 +162,8 @@ class IssuingCaTable(tables.Table):
         return format_html('{}<br>{}', generate_button, download_button)
 
 
-class DomainProfileTable(tables.Table):
-    """Table representation of the Domain Profile model."""
+class DomainTable(tables.Table):
+    """Table representation of the Domain model."""
 
     issuing_ca = tables.Column(
         verbose_name=_('Issuing CA - Common Name'),
@@ -172,11 +172,11 @@ class DomainProfileTable(tables.Table):
     class Meta:
         """Table meta class configurations."""
 
-        model = DomainProfile
+        model = DomainModel
         template_name = 'django_tables2/bootstrap5.html'
         # order_by = '-created_at'
         empty_values = ()
-        _msg = _('There are no Domain Profiles available.')
+        _msg = _('There are no Domain available.')
         empty_text = format_html_lazy('<div class="text-center">{}</div>', _msg)
 
         fields = (
@@ -236,7 +236,7 @@ class DomainProfileTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        generate_button = format_html('<a href="/pki/generate-domain-profile-crl/{}/" class="btn btn-primary tp-table-btn">Generate CRL</a>', record.pk)
-        download_button = format_html('<a href="/pki/domain-profile-crl/{}/" class="btn btn-primary tp-table-btn">Download CRL</a>', record.pk)
+        generate_button = format_html('<a href="/pki/generate-domain-crl/{}/" class="btn btn-primary tp-table-btn">Generate CRL</a>', record.pk)
+        download_button = format_html('<a href="/pki/domain-crl/{}/" class="btn btn-primary tp-table-btn">Download CRL</a>', record.pk)
         return format_html('{}<br>{}', generate_button, download_button)
 

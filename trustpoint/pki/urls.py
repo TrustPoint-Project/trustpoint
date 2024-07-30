@@ -47,31 +47,31 @@ urlpatterns = [
     path('generate-ca-crl/<int:ca_id>/',
          views.CRLDownloadView.generate_ca_crl,
          name='crl'),
-    path('domain-profile-crl/<int:id>/',
-         views.CRLDownloadView.download_domain_profile_crl,
+    path('domain-crl/<int:id>/',
+         views.CRLDownloadView.download_domain_crl,
          name='crl'),
-    path('generate-domain-profile-crl/<int:id>/',
-         views.CRLDownloadView.generate_domain_profile_crl,
+    path('generate-domain-crl/<int:id>/',
+         views.CRLDownloadView.generate_domain_crl,
          name='crl'),
-    path('domain-profiles/', views.DomainProfileTableView.as_view(), name='domain_profiles'),
+    path('domains/', views.DomainTableView.as_view(), name='domains'),
     path(
-        'domain-profiles/add/',
-        views.DomainProfileCreateView.as_view(),
-        name='domain_profiles-add'
+        'domains/add/',
+        views.DomainCreateView.as_view(),
+        name='domains-add'
     ),
     path(
-        'domain-profiles/edit/<pk>/',
-        views.DomainProfileUpdateView.as_view(),
-        name='domain_profiles-edit'
+        'domains/edit/<pk>/',
+        views.DomainUpdateView.as_view(),
+        name='domains-edit'
     ),
     path(
-        'domain-profiles/detail/<pk>/',
-        views.DomainProfileDetailView.as_view(),
-        name='domain_profiles-delete_confirm'),
+        'domains/detail/<pk>/',
+        views.DomainDetailView.as_view(),
+        name='domains-delete_confirm'),
     re_path(
-        r'^domain-profiles/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
-        views.DomainProfilesBulkDeleteConfirmView.as_view(),
-        name='domain_profiles-delete_confirm',
+        r'^domains/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
+        views.DomainBulkDeleteConfirmView.as_view(),
+        name='domains-delete_confirm',
     ),
     path('truststores/', views.TrustStoresTableView.as_view(), name='truststores')
 ]
