@@ -20,16 +20,17 @@ from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect
 
 
-from .models import CertificateModel, IssuingCaModel, DomainModel
+from .models import CertificateModel, IssuingCaModel, DomainModel, TrustStoreModel
 # RevokedCertificate
 
-from .tables import CertificateTable, IssuingCaTable, DomainTable
+from .tables import CertificateTable, IssuingCaTable, DomainTable, TrustStoreTable
 from .forms import (
     CertificateDownloadForm,
     IssuingCaAddMethodSelectForm,
     IssuingCaFileTypeSelectForm,
     IssuingCaAddFileImportPkcs12Form,
-    IssuingCaAddFileImportOtherForm)
+    IssuingCaAddFileImportOtherForm,
+    TrustStoreAddForm)
 from .files import (
     CertificateFileContainer,
     CertificateChainIncluded,
@@ -363,9 +364,16 @@ class TrustStoresTableView(TrustStoresContextMixin, TpLoginRequiredMixin, Single
     """Certificates Table View."""
 
     # TODO: Create Truststore Model and modify this
-    model = CertificateModel
-    table_class = CertificateTable
+    model = TrustStoreModel
+    table_class = TrustStoreTable
     template_name = 'pki/truststores/truststores.html'
+
+
+class TrustStoreAddView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
+
+    template_name = 'pki/truststores/add.html'
+    form_class = TrustStoreAddForm
+    success_url = reverse_lazy('pki:truststores')
 
 
 

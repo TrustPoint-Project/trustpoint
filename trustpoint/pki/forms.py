@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from django.core.exceptions import ValidationError
 
-from .initializer import LocalUnprotectedIssuingCaFromP12FileInitializer
+from .initializer import LocalUnprotectedIssuingCaFromP12FileInitializer, TrustStoreInitializer
 from .models import IssuingCaModel
 
 
@@ -119,8 +119,6 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
                 p12=pkcs12_raw,
                 password=pkcs12_password)
         except Exception as e:
-            print(e)
-            print(type(e))
             raise ValidationError(
                 'Failed to load PKCS#12 file. Either malformed file or wrong password.',
                 code='pkcs12-loading-failed')
@@ -156,3 +154,51 @@ class DomainModelForm(forms.ModelForm):
 
     # TODO: use form instead of CreateView and fields directly
     # TODO: validate url_path_segment
+
+
+class TrustStoreAddForm(forms.Form):
+
+    unique_name = forms.CharField(
+        max_length=256,
+        label='Unique Name (Trust Store)',
+        widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
+        required=True)
+
+    trust_store_file = forms.FileField(label=_('PEM or PKCS#7 File'), required=True)
+
+    def clean_unique_name(self) -> str:
+        unique_name = self.cleaned_data['unique_name']
+        if IssuingCaModel.objects.filter(unique_name=unique_name).exists():
+            raise ValidationError('Unique name is already taken. Choose another one.')
+        return unique_name
+
+    def clean(self):
+        cleaned_data = super().clean()
+        unique_name = cleaned_data.get('unique_name')
+        if unique_name is None:
+            return
+
+        try:
+            # This should not throw any exceptions, even if invalid data was sent via HTTP POST request.
+            # However, just in case.
+            trust_store_file = cleaned_data.get('trust_store_file').read()
+        except Exception:
+            raise ValidationError(
+                _('Unexpected error occurred while trying to get file contents. Please see logs for further details.'),
+                code='unexpected-error')
+
+        try:
+            initializer = TrustStoreInitializer(
+                unique_name=cleaned_data['unique_name'],
+                trust_store=trust_store_file)
+        except Exception as e:
+            raise ValidationError(
+                'Failed to load file. Seems to be malformed.',
+                code='trust-store-file-loading-failed')
+
+        try:
+            initializer.save()
+        except Exception:
+            raise ValidationError('Unexpected Error. Failed to save validated Trust Store in DB.')
+
+

@@ -21,7 +21,7 @@ from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
-from .serializer import CertificateSerializer, PublicKeySerializer, CertificateChainSerializer
+from .serializer import CertificateSerializer, PublicKeySerializer, CertificateChainSerializer, TrustStoreSerializer
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .crypto_backend import CRLManager
 
@@ -1451,7 +1451,7 @@ class CertificateRevocationList(models.Model):
         return self.crl_content
 
 
-class TrustStore(models.Model):
+class TrustStoreModel(models.Model):
 
     unique_name = models.CharField(
         verbose_name=_('Unique Name'),
@@ -1460,29 +1460,31 @@ class TrustStore(models.Model):
         unique=True
     )
 
+    certificates = models.ManyToManyField(
+        to=CertificateModel,
+        verbose_name=_('Intermediate CA Certificates'),
+        through='TrustStoreOrderModel')
+
+    @property
+    def number_of_certificates(self) -> int:
+        return len(self.certificates.all())
+
+    def __str__(self) -> str:
+        return f'TrustStoreModel({self.unique_name})'
+
+    def get_serializer(self) -> TrustStoreSerializer:
+        pass
+
 
 class TrustStoreOrderModel(models.Model):
-    pass
 
+    class Meta:
+        unique_together = ('order', 'trust_store')
 
-# class TrustStore(models.Model):
-#     """TrustStores model."""
-#
-#     unique_name = models.CharField(_('Unique Name'), max_length=100, unique=True)
-#     certificates = models.ManyToManyField(
-#         Certificate,
-#         verbose_name=_('Certificates'),
-#         editable=False
-#     )
-#     domain = models.ManyToManyField(
-#         Domain,
-#         verbose_name=_('Domain'),
-#     )
-#
-#     def get_truststore_as_pem(self) -> list[bytes]:
-#         # TODO
-#         pass
-#
-#     def get_truststore_as_crypto(self) -> list[x509.Certificate]:
-#         # TODO
-#         pass
+    order = models.PositiveSmallIntegerField(verbose_name=_('Trust Store Certificate Index (Order)'), editable=False)
+    certificate = models.ForeignKey(
+        CertificateModel,
+        on_delete=models.CASCADE,
+        editable=False,
+        related_name='trust_store_components')
+    trust_store = models.ForeignKey(TrustStoreModel, on_delete=models.CASCADE, editable=False)

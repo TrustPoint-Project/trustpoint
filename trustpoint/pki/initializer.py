@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
 from django.db import transaction
 
 
-from .models import CertificateModel, IssuingCaModel, CertificateChainOrderModel
+from .models import CertificateModel, IssuingCaModel, CertificateChainOrderModel, TrustStoreModel, TrustStoreOrderModel
 
 
 if TYPE_CHECKING:
@@ -29,6 +29,47 @@ class IssuingCaValidator:
     @staticmethod
     def validate(self, full_cert_chain: list[x509.Certificate], private_key: PrivateKey, **kwargs) -> bool:
         return True
+
+
+class TrustStoreInitializer:
+    _unique_name: str
+    _trust_store: list[x509.Certificate]
+
+    def __init__(
+            self,
+            unique_name: str,
+            trust_store: bytes | list[x509.Certificate],
+            cert_model_class: type(CertificateModel) = CertificateModel,
+            trust_store_model_class: type(TrustStoreModel) = TrustStoreModel,
+            trust_store_order_model_class: type(TrustStoreOrderModel) = TrustStoreOrderModel) -> None:
+
+        if isinstance(trust_store, bytes):
+            trust_store = x509.load_pem_x509_certificates(trust_store)
+
+        self._unique_name = unique_name
+        self._trust_store = trust_store
+
+        self._cert_model_class = cert_model_class
+        self._trust_store_model_class = trust_store_model_class
+        self._trust_store_order_model_class = trust_store_order_model_class
+
+    @transaction.atomic
+    def save(self):
+
+        saved_certs = []
+
+        for certificate in self._trust_store:
+            saved_certs.append(self._cert_model_class.save_certificate(certificate))
+
+        trust_store_model = self._trust_store_model_class(unique_name=self._unique_name)
+        trust_store_model.save()
+
+        for number, certificate in enumerate(saved_certs):
+            _trust_store_order_model = self._trust_store_order_model_class()
+            _trust_store_order_model.order = number
+            _trust_store_order_model.certificate = certificate
+            _trust_store_order_model.trust_store = trust_store_model
+            _trust_store_order_model.save()
 
 
 class IssuingCaInitializer(ABC):

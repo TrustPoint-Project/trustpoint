@@ -73,5 +73,10 @@ urlpatterns = [
         views.DomainBulkDeleteConfirmView.as_view(),
         name='domains-delete_confirm',
     ),
-    path('truststores/', views.TrustStoresTableView.as_view(), name='truststores')
+    path('truststores/', views.TrustStoresTableView.as_view(), name='truststores'),
+    path(
+        'truststores/add/',
+        views.TrustStoreAddView.as_view(),
+        name='truststores-add'
+    ),
 ]
