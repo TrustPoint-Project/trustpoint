@@ -1451,6 +1451,20 @@ class CertificateRevocationList(models.Model):
         return self.crl_content
 
 
+class TrustStore(models.Model):
+
+    unique_name = models.CharField(
+        verbose_name=_('Unique Name'),
+        max_length=100,
+        validators=[MinLengthValidator(3)],
+        unique=True
+    )
+
+
+class TrustStoreOrderModel(models.Model):
+    pass
+
+
 # class TrustStore(models.Model):
 #     """TrustStores model."""
 #

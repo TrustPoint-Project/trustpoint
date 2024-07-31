@@ -185,3 +185,73 @@ class CertificateChainSerializer:
             return x509.load_der_x509_certificate(certificate)
         except Exception:
             raise ValueError
+
+
+class TrustStoreSerializer(Serializer):
+    _trust_store: list[x509.Certificate]
+
+    def __init__(self, trust_store: list[x509.Certificate]) -> None:
+        if not isinstance(trust_store, list):
+            raise TypeError('Trust Store must be an instance of list[x509.CertificateChain].')
+
+        for element in trust_store:
+            if not isinstance(element, x509.Certificate):
+                raise TypeError('Found a certificate entry that is not an instance of x509.Certificate.')
+
+        self._trust_store = trust_store
+
+    @classmethod
+    def from_bytes(cls, trust_store: bytes) -> TrustStoreSerializer:
+        try:
+            trust_store = x509.load_pem_x509_certificates(trust_store)
+        except ValueError:
+            raise ValueError('Failed to load trust store.')
+        return cls(trust_store)
+
+    @classmethod
+    def from_list_of_bytes(cls, trust_store: list[bytes]) -> TrustStoreSerializer:
+        loaded_trust_store = []
+        for certificate in trust_store:
+            try:
+                loaded_trust_store.append(cls._load_pem_certificate(certificate))
+            except ValueError:
+                try:
+                    loaded_trust_store.append(cls._load_der_certificate(certificate))
+                except ValueError:
+                    raise ValueError('Failed to load certificate.')
+        return cls(loaded_trust_store)
+
+    @classmethod
+    def from_string(cls, trust_store: str) -> TrustStoreSerializer:
+        return cls.from_bytes(trust_store.encode())
+
+    @classmethod
+    def from_list_of_strings(cls, trust_store: list[str]) -> TrustStoreSerializer:
+        return cls.from_list_of_bytes([entry.encode() for entry in trust_store])
+
+    def get_as_pem(self) -> bytes:
+        return b''.join([cert.public_bytes(encoding=serialization.Encoding.PEM) for cert in self._trust_store])
+
+    def get_as_der_pkcs7(self) -> bytes:
+        return pkcs7.serialize_certificates(self._trust_store, encoding=serialization.Encoding.DER)
+
+    def get_as_pem_pkcs7(self) -> bytes:
+        return pkcs7.serialize_certificates(self._trust_store, encoding=serialization.Encoding.PEM)
+
+    def get_as_crypto(self) -> list[x509.Certificate]:
+        return self._trust_store
+
+    @staticmethod
+    def _load_pem_certificate(certificate: bytes) -> x509.Certificate:
+        try:
+            return x509.load_pem_x509_certificate(certificate)
+        except Exception:
+            raise ValueError
+
+    @staticmethod
+    def _load_der_certificate(certificate: bytes) -> x509.Certificate:
+        try:
+            return x509.load_der_x509_certificate(certificate)
+        except Exception:
+            raise ValueError
+
