@@ -10,7 +10,9 @@ Welcome to Trustpoint's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   gui
+   architecture
+   issuing_cas_gui
+   domains_gui
    pki
    pki_models
    pki_issuing_ca

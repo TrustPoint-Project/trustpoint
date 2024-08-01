@@ -1,8 +1,5 @@
-Graphical User Interface
-========================
-
-Issuing CAs
------------
+Domains - GUI
+=============
 
 
 Domains

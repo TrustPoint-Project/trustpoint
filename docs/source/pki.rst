@@ -1,5 +1,5 @@
-PKI App - Architecture
-======================
+Software Architecture
+=====================
 
 
 Serializer
@@ -49,4 +49,3 @@ model using the save() method. It is instead abstracted into Initializer classes
 
 Initializer classes are intended to provide a simple API to create new PKI objects like IssuingCas, TrustStores and
 Credentials. They are only used on creation, not on read, delete or modify.
-
