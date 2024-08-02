@@ -21,7 +21,7 @@ from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
-from .serializer import CertificateSerializer, PublicKeySerializer, CertificateChainSerializer, TrustStoreSerializer
+from .serializer import CertificateSerializer, PublicKeySerializer, CertificateCollectionSerializer
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .crypto_backend import CRLManager
 
@@ -907,8 +907,8 @@ class CertificateModel(models.Model):
 
     def get_certificate_chain_serializers(
             self,
-            certificate_chain_serializer_class: type(CertificateChainSerializer) = CertificateChainSerializer
-    ) -> list[CertificateChainSerializer]:
+            certificate_chain_serializer_class: type(CertificateCollectionSerializer) = CertificateCollectionSerializer
+    ) -> list[CertificateCollectionSerializer]:
         certificate_chain_serializers = []
         for cert_chain in self.get_certificate_chains():
             certificate_chain_serializers.append(certificate_chain_serializer_class(
@@ -1296,30 +1296,14 @@ class IssuingCaModel(models.Model):
 
     def get_issuing_ca_certificate_chain_serializer(
             self,
-            certificate_chain_serializer: type(CertificateChainSerializer) = CertificateSerializer
-    ) -> CertificateChainSerializer:
+            certificate_chain_serializer: type(CertificateCollectionSerializer) = CertificateCollectionSerializer
+    ) -> CertificateCollectionSerializer:
         return certificate_chain_serializer(
             [cert.get_certificate_serializer().get_as_crypto() for cert in self.get_issuing_ca_certificate_chain()])
 
     def get_issuing_ca(self) -> IssuingCa:
         if self.private_key_pem:
             return UnprotectedLocalIssuingCa(self)
-
-    # def generate_crl(self) -> bool:
-    #     """Generate CRL."""
-    #     manager = CRLManager(
-    #         ca_cert=self.issuing_ca_certificate.get_certificate_serializer().get_as_crypto(),
-    #         ca_private_key=self.issuing_ca_certificate.get_certificate_serializer().get_private_key_as_crypto(),
-    #     )
-    #     return manager.generate_crl(self)
-    #
-    # def get_crl(self) -> CertificateRevocationList | None:
-    #     """Retrieve the latest CRL from the database.
-    #
-    #     Returns:
-    #         CertificateRevocationList or None: The latest CRL if exists, None otherwise.
-    #     """
-    #     return CRLManager.get_latest_crl(self)
 
 
 class CertificateChainOrderModel(models.Model):
@@ -1472,7 +1456,7 @@ class TrustStoreModel(models.Model):
     def __str__(self) -> str:
         return f'TrustStoreModel({self.unique_name})'
 
-    def get_serializer(self) -> TrustStoreSerializer:
+    def get_serializer(self) -> CertificateCollectionSerializer:
         pass
 
 

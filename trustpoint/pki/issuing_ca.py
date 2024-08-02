@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from .serializer import CertificateSerializer, CertificateChainSerializer, PublicKeySerializer
+from .serializer import CertificateSerializer, CertificateCollectionSerializer, PublicKeySerializer
 # from devices.models import Device
 
 

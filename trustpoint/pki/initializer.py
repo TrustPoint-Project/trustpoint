@@ -4,8 +4,10 @@ from typing import TYPE_CHECKING
 
 
 from abc import ABC, abstractmethod
-from cryptography import x509
+
 from cryptography.exceptions import InvalidSignature
+
+from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.serialization import pkcs12
@@ -43,6 +45,7 @@ class TrustStoreInitializer:
             trust_store_model_class: type(TrustStoreModel) = TrustStoreModel,
             trust_store_order_model_class: type(TrustStoreOrderModel) = TrustStoreOrderModel) -> None:
 
+        # TODO
         if isinstance(trust_store, bytes):
             trust_store = x509.load_pem_x509_certificates(trust_store)
 
@@ -105,6 +108,7 @@ class LocalUnprotectedIssuingCaFromP12FileInitializer(LocalIssuingCaFromFileInit
             issuing_ca_model_class: type(IssuingCaModel) = IssuingCaModel,
             cert_chain_order_model: type(CertificateChainOrderModel) = CertificateChainOrderModel) -> None:
 
+        # TODO
         if isinstance(p12, bytes):
             p12 = pkcs12.load_pkcs12(p12, password)
 

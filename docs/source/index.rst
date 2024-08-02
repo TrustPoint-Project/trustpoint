@@ -20,8 +20,7 @@ Welcome to Trustpoint's documentation!
 
    serializers
    validators
-
-
+   api_serializers
 
 
 Indices and tables
