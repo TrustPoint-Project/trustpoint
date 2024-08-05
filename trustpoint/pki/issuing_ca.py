@@ -31,12 +31,13 @@ class IssuingCa(ABC):
     #     pass
 
 
-
-
 class UnprotectedLocalIssuingCa(IssuingCa):
 
     def __init__(self, issuing_ca_model: IssuingCaModel) -> None:
         self._issuing_ca_model = issuing_ca_model
+
+    def sign_crl(self, crl):
+        pass
 
     # def issue_ldevid(self, device: Device):
     #     pass
