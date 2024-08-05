@@ -912,7 +912,7 @@ class CertificateModel(models.Model):
         certificate_chain_serializers = []
         for cert_chain in self.get_certificate_chains():
             certificate_chain_serializers.append(certificate_chain_serializer_class(
-                [cert.get_certificate_serializer().get_as_crypto() for cert in cert_chain]))
+                [cert.get_certificate_serializer().as_crypto() for cert in cert_chain]))
         return certificate_chain_serializers
 
     # --------------------------------------------------- Extensions ---------------------------------------------------
@@ -1178,7 +1178,7 @@ class CertificateModel(models.Model):
         for issuer_candidate in issuer_candidates:
             try:
                 certificate.verify_directly_issued_by(
-                    issuer_candidate.get_certificate_serializer().get_as_crypto())
+                    issuer_candidate.get_certificate_serializer().as_crypto())
                 cert_model.issuer_references.add(issuer_candidate)
             except (ValueError, TypeError, InvalidSignature):
                 pass
@@ -1189,7 +1189,7 @@ class CertificateModel(models.Model):
 
         for issued_candidate in issued_candidates:
             try:
-                issued_candidate.get_certificate_serializer().get_as_crypto().verify_directly_issued_by(certificate)
+                issued_candidate.get_certificate_serializer().as_crypto().verify_directly_issued_by(certificate)
                 issued_candidate.issuer_references.add(cert_model)
             except (ValueError, TypeError, InvalidSignature):
                 pass
@@ -1299,7 +1299,7 @@ class IssuingCaModel(models.Model):
             certificate_chain_serializer: type(CertificateCollectionSerializer) = CertificateCollectionSerializer
     ) -> CertificateCollectionSerializer:
         return certificate_chain_serializer(
-            [cert.get_certificate_serializer().get_as_crypto() for cert in self.get_issuing_ca_certificate_chain()])
+            [cert.get_certificate_serializer().as_crypto() for cert in self.get_issuing_ca_certificate_chain()])
 
     def get_issuing_ca(self) -> IssuingCa:
         if self.private_key_pem:

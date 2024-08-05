@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import traceback
+
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
@@ -119,13 +121,17 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
                 p12=pkcs12_raw,
                 password=pkcs12_password)
         except Exception as e:
+            print(e)
+            print(traceback.format_exc())
             raise ValidationError(
                 'Failed to load PKCS#12 file. Either malformed file or wrong password.',
                 code='pkcs12-loading-failed')
 
         try:
             initializer.save()
-        except Exception:
+        except Exception as e:
+            print(e)
+            print(traceback.format_exc())
             raise ValidationError('Unexpected Error. Failed to save validated Issuing CA in DB.')
 
 

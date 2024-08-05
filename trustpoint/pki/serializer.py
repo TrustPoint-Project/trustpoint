@@ -1,6 +1,5 @@
 """The serializer module provides Serializer classes for serializing and loading pki ASN.1 objects.
 
-
 Inheritance Diagram
 -------------------
 
@@ -53,14 +52,13 @@ API Documentation
 from __future__ import annotations
 
 import abc
-
+from typing import Union, get_args
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, pkcs7, pkcs12
-from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
 
-from typing import Union, get_args
 PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
 PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
@@ -92,7 +90,10 @@ class Serializer(abc.ABC):
     # @abc.abstractmethod
     # def __repr__(self) -> str:
     #     pass
-    pass
+    #
+    # @abc.abstractmethod
+    # def load(self, data: bytes) -> bytes:
+    #     pass
 
 
 class CertificateSerializer(Serializer):
@@ -127,6 +128,7 @@ class CertificateSerializer(Serializer):
 
         Serializer <|-- CertificateSerializer
     """
+
     _certificate: x509.Certificate
 
     def __init__(self, certificate: x509.Certificate) -> None:
@@ -226,14 +228,14 @@ class CertificateSerializer(Serializer):
     def _load_pem_certificate(certificate_data: bytes) -> x509.Certificate:
         try:
             return x509.load_pem_x509_certificate(certificate_data)
-        except Exception:
+        except Exception:   # noqa: BLE001
             raise ValueError
 
     @staticmethod
     def _load_der_certificate(certificate_data: bytes) -> x509.Certificate:
         try:
             return x509.load_der_x509_certificate(certificate_data)
-        except Exception:
+        except Exception:   # noqa: BLE001
             raise ValueError
 
 
@@ -268,6 +270,7 @@ class PublicKeySerializer(Serializer):
 
         Serializer <|-- PublicKeySerializer
     """
+
     _public_key: PublicKey
 
     def __init__(self, public_key: PublicKey) -> None:
@@ -334,7 +337,7 @@ class PublicKeySerializer(Serializer):
         except ValueError:
             pass
 
-        raise RuntimeError('Failed to load public key. May be malformed or not in a DER or PEM format.')
+        raise ValueError('Failed to load public key. May be malformed or not in a DER or PEM format.')
 
     @classmethod
     def from_string(cls, public_key_data: str) -> PublicKeySerializer:
@@ -356,41 +359,41 @@ class PublicKeySerializer(Serializer):
 
         Returns:
             bytes: Bytes that contains the public key in PEM format.
-       """
+        """
         return self._public_key.public_bytes(
-            encoding=serialization.Encoding.PEM,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo)
+            encoding=serialization.Encoding.PEM, format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
 
     def as_der(self) -> bytes:
         """Gets the associated public key as bytes in DER format.
 
         Returns:
             bytes: Bytes that contains the public key in PEM format.
-       """
+        """
         return self._public_key.public_bytes(
-            encoding=serialization.Encoding.DER,
-            format=serialization.PublicFormat.SubjectPublicKeyInfo)
+            encoding=serialization.Encoding.DER, format=serialization.PublicFormat.SubjectPublicKeyInfo
+        )
 
     def as_crypto(self) -> PublicKey:
         """Gets the associated public key as PublicKey instance.
 
         Returns:
             PublicKey: The associated private key as PublicKey instance.
-       """
+        """
         return self._public_key
 
     @staticmethod
     def _load_pem_public_key(public_key_data: bytes) -> PublicKey:
         try:
             return serialization.load_pem_public_key(public_key_data)
-        except Exception:
+        except Exception:   # noqa: BLE001
             raise ValueError
 
     @staticmethod
     def _load_der_public_key(public_key_data: bytes) -> PublicKey:
         try:
             return serialization.load_der_public_key(public_key_data)
-        except Exception:
+        except Exception:   # noqa: BLE001
             raise ValueError
 
 
@@ -436,6 +439,7 @@ class PrivateKeySerializer(Serializer):
 
         PrivateKeySerializer --o PublicKeySerializer
     """
+
     _private_key: PrivateKey
 
     _public_key_serializer_class: type[PublicKeySerializer] = PublicKeySerializer
@@ -443,12 +447,12 @@ class PrivateKeySerializer(Serializer):
     def __init__(self, private_key: PrivateKey) -> None:
         """Inits the PrivateKeySerializer class.
 
-            Args:
-                private_key: The private key to serialize (rsa, ec, ed448 or ed25519).
+        Args:
+            private_key: The private key to serialize (rsa, ec, ed448 or ed25519).
 
-            Raises:
-                TypeError: If the private key is not a PrivateKey object.
-            """
+        Raises:
+            TypeError: If the private key is not a PrivateKey object.
+        """
         if not isinstance(private_key, get_args(PrivateKey)):
             raise TypeError('private_key must be an instance of PrivateKey.')
 
@@ -499,7 +503,8 @@ class PrivateKeySerializer(Serializer):
             pass
 
         raise ValueError(
-            'Failed to load private key. May be an incorrect password, malformed data or an unsupported format.')
+            'Failed to load private key. May be an incorrect password, malformed data or an unsupported format.'
+        )
 
     @classmethod
     def from_string(cls, private_key_data: str, password: None | bytes = None) -> PrivateKeySerializer:
@@ -525,11 +530,12 @@ class PrivateKeySerializer(Serializer):
 
         Returns:
             bytes: Bytes that contains the private key in PKCS#1 DER format.
-       """
+        """
         return self._private_key.private_bytes(
             encoding=Encoding.DER,
             format=PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=self._get_encryption_algorithm(password))
+            encryption_algorithm=self._get_encryption_algorithm(password),
+        )
 
     def as_pkcs1_pem(self, password: None | bytes) -> bytes:
         """Gets the associated private key as bytes in PKCS#1 PEM format.
@@ -543,7 +549,8 @@ class PrivateKeySerializer(Serializer):
         return self._private_key.private_bytes(
             encoding=Encoding.PEM,
             format=PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=self._get_encryption_algorithm(password))
+            encryption_algorithm=self._get_encryption_algorithm(password),
+        )
 
     def as_pkcs8_der(self, password: None | bytes) -> bytes:
         """Gets the associated private key as bytes in PKCS#8 DER format.
@@ -557,7 +564,8 @@ class PrivateKeySerializer(Serializer):
         return self._private_key.private_bytes(
             encoding=Encoding.DER,
             format=PrivateFormat.PKCS8,
-            encryption_algorithm=self._get_encryption_algorithm(password))
+            encryption_algorithm=self._get_encryption_algorithm(password),
+        )
 
     def as_pkcs8_pem(self, password: None | bytes) -> bytes:
         """Gets the associated private key as bytes in PKCS#8 DER format.
@@ -567,11 +575,12 @@ class PrivateKeySerializer(Serializer):
 
         Returns:
             bytes: Bytes that contains the private key in PKCS#8 DER format.
-       """
+        """
         return self._private_key.private_bytes(
             encoding=Encoding.PEM,
             format=PrivateFormat.PKCS8,
-            encryption_algorithm=self._get_encryption_algorithm(password))
+            encryption_algorithm=self._get_encryption_algorithm(password),
+        )
 
     def as_pkcs12(self, password: None | bytes, friendly_name: bytes = b'') -> bytes:
         """Gets the associated private key as bytes in PKCS#12 format.
@@ -582,20 +591,21 @@ class PrivateKeySerializer(Serializer):
 
         Returns:
             bytes: Bytes that contains the private key in PKCS#12 format.
-       """
+        """
         return pkcs12.serialize_key_and_certificates(
             name=friendly_name,
             key=self._private_key,
             cert=None,
             cas=None,
-            encryption_algorithm=self._get_encryption_algorithm(password))
+            encryption_algorithm=self._get_encryption_algorithm(password),
+        )
 
     def as_crypto(self) -> PrivateKey:
         """Gets the associated private key as PrivateKey instance.
 
         Returns:
             PrivateKey: The associated private key as PrivateKey instance.
-       """
+        """
         return self._private_key
 
     def get_public_key_serializer(self) -> PublicKeySerializer:
@@ -616,21 +626,21 @@ class PrivateKeySerializer(Serializer):
     def _load_pem_private_key(private_key_data: bytes, password: None | bytes = None) -> PrivateKey:
         try:
             return serialization.load_pem_private_key(private_key_data, password)
-        except Exception:
+        except Exception:   # noqa: BLE001
             raise ValueError
 
     @staticmethod
     def _load_der_private_key(private_key_data: bytes, password: None | bytes = None) -> PrivateKey:
         try:
             return serialization.load_der_private_key(private_key_data, password)
-        except Exception:
+        except Exception:   # noqa: BLE001
             raise ValueError
 
     @staticmethod
     def _load_pkcs12_private_key(p12_data: bytes, password: None | bytes = None) -> PrivateKey:
         try:
             return pkcs12.load_pkcs12(p12_data, password).key
-        except Exception:
+        except Exception:   # noqa: BLE001
             raise ValueError
 
 
@@ -739,9 +749,8 @@ class CertificateCollectionSerializer(Serializer):
 
     @classmethod
     def from_bytes(
-            cls,
-            certificate_collection_data: bytes,
-            password: None | bytes = None) -> CertificateCollectionSerializer:
+        cls, certificate_collection_data: bytes, password: None | bytes = None
+    ) -> CertificateCollectionSerializer:
         """Inits the CertificateCollectionSerializer class from a bytes object.
 
         Args:
@@ -778,7 +787,8 @@ class CertificateCollectionSerializer(Serializer):
 
         raise ValueError(
             'Failed to load certificate collection. '
-            'May be an incorrect password, malformed data or an unsupported format.')
+            'May be an incorrect password, malformed data or an unsupported format.'
+        )
 
     @classmethod
     def from_string(cls, certificate_collection_data: str) -> CertificateCollectionSerializer:
@@ -811,12 +821,16 @@ class CertificateCollectionSerializer(Serializer):
         """
         try:
             return cls(
-                [CertificateSerializer.from_bytes(certificate).as_crypto()
-                    for certificate in certificate_collection_data])
-        except Exception:
+                [
+                    CertificateSerializer.from_bytes(certificate).as_crypto()
+                    for certificate in certificate_collection_data
+                ]
+            )
+        except Exception:   # noqa: BLE001
             raise ValueError(
                 'Failed to load certificate collection. '
-                'May be an incorrect password, malformed data or an unsupported format.')
+                'May be an incorrect password, malformed data or an unsupported format.'
+            )
 
     @classmethod
     def from_list_of_strings(cls, certificate_collection_data: list[str]) -> CertificateCollectionSerializer:
@@ -869,28 +883,28 @@ class CertificateCollectionSerializer(Serializer):
     def _load_pem(cls, pem_data: bytes) -> list[x509.Certificate]:
         try:
             return x509.load_pem_x509_certificates(pem_data)
-        except Exception:
-            raise ValueError
+        except Exception as exception:  # noqa: BLE001
+            raise ValueError from exception
 
     @classmethod
     def _load_pkcs7_pem(cls, p7_data: bytes) -> list[x509.Certificate]:
         try:
             return pkcs7.load_pem_pkcs7_certificates(p7_data)
-        except Exception:
+        except Exception:   # noqa: BLE001
             raise ValueError
 
     @classmethod
     def _load_pkcs7_der(cls, p7_data: bytes) -> list[x509.Certificate]:
         try:
             return pkcs7.load_der_pkcs7_certificates(p7_data)
-        except Exception:
+        except Exception:   # noqa: BLE001
             raise ValueError
 
     @classmethod
     def _load_pkcs12(cls, p12_data: bytes, password: None | bytes = None) -> pkcs12.PKCS12KeyAndCertificates:
         try:
             return pkcs12.load_pkcs12(p12_data, password)
-        except Exception:
+        except Exception:   # noqa: BLE001
             raise ValueError
 
 
@@ -946,6 +960,7 @@ class CredentialSerializer(Serializer):
         CredentialSerializer --o CertificateCollectionSerializer
 
     """
+
     _credential_private_key: PrivateKey
     _credential_certificate: x509.Certificate
     _additional_certificates: list[x509.Certificate]
@@ -955,10 +970,11 @@ class CredentialSerializer(Serializer):
     _certificate_collection_serializer_class: type[CertificateCollectionSerializer] = CertificateCollectionSerializer
 
     def __init__(
-            self,
-            credential_private_key: PrivateKey,
-            credential_certificate: x509.Certificate,
-            additional_certificates: None | list[x509.Certificate] = None,) -> None:
+        self,
+        credential_private_key: PrivateKey,
+        credential_certificate: x509.Certificate,
+        additional_certificates: None | list[x509.Certificate] = None,
+    ) -> None:
         """Inits the CertificateCollectionSerializer class.
 
         Args:
@@ -994,10 +1010,11 @@ class CredentialSerializer(Serializer):
 
     @classmethod
     def from_crypto(
-            cls,
-            credential_private_key: PrivateKey,
-            credential_certificate: x509.Certificate,
-            additional_certificates: list[x509.Certificate]) -> CredentialSerializer:
+        cls,
+        credential_private_key: PrivateKey,
+        credential_certificate: x509.Certificate,
+        additional_certificates: list[x509.Certificate],
+    ) -> CredentialSerializer:
         """Inits the CredentialSerializer class from a PrivateKey, x509.Certificate and additional x509.Certificates.
 
         Args:
@@ -1029,11 +1046,7 @@ class CredentialSerializer(Serializer):
         Raises:
             ValueError: If the pkcs12.PKCS12 instance does not contain the credential private key and certificate.
         """
-        return cls(
-            p12.key,
-            p12.cert.certificate,
-            [certificate.certificate for certificate in p12.additional_certs]
-        )
+        return cls(p12.key, p12.cert.certificate, [certificate.certificate for certificate in p12.additional_certs])
 
     @classmethod
     def from_bytes(cls, credential_data: bytes, password: None | bytes = None) -> CredentialSerializer:
@@ -1063,13 +1076,14 @@ class CredentialSerializer(Serializer):
 
         Returns:
             bytes: Bytes that contains the credential in PKCS#12 format.
-       """
+        """
         return pkcs12.serialize_key_and_certificates(
             name=friendly_name,
             key=self._credential_private_key,
             cert=self._credential_certificate,
             cas=self._additional_certificates,
-            encryption_algorithm=self._get_encryption_algorithm(password))
+            encryption_algorithm=self._get_encryption_algorithm(password),
+        )
 
     def get_credential_private_key_serializer(self) -> PrivateKeySerializer:
         """Gets the PrivateKeySerializer instance of the associated credential private key.
@@ -1117,9 +1131,9 @@ class CredentialSerializer(Serializer):
 
     @staticmethod
     def _load_pkcs12(
-            p12_data: bytes,
-            password: None | bytes = None) -> (PrivateKey, x509.Certificate, list[x509.Certificate]):
+        p12_data: bytes, password: None | bytes = None
+    ) -> (PrivateKey, x509.Certificate, list[x509.Certificate]):
         try:
             return pkcs12.load_key_and_certificates(p12_data, password)
-        except Exception:
+        except Exception:   # noqa: BLE001
             raise ValueError
