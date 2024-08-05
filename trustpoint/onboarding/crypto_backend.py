@@ -103,7 +103,7 @@ class CryptoBackend:
         if not signing_ca.issuing_ca_certificate:
             msg = 'CA does not have issuing CA certificate.'
             raise OnboardingError(msg)
-        
+
         return signing_ca.issuing_ca_certificate
 
 
@@ -188,6 +188,36 @@ class CryptoBackend:
         device.device_serial_number = serial_no
 
         return CryptoBackend._sign_ldevid(csr.public_key(), device).public_bytes(serialization.Encoding.PEM)
+
+    @staticmethod
+    def convert_pkcs12_to_pem(pkcs12_data: bytes, p12_password: bytes=b'') -> bytes:
+        """Converts PKCS12 data to PEM format.
+
+        Args:
+            pkcs12_data (bytes): The PKCS12 data.
+            p12_password (bytes): The password for the PKCS12 file.
+
+        Returns:
+            bytes: The PEM data.
+        """
+        private_key, certificate, additional_certificates = pkcs12.load_key_and_certificates(pkcs12_data, p12_password)
+
+        pem_certificate = certificate.public_bytes(serialization.Encoding.PEM)
+        pem_private_key = private_key.private_bytes(
+            encoding=serialization.Encoding.PEM,
+            format=serialization.PrivateFormat.TraditionalOpenSSL,
+            encryption_algorithm=serialization.NoEncryption()
+        )
+
+        pem_additional_certificates = b''
+        if additional_certificates:
+            for ca_certificate in additional_certificates:
+                pem_additional_certificates += ca_certificate.public_bytes(serialization.Encoding.PEM)
+
+        pem_combined = pem_certificate + pem_additional_certificates
+
+        return (pem_combined, pem_private_key)
+
 
     @staticmethod
     def get_cert_chain(device: Device) -> bytes:

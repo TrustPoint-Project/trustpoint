@@ -6,17 +6,19 @@ from typing import TYPE_CHECKING
 
 from devices.models import Device
 from django.contrib import messages
-from django.http import Http404, HttpResponse
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.http.request import HttpRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.views.generic import DetailView, RedirectView, TemplateView, View
 from django.utils.translation import gettext as _
+from django.views.generic import DetailView, FormView, RedirectView, TemplateView, View
 
-from trustpoint.views import TpLoginRequiredMixin
+from trustpoint.views import FormMixin, TpLoginRequiredMixin
 
 from .cli_builder import CliCommandBuilder
+from .forms import BrowserLoginForm
 from .models import (
+    BrowserOnboardingProcess,
     DownloadOnboardingProcess,
     ManualOnboardingProcess,
     OnboardingProcess,
@@ -91,6 +93,88 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
 
         return render(request, self.template_name, context)
 
+class BrowserInitializationView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView, FormView):
+    """View for downloading the certificate, and if applicable, the private key of a device."""
+    template_name = 'onboarding/manual/browser.html'
+    redirection_view = 'devices:devices'
+    context_object_name = 'device'
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+        """Renders a template view for downloading certificate data."""
+        if (not self.get_device(request)
+            or not self.check_onboarding_prerequisites(request, [Device.OnboardingProtocol.BROWSER])
+           ):
+            return redirect(self.redirection_view)
+
+        device = self.device
+
+        onboarding_process = OnboardingProcess.make_onboarding_process(device, BrowserOnboardingProcess)
+
+        otp = onboarding_process.otp
+
+        context = {
+            'page_category': 'onboarding',
+            'page_name': 'browser',
+            'url': request.path,
+            'sn': device.device_serial_number,
+            'device_name': device.device_name,
+            'device_id': device.id,
+            'otp': otp,
+            'download_url': request.build_absolute_uri(reverse('onboarding:browser-login')),
+        }
+
+        return render(request, self.template_name, context)
+
+
+class BrowserDownloadView(OnboardingUtilMixin, TemplateView):
+    template_name = 'onboarding/manual/browser-download.html'
+    redirection_view = 'devices:devices'
+
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        if (not self.get_device(request)
+            or not self.check_onboarding_prerequisites(request, [Device.OnboardingProtocol.BROWSER])
+           ):
+            return redirect(self.redirection_view)
+        device = self.device
+        print('device: ', device)
+        onboarding_process = OnboardingProcess.get_by_device(device)
+        onboarding_process.start_onboarding()
+
+        context = {
+            'page_category': 'onboarding',
+            'page_name': 'browser',
+            'url': onboarding_process.url,
+            'sn': device.device_serial_number,
+            'device_name': device.device_name,
+            'device_id': device.id,
+        }
+        return render(request, self.template_name, context)
+
+
+class BrowserLoginView(OnboardingUtilMixin, FormView):
+    """View to handle certificate download requests."""
+    template_name = 'onboarding/manual/browser-login.html'
+    form_class = BrowserLoginForm
+
+    def post(self, request, *args, **kwargs):
+        form = BrowserLoginForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, 'Device or PW does not match')
+            return redirect(request.path)
+
+        device_id = form.cleaned_data['device_id']
+        otp = form.cleaned_data['otp']
+        self.device = Device.get_by_id(device_id)
+        onboarding_process = OnboardingProcess.get_by_device(self.device)
+
+        if onboarding_process and otp == onboarding_process.otp:
+            return BrowserDownloadView.as_view()(request, device_id=device_id, *args, **kwargs)
+
+        messages.error(request, 'Device or PW does not match')
+        return redirect(request.path)
+
+
+
 class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
     """View for downloading the PKCS12 file of a device."""
 
@@ -98,7 +182,7 @@ class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
 
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
         """GET method that returns the PKCS12 file of a device."""
-        if not self.get_device(request) or self.device.onboarding_protocol != Device.OnboardingProtocol.MANUAL:
+        if not self.get_device(request) and (self.device.onboarding_protocol != Device.OnboardingProtocol.MANUAL or self.device.onboarding_protocol != Device.OnboardingProtocol.BROWSER):
             return HttpResponse('Not found.', status=404)
 
         device = self.device
@@ -107,6 +191,67 @@ class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             return HttpResponse('Not found.', status=404)
 
         return HttpResponse(onboarding_process.get_pkcs12(), content_type='application/x-pkcs12')
+
+
+class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
+    """View for downloading the PKCS12 file of a device."""
+
+    redirection_view = 'devices:devices'
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+        """GET method that returns the PKCS12 file of a device."""
+        if not self.get_device(request) and (self.device.onboarding_protocol != Device.OnboardingProtocol.MANUAL or self.device.onboarding_protocol != Device.OnboardingProtocol.BROWSER):
+            return HttpResponse('Not found.', status=404)
+
+        device = self.device
+        onboarding_process = OnboardingProcess.get_by_device(device)
+        if not onboarding_process or not onboarding_process.pkcs12:
+            return HttpResponse('Not found.', status=404)
+
+        return HttpResponse(onboarding_process.get_pem(), content_type='application/x-pkcs12')
+
+
+class PemDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
+    """View for downloading the PEM file of a device."""
+
+    redirection_view = 'devices:devices'
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """GET method that returns the PEM file of a device."""
+        if not self.get_device(request) and (self.device.onboarding_protocol != Device.OnboardingProtocol.MANUAL or self.device.onboarding_protocol != Device.OnboardingProtocol.BROWSER):
+            return HttpResponse('Not found.', status=404)
+
+        device = self.device
+        onboarding_process = OnboardingProcess.get_by_device(device)
+        if not onboarding_process or not onboarding_process.pkcs12:
+            return HttpResponse('Not found.', status=404)
+
+        pem_data = onboarding_process.get_pem()
+        response = HttpResponse(pem_data, content_type='application/x-pem-file')
+        response['Content-Disposition'] = f'attachment; filename="{device.device_name}.pem"'
+        return response
+
+
+class JavaKeyStoreDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
+    """View for downloading the Java KeyStore file of a device."""
+
+    redirection_view = 'devices:devices'
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """GET method that returns the Java KeyStore file of a device."""
+        if not self.get_device(request) and (self.device.onboarding_protocol != Device.OnboardingProtocol.MANUAL or self.device.onboarding_protocol != Device.OnboardingProtocol.BROWSER):
+            return HttpResponse('Not found.', status=404)
+
+        device = self.device
+        onboarding_process = OnboardingProcess.get_by_device(device)
+        if not onboarding_process or not onboarding_process.keystore:
+            return HttpResponse('Not found.', status=404)
+
+        keystore_data = onboarding_process.get_keystore()
+        response = HttpResponse(keystore_data, content_type='application/x-java-keystore')
+        response['Content-Disposition'] = f'attachment; filename="{device.device_name}.jks"'
+        return response
+
 
 class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
     """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
@@ -123,13 +268,17 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
         if (not self.get_device(request) or not self.check_onboarding_prerequisites(request,
                 [Device.OnboardingProtocol.CLI,
                  Device.OnboardingProtocol.TP_CLIENT,
-                 Device.OnboardingProtocol.MANUAL])
+                 Device.OnboardingProtocol.MANUAL,
+                 Device.OnboardingProtocol.BROWSER])
            ):
             return redirect(self.redirection_view)
         device = self.device
 
         if device.onboarding_protocol == Device.OnboardingProtocol.MANUAL:
             return ManualDownloadView.as_view()(request, *args, **kwargs)
+
+        if device.onboarding_protocol == Device.OnboardingProtocol.BROWSER:
+            return BrowserInitializationView.as_view()(request, *args, **kwargs)
 
         onboarding_process = OnboardingProcess.make_onboarding_process(device, ManualOnboardingProcess)
 
@@ -166,6 +315,12 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             context['cmd_3'] = [CliCommandBuilder.cli_get_cert_chain(context)]
 
         return render(request, 'onboarding/manual/cli.html', context=context)
+
+    def post(self, request, *args, **kwargs):
+        self.get_device(request)
+        if self.device.onboarding_protocol == Device.OnboardingProtocol.BROWSER:
+            return BrowserInitializationView.as_view()(request, *args, **kwargs)
+        return None
 
 
 class Detail404RedirectionMessageView(DetailView):

@@ -1,0 +1,15 @@
+{% extends 'trustpoint/base.html' %} {% load i18n %} {% load render_table from
+django_tables2 %} {% block content %}
+
+<h1>Request Certificate for Onboarding</h1>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  <label for="device_name">Device Name:</label>
+  <input type="text" id="device_name" name="device_name" />
+  <label for="description">Description:</label>
+  <textarea id="description" name="description"></textarea>
+  <label for="cert_file">Upload Certificate:</label>
+  <input type="file" id="cert_file" name="cert_file" accept=".p12" />
+  <button type="submit">Submit</button>
+</form>
+{% endblock content %}

@@ -45,6 +45,7 @@ class Device(models.Model):
         """Supported Onboarding Protocols."""
 
         MANUAL = 'MA', _('Manual download')
+        BROWSER = 'BO', _('Browser download')
         CLI = 'CI', _('Device CLI')
         TP_CLIENT = 'TP', _('Trustpoint Client')
         BRSKI = 'BR', _('BRSKI')

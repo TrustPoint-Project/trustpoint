@@ -1,0 +1,14 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load render_table from django_tables2 %}
+
+{% block content %}
+    
+<h1>Login</h1>
+<form action="{% url 'onboarding:browser-login'%}" method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form }}
+  <button type="submit">Submit</button>
+</form>
+
+{% endblock content %}

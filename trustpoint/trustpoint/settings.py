@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'onboarding.apps.OnboardingConfig',
     'pki.apps.PkiConfig',
     'sysconf.apps.SysconfConfig',
+    'ra.apps.RaConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',

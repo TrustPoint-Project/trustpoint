@@ -303,4 +303,47 @@ class DownloadOnboardingProcess(OnboardingProcess):
         return self.pkcs12
 
 
+class BrowserOnboardingProcess(OnboardingProcess):
+    """Onboarding process for a device using the download onboarding method."""
+
+    def __init__(self, dev: Device) -> None:
+        """Initializes a new download onboarding process for a device."""
+        super().__init__(dev)
+        self.otp = secrets.token_hex(8)
+        # self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
+        # self.gen_thread.start()
+        # self.pkcs12 = None
+
+    def start_onboarding(self):
+        self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
+        self.gen_thread.start()
+        self.pkcs12 = None
+
+    def _gen_keypair_and_ldevid(self) -> None:
+        """Generates a keypair and LDevID certificate for the device."""
+        try:
+            if not self.device.device_serial_number:
+                self.device.device_serial_number = 'tpdl_' + secrets.token_urlsafe(12)
+            self.pkcs12 = Crypt.gen_keypair_and_ldevid(self.device)
+            self.state = OnboardingProcessState.LDEVID_SENT
+            log.info(f'LDevID issued for device {self.device.device_name} in onboarding process {self.id}.')
+        except Exception as e:  # noqa: BLE001
+            msg = 'Error generating device key or LDevID.'
+            self._fail(msg)
+            raise OnboardingError(msg) from e
+
+    def get_pkcs12(self) -> bytes | None:
+        """Returns the keypair and LDevID certificate as PKCS12 serialized bytes and ends the onboarding process."""
+        log.debug(f'PKCS12 requested for onboarding process {self.id}.')
+        self.gen_thread.join()
+        self._success()
+        return self.pkcs12
+    
+    def get_pem(self) -> bytes | None:
+        """Returns the keypair and LDevID certificate as PKCS12 serialized bytes and ends the onboarding process."""
+        log.debug(f'PKCS12 requested for onboarding process {self.id}.')
+        self.gen_thread.join()
+        self._success()
+        return Crypt.convert_pkcs12_to_pem(self.pkcs12)
+
 onboarding_processes = []

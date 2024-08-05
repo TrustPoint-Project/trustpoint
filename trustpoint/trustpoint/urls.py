@@ -48,6 +48,7 @@ urlpatterns = [
         name='javascript-catalog'
     ),
     path('', views.IndexView.as_view()),
+    path('ra/', include('ra.urls')),
 ]
 
 if settings.DEBUG:

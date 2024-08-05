@@ -1667,5 +1667,3 @@ class TrustStore(models.Model):
     def get_truststore_as_crypto(self) -> list[x509.Certificate]:
         # TODO
         pass
-
-
