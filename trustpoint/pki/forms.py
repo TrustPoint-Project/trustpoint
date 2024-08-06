@@ -183,10 +183,10 @@ class DomainBaseForm(forms.ModelForm):
             domain_instance.save()
 
         return domain_instance
-    # TODO: validate url_path_segment
 
 class DomainCreateForm(DomainBaseForm):
     """Form for creating DomainModel instances, includes additional fields."""
+    # TODO: validate url_path_segment
 
     class Meta(DomainBaseForm.Meta):
         fields = DomainBaseForm.Meta.fields + ['url_path_segment']
