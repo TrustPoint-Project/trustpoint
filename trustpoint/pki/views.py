@@ -1,43 +1,41 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-# from urllib.parse import quote
 
-from django.views import View
+# from django.core.files.uploadedfile import InMemoryUploadedFile
+from django.contrib import messages
 
-from trustpoint.views import ContextDataMixin, TpLoginRequiredMixin, BulkDeleteView
-from django.views.generic.base import RedirectView
-from django.views.generic.list import ListView
-from django.views.generic.detail import DetailView
-from django.views.generic.edit import FormView, CreateView, UpdateView
-from django_tables2 import SingleTableView
+# from django.db import transaction
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
-# from django.core.files.uploadedfile import InMemoryUploadedFile
-from django.contrib import messages
-# from django.db import transaction
-from django.http import HttpResponse, HttpResponseRedirect
 
+# from urllib.parse import quote
+from django.views import View
+from django.views.generic.base import RedirectView
+from django.views.generic.detail import DetailView
+from django.views.generic.edit import CreateView, FormView, UpdateView
+from django.views.generic.list import ListView
+from django_tables2 import SingleTableView
 
-from .models import CertificateModel, IssuingCaModel, DomainModel, TrustStoreModel
-# RevokedCertificate
+from trustpoint.views import BulkDeleteView, ContextDataMixin, TpLoginRequiredMixin
 
-from .tables import CertificateTable, IssuingCaTable, DomainTable, TrustStoreTable
+from .files import CertificateChainIncluded, CertificateFileContainer, CertificateFileFormat, CertificateFileGenerator
 from .forms import (
     CertificateDownloadForm,
+    DomainCreateForm,
+    DomainUpdateForm,
+    IssuingCaAddFileImportOtherForm,
+    IssuingCaAddFileImportPkcs12Form,
     IssuingCaAddMethodSelectForm,
     IssuingCaFileTypeSelectForm,
-    IssuingCaAddFileImportPkcs12Form,
-    IssuingCaAddFileImportOtherForm,
-    TrustStoreAddForm)
-from .files import (
-    CertificateFileContainer,
-    CertificateChainIncluded,
-    CertificateFileFormat,
-    CertificateFileGenerator
+    TrustStoreAddForm,
 )
+from .models import CertificateModel, DomainModel, IssuingCaModel, TrustStoreModel
 
+# RevokedCertificate
+from .tables import CertificateTable, DomainTable, IssuingCaTable, TrustStoreTable
 
 if TYPE_CHECKING:
     from typing import Any
@@ -253,7 +251,8 @@ class DomainCreateView(DomainContextMixin, TpLoginRequiredMixin, CreateView):
 
     model = DomainModel
     template_name = 'pki/domains/add.html'
-    fields = ['unique_name', 'url_path_segment', 'issuing_ca', 'auto_crl']
+    # fields = ['unique_name', 'url_path_segment', 'issuing_ca', 'auto_crl']
+    form_class = DomainCreateForm
     success_url = reverse_lazy('pki:domains')
     ignore_url = reverse_lazy('pki:domains')
 
@@ -262,7 +261,8 @@ class DomainUpdateView(DomainContextMixin, TpLoginRequiredMixin, UpdateView):
 
     model = DomainModel
     template_name = 'pki/domains/add.html'
-    fields = ['unique_name', 'issuing_ca', 'auto_crl']
+    # fields = ['unique_name', 'issuing_ca', 'auto_crl']
+    form_class = DomainUpdateForm
     success_url = reverse_lazy('pki:domains')
     ignore_url = reverse_lazy('pki:domains')
 

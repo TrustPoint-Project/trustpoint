@@ -1363,14 +1363,34 @@ class DomainModel(models.Model):
         related_name='domain'
     )
 
+    @property
+    def auto_crl(self) -> bool:
+        """Retrieve the auto_crl value from the related IssuingCaModel.
+
+        Returns:
+            bool: The auto_crl value from the IssuingCaModel, or False if no IssuingCaModel is associated.
+        """
+        if self.issuing_ca:
+            return self.issuing_ca.auto_crl
+        return False  # Fallback if no CA is associated
+
+    @auto_crl.setter
+    def auto_crl(self, value: bool) -> None:
+        """Set the auto_crl value in the related IssuingCaModel.
+
+        Args:
+            value (bool): The new value for auto_crl to be set.
+        """
+        if self.issuing_ca:
+            self.issuing_ca.auto_crl = value
+            self.issuing_ca.save()
+
     # est_config = models.ForeignKey
     # cmp_config = models.ForeignKey
     # scep_config = models.ForeignKey
     # rest_config = models.ForeignKey
 
     # def get_domain
-
-    auto_crl = models.BooleanField(default=True, verbose_name='Generate CRL upon certificate revocation.')
 
     def __str__(self) -> str:
         """Human-readable representation of the Domain model instance.

@@ -8,7 +8,7 @@ from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 
 from .initializer import LocalUnprotectedIssuingCaFromP12FileInitializer, TrustStoreInitializer
-from .models import IssuingCaModel
+from .models import IssuingCaModel, DomainModel
 
 
 class CertificateDownloadForm(forms.Form):
@@ -153,13 +153,49 @@ class IssuingCaAddFileImportOtherForm(forms.Form):
     auto_crl = forms.BooleanField(label='Generate CRL upon certificate revocation.', initial=True, required=False)
 
 
-class DomainModelForm(forms.ModelForm):
+
+class DomainBaseForm(forms.ModelForm):
+    """Base form for DomainModel, containing shared logic and fields."""
+    auto_crl = forms.BooleanField(
+        label='Generate CRL upon certificate revocation.',
+        required=False,
+        help_text='Check this box to automatically generate a CRL when a certificate is revoked.'
+    )
 
     class Meta:
-        fields = ['unique_name', 'url_path_segment', 'issuing_ca']
+        model = DomainModel
+        fields = ['unique_name', 'issuing_ca', 'auto_crl']  # Base fields
 
-    # TODO: use form instead of CreateView and fields directly
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance.pk:  # If updating an existing instance
+            self.fields['auto_crl'].initial = self.instance.auto_crl
+
+    def save(self, commit=True):
+        domain_instance = super().save(commit=False)
+        issuing_ca = domain_instance.issuing_ca
+
+        if issuing_ca:
+            issuing_ca.auto_crl = self.cleaned_data['auto_crl']
+            issuing_ca.save()
+
+        if commit:
+            domain_instance.save()
+
+        return domain_instance
     # TODO: validate url_path_segment
+
+class DomainCreateForm(DomainBaseForm):
+    """Form for creating DomainModel instances, includes additional fields."""
+
+    class Meta(DomainBaseForm.Meta):
+        fields = DomainBaseForm.Meta.fields + ['url_path_segment']
+
+class DomainUpdateForm(DomainBaseForm):
+    """Form for updating DomainModel instances."""
+
+    class Meta(DomainBaseForm.Meta):
+        fields = DomainBaseForm.Meta.fields
 
 
 class TrustStoreAddForm(forms.Form):
