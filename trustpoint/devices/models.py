@@ -2,6 +2,7 @@
 
 
 from __future__ import annotations
+
 import logging
 
 from django.db import models
@@ -80,16 +81,12 @@ class Device(models.Model):
             self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
 
         RevokedCertificate.objects.create(
-                device_name=self.device_name,
-                device_serial_number=self.device_serial_number,
-                cert_serial_number=self.ldevid.serial_number,
-                revocation_datetime=timezone.now(),
-                revocation_reason=revocation_reason,
-                issuing_ca=self.domain.issuing_ca,
-                domain=self.domain
-            )
+            cert=self.ldevid,
+            revocation_datetime=timezone.now(),
+            issuing_ca=self.domain.issuing_ca,
+        )
 
-        self.ldevid.revoke()
+        self.ldevid.revoke(revocation_reason)
         self.ldevid = None
         self.save()
 

@@ -292,23 +292,23 @@ class CRLDownloadView(View):
     @staticmethod
     def download_ca_crl(self: CRLDownloadView, ca_id):
         try:
-            issuing_ca = IssuingCaModel.objects.get(pk=ca_id)
+            issuing_ca = IssuingCaModel.objects.get(pk=ca_id).get_issuing_ca()
         except IssuingCaModel.DoesNotExist:
             messages.error(self, _('Issuing CA not found.'))
             return redirect('pki:issuing_cas')
 
         crl_data = issuing_ca.get_crl()
         if not crl_data:
-            messages.warning(self, _('No CRL available for issuing CA %s.') % issuing_ca.unique_name)
+            messages.warning(self, _('No CRL available for issuing CA %s.') % issuing_ca.get_ca_name())
             return redirect('pki:issuing_cas')
         response = HttpResponse(crl_data, content_type='text/plain')
-        response['Content-Disposition'] = f'attachment; filename="{issuing_ca.unique_name}.crl"'
+        response['Content-Disposition'] = f'attachment; filename="{issuing_ca.get_ca_name()}.crl"'
         return response
 
     @staticmethod
     def generate_ca_crl(self: CRLDownloadView, ca_id):
         try:
-            issuing_ca = IssuingCaModel.objects.get(pk=ca_id)
+            issuing_ca = IssuingCaModel.objects.get(pk=ca_id).get_issuing_ca()
         except IssuingCaModel.DoesNotExist:
             messages.error(self, _('Issuing CA not found.'))
             return redirect('pki:issuing_cas')

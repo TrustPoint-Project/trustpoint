@@ -2,17 +2,17 @@
 
 
 from __future__ import annotations
-from typing import TYPE_CHECKING
-
 
 import abc
 import logging
 from ipaddress import IPv4Address, IPv4Network, IPv6Address, IPv6Network
+from typing import TYPE_CHECKING
 
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import ec, rsa, ed448, ed25519
+from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
+from cryptography.x509 import CertificateRevocationList
 from cryptography.x509.extensions import ExtensionNotFound
 from django.conf import settings
 from django.contrib import messages
@@ -20,15 +20,15 @@ from django.core.validators import MinLengthValidator
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
-from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
-from .serializer import CertificateSerializer, PublicKeySerializer, CertificateCollectionSerializer
-from .issuing_ca import UnprotectedLocalIssuingCa
 from .crypto_backend import CRLManager
-
+from .issuing_ca import UnprotectedLocalIssuingCa
+from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
+from .serializer import CertificateCollectionSerializer, CertificateSerializer, PublicKeySerializer
 
 if TYPE_CHECKING:
-    from .issuing_ca import IssuingCa
     from typing import Union
+
+    from .issuing_ca import IssuingCaModel
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
 
@@ -747,6 +747,19 @@ class CertificateModel(models.Model):
         # We only allow version 3 or later if any are available in the future.
         V3 = 2, _('Version 3')
 
+    class ReasonCode(models.TextChoices):
+        """Revocation reasons per RFC 5280"""
+        UNSPECIFIED = 'unspecified', _('Unspecified')
+        KEY_COMPROMISE = 'keyCompromise', _('Key Compromise')
+        CA_COMPROMISE = 'cACompromise', _('CA Compromise')
+        AFFILIATION_CHANGED = 'affiliationChanged', _('Affiliation Changed')
+        SUPERSEDED = 'superseded', _('Superseded')
+        CESSATION = 'cessationOfOperation', _('Cessation of Operation')
+        CERTIFICATE_HOLD = 'certificateHold', _('Certificate Hold')
+        PRIVILEGE_WITHDRAWN = 'privilegeWithdrawn', _('Privilege Withdrawn')
+        AA_COMPROMISE = 'aACompromise', _('AA Compromise')
+        REMOVE_FROM_CRL = 'removeFromCRL', _('Remove from CRL')
+
     SignatureAlgorithmOidChoices = models.TextChoices(
         'SIGNATURE_ALGORITHM_OID', [(x.dotted_string, x.dotted_string) for x in SignatureAlgorithmOid])
 
@@ -759,9 +772,12 @@ class CertificateModel(models.Model):
     )
 
     # ----------------------------------------------- Custom Data Fields -----------------------------------------------
-    
+
     certificate_status = models.CharField(verbose_name=_('Status'), max_length=2, choices=CertificateStatus,
                                           editable=False, default=CertificateStatus.OK)
+
+    revocation_reason = models.CharField(verbose_name=_('Revocation reason'), max_length=30, choices=ReasonCode,
+                                          editable=False, default=ReasonCode.UNSPECIFIED)
 
     # TODO: This is kind of a hack.
     # TODO: This information is already available through the subject relation
@@ -1221,10 +1237,11 @@ class CertificateModel(models.Model):
             trustpoint.pki.models.Certificate: The certificate object that has just been saved.
         """
         return cls._save_certificate(certificate=certificate, exist_ok=exist_ok)
-    
-    def revoke(self) -> None:
+
+    def revoke(self, revocation_reason: ReasonCode) -> None:
         """Revokes the certificate."""
         self.certificate_status = self.CertificateStatus.REVOKED
+        self.revocation_reason = revocation_reason
         self._save()
 
 
@@ -1301,9 +1318,10 @@ class IssuingCaModel(models.Model):
         return certificate_chain_serializer(
             [cert.get_certificate_serializer().as_crypto() for cert in self.get_issuing_ca_certificate_chain()])
 
-    def get_issuing_ca(self) -> IssuingCa:
+    def get_issuing_ca(self) -> UnprotectedLocalIssuingCa:
         if self.private_key_pem:
             return UnprotectedLocalIssuingCa(self)
+        return None
 
 
 class CertificateChainOrderModel(models.Model):
@@ -1322,7 +1340,7 @@ class CertificateChainOrderModel(models.Model):
     def get_issuing_ca(
             self,
             unprotected_local_issuing_ca_class: type(UnprotectedLocalIssuingCa) = UnprotectedLocalIssuingCa
-    ) -> IssuingCa:
+    ) -> IssuingCaModel:
         return unprotected_local_issuing_ca_class(self)
 
     def __str__(self):
@@ -1365,48 +1383,29 @@ class DomainModel(models.Model):
             return f'Domain({self.unique_name}, {self.issuing_ca.unique_name})'
         return f'Domain({self.unique_name}, None)'
 
-    # def generate_crl(self) -> bool:
-    #     """Generate CRL."""
-    #     manager = CRLManager(
-    #         ca_cert=self.issuing_ca.issuing_ca_certificate.get_cert_as_crypto(),
-    #         ca_private_key=self.issuing_ca.issuing_ca_certificate.get_private_key_as_crypto(),
-    #     )
-    #     return manager.generate_crl(self)
-    #
-    # def get_crl(self) -> CertificateRevocationList | None:
-    #     """Retrieve the latest CRL from the database.
-    #
-    #     Returns:
-    #         CertificateRevocationList or None: The latest CRL if exists, None otherwise.
-    #     """
-    #     return CRLManager.get_latest_crl(self)
-    
+    def generate_crl(self) -> bool:
+        """Generate CRL."""
+        manager = CRLManager(
+            ca_cert=self.issuing_ca.get_issuing_ca_certificate_serializer().as_crypto(),
+            ca_private_key=self.issuing_ca.issuing_ca_certificate.get_private_key_as_crypto(),
+        )
+        return manager.generate_crl(self)
 
-class ReasonCode(models.TextChoices):
-    """Revocation reasons per RFC 5280"""
-    UNSPECIFIED = 'unspecified', _('Unspecified')
-    KEY_COMPROMISE = 'keyCompromise', _('Key Compromise')
-    CA_COMPROMISE = 'cACompromise', _('CA Compromise')
-    AFFILIATION_CHANGED = 'affiliationChanged', _('Affiliation Changed')
-    SUPERSEDED = 'superseded', _('Superseded')
-    CESSATION = 'cessationOfOperation', _('Cessation of Operation')
-    CERTIFICATE_HOLD = 'certificateHold', _('Certificate Hold')
-    PRIVILEGE_WITHDRAWN = 'privilegeWithdrawn', _('Privilege Withdrawn')
-    AA_COMPROMISE = 'aACompromise', _('AA Compromise')
-    REMOVE_FROM_CRL = 'removeFromCRL', _('Remove from CRL')
+    def get_crl(self) -> CRLStorage | None:
+        """Retrieve the latest CRL from the database.
+
+        Returns:
+            CertificateRevocationList or None: The latest CRL if exists, None otherwise.
+        """
+        return CRLManager.get_latest_crl(self)
 
 
 class RevokedCertificate(models.Model):
     """Certificate Revocation model."""
-    device_name = models.CharField(max_length=50, help_text='Device name')
-    device_serial_number = models.CharField(max_length=50, help_text='Serial number of device.')
-    cert_serial_number = models.CharField(max_length=50, unique=True,
-                                          help_text='Unique serial number of revoked certificate.', primary_key=True)
+    cert = models.ForeignKey(CertificateModel, on_delete=models.PROTECT)
     revocation_datetime = models.DateTimeField(help_text='Timestamp when certificate was revoked.')
-    revocation_reason = models.CharField(max_length=255, choices=ReasonCode, default=ReasonCode.UNSPECIFIED, help_text='Reason of revocation.')
     issuing_ca = models.ForeignKey(
         IssuingCaModel, on_delete=models.CASCADE, related_name='revoked_certificates', help_text='Name of Issuing CA.')
-    domain = models.ForeignKey(DomainModel, on_delete=models.CASCADE, related_name='revoked_certificates')
 
     def __str__(self) -> str:
         """Human-readable string when Certificate got revoked
@@ -1415,15 +1414,14 @@ class RevokedCertificate(models.Model):
             str:
                 CRL as PEM String
         """
-        return f"{self.cert_serial_number} - Revoked on {self.revocation_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
+        return f"{self.cert.serial_number} - Revoked on {self.revocation_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
 
 
-class CertificateRevocationList(models.Model):
+class CRLStorage(models.Model):
     """Storage of CRLs."""
-    crl_content = models.TextField()
+    crl = models.TextField()
     issued_at = models.DateTimeField(auto_now_add=True, editable=False)
     ca = models.ForeignKey(IssuingCaModel, on_delete=models.CASCADE)
-    domain = models.ForeignKey(DomainModel, on_delete=models.CASCADE, null=True, blank=True)
 
     def __str__(self) -> str:
         """PEM representation of CRL
@@ -1432,7 +1430,25 @@ class CertificateRevocationList(models.Model):
             str:
                 CRL as PEM String
         """
-        return self.crl_content
+        return self.crl
+
+    def save_crl_in_db(self, crl: CertificateRevocationList, ca: IssuingCaModel):
+        """Saving crl in Database
+
+        Returns:
+            bool:
+                True
+        """
+        self.crl = crl
+        self.ca = ca
+        self.save()
+
+    @staticmethod
+    def get_crl(ca: IssuingCaModel):
+        try:
+            return CRLStorage.objects.filter(ca=ca).latest('issued_at').crl
+        except CRLStorage.DoesNotExist:
+            return None
 
 
 class TrustStoreModel(models.Model):

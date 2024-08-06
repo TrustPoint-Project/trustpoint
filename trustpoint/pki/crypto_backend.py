@@ -49,8 +49,8 @@ class CRLManager:
 
         if invalid_revocation_reasons:
             log.error(
-                f"{len(invalid_revocation_reasons)} invalid revocation reasons encountered "
-                f"while building CRL: {invalid_revocation_reasons}"
+                '%s invalid revocation reasons encountered while building CRL: %s',
+                len(invalid_revocation_reasons), invalid_revocation_reasons
             )
 
         crl = builder.sign(private_key=self.ca_private_key, algorithm=hashes.SHA256(), backend=default_backend())
@@ -68,16 +68,16 @@ class CRLManager:
         from .models import (  # Local import to avoid circular import
             CertificateRevocationList,
             DomainModel,
-            IssuingCa,
+            IssuingCaModel,
             RevokedCertificate,
         )
 
-        if isinstance(issuing_instance, (IssuingCa, DomainModel)):
+        if isinstance(issuing_instance, (IssuingCaModel, DomainModel)):
             revoked_certificates = RevokedCertificate.objects.filter(
-                issuing_ca=issuing_instance if isinstance(issuing_instance, IssuingCa) else issuing_instance.issuing_ca,
-                domain_profile=None if isinstance(issuing_instance, IssuingCa) else issuing_instance
+                issuing_ca=issuing_instance if isinstance(issuing_instance, IssuingCaModel) else issuing_instance.issuing_ca,
+                domain=None if isinstance(issuing_instance, IssuingCaModel) else issuing_instance
             )
-            if isinstance(issuing_instance, IssuingCa):
+            if isinstance(issuing_instance, IssuingCaModel):
                 log.info('Generating CRL for Issuing CA %s', issuing_instance.unique_name)
             else:
                 log.info('Generating CRL for Domain Profile %s (CA %s)',
@@ -87,8 +87,8 @@ class CRLManager:
             if crl:
                 CertificateRevocationList.objects.update_or_create(
                     crl_content=crl,
-                    ca=issuing_instance if isinstance(issuing_instance, IssuingCa) else issuing_instance.issuing_ca,
-                    domain_profile=None if isinstance(issuing_instance, IssuingCa) else issuing_instance
+                    ca=issuing_instance if isinstance(issuing_instance, IssuingCaModel) else issuing_instance.issuing_ca,
+                    domain=None if isinstance(issuing_instance, IssuingCaModel) else issuing_instance
                 )
                 return True
         return False
@@ -103,12 +103,12 @@ class CRLManager:
         Returns:
             CertificateRevocationList or None: The latest CRL if exists, None otherwise.
         """
-        from .models import CertificateRevocationList, DomainModel, IssuingCa  # Local import to avoid circular import
+        from .models import CertificateRevocationList, DomainModel, IssuingCaModel  # Local import to avoid circular import
 
         try:
-            if isinstance(issuing_instance, IssuingCa):
-                return CertificateRevocationList.objects.filter(ca=issuing_instance, domain_profile=None).latest('issued_at')
+            if isinstance(issuing_instance, IssuingCaModel):
+                return CertificateRevocationList.objects.filter(ca=issuing_instance, domain=None).latest('issued_at')
             elif isinstance(issuing_instance, DomainModel):
-                return CertificateRevocationList.objects.filter(domain_profile=issuing_instance).latest('issued_at')
+                return CertificateRevocationList.objects.filter(domain=issuing_instance).latest('issued_at')
         except CertificateRevocationList.DoesNotExist:
             return None
