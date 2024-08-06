@@ -7,7 +7,7 @@ from heapq import heapify, heappop, heappush
 from django.conf import settings
 from django.utils import timezone
 
-from .models import DomainModel, IssuingCaModel
+from .models import IssuingCaModel
 
 # Min-Heap für Timestamps und CA-Instanzen
 crl_schedule = []
@@ -21,27 +21,25 @@ def _initialize_crl_schedule(issuing_instances) -> None:
     Args:
         issuing_instances (QuerySet): QuerySet of IssuingCa or DomainProfile instances.
     """
-    # for entry in issuing_instances:
-    #     if isinstance(entry, (IssuingCaModel, DomainModel)):
-    #         current_crl = entry.get_crl()
-    #         if current_crl:
-    #             next_crl_time = current_crl.issued_at + timedelta(hours=settings.CRL_INTERVAL)
-    #             heappush(crl_schedule, (next_crl_time, entry))
-    #         else:
-    #             generate_crl(entry)
-    pass
+    for entry in issuing_instances:
+        if isinstance(entry, IssuingCaModel):
+            current_crl = entry.get_issuing_ca().get_crl_entry()
+            if current_crl:
+                next_crl_time = current_crl.issued_at + timedelta(hours=settings.CRL_INTERVAL)
+                heappush(crl_schedule, (next_crl_time, entry))
+            else:
+                generate_crl(entry)
 
 
 def initialize_crl_schedule() -> None:
     """Initialize the CRL schedule for all IssuingCa and DomainProfile instances."""
     _initialize_crl_schedule(IssuingCaModel.objects.all())
-    _initialize_crl_schedule(DomainModel.objects.all())
     log.debug('All CRLs initialized: %s', crl_schedule)
 
 
 def add_crl_to_schedule(instance) -> bool:
     """Adds new CRL instance to scheduler"""
-    if isinstance(instance, (IssuingCaModel, DomainModel)):
+    if isinstance(instance, IssuingCaModel):
         schedule_next_crl(instance)
         log.debug('%s added to CRL schedule.', instance)
         return True
@@ -51,7 +49,7 @@ def add_crl_to_schedule(instance) -> bool:
 def remove_crl_from_schedule(instance) -> bool:
     """Removes CRL instance from scheduler after instance got deleted"""
     global crl_schedule
-    if isinstance(instance, (IssuingCaModel, DomainModel)):
+    if isinstance(instance, IssuingCaModel):
         original_length = len(crl_schedule)
         crl_schedule = [(time, inst) for time, inst in crl_schedule if inst != instance]
         heapify(crl_schedule)
@@ -77,7 +75,7 @@ def generate_crl(issuing_instance) -> None:
     Args:
         issuing_instance (IssuingCa or DomainProfile): The issuing instance for which to generate a CRL.
     """
-    if isinstance(issuing_instance, (IssuingCaModel, DomainModel)):
+    if isinstance(issuing_instance, IssuingCaModel):
         issuing_instance.generate_crl()
     schedule_next_crl(issuing_instance)
 

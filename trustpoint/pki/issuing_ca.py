@@ -163,6 +163,17 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             crl = CRLStorage.get_crl(ca=self._issuing_ca_model)
         return crl
 
+    def get_crl_entry(self) -> str:
+        """Retrieves the current CRL for the issuing CA.
+
+        If no CRL is present, generates a new one and returns it.
+
+        Returns:
+            str: The CRL in PEM format.
+        """
+        from .models import CRLStorage
+        return CRLStorage.get_crl_entry(ca=self._issuing_ca_model)
+
     def get_ca_name(self) -> str:
         """Retrieves the unique name of the issuing CA.
 

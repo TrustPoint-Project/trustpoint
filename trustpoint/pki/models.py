@@ -1443,8 +1443,15 @@ class CRLStorage(models.Model):
 
     @staticmethod
     def get_crl(ca: IssuingCaModel):
+        result = CRLStorage.get_crl_entry(ca)
+        if result:
+            return result.crl
+        return None
+
+    @staticmethod
+    def get_crl_entry(ca: IssuingCaModel):
         try:
-            return CRLStorage.objects.filter(ca=ca).latest('issued_at').crl
+            return CRLStorage.objects.filter(ca=ca).latest('issued_at')
         except CRLStorage.DoesNotExist:
             return None
 
