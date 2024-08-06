@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import logging
 from abc import ABC, abstractmethod
 
 # from devices.models import Device
@@ -27,6 +28,8 @@ if TYPE_CHECKING:
 
     from .models import CertificateModel, IssuingCaModel
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
+
+log = logging.getLogger('tp.pki')
 
 
 class IssuingCa(ABC):
@@ -67,6 +70,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             last_update=datetime.datetime.today(),
             next_update=datetime.datetime.today() + datetime.timedelta(hours=settings.CRL_INTERVAL)
         )
+        log.debug('UnprotectedLocalIssuingCa initialized.')
 
     def _parse_existing_crl(self) -> list:
         """Parses the existing CRL for the associated CA.
@@ -81,7 +85,9 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         from .models import CRLStorage
         crl = CRLStorage.get_crl(ca=self._issuing_ca_model)
         if crl:
+            log.debug('CRL found in database and started parsing.')
             return load_pem_x509_crl(crl.encode('utf-8'))
+        log.debug('No CRL found in database.')
         return []
 
     def _get_private_key_serializer(self) -> PrivateKeySerializer:
@@ -121,6 +127,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         """
         from .models import RevokedCertificate
         with transaction.atomic():
+            log.debug('Started CRL generation.')
 
             revoked_certificates = self._parse_existing_crl()
             for cert in revoked_certificates:
@@ -131,9 +138,12 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             for entry in revoked_certificates:
                 revoked_cert = self._build_revoked_cert(entry.revocation_datetime, entry.cert)
                 self.crl_builder = self.crl_builder.add_revoked_certificate(revoked_cert)
+            log.debug('CRL generation finished. Starting signing.')
             crl = self.crl_builder.sign(private_key=self._private_key_serializer.as_crypto(), algorithm=hashes.SHA256())
+            log.debug('CRL signing finished.')
             self.save_crl_to_database(crl.public_bytes(encoding=serialization.Encoding.PEM).decode('utf-8'))
             revoked_certificates.delete()
+            log.info('CRL generated and stored in Database.')
         return True
 
     def save_crl_to_database(self, crl: CertificateRevocationList) -> None:
