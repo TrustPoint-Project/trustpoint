@@ -76,7 +76,7 @@ def generate_crl(issuing_instance) -> None:
         issuing_instance (IssuingCa or DomainProfile): The issuing instance for which to generate a CRL.
     """
     if isinstance(issuing_instance, IssuingCaModel):
-        issuing_instance.generate_crl()
+        issuing_instance.get_issuing_ca().generate_crl()
     schedule_next_crl(issuing_instance)
 
 
