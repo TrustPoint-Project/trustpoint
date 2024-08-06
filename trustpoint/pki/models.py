@@ -777,7 +777,7 @@ class CertificateModel(models.Model):
                                           editable=False, default=CertificateStatus.OK)
 
     revocation_reason = models.CharField(verbose_name=_('Revocation reason'), max_length=30, choices=ReasonCode,
-                                          editable=False, default=ReasonCode.UNSPECIFIED)
+                                          editable=True, default=ReasonCode.UNSPECIFIED)
 
     # TODO: This is kind of a hack.
     # TODO: This information is already available through the subject relation
@@ -1291,7 +1291,7 @@ class IssuingCaModel(models.Model):
 
     # TODO: remote_ca_config -> ForeignKey
 
-    auto_crl = models.BooleanField(default=True, verbose_name='generate CRL upon certificate revocation')
+    auto_crl = models.BooleanField(default=True, verbose_name='Generate CRL upon certificate revocation')
 
     def __str__(self) -> str:
         return f'IssuingCa({self.unique_name})'
@@ -1385,11 +1385,9 @@ class DomainModel(models.Model):
 
     def generate_crl(self) -> bool:
         """Generate CRL."""
-        manager = CRLManager(
-            ca_cert=self.issuing_ca.get_issuing_ca_certificate_serializer().as_crypto(),
-            ca_private_key=self.issuing_ca.issuing_ca_certificate.get_private_key_as_crypto(),
-        )
-        return manager.generate_crl(self)
+        if self.issuing_ca.get_issuing_ca().generate_crl():
+            return True
+        return False
 
     def get_crl(self) -> CRLStorage | None:
         """Retrieve the latest CRL from the database.
@@ -1397,7 +1395,7 @@ class DomainModel(models.Model):
         Returns:
             CertificateRevocationList or None: The latest CRL if exists, None otherwise.
         """
-        return CRLManager.get_latest_crl(self)
+        return self.issuing_ca.get_issuing_ca().get_crl()
 
 
 class RevokedCertificate(models.Model):

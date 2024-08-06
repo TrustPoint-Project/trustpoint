@@ -90,14 +90,9 @@ class Device(models.Model):
         self.ldevid = None
         self.save()
 
-        # generate CRLs
-
-        if self.domain.auto_crl:
-            pass
-            # self.domain.generate_crl()
+        # generate CRL
         if self.domain.issuing_ca.auto_crl:
-            pass
-            # self.domain.issuing_ca.generate_crl()
+            self.domain.issuing_ca.get_issuing_ca().generate_crl()
 
         log.info('Revoked LDevID for device %s', self.device_name)
         return True
