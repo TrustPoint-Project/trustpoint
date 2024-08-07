@@ -26,7 +26,6 @@ from .serializer import CertificateCollectionSerializer, CertificateSerializer, 
 if TYPE_CHECKING:
     from typing import Union
 
-    from .issuing_ca import IssuingCa
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
 
@@ -1435,7 +1434,8 @@ class RevokedCertificate(models.Model):
 
 class CRLStorage(models.Model):
     """Storage of CRLs."""
-    crl = models.CharField(max_length=4294967296)
+    # crl = models.CharField(max_length=4294967296)
+    crl = models.TextField()
     issued_at = models.DateTimeField(auto_now_add=True, editable=False)
     ca = models.ForeignKey(IssuingCaModel, on_delete=models.CASCADE)
 
@@ -1448,14 +1448,14 @@ class CRLStorage(models.Model):
         """
         return f'CrlStorage(IssuingCa({self.ca.unique_name}))'
 
-    def save_crl_in_db(self, crl: CertificateRevocationList, ca: IssuingCaModel):
+    def save_crl_in_db(self, crl: str, ca: IssuingCaModel):
         """Saving crl in Database
 
         Returns:
             bool:
                 True
         """
-        self.crl = crl.public_bytes(encoding=Encoding.PEM)
+        self.crl = crl
         self.ca = ca
         self.save()
 

@@ -13,7 +13,8 @@ from cryptography.hazmat.primitives.serialization import (
     BestAvailableEncryption,
     Encoding,
     PrivateFormat,
-    NoEncryption
+    NoEncryption,
+    PublicFormat
 )
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
@@ -161,7 +162,7 @@ class Command(BaseCommand):
         issuing_ca_model.private_key_pem = private_key.private_bytes(
             encoding=Encoding.PEM,
             format=PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=NoEncryption())
+            encryption_algorithm=NoEncryption()).decode()
 
         if intermediate_ca_certs:
             issuing_ca_cert_model.intermediate_ca_certificates = intermediate_ca_certs
