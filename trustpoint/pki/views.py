@@ -2,16 +2,17 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-# from django.core.files.uploadedfile import InMemoryUploadedFile
 from django.contrib import messages
 
-# from django.db import transaction
-from django.http import HttpResponse, HttpResponseRedirect
+from cryptography import x509
+
+from django.http import HttpResponse, HttpResponseRedirect, Http404
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 
-# from urllib.parse import quote
 from django.views import View
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
@@ -374,6 +375,22 @@ class TrustStoreAddView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
     template_name = 'pki/truststores/add.html'
     form_class = TrustStoreAddForm
     success_url = reverse_lazy('pki:truststores')
+
+
+# --------------------------------------------------- PKI Endpoints  ---------------------------------------------------
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class EstEndpoint(View):
+    http_method_names = ['post']
+
+    def post(self, request, *args, **kwargs):
+        if request.content_type != 'application/pkcs10':
+            return HttpResponse(status=415)
+        raw_csr = request.read()
+        csr = x509.load_pem_x509_csr(raw_csr)
+        return HttpResponse('hello')
+
 
 
 

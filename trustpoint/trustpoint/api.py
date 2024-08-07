@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from ninja import NinjaAPI
 from ninja.security import HttpBearer, django_auth
+from pki.api import router as pki_router
 from devices.api import router as devices_router
 from onboarding.api import router as onboarding_router
 from users.api import router as users_router
@@ -25,7 +26,7 @@ api = NinjaAPI(
 
 api.add_router('/devices/', devices_router, tags=['Devices'])
 api.add_router('/onboarding/', onboarding_router, tags=['Onboarding'])
-# api.add_router('/pki/', 'pki.api.router', tags=['PKI'])
+api.add_router('/pki/', pki_router, tags=['PKI'])
 api.add_router('/users/', users_router, tags=['Users'])
 
 # TODO(Air): Couldn't get non-GET requests to work with CSRF using Django-auth reliably

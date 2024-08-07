@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives.serialization import (
     PublicFormat
 )
 from cryptography.hazmat.primitives.asymmetric import rsa
-from cryptography.x509.oid import NameOID
+from cryptography.x509.oid import AttributeOID, NameOID
 import datetime
 from pathlib import Path
 import shutil
@@ -185,6 +185,28 @@ class Command(BaseCommand):
             print(f'Saving EE certificate in DB: {name}')
             CertificateModel.save_certificate(cert)
 
+    @staticmethod
+    def create_csr(number: int) -> None:
+        tests_data_path = Path(__file__).parent.parent.parent.parent.parent / Path('tests/data/issuing_ca')
+        for i in range(number):
+            private_key = rsa.generate_private_key(
+                public_exponent=65537,
+                key_size=2048,
+            )
+            builder = x509.CertificateSigningRequestBuilder()
+            builder = builder.subject_name(x509.Name([
+                x509.NameAttribute(NameOID.COMMON_NAME, f'CSR Cert {i}'),
+            ]))
+            builder = builder.add_extension(
+                x509.BasicConstraints(ca=False, path_length=None), critical=True,
+            )
+            csr = builder.sign(
+                private_key, hashes.SHA256()
+            )
+
+            with open(tests_data_path / Path(f'csr{i}.pem'), 'wb') as f:
+                f.write(csr.public_bytes(encoding=Encoding.PEM))
+
     def handle(self, *args, **kwargs) -> None:
 
         root_1, root_1_key = self.create_root_ca('Root CA')
@@ -219,3 +241,5 @@ class Command(BaseCommand):
 
         self.store_ee_certs(ee_certs)
         self.save_ee_certs(ee_certs)
+
+        self.create_csr(10)
