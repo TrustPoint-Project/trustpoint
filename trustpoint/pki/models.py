@@ -11,16 +11,14 @@ from typing import TYPE_CHECKING
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 from cryptography.x509 import CertificateRevocationList
 from cryptography.x509.extensions import ExtensionNotFound
-from django.conf import settings
-from django.contrib import messages
 from django.core.validators import MinLengthValidator
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
-from .crypto_backend import CRLManager
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
 from .serializer import CertificateCollectionSerializer, CertificateSerializer, PublicKeySerializer
@@ -28,7 +26,7 @@ from .serializer import CertificateCollectionSerializer, CertificateSerializer, 
 if TYPE_CHECKING:
     from typing import Union
 
-    from .issuing_ca import IssuingCaModel
+    from .issuing_ca import IssuingCa
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
 
@@ -1321,7 +1319,7 @@ class IssuingCaModel(models.Model):
     def get_issuing_ca(self) -> UnprotectedLocalIssuingCa:
         if self.private_key_pem:
             return UnprotectedLocalIssuingCa(self)
-        return None
+        raise RuntimeError('Unexpected error occurred. No matching IssuingCa object found.')
 
 
 class CertificateChainOrderModel(models.Model):
@@ -1437,7 +1435,7 @@ class RevokedCertificate(models.Model):
 
 class CRLStorage(models.Model):
     """Storage of CRLs."""
-    crl = models.TextField()
+    crl = models.CharField(max_length=4294967296)
     issued_at = models.DateTimeField(auto_now_add=True, editable=False)
     ca = models.ForeignKey(IssuingCaModel, on_delete=models.CASCADE)
 
@@ -1448,7 +1446,7 @@ class CRLStorage(models.Model):
             str:
                 CRL as PEM String
         """
-        return self.crl
+        return f'CrlStorage(IssuingCa({self.ca.unique_name}))'
 
     def save_crl_in_db(self, crl: CertificateRevocationList, ca: IssuingCaModel):
         """Saving crl in Database
@@ -1457,7 +1455,7 @@ class CRLStorage(models.Model):
             bool:
                 True
         """
-        self.crl = crl
+        self.crl = crl.public_bytes(encoding=Encoding.PEM)
         self.ca = ca
         self.save()
 
@@ -1469,7 +1467,7 @@ class CRLStorage(models.Model):
         return None
 
     @staticmethod
-    def get_crl_entry(ca: IssuingCaModel):
+    def get_crl_entry(ca: IssuingCaModel) -> None | CRLStorage:
         try:
             return CRLStorage.objects.filter(ca=ca).latest('issued_at')
         except CRLStorage.DoesNotExist:

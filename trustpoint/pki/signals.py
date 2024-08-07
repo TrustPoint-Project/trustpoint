@@ -44,7 +44,9 @@ def handle_post_save(sender, instance, created, **kwargs) -> None:
 def handle_post_delete(sender, instance, **kwargs) -> None:
     remove_crl_from_schedule(instance)
 
+
 crl_thread_started = False
+
 
 @receiver(connection_created)
 def initial_database_connection(sender, connection, **kwargs):
@@ -55,5 +57,5 @@ def initial_database_connection(sender, connection, **kwargs):
 
     log.info('Initial database connection established: %s', connection.alias)
 
-    from .tasks import start_crl_generation_thread
-    start_crl_generation_thread()
+    # from .tasks import start_crl_generation_thread
+    # start_crl_generation_thread()

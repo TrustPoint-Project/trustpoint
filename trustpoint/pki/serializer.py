@@ -531,6 +531,7 @@ class PrivateKeySerializer(Serializer):
         Returns:
             bytes: Bytes that contains the private key in PKCS#1 DER format.
         """
+        print(password)
         return self._private_key.private_bytes(
             encoding=Encoding.DER,
             format=PrivateFormat.TraditionalOpenSSL,
