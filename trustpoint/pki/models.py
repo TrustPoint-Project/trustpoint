@@ -1406,11 +1406,11 @@ class DomainModel(models.Model):
             return True
         return False
 
-    def get_crl(self) -> CRLStorage | None:
+    def get_crl(self) -> str | None:
         """Retrieve the latest CRL from the database.
 
         Returns:
-            CertificateRevocationList or None: The latest CRL if exists, None otherwise.
+            str or None: The latest CRL if exists, None otherwise.
         """
         return self.issuing_ca.get_issuing_ca().get_crl()
 
