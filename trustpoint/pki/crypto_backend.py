@@ -9,6 +9,7 @@ from django.conf import settings
 
 log = logging.getLogger('tp.pki')
 
+
 class CRLManager:
     """Manager to build and update CRLs"""
     def __init__(self, ca_cert, ca_private_key) -> None:

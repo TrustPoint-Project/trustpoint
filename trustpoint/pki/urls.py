@@ -78,5 +78,5 @@ urlpatterns = [
         'truststores/add/',
         views.TrustStoreAddView.as_view(),
         name='truststores-add'
-    ),
+    )
 ]
