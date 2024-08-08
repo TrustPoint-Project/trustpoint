@@ -66,7 +66,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         )
         log.debug('UnprotectedLocalIssuingCa initialized.')
 
-    def _parse_existing_crl(self) -> None | x509.CertificateRevocationList:
+    def _parse_existing_crl(self) -> list | x509.CertificateRevocationList:
         """Parses the existing CRL for the associated CA.
 
         Retrieves the stored CRL from the database and loads it using the x509
@@ -82,7 +82,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             log.debug('CRL found in database and started parsing.')
             return x509.load_pem_x509_crl(crl.encode())
         log.debug('No CRL found in database.')
-        return None
+        return []
 
     def _get_private_key_serializer(self) -> PrivateKeySerializer:
         """Retrieves the private key serializer for the issuing CA.
