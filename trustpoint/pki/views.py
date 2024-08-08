@@ -34,9 +34,11 @@ from .forms import (
     TrustStoreAddForm,
 )
 from .models import CertificateModel, DomainModel, IssuingCaModel, TrustStoreModel
+from .pki_message import PkiEstRequestMessage, PkiEstRequestMessage, EstOperation, PkiProtocol
 
 # RevokedCertificate
 from .tables import CertificateTable, DomainTable, IssuingCaTable, TrustStoreTable
+from .dispatcher import RequestDispatcher
 
 if TYPE_CHECKING:
     from typing import Any
@@ -386,5 +388,12 @@ class EstSimpleEnroll(View):
         if request.content_type != 'application/pkcs10':
             return HttpResponse(status=415)
         raw_csr = request.read()
-        csr = x509.load_pem_x509_csr(raw_csr)
-        return HttpResponse('hello')
+        domain_str = self.kwargs.get('domain')
+        request = PkiEstRequestMessage(
+            operation=EstOperation.SIMPLE_ENROLL,
+            domain=domain_str,
+            raw_request=raw_csr)
+
+        response = RequestDispatcher.dispatch_est_request(request)
+
+        return HttpResponse(content=response.raw_response, content_type=response.mimetype, status=response.http_status)
