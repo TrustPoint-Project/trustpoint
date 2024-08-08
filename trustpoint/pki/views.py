@@ -6,7 +6,7 @@ from django.contrib import messages
 
 from cryptography import x509
 
-from django.http import HttpResponse, HttpResponseRedirect, Http404
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
@@ -319,9 +319,9 @@ class CRLDownloadView(View):
         return redirect('pki:issuing_cas')
 
     @staticmethod
-    def download_domain_crl(self: CRLDownloadView, id):
+    def download_domain_crl(self: CRLDownloadView, id_):
         try:
-            domain = DomainModel.objects.get(pk=id)
+            domain = DomainModel.objects.get(pk=id_)
         except IssuingCaModel.DoesNotExist:
             messages.error(self, _('Domain not found.'))
             return redirect('pki:domains')
@@ -335,9 +335,9 @@ class CRLDownloadView(View):
         return response
 
     @staticmethod
-    def generate_domain_crl(self: CRLDownloadView, id):
+    def generate_domain_crl(self: CRLDownloadView, id_):
         try:
-            domain = DomainModel.objects.get(pk=id)
+            domain = DomainModel.objects.get(pk=id_)
         except IssuingCaModel.DoesNotExist:
             messages.error(self, _('Domain not found.'))
             return redirect('pki:domains')
@@ -379,7 +379,7 @@ class TrustStoreAddView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class EstEndpoint(View):
+class EstSimpleEnroll(View):
     http_method_names = ['post']
 
     def post(self, request, *args, **kwargs):
@@ -388,7 +388,3 @@ class EstEndpoint(View):
         raw_csr = request.read()
         csr = x509.load_pem_x509_csr(raw_csr)
         return HttpResponse('hello')
-
-
-
-

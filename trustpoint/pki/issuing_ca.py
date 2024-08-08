@@ -2,36 +2,25 @@ from __future__ import annotations
 
 import datetime
 import logging
-from abc import ABC, abstractmethod
+from abc import ABC
 
-# from devices.models import Device
 from typing import TYPE_CHECKING
 
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.x509 import (
-    CertificateRevocationListBuilder,
-    CRLReason,
-    ReasonFlags,
-    RevokedCertificateBuilder,
-    load_pem_x509_crl,
-)
+from cryptography import x509
 from django.conf import settings
 from django.db import transaction
 
 from .serializer import (
-    CertificateCollectionSerializer,
-    CertificateSerializer,
     PrivateKeySerializer,
-    PublicKeySerializer,
 )
 
 if TYPE_CHECKING:
     from typing import Union
 
     from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
-    from cryptography.x509 import CertificateRevocationList
 
-    from .models import CertificateModel, IssuingCaModel
+    from .models import CertificateModel, IssuingCaModel, RevokedCertificate, CRLStorage
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
 
 log = logging.getLogger('tp.pki')
@@ -57,27 +46,27 @@ class UnprotectedLocalIssuingCa(IssuingCa):
 
     _issuing_ca_model: IssuingCaModel
     _private_key_serializer: PrivateKeySerializer
-    _builder: CertificateRevocationListBuilder
+    _builder: x509.CertificateRevocationListBuilder
 
-    def __init__(self, issuing_ca_model: IssuingCaModel) -> None:
+    def __init__(self, issuing_ca_model: IssuingCaModel, *args, **kwargs) -> None:
         """Initializes an UnprotectedLocalIssuingCa instance.
 
         Args:
             issuing_ca_model (IssuingCaModel): The issuing CA model instance
             representing the CA for which the CRL is being managed.
         """
-        super().__init__()
+        super().__init__(*args, **kwargs)
         self._issuing_ca_model = issuing_ca_model
         self._private_key_serializer = self._get_private_key_serializer()
         ca_serializer = self._issuing_ca_model.get_issuing_ca_certificate_serializer().as_crypto()
-        self.crl_builder = CertificateRevocationListBuilder(
+        self.crl_builder = x509.CertificateRevocationListBuilder(
             issuer_name=ca_serializer.issuer,
             last_update=datetime.datetime.today(),
             next_update=datetime.datetime.today() + datetime.timedelta(hours=settings.CRL_INTERVAL)
         )
         log.debug('UnprotectedLocalIssuingCa initialized.')
 
-    def _parse_existing_crl(self) -> list:
+    def _parse_existing_crl(self) -> None | x509.CertificateRevocationList:
         """Parses the existing CRL for the associated CA.
 
         Retrieves the stored CRL from the database and loads it using the x509
@@ -91,9 +80,9 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         crl = CRLStorage.get_crl(ca=self._issuing_ca_model)
         if crl:
             log.debug('CRL found in database and started parsing.')
-            return load_pem_x509_crl(crl.encode('utf-8'))
+            return x509.load_pem_x509_crl(crl.encode())
         log.debug('No CRL found in database.')
-        return []
+        return None
 
     def _get_private_key_serializer(self) -> PrivateKeySerializer:
         """Retrieves the private key serializer for the issuing CA.
@@ -103,7 +92,8 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         """
         return PrivateKeySerializer.from_string(self._issuing_ca_model.private_key_pem)
 
-    def _build_revoked_cert(self, revocation_datetime: datetime, cert: CertificateModel) -> RevokedCertificateBuilder:
+    @staticmethod
+    def _build_revoked_cert(revocation_datetime: datetime, cert: CertificateModel) -> RevokedCertificate:
         """Builds a revoked certificate entry for inclusion in the CRL.
 
         Args:
@@ -115,13 +105,10 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         Returns:
             x509.RevokedCertificate: The constructed revoked certificate entry.
         """
-        return RevokedCertificateBuilder().serial_number(
-                    int(cert.serial_number, 16)
-                ).revocation_date(
-                    revocation_datetime
-                ).add_extension(
-                    CRLReason(ReasonFlags(cert.revocation_reason)), critical=False
-                ).build()
+        return x509.RevokedCertificateBuilder().serial_number(
+            int(cert.serial_number, 16)).revocation_date(
+                revocation_datetime).add_extension(x509.CRLReason(
+                    x509.ReasonFlags(cert.revocation_reason)), critical=False).build()
 
     def generate_crl(self) -> bool:
         """Generates a new CRL and updates the database with the latest entries.
@@ -151,7 +138,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             log.info('CRL generation finished.')
         return True
 
-    def save_crl_to_database(self, crl: CertificateRevocationList) -> None:
+    def save_crl_to_database(self, crl: x509.CertificateRevocationList) -> None:
         """Saves the generated CRL to the database.
 
         Args:
@@ -179,7 +166,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             crl = CRLStorage.get_crl(ca=self._issuing_ca_model)
         return crl
 
-    def get_crl_entry(self) -> str:
+    def get_crl_entry(self) -> CRLStorage:
         """Retrieves the current CRL for the issuing CA.
 
         If no CRL is present, generates a new one and returns it.
@@ -197,12 +184,3 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             str: The unique name of the CA.
         """
         return self._issuing_ca_model.unique_name
-
-    # def issue_ldevid(self, device: Device):
-    #     pass
-
-    # def issue_certificate(self, *args, **kwargs) -> CertificateModel:
-    #     pass
-    #
-    # def sign_crl(self, *args, **kwargs) -> Any:
-    #     pass

@@ -38,7 +38,5 @@ class Domain:
         # TODO
         return self._acme_is_enabled
 
-    def issue_certificate(self, certificate_request) -> issued_certificate:
+    def issue_certificate(self, certificate_request) -> None:
         pass
-
-

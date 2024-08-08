@@ -15,7 +15,6 @@ from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 from cryptography.x509.extensions import ExtensionNotFound
 from django.core.validators import MinLengthValidator
 from django.db import models, transaction
-from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from .issuing_ca import UnprotectedLocalIssuingCa
@@ -772,8 +771,12 @@ class CertificateModel(models.Model):
     certificate_status = models.CharField(verbose_name=_('Status'), max_length=2, choices=CertificateStatus,
                                           editable=False, default=CertificateStatus.OK)
 
-    revocation_reason = models.CharField(verbose_name=_('Revocation reason'), max_length=30, choices=ReasonCode,
-                                          editable=True, default=ReasonCode.UNSPECIFIED)
+    revocation_reason = models.CharField(
+        verbose_name=_('Revocation reason'),
+        max_length=30,
+        choices=ReasonCode,
+        editable=True,
+        default=ReasonCode.UNSPECIFIED)
 
     # TODO: This is kind of a hack.
     # TODO: This information is already available through the subject relation
@@ -1468,7 +1471,7 @@ class CRLStorage(models.Model):
         self.save()
 
     @staticmethod
-    def get_crl(ca: IssuingCaModel):
+    def get_crl(ca: IssuingCaModel) -> None | str:
         result = CRLStorage.get_crl_entry(ca)
         if result:
             return result.crl

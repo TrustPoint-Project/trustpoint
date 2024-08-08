@@ -7,5 +7,5 @@ from . import views
 app_name = 'est'
 
 urlpatterns = [
-    path('issuing-ca/simpleenroll/', views.EstEndpoint.as_view(), name='simple_enroll')
+    path('issuing-ca/simpleenroll/', views.EstSimpleEnroll.as_view(), name='simple_enroll')
 ]
