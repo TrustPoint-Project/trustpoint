@@ -80,19 +80,9 @@ class Device(models.Model):
         if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
             self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
 
-        RevokedCertificate.objects.create(
-            cert=self.ldevid,
-            revocation_datetime=timezone.now(),
-            issuing_ca=self.domain.issuing_ca,
-        )
-
         self.ldevid.revoke(revocation_reason)
         self.ldevid = None
         self.save()
-
-        # generate CRL
-        if self.domain.issuing_ca.auto_crl:
-            self.domain.issuing_ca.get_issuing_ca().generate_crl()
 
         log.info('Revoked LDevID for device %s', self.device_name)
         return True

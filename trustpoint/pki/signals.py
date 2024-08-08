@@ -33,14 +33,12 @@ def update_delete_student(sender, instance, **kwargs):
 
 
 @receiver(post_save, sender=IssuingCaModel)
-@receiver(post_save, sender=DomainModel)
 def handle_post_save(sender, instance, created, **kwargs) -> None:
     if created:
         add_crl_to_schedule(instance)
 
 
 @receiver(post_delete, sender=IssuingCaModel)
-@receiver(post_delete, sender=DomainModel)
 def handle_post_delete(sender, instance, **kwargs) -> None:
     remove_crl_from_schedule(instance)
 

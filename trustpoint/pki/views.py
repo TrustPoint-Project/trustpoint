@@ -251,7 +251,6 @@ class DomainCreateView(DomainContextMixin, TpLoginRequiredMixin, CreateView):
 
     model = DomainModel
     template_name = 'pki/domains/add.html'
-    # fields = ['unique_name', 'url_path_segment', 'issuing_ca', 'auto_crl']
     form_class = DomainCreateForm
     success_url = reverse_lazy('pki:domains')
     ignore_url = reverse_lazy('pki:domains')
@@ -261,7 +260,6 @@ class DomainUpdateView(DomainContextMixin, TpLoginRequiredMixin, UpdateView):
 
     model = DomainModel
     template_name = 'pki/domains/add.html'
-    # fields = ['unique_name', 'issuing_ca', 'auto_crl']
     form_class = DomainUpdateForm
     success_url = reverse_lazy('pki:domains')
     ignore_url = reverse_lazy('pki:domains')

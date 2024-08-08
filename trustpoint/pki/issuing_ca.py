@@ -7,9 +7,14 @@ from abc import ABC, abstractmethod
 # from devices.models import Device
 from typing import TYPE_CHECKING
 
-from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.x509 import CertificateRevocationListBuilder, ReasonFlags, load_pem_x509_crl
+from cryptography.x509 import (
+    CertificateRevocationListBuilder,
+    CRLReason,
+    ReasonFlags,
+    RevokedCertificateBuilder,
+    load_pem_x509_crl,
+)
 from django.conf import settings
 from django.db import transaction
 
@@ -98,7 +103,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         """
         return PrivateKeySerializer.from_string(self._issuing_ca_model.private_key_pem)
 
-    def _build_revoked_cert(self, revocation_datetime: datetime, cert: CertificateModel):
+    def _build_revoked_cert(self, revocation_datetime: datetime, cert: CertificateModel) -> RevokedCertificateBuilder:
         """Builds a revoked certificate entry for inclusion in the CRL.
 
         Args:
@@ -110,12 +115,12 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         Returns:
             x509.RevokedCertificate: The constructed revoked certificate entry.
         """
-        return x509.RevokedCertificateBuilder().serial_number(
+        return RevokedCertificateBuilder().serial_number(
                     int(cert.serial_number, 16)
                 ).revocation_date(
                     revocation_datetime
                 ).add_extension(
-                    x509.CRLReason(ReasonFlags(cert.revocation_reason)), critical=False
+                    CRLReason(ReasonFlags(cert.revocation_reason)), critical=False
                 ).build()
 
     def generate_crl(self) -> bool:
@@ -131,7 +136,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
 
             revoked_certificates = self._parse_existing_crl()
             for cert in revoked_certificates:
-                self.crl_builder.add_revoked_certificate(cert)
+                self.crl_builder = self.crl_builder.add_revoked_certificate(cert)
 
             revoked_certificates = RevokedCertificate.objects.filter(issuing_ca=self._issuing_ca_model)
 
@@ -143,7 +148,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             log.debug('CRL signing finished.')
             self.save_crl_to_database(crl.public_bytes(encoding=serialization.Encoding.PEM).decode('utf-8'))
             revoked_certificates.delete()
-            log.info('CRL generated and stored in Database.')
+            log.info('CRL generation finished.')
         return True
 
     def save_crl_to_database(self, crl: CertificateRevocationList) -> None:
@@ -157,6 +162,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             crl=crl,
             ca=self._issuing_ca_model
         )
+        log.info('CRL stored in Database.')
 
     def get_crl(self) -> str:
         """Retrieves the current CRL for the issuing CA.

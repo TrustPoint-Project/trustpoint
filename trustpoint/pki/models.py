@@ -11,12 +11,11 @@ from typing import TYPE_CHECKING
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.serialization import Encoding
 from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
-from cryptography.x509 import CertificateRevocationList
 from cryptography.x509.extensions import ExtensionNotFound
 from django.core.validators import MinLengthValidator
 from django.db import models, transaction
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from .issuing_ca import UnprotectedLocalIssuingCa
@@ -1235,10 +1234,19 @@ class CertificateModel(models.Model):
         """
         return cls._save_certificate(certificate=certificate, exist_ok=exist_ok)
 
+    @transaction.atomic
     def revoke(self, revocation_reason: ReasonCode) -> None:
         """Revokes the certificate."""
         self.certificate_status = self.CertificateStatus.REVOKED
         self.revocation_reason = revocation_reason
+        qs = self.issuer_references.all()
+        for entry in qs:
+            issuing_ca = entry.issuing_ca_certificate
+            rc = RevokedCertificate(cert=self)
+            rc.issuing_ca = issuing_ca
+            rc.save()
+            if issuing_ca.auto_crl:
+                issuing_ca.get_issuing_ca().generate_crl()
         self._save()
 
 
@@ -1267,7 +1275,7 @@ class IssuingCaModel(models.Model):
         verbose_name=_('Intermediate CA Certificates'),
         through='CertificateChainOrderModel')
 
-    issuing_ca_certificate = models.ForeignKey(
+    issuing_ca_certificate = models.OneToOneField(
         to=CertificateModel,
         verbose_name=_('Issuing CA Certificate'),
         on_delete=models.CASCADE,
@@ -1360,6 +1368,24 @@ class DomainModel(models.Model):
         related_name='domain'
     )
 
+    # est_config = models.ForeignKey
+    # cmp_config = models.ForeignKey
+    # scep_config = models.ForeignKey
+    # rest_config = models.ForeignKey
+
+    # def get_domain
+
+    def __str__(self) -> str:
+        """Human-readable representation of the Domain model instance.
+
+        Returns:
+            str:
+                Human-readable representation of the EndpointProfile model instance.
+        """
+        if self.issuing_ca:
+            return f'Domain({self.unique_name}, {self.issuing_ca.unique_name})'
+        return f'Domain({self.unique_name}, None)'
+
     @property
     def auto_crl(self) -> bool:
         """Retrieve the auto_crl value from the related IssuingCaModel.
@@ -1382,24 +1408,6 @@ class DomainModel(models.Model):
             self.issuing_ca.auto_crl = value
             self.issuing_ca.save()
 
-    # est_config = models.ForeignKey
-    # cmp_config = models.ForeignKey
-    # scep_config = models.ForeignKey
-    # rest_config = models.ForeignKey
-
-    # def get_domain
-
-    def __str__(self) -> str:
-        """Human-readable representation of the Domain model instance.
-
-        Returns:
-            str:
-                Human-readable representation of the EndpointProfile model instance.
-        """
-        if self.issuing_ca:
-            return f'Domain({self.unique_name}, {self.issuing_ca.unique_name})'
-        return f'Domain({self.unique_name}, None)'
-
     def generate_crl(self) -> bool:
         """Generate CRL."""
         if self.issuing_ca.get_issuing_ca().generate_crl():
@@ -1418,9 +1426,9 @@ class DomainModel(models.Model):
 class RevokedCertificate(models.Model):
     """Certificate Revocation model."""
     cert = models.ForeignKey(CertificateModel, on_delete=models.PROTECT)
-    revocation_datetime = models.DateTimeField(help_text='Timestamp when certificate was revoked.')
+    revocation_datetime = models.DateTimeField(auto_now_add=True, help_text='Timestamp when certificate was revoked.')
     issuing_ca = models.ForeignKey(
-        IssuingCaModel, on_delete=models.CASCADE, related_name='revoked_certificates', help_text='Name of Issuing CA.')
+        IssuingCaModel, on_delete=models.PROTECT, related_name='revoked_certificates', help_text='Name of Issuing CA.')
 
     def __str__(self) -> str:
         """Human-readable string when Certificate got revoked

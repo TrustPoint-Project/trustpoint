@@ -1,16 +1,18 @@
 from django.contrib import admin
-from django.utils.html import format_html
 from django.urls import reverse
+from django.utils.html import format_html
 
 from .models import (
-    CertificateModel,
-    IssuingCaModel,
-    CertificateChainOrderModel,
-    BasicConstraintsExtension,
-    KeyUsageExtension,
     AttributeTypeAndValue,
+    BasicConstraintsExtension,
+    CertificateChainOrderModel,
+    CertificateModel,
+    CRLStorage,
     IssuerAlternativeNameExtension,
-    SubjectAlternativeNameExtension)
+    IssuingCaModel,
+    KeyUsageExtension,
+    SubjectAlternativeNameExtension,
+)
 
 
 class IssuingCaAdmin(admin.ModelAdmin):
@@ -126,6 +128,13 @@ class CertificateAdmin(admin.ModelAdmin):
         'basic_constraints_extension'
     )
 
+class CRLStorageAdmin(admin.ModelAdmin):
+    readonly_fields = (
+        'crl',
+        'issued_at',
+        'ca'
+    )
+
 
 admin.site.register(IssuingCaModel, IssuingCaAdmin)
 admin.site.register(SubjectAlternativeNameExtension, AlternativeNameExtensionAdmin)
@@ -135,3 +144,4 @@ admin.site.register(BasicConstraintsExtension, BasicConstraintsExtensionAdmin)
 admin.site.register(KeyUsageExtension, KeyUsageExtensionAdmin)
 admin.site.register(CertificateModel, CertificateAdmin)
 admin.site.register(CertificateChainOrderModel, CertificateChainOrderModelAdmin)
+admin.site.register(CRLStorage, CRLStorageAdmin)
