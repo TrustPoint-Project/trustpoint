@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from typing import Union
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
-    from .pki_message import PkiRequestMessage, PkiResponseMessage
 
 log = logging.getLogger('tp.pki')
 
@@ -1424,10 +1423,6 @@ class DomainModel(models.Model):
             str or None: The latest CRL if exists, None otherwise.
         """
         return self.issuing_ca.get_issuing_ca().get_crl()
-
-    def process_est_request(self, request: PkiRequestMessage) -> PkiResponseMessage:
-        # TODO: Validations in regards to domain configuration and compatability
-        return self.issuing_ca.get_issuing_ca().process_est_request(request)
 
 
 class RevokedCertificate(models.Model):

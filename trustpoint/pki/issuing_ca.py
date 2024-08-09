@@ -12,13 +12,11 @@ from django.conf import settings
 from django.db import transaction
 
 from .serializer import PrivateKeySerializer
-from .est_server import LocalEstServer
 
 if TYPE_CHECKING:
     from typing import Union
     from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
     from .models import CertificateModel, IssuingCaModel, RevokedCertificate, CRLStorage
-    from .pki_message import PkiEstRequestMessage, PkiEstResponseMessage
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
@@ -46,7 +44,6 @@ class UnprotectedLocalIssuingCa(IssuingCa):
     _issuing_ca_model: IssuingCaModel
     _private_key: None | PrivateKey = None
     _builder: x509.CertificateRevocationListBuilder
-    _est_server: type(LocalEstServer)
 
     def __init__(self, issuing_ca_model: IssuingCaModel, *args, **kwargs) -> None:
         """Initializes an UnprotectedLocalIssuingCa instance.
@@ -64,7 +61,6 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             last_update=datetime.datetime.today(),
             next_update=datetime.datetime.today() + datetime.timedelta(hours=settings.CRL_INTERVAL)
         )
-        self._est_server = LocalEstServer
         log.debug('UnprotectedLocalIssuingCa initialized.')
 
     @property
@@ -77,10 +73,6 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         if self._private_key is None:
             self._private_key = PrivateKeySerializer.from_string(self._issuing_ca_model.private_key_pem).as_crypto()
         return self._private_key
-
-    def process_est_request(self, request: PkiEstRequestMessage) -> PkiEstResponseMessage:
-        est_server = self._est_server(request_message=request, issuing_ca=self)
-        return est_server.process_request()
 
     def _parse_existing_crl(self) -> list | x509.CertificateRevocationList:
         """Parses the existing CRL for the associated CA.

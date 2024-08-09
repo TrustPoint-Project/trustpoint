@@ -4,8 +4,6 @@ from typing import TYPE_CHECKING
 
 from django.contrib import messages
 
-from cryptography import x509
-
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
@@ -34,11 +32,11 @@ from .forms import (
     TrustStoreAddForm,
 )
 from .models import CertificateModel, DomainModel, IssuingCaModel, TrustStoreModel
-from .pki_message import PkiEstRequestMessage, PkiEstRequestMessage, EstOperation, PkiProtocol
+from .pki_message import PkiEstSimpleEnrollRequestMessage
+from .request_handler.est import CaRequestHandlerFactory
 
 # RevokedCertificate
 from .tables import CertificateTable, DomainTable, IssuingCaTable, TrustStoreTable
-from .dispatcher import RequestDispatcher
 
 if TYPE_CHECKING:
     from typing import Any
@@ -381,19 +379,21 @@ class TrustStoreAddView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
 
 
 @method_decorator(csrf_exempt, name='dispatch')
-class EstSimpleEnroll(View):
+class EstSimpleEnrollView(View):
     http_method_names = ['post']
 
     def post(self, request, *args, **kwargs):
-        if request.content_type != 'application/pkcs10':
-            return HttpResponse(status=415)
-        raw_csr = request.read()
-        domain_str = self.kwargs.get('domain')
-        request = PkiEstRequestMessage(
-            operation=EstOperation.SIMPLE_ENROLL,
-            domain=domain_str,
-            raw_request=raw_csr)
 
-        response = RequestDispatcher.dispatch_est_request(request)
+        # TODO: content-length
+        pki_request = PkiEstSimpleEnrollRequestMessage(
+            mimetype=request.headers.get('Content-Type'),
+            content_transfer_encoding=request.headers.get('Content-Transfer-Encoding'),
+            domain_unique_name=self.kwargs.get('domain'),
+            raw_request=request.read()
+        )
 
-        return HttpResponse(content=response.raw_response, content_type=response.mimetype, status=response.http_status)
+        if pki_request.is_invalid:
+            return pki_request.invalid_response.to_django_http_response()
+
+        request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
+        return request_handler.process_request().to_django_http_response()
