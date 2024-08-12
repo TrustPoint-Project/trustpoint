@@ -32,8 +32,8 @@ from .forms import (
     TrustStoreAddForm,
 )
 from .models import CertificateModel, DomainModel, IssuingCaModel, TrustStoreModel
-from .pki_message import PkiEstSimpleEnrollRequestMessage
-from .request_handler.factory import CaRequestHandlerFactory
+from .pki_request.message.est import PkiEstSimpleEnrollRequestMessage
+from .pki_request.request_handler.factory import CaRequestHandlerFactory
 
 # RevokedCertificate
 from .tables import CertificateTable, DomainTable, IssuingCaTable, TrustStoreTable

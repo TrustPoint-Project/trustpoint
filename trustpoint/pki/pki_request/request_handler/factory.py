@@ -3,15 +3,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import base64
-import abc
-from ..pki_message import (
-    PkiRequestMessage,
-    PkiResponseMessage,
-    PkiEstSimpleEnrollRequestMessage)
+from ..message import PkiRequestMessage
+from ..message.est import PkiEstSimpleEnrollRequestMessage
 
 
-from ..issuing_ca import UnprotectedLocalIssuingCa
+from ...issuing_ca import UnprotectedLocalIssuingCa
 from . import est
 
 

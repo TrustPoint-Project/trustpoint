@@ -2,12 +2,9 @@ from __future__ import annotations
 
 import base64
 import abc
-from ..pki_message import (
-    PkiRequestMessage,
-    PkiResponseMessage,
-    PkiEstSimpleEnrollRequestMessage,
-    HttpStatusCode,
-    MimeType)
+from ..message import PkiResponseMessage, HttpStatusCode, MimeType
+from ..message.est import PkiEstSimpleEnrollRequestMessage
+
 from cryptography import x509
 
 from cryptography.hazmat.primitives.serialization import pkcs7, Encoding
@@ -15,7 +12,7 @@ from cryptography.hazmat.primitives.serialization import pkcs7, Encoding
 import datetime
 
 
-from ..issuing_ca import UnprotectedLocalIssuingCa
+from ...issuing_ca import UnprotectedLocalIssuingCa
 from . import CaRequestHandler
 
 ONE_DAY = datetime.timedelta(1, 0, 0)

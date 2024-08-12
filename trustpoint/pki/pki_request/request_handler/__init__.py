@@ -7,7 +7,7 @@ import abc
 
 
 if TYPE_CHECKING:
-    from ..pki_message import PkiResponseMessage
+    from ..message import PkiResponseMessage
 
 
 class CaRequestHandler(abc.ABC):
