@@ -26,22 +26,9 @@ log = logging.getLogger('tp.pki')
 class IssuingCa(ABC):
     _issuing_ca_model: IssuingCaModel
 
-    # @abstractmethod
-    # def issue_ldevid(self, device: Device):
-    #     pass
-
-    # @abstractmethod
-    # def issue_certificate(self, *args, **kwargs) -> CertificateModel:
-    #     pass
-    #
-    # @abstractmethod
-    # def sign_crl(self, *args, **kwargs) -> Any:
-    #     pass
-
 
 class UnprotectedLocalIssuingCa(IssuingCa):
 
-    _issuing_ca_model: IssuingCaModel
     _private_key: None | PrivateKey = None
     _builder: x509.CertificateRevocationListBuilder
 
