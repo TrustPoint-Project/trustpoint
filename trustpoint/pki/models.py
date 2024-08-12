@@ -19,7 +19,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
-from .serializer import CertificateCollectionSerializer, CertificateSerializer, PublicKeySerializer
+from .serialization.serializer import CertificateCollectionSerializer, CertificateSerializer, PublicKeySerializer
 
 if TYPE_CHECKING:
     from typing import Union
@@ -1359,8 +1359,6 @@ class DomainModel(models.Model):
 
     unique_name = models.CharField(_('Unique Name'), max_length=100, unique=True)
 
-    url_path_segment = models.CharField(_('URL Path Segment'), max_length=100, unique=True)
-
     issuing_ca = models.ForeignKey(
         IssuingCaModel,
         on_delete=models.CASCADE,
@@ -1369,13 +1367,6 @@ class DomainModel(models.Model):
         verbose_name=_('Issuing CA'),
         related_name='domain'
     )
-
-    # est_config = models.ForeignKey
-    # cmp_config = models.ForeignKey
-    # scep_config = models.ForeignKey
-    # rest_config = models.ForeignKey
-
-    # def get_domain
 
     def __str__(self) -> str:
         """Human-readable representation of the Domain model instance.

@@ -7,7 +7,7 @@ from django.utils.translation import gettext_lazy as _
 
 from django.core.exceptions import ValidationError
 
-from .initializer import LocalUnprotectedIssuingCaFromP12FileInitializer, TrustStoreInitializer
+from .serialization.initializer import LocalUnprotectedIssuingCaFromP12FileInitializer, TrustStoreInitializer
 from .models import IssuingCaModel, DomainModel
 
 
@@ -184,12 +184,14 @@ class DomainBaseForm(forms.ModelForm):
 
         return domain_instance
 
+
 class DomainCreateForm(DomainBaseForm):
     """Form for creating DomainModel instances, includes additional fields."""
     # TODO: validate url_path_segment
 
     class Meta(DomainBaseForm.Meta):
-        fields = DomainBaseForm.Meta.fields + ['url_path_segment']
+        fields = DomainBaseForm.Meta.fields
+
 
 class DomainUpdateForm(DomainBaseForm):
     """Form for updating DomainModel instances."""

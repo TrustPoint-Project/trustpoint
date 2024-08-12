@@ -11,7 +11,7 @@ from cryptography import x509
 from django.conf import settings
 from django.db import transaction
 
-from .serializer import PrivateKeySerializer
+from .serialization.serializer import PrivateKeySerializer
 
 if TYPE_CHECKING:
     from typing import Union

@@ -17,7 +17,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
 from django.db import transaction
 
 
-from .models import CertificateModel, IssuingCaModel, CertificateChainOrderModel, TrustStoreModel, TrustStoreOrderModel
+from ..models import CertificateModel, IssuingCaModel, CertificateChainOrderModel, TrustStoreModel, TrustStoreOrderModel
 
 
 if TYPE_CHECKING:
