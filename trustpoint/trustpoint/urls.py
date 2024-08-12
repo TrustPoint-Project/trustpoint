@@ -35,6 +35,7 @@ urlpatterns = [
     path('users/', include('users.urls')),
     path('pki/', include('pki.urls.pki')),
     path('.well-known/est/', include('pki.urls.est')),
+    path('.well-known/cmp/', include('pki.urls.cmp')),
     path('home/', include('home.urls')),
     path('devices/', include('devices.urls')),
     path('onboarding/', include('onboarding.urls')),

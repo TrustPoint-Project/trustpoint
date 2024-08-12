@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 import base64
 
 from . import PkiRequestMessage, PkiResponseMessage
-from . import Protocol, EstOperation, MimeType, ContentTransferEncoding, HttpStatusCode
+from . import Protocol, MimeType, ContentTransferEncoding, HttpStatusCode, Operation
 
 
 from cryptography import x509
@@ -15,6 +15,10 @@ if TYPE_CHECKING:
     from typing import Union
     from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
+
+
+class EstOperation(Operation):
+    SIMPLE_ENROLL = 'simple_enroll'
 
 
 class PkiEstSimpleEnrollRequestMessage(PkiRequestMessage):

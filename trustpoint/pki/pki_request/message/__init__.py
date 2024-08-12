@@ -18,10 +18,6 @@ class Operation(Enum):
     pass
 
 
-class EstOperation(Operation):
-    SIMPLE_ENROLL = 'simple_enroll'
-
-
 class MimeType(Enum):
 
     TEXT_PLAIN = 'text/plain; charset=utf-8'
@@ -30,6 +26,7 @@ class MimeType(Enum):
     APPLICATION_PKCS8 = 'application/pkcs8'
     APPLICATION_PKCS10 = 'application/pkcs10'
     APPLICATION_CSRATTRS = 'application/csrattrs'
+    APPLICATION_PKIXCMP = 'application/pkixcmp'
     MULTIPART_MIXED = 'multipart/mixed'
     MULTIPART_MIXED_BOUNDARY = 'multipart/mixed; boundary=estServerExampleBoundary'
 

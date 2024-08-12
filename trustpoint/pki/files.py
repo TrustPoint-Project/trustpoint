@@ -1,3 +1,5 @@
+# TODO: remove this module and integrate it in the serializer module / serialization package
+
 from __future__ import annotations
 
 
