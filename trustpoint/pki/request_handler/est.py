@@ -16,25 +16,9 @@ import datetime
 
 
 from ..issuing_ca import UnprotectedLocalIssuingCa
+from . import CaRequestHandler
 
 ONE_DAY = datetime.timedelta(1, 0, 0)
-
-
-class CaRequestHandlerFactory:
-
-    @classmethod
-    def get_request_handler(cls, request: PkiRequestMessage) -> CaRequestHandler:
-
-        if isinstance(request, PkiEstSimpleEnrollRequestMessage):
-            if isinstance(request.domain_model.issuing_ca.get_issuing_ca(), UnprotectedLocalIssuingCa):
-                return LocalEstCaSimpleEnrollRequestHandler(request)
-
-
-class CaRequestHandler(abc.ABC):
-
-    @abc.abstractmethod
-    def process_request(self) -> PkiResponseMessage:
-        pass
 
 
 class CaEstRequestHandler(CaRequestHandler):

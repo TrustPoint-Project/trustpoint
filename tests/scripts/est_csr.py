@@ -31,8 +31,12 @@ def request_certificate(csr_: bytes):
 if __name__ == '__main__':
     csr = load_request()
     resp = request_certificate(csr)
-    pkcs7_resp = base64.b64decode(resp.content)
-    cert = pkcs7.load_der_pkcs7_certificates(pkcs7_resp)
-    if cert:
-        print(f'{resp.status_code} OK : {cert}')
+    if resp.status_code != 200:
+        print(resp)
+        print(resp.content)
+    else:
+        pkcs7_resp = base64.b64decode(resp.content)
+        cert = pkcs7.load_der_pkcs7_certificates(pkcs7_resp)
+        if cert:
+            print(f'{resp.status_code} OK : {cert}')
 

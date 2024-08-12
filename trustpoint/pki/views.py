@@ -33,7 +33,7 @@ from .forms import (
 )
 from .models import CertificateModel, DomainModel, IssuingCaModel, TrustStoreModel
 from .pki_message import PkiEstSimpleEnrollRequestMessage
-from .request_handler.est import CaRequestHandlerFactory
+from .request_handler.factory import CaRequestHandlerFactory
 
 # RevokedCertificate
 from .tables import CertificateTable, DomainTable, IssuingCaTable, TrustStoreTable
