@@ -6,9 +6,8 @@ from django.views.decorators.csrf import csrf_exempt
 
 from django.views import View
 
-
-from ...pki_request.message.est import PkiEstSimpleEnrollRequestMessage
-from ...pki_request.request_handler.factory import CaRequestHandlerFactory
+from pki.pki.request.message.est import PkiEstSimpleEnrollRequestMessage
+from pki.pki.request.handler.factory import CaRequestHandlerFactory
 
 
 @method_decorator(csrf_exempt, name='dispatch')

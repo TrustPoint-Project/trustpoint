@@ -8,8 +8,8 @@ from ..message.cmp import PkiCmpInitializationRequestMessage
 import datetime
 
 
-from ...issuing_ca import UnprotectedLocalIssuingCa
-from . import CaRequestHandler
+from pki.issuing_ca import UnprotectedLocalIssuingCa
+from pki.pki.request.handler import CaRequestHandler
 
 ONE_DAY = datetime.timedelta(1, 0, 0)
 

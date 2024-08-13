@@ -3,17 +3,15 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from ..message import PkiRequestMessage
-from ..message.est import PkiEstSimpleEnrollRequestMessage
-from ..message.cmp import PkiCmpInitializationRequestMessage
-
-
-from ...issuing_ca import UnprotectedLocalIssuingCa
-from . import est, cmp
+from pki.issuing_ca import UnprotectedLocalIssuingCa
+from pki.pki.request.handler import est, cmp
+from pki.pki.request.message.est import PkiEstSimpleEnrollRequestMessage
+from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage
 
 
 if TYPE_CHECKING:
     from . import CaRequestHandler
+    from pki.pki.request.message import PkiRequestMessage
 
 
 class CaRequestHandlerFactory:

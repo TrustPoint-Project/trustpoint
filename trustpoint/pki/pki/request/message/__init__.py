@@ -6,7 +6,7 @@ from django.http import HttpResponse
 
 
 from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
-from ...models import DomainModel
+from pki.models import DomainModel
 
 
 if TYPE_CHECKING:

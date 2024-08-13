@@ -1,19 +1,18 @@
 from __future__ import annotations
 
+import datetime
 import base64
 import abc
-from ..message import PkiResponseMessage, HttpStatusCode, MimeType
-from ..message.est import PkiEstSimpleEnrollRequestMessage
 
 from cryptography import x509
-
 from cryptography.hazmat.primitives.serialization import pkcs7, Encoding
 
-import datetime
+from pki.issuing_ca import UnprotectedLocalIssuingCa
+from pki.models import CertificateModel
+from pki.pki.request.handler import CaRequestHandler
+from pki.pki.request.message import PkiResponseMessage, HttpStatusCode, MimeType
+from pki.pki.request.message.est import PkiEstSimpleEnrollRequestMessage
 
-
-from ...issuing_ca import UnprotectedLocalIssuingCa
-from . import CaRequestHandler
 
 ONE_DAY = datetime.timedelta(1, 0, 0)
 
@@ -42,6 +41,9 @@ class LocalEstCaSimpleEnrollRequestHandler(CaEstRequestHandler):
         cert = cert_builder.sign(
             private_key=self._issuing_ca.private_key,
             algorithm=self._request_message.csr.signature_hash_algorithm)
+
+        CertificateModel.save_certificate(certificate=cert)
+
         raw_pkcs7 = pkcs7.serialize_certificates([cert], encoding=Encoding.DER)
         return PkiResponseMessage(
             raw_response=base64.b64encode(raw_pkcs7),

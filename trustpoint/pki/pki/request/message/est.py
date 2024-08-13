@@ -8,7 +8,7 @@ from . import Protocol, MimeType, ContentTransferEncoding, HttpStatusCode, Opera
 
 
 from cryptography import x509
-from ...models import DomainModel
+from pki.models import DomainModel
 
 
 if TYPE_CHECKING:

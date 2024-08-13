@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 from . import PkiRequestMessage, PkiResponseMessage
 from . import Protocol, MimeType, HttpStatusCode, Operation
 
-from ...models import DomainModel
+from pki.models import DomainModel
 from pyasn1.type.base import Asn1Type
 from pyasn1.codec.der import decoder
 from pyasn1_modules import rfc4210
