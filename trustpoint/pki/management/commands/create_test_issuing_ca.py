@@ -229,29 +229,10 @@ class Command(BaseCommand):
         self.store_issuing_ca(issuing_1, [root_1], issuing_1_key)
         self.save_issuing_ca(issuing_1, root_1, [], issuing_1_key)
 
-        ee_0, _ = self.create_ee(issuing_1_key, 'Issuing CA', 'EE 0')
-        ee_1, _ = self.create_ee(issuing_1_key, 'Issuing CA', 'EE 1')
-        ee_2, _ = self.create_ee(issuing_1_key, 'Issuing CA', 'EE 2')
-        ee_3, _ = self.create_ee(issuing_1_key, 'Issuing CA', 'EE 3')
-        ee_4, _ = self.create_ee(issuing_1_key, 'Issuing CA', 'EE 4')
-        ee_5, _ = self.create_ee(issuing_1_key, 'Issuing CA', 'EE 5')
-        ee_6, _ = self.create_ee(issuing_1_key, 'Issuing CA', 'EE 6')
-        ee_7, _ = self.create_ee(issuing_1_key, 'Issuing CA', 'EE 7')
-        ee_8, _ = self.create_ee(issuing_1_key, 'Issuing CA', 'EE 8')
-        ee_9, _ = self.create_ee(issuing_1_key, 'Issuing CA', 'EE 9')
-
-        ee_certs = {
-            'ee0': ee_0,
-            'ee1': ee_1,
-            'ee2': ee_2,
-            'ee3': ee_3,
-            'ee4': ee_4,
-            'ee5': ee_5,
-            'ee6': ee_6,
-            'ee7': ee_7,
-            'ee8': ee_8,
-            'ee9': ee_9,
-        }
+        ee_certs = {}
+        for i in range(0, 100):
+            ee, _ = self.create_ee(issuing_1_key, 'Issuing CA', f'EE {i}')
+            ee_certs[f'ee{i}'] = ee
 
         self.store_ee_certs(ee_certs)
         self.save_ee_certs(ee_certs)

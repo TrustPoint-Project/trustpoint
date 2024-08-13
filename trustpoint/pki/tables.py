@@ -112,13 +112,15 @@ class IssuingCaTable(tables.Table):
             'signature_algorithm',
             'details',
             'delete',
-            'crl',
+            'generate_crl',
+            'download_crl'
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
     delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
-    crl = tables.Column(empty_values=(), orderable=False, verbose_name=_('CRL'))
+    generate_crl = tables.Column(empty_values=(), orderable=False, verbose_name=_('Generate CRL'))
+    download_crl = tables.Column(empty_values=(), orderable=False, verbose_name=_('Download CRL'))
 
     @staticmethod
     def render_details(record: CertificateModel) -> SafeString:
@@ -147,7 +149,7 @@ class IssuingCaTable(tables.Table):
                            record.pk, _('Delete'))
 
     @staticmethod
-    def render_crl(record: IssuingCaModel) -> SafeString:
+    def render_generate_crl(record: IssuingCaModel) -> SafeString:
         """Creates the html hyperlink for the details-view.
 
         Args:
@@ -156,9 +158,23 @@ class IssuingCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        generate_button = format_html('<a href="/pki/generate-ca-crl/{}/" class="btn btn-primary tp-table-btn">Generate CRL</a>', record.pk)
-        download_button = format_html('<a href="/pki/ca-crl/{}/" class="btn btn-primary tp-table-btn mb-2">Download CRL</a>', record.pk)
-        return format_html('{}<br>{}', generate_button, download_button)
+        return format_html(
+            '<a href="/pki/generate-ca-crl/{}/" class="btn btn-primary tp-table-btn">Generate CRL</a>',
+            record.pk)
+
+    @staticmethod
+    def render_download_crl(record: IssuingCaModel) -> SafeString:
+        """Creates the html hyperlink for the details-view.
+
+        Args:
+            record (IssuingCa): The current record of the IssuingCa model.
+
+        Returns:
+            SafeString: The html hyperlink for the details-view.
+        """
+        return format_html(
+            '<a href="/pki/ca-crl/{}/" class="btn btn-primary tp-table-btn mb-2">Download CRL</a>',
+            record.pk)
 
 
 class DomainTable(tables.Table):
@@ -185,14 +201,12 @@ class DomainTable(tables.Table):
             'details',
             'edit',
             'delete',
-            'crl'
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
     edit = tables.Column(empty_values=(), orderable=False, verbose_name=_('Edit'))
     delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
-    crl = tables.Column(empty_values=(), orderable=False, verbose_name=_('CRL'))
 
     @staticmethod
     def render_details(record: CertificateModel) -> SafeString:
@@ -224,20 +238,6 @@ class DomainTable(tables.Table):
         """
         return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
                            record.pk, _('Delete'))
-
-    @staticmethod
-    def render_crl(record: IssuingCaModel) -> SafeString:
-        """Creates the html hyperlink for the details-view.
-
-        Args:
-            record (IssuingCa): The current record of the IssuingCa model.
-
-        Returns:
-            SafeString: The html hyperlink for the details-view.
-        """
-        generate_button = format_html('<a href="/pki/generate-domain-crl/{}/" class="btn btn-primary tp-table-btn">Generate CRL</a>', record.pk)
-        download_button = format_html('<a href="/pki/domain-crl/{}/" class="btn btn-primary tp-table-btn">Download CRL</a>', record.pk)
-        return format_html('{}<br>{}', generate_button, download_button)
 
 
 class TrustStoreTable(tables.Table):
