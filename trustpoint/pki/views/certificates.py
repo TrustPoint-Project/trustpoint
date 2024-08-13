@@ -13,7 +13,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from django_tables2 import SingleTableView
 
-from trustpoint.views import ContextDataMixin, TpLoginRequiredMixin
+from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, PrimaryKeyFromUrlToQuerysetMixin
 
 from ..files import CertificateChainIncluded, CertificateFileContainer, CertificateFileFormat, CertificateFileGenerator
 from ..forms import CertificateDownloadForm
@@ -24,10 +24,6 @@ from ..tables import CertificateTable
 
 if TYPE_CHECKING:
     from typing import Any
-    from django.db.models import QuerySet
-
-
-# -------------------------------------------------- Certificate Views -------------------------------------------------
 
 
 class CertificatesRedirectView(TpLoginRequiredMixin, RedirectView):
@@ -61,7 +57,7 @@ class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, Deta
     context_object_name = 'cert'
 
 
-class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, ListView):
+class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, PrimaryKeyFromUrlToQuerysetMixin, ListView):
     model = CertificateModel
     success_url = reverse_lazy('pki:certificates')
     ignore_url = reverse_lazy('pki:certificates')
@@ -119,21 +115,3 @@ class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, Li
             return redirect(self.get_ignore_url())
 
         return super().get(request, *args, **kwargs)
-
-    def get_pks(self) -> list[str]:
-        return self.kwargs['pks'].split('/')
-
-    def get_queryset(self) -> QuerySet | None:
-        if self.queryset:
-            return self.queryset
-
-        pks = self.get_pks()
-        if not pks:
-            return None
-        queryset = self.model.objects.filter(pk__in=pks)
-
-        if len(pks) != len(queryset):
-            queryset = None
-
-        self.queryset = queryset
-        return queryset

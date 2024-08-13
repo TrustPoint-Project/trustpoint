@@ -25,7 +25,8 @@ from django.views.decorators.http import last_modified
 from django.views.decorators.vary import vary_on_cookie
 from django.views.i18n import JavaScriptCatalog
 
-from . import api, views
+from . import api
+from .views import base
 
 last_modified_date = timezone.now()
 
@@ -49,7 +50,7 @@ urlpatterns = [
         )),
         name='javascript-catalog'
     ),
-    path('', views.IndexView.as_view()),
+    path('', base.IndexView.as_view()),
 ]
 
 if settings.DEBUG:

@@ -21,6 +21,13 @@ from django.views.generic.list import BaseListView, MultipleObjectTemplateRespon
 
 from django.db.models import Model
 
+from django.views.generic import ListView
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet, Model
+
 
 class IndexView(RedirectView):
     """View that redirects to the index home page."""
@@ -74,31 +81,6 @@ class ContextDataMixin:
             return super_get_context_method(**kwargs)
 
 
-# class BulkDeleteMixin:
-#     queryset: Any
-#     form_class = dj_forms.Form
-#     get_form: Callable
-#     get_queryset: Callable
-#     kwargs: dict
-#     form_invalid: Callable
-#     get_success_url: Callable
-#
-#     def post(self, request, *args, **kwargs):
-#         self.queryset = self.get_queryset(self.kwargs['pks'])
-#         form = self.get_form()
-#         if form.is_valid():
-#             return self.form_valid(form)
-#         return self.form_invalid(form)
-#
-#     def form_valid(self, form):
-#         success_url = self.get_success_url()
-#         self.queryset.delete()
-#         return HttpResponseRedirect(success_url)
-#
-#     def get_pks(self) -> list[str]:
-#         return self.kwargs['pks'].split('/')
-
-
 class BulkDeletionMixin:
 
     queryset: Any
@@ -139,12 +121,16 @@ class BaseBulkDeleteView(BulkDeletionMixin, FormMixin, BaseListView):
         return HttpResponseRedirect(success_url)
 
 
-class BulkDeleteView(MultipleObjectTemplateResponseMixin, BaseBulkDeleteView):
+class PrimaryKeyFromUrlToQuerysetMixin:
+
+    kwargs: dict
+    queryset: QuerySet
+    model: Model
 
     def get_pks(self) -> list[str]:
         return self.kwargs['pks'].split('/')
 
-    def get_queryset(self):
+    def get_queryset(self) -> QuerySet | None:
         if self.queryset:
             return self.queryset
 
@@ -158,3 +144,7 @@ class BulkDeleteView(MultipleObjectTemplateResponseMixin, BaseBulkDeleteView):
 
         self.queryset = queryset
         return queryset
+
+
+class BulkDeleteView(MultipleObjectTemplateResponseMixin, PrimaryKeyFromUrlToQuerysetMixin, BaseBulkDeleteView):
+    pass

@@ -6,7 +6,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
 from django_tables2 import SingleTableView
 
-from trustpoint.views import BulkDeleteView, ContextDataMixin, TpLoginRequiredMixin
+from trustpoint.views.base import BulkDeleteView, ContextDataMixin, TpLoginRequiredMixin
 
 from ..forms import DomainCreateForm, DomainUpdateForm
 from ..models import DomainModel

@@ -6,7 +6,7 @@ from django.urls import reverse_lazy
 from django.views.generic.edit import FormView
 from django_tables2 import SingleTableView
 
-from trustpoint.views import ContextDataMixin, TpLoginRequiredMixin
+from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin
 
 
 from ..forms import TrustStoreAddForm

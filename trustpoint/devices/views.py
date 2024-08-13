@@ -12,7 +12,7 @@ from django.views.generic.edit import CreateView, FormMixin, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_tables2 import SingleTableView
 
-from trustpoint.views import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
+from trustpoint.views.base import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
 
 from .models import Device
 from .tables import DeviceTable
