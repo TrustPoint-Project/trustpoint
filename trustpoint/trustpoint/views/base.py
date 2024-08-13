@@ -17,16 +17,13 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic.base import RedirectView
 from django.views.generic.edit import FormMixin
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
+from django.db.models import QuerySet
 
-
-from django.db.models import Model
-
-from django.views.generic import ListView
 from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from django.db.models import QuerySet, Model
+    from django.db.models import Model
 
 
 class IndexView(RedirectView):
@@ -128,15 +125,19 @@ class PrimaryKeyFromUrlToQuerysetMixin:
     model: Model
 
     def get_pks(self) -> list[str]:
-        return self.kwargs['pks'].split('/')
+        pks = self.kwargs.get('pks')
+        if pks:
+            return pks.split('/')
 
-    def get_queryset(self) -> QuerySet | None:
+        return []
+
+    def get_queryset(self) -> None | QuerySet:
         if self.queryset:
             return self.queryset
 
         pks = self.get_pks()
         if not pks:
-            return None
+            return self.model.objects.all()
         queryset = self.model.objects.filter(pk__in=pks)
 
         if len(pks) != len(queryset):

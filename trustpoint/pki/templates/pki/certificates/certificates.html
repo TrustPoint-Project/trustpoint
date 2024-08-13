@@ -6,7 +6,11 @@
 
     <div class="card card-main">
         <div class="card-header tp-card-header">
-            <h1>{% trans "Certificates" %}</h1>
+            {% if issuing_ca_cert %}
+                <h1>{% trans "Certificates issued by the CA: " %} {{ issuing_ca_cert.common_name }}</h1>
+            {% else %}
+                <h1>{% trans "Certificates" %}</h1>
+            {% endif %}
         </div>
         <div class="card-body text-start">
 

@@ -32,26 +32,20 @@
                         {% endif %}
                     </a><br>
                 {% endfor %}
-
-                <a href="#" class="btn btn-primary my-1">Download Certificate Chain (PEM)</a>
-                <a href="#" class="btn btn-primary my-1">Download Certificate Chain (PKCS#7 - DER)</a>
-                <a href="#" class="btn btn-primary my-1">Download Certificate Chain (PKCS#7 - PEM)</a>
             <br>
             </div>
         </div>
     {% endfor %}
 
-    {% if cert.issued_certificate_references %}
-    <div class="tp-card-split">
-        <div>Issued Certificates</div>
-        <div>
-        {% for issued_cert in cert.issued_certificate_references.all|slice:":3" %}
-            <a href="{% url 'pki:certificate-detail' pk=issued_cert.id %}">
-                {{ issued_cert.common_name }}
-            </a><br>
-        {% endfor %}
+    {% if cert.issued_certificate_references.all %}
+        <div class="tp-card-split">
+            <div>Number of Issued Certificates</div>
+            <div>
+                {{ cert.issued_certificate_references.count }}
+                <br>
+                <a href="{% url 'pki:issued_certificates' pk=cert.id %}" class="btn btn-primary my-1">Show All Issued Certificates</a>
+            </div>
         </div>
-    </div>
     {% endif %}
 
 {% endblock certificate_hierarchy %}

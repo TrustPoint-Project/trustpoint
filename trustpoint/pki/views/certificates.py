@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from idlelib.query import Query
 from typing import TYPE_CHECKING
 
 
@@ -24,6 +25,7 @@ from ..tables import CertificateTable
 
 if TYPE_CHECKING:
     from typing import Any
+    from django.db.models import QuerySet
 
 
 class CertificatesRedirectView(TpLoginRequiredMixin, RedirectView):
@@ -47,6 +49,31 @@ class CertificateTableView(CertificatesContextMixin, TpLoginRequiredMixin, Singl
     table_class = CertificateTable
     template_name = 'pki/certificates/certificates.html'
     context_object_name = 'certificates'
+
+
+class IssuedCertificatesTableView(CertificatesContextMixin, TpLoginRequiredMixin, SingleTableView):
+
+    model = CertificateModel
+    table_class = CertificateTable
+    template_name = 'pki/certificates/certificates.html'
+    context_object_name = 'certificates'
+
+    def get_queryset(self) -> None | QuerySet:
+        pk = self.kwargs.get('pk')
+        if not pk:
+            return None
+
+        try:
+            issuing_ca_cert = CertificateModel.objects.get(pk=pk)
+        except CertificateModel.DoesNotExist:
+            return None
+
+        if not issuing_ca_cert.is_ca:
+            return None
+
+        self.extra_context = {'issuing_ca_cert': issuing_ca_cert}
+
+        return issuing_ca_cert.issued_certificate_references.all()
 
 
 class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):

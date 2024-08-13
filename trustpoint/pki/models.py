@@ -1003,8 +1003,14 @@ class CertificateModel(models.Model):
         return False
 
     @property
+    def is_ca(self) -> bool:
+        if self.basic_constraints_extension and self.basic_constraints_extension.ca:
+            return True
+        return False
+
+    @property
     def is_root_ca(self) -> bool:
-        if self.is_self_signed and self.basic_constraints_extension and self.basic_constraints_extension.ca:
+        if self.is_self_signed and self.is_ca:
             return True
         return False
 
@@ -1281,7 +1287,7 @@ class IssuingCaModel(models.Model):
         to=CertificateModel,
         verbose_name=_('Issuing CA Certificate'),
         on_delete=models.CASCADE,
-        related_name='issuing_ca_certificate',
+        related_name='issuing_ca_model',
         editable=False)
 
     private_key_pem = models.CharField(

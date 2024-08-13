@@ -7,13 +7,21 @@ from ..views import certificates, crls, domains, issuing_cas, trust_stores
 app_name = 'pki'
 
 urlpatterns = [
-    path('certificates/', certificates.CertificateTableView.as_view(), name='certificates'),
+    path(
+        'certificates/',
+        certificates.CertificateTableView.as_view(),
+        name='certificates',
+    ),
+    path(
+        'certificates/issued-certificates/<int:pk>/',
+        certificates.IssuedCertificatesTableView.as_view(),
+        name='issued_certificates'),
     re_path(
         r'^certificates/download/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
         certificates.CertificateDownloadView.as_view(),
         name='certificates-download',
     ),
-    path('certificates/detail/<pk>/', certificates.CertificateDetailView.as_view(), name='certificate-detail'),
+    path('certificates/detail/<int:pk>/', certificates.CertificateDetailView.as_view(), name='certificate-detail'),
 
     path('issuing-cas/', issuing_cas.IssuingCaTableView.as_view(), name='issuing_cas'),
     path(
@@ -35,7 +43,7 @@ urlpatterns = [
         issuing_cas.IssuingCaAddFileImportOtherView.as_view(),
         name='issuing_cas-add-file_import-other'
     ),
-    path('issuing-cas/detail/<pk>/', issuing_cas.IssuingCaDetailView.as_view(), name='issuing_cas-detail'),
+    path('issuing-cas/detail/<int:pk>/', issuing_cas.IssuingCaDetailView.as_view(), name='issuing_cas-detail'),
     re_path(
         r'^issuing-cas/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
         issuing_cas.IssuingCaBulkDeleteConfirmView.as_view(),
@@ -60,12 +68,12 @@ urlpatterns = [
         name='domains-add'
     ),
     path(
-        'domains/edit/<pk>/',
+        'domains/edit/<int:pk>/',
         domains.DomainUpdateView.as_view(),
         name='domains-edit'
     ),
     path(
-        'domains/detail/<pk>/',
+        'domains/detail/<int:pk>/',
         domains.DomainDetailView.as_view(),
         name='domains-delete_confirm'),
     re_path(
