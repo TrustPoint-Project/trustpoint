@@ -7,11 +7,15 @@ import abc
 from cryptography import x509
 from cryptography.hazmat.primitives.serialization import pkcs7, Encoding
 
-from pki.issuing_ca import UnprotectedLocalIssuingCa
-from pki.models import CertificateModel
-from pki.pki.request.handler import CaRequestHandler
 from pki.pki.request.message import PkiResponseMessage, HttpStatusCode, MimeType
-from pki.pki.request.message.est import PkiEstSimpleEnrollRequestMessage
+from pki.pki.request.handler import CaRequestHandler
+from pki.models import CertificateModel
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pki.pki.request.message.est import PkiEstSimpleEnrollRequestMessage
+    from pki.issuing_ca import UnprotectedLocalIssuingCa
 
 
 ONE_DAY = datetime.timedelta(1, 0, 0)

@@ -1,18 +1,23 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from . import PkiRequestMessage, PkiResponseMessage
-from . import Protocol, MimeType, HttpStatusCode, Operation
-
-from pki.models import DomainModel
-from pyasn1.type.base import Asn1Type
 from pyasn1.codec.der import decoder
 from pyasn1_modules import rfc4210
+
+from pki.models import DomainModel
+from pki.pki.request.message import (
+    PkiRequestMessage,
+    PkiResponseMessage,
+    Protocol,
+    MimeType,
+    HttpStatusCode,
+    Operation)
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Union
     from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
+    from pyasn1.type.base import Asn1Type
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
@@ -21,7 +26,7 @@ class CmpOperation(Operation):
 
 
 class PkiCmpInitializationRequestMessage(PkiRequestMessage):
-    _cmp = Asn1Type
+    _cmp: Asn1Type
 
     def __init__(self,
                  mimetype: None | str,

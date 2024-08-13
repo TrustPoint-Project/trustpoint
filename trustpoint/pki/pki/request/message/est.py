@@ -1,15 +1,20 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+
 import base64
-
-from . import PkiRequestMessage, PkiResponseMessage
-from . import Protocol, MimeType, ContentTransferEncoding, HttpStatusCode, Operation
-
-
 from cryptography import x509
-from pki.models import DomainModel
 
+from pki.models import DomainModel
+from pki.pki.request.message import (
+    PkiRequestMessage,
+    PkiResponseMessage,
+    Protocol,
+    MimeType,
+    ContentTransferEncoding,
+    HttpStatusCode,
+    Operation)
+
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Union

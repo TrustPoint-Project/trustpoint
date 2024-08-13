@@ -1,27 +1,25 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-
-from abc import ABC, abstractmethod
-
+import abc
+from django.db import transaction
 from cryptography.exceptions import InvalidSignature
-
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.serialization import pkcs12
-from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
 
+from pki.models import (
+    CertificateModel,
+    IssuingCaModel,
+    CertificateChainOrderModel,
+    TrustStoreModel,
+    TrustStoreOrderModel)
 
-from django.db import transaction
-
-
-from ..models import CertificateModel, IssuingCaModel, CertificateChainOrderModel, TrustStoreModel, TrustStoreOrderModel
-
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Union
+    from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
@@ -75,14 +73,14 @@ class TrustStoreInitializer:
             _trust_store_order_model.save()
 
 
-class IssuingCaInitializer(ABC):
+class IssuingCaInitializer(abc.ABC):
 
-    @abstractmethod
+    @abc.abstractmethod
     def save(self):
         pass
 
 
-class LocalIssuingCaFromFileInitializer(IssuingCaInitializer, ABC):
+class LocalIssuingCaFromFileInitializer(IssuingCaInitializer, abc.ABC):
     pass
 
 

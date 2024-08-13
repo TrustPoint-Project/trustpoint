@@ -1,15 +1,17 @@
 from __future__ import annotations
 
 import abc
-from ..message import PkiResponseMessage, HttpStatusCode, MimeType
-from ..message.cmp import PkiCmpInitializationRequestMessage
-
-
 import datetime
 
-
-from pki.issuing_ca import UnprotectedLocalIssuingCa
 from pki.pki.request.handler import CaRequestHandler
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pki.pki.request.message import PkiResponseMessage
+    from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage
+    from pki.issuing_ca import UnprotectedLocalIssuingCa
+
 
 ONE_DAY = datetime.timedelta(1, 0, 0)
 

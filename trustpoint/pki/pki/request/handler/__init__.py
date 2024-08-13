@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-
 import abc
 
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from ..message import PkiResponseMessage
+    from pki.pki.request.message import PkiResponseMessage
 
 
 class CaRequestHandler(abc.ABC):

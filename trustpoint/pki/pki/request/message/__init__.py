@@ -1,24 +1,23 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+
 import abc
-from enum import Enum
+import enum
 from django.http import HttpResponse
 
-
-from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
-from pki.models import DomainModel
-
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Union
+    from pki.models import DomainModel
+    from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
-class Operation(Enum):
+class Operation(enum.Enum):
     pass
 
 
-class MimeType(Enum):
+class MimeType(enum.Enum):
 
     TEXT_PLAIN = 'text/plain; charset=utf-8'
     APPLICATION_PKCS7 = 'application/pkcs7'
@@ -31,17 +30,17 @@ class MimeType(Enum):
     MULTIPART_MIXED_BOUNDARY = 'multipart/mixed; boundary=estServerExampleBoundary'
 
 
-class ContentTransferEncoding(Enum):
+class ContentTransferEncoding(enum.Enum):
     BASE64 = 'base64'
 
 
-class HttpStatusCode(Enum):
+class HttpStatusCode(enum.Enum):
     OK = 200
     BAD_REQUEST = 400
     UNSUPPORTED_MEDIA_TYPE = 415
 
 
-class Protocol(Enum):
+class Protocol(enum.Enum):
 
     EST = 'est'
     CMP = 'cmp'
