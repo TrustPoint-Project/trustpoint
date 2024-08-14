@@ -14,7 +14,41 @@
     </div>
 
     <div class="tp-card-split">
-        <div>Cross signed certificate</div>
+        <div>End-Entity Certificate</div>
+        <div>
+            <div>
+            {{ cert.is_end_entity }}
+        </div>
+        </div>
+    </div>
+
+    <div class="tp-card-split">
+        <div>Certificate Authority (CA)</div>
+        <div>
+            <div>
+            {{ cert.is_ca }}
+        </div>
+        </div>
+    </div>
+
+    <div class="tp-card-split">
+        <div>Root Certificate Authority (CA)</div>
+        <div>
+            <div>
+            {{ cert.is_root_ca }}
+        </div>
+        </div>
+    </div>
+
+    <div class="tp-card-split">
+        <div>Self-Signed</div>
+        <div>
+            {{ cert.is_self_signed }}
+        </div>
+    </div>
+
+    <div class="tp-card-split">
+        <div>Cross-Signed</div>
         <div>{{ cert.is_cross_signed }}</div>
     </div>
 

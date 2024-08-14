@@ -16,10 +16,18 @@ urlpatterns = [
         'certificates/issued-certificates/<int:pk>/',
         certificates.IssuedCertificatesTableView.as_view(),
         name='issued_certificates'),
+    path(
+        'certificates/download/<int:pk>/',
+        certificates.CertificateDownloadView.as_view(),
+        name='certificate-download'),
+    path(
+        'certificates/download/<int:pk>/<str:file_format>/<str:file_content>/',
+        certificates.CertificateDownloadView.as_view(),
+        name='certificate-file-download'),
     re_path(
         r'^certificates/download/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
         certificates.CertificateDownloadView.as_view(),
-        name='certificates-download',
+        name='certificates-file-download',
     ),
     path('certificates/detail/<int:pk>/', certificates.CertificateDetailView.as_view(), name='certificate-detail'),
 

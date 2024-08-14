@@ -4,7 +4,7 @@ from idlelib.query import Query
 from typing import TYPE_CHECKING
 
 
-from django.http import HttpResponse
+from django.http import HttpResponse, Http404
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 
@@ -15,7 +15,7 @@ from django.views.generic.list import ListView
 from django_tables2 import SingleTableView
 
 from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, PrimaryKeyFromUrlToQuerysetMixin
-
+from pki.download.certificate import CertificateDownloadResponseBuilder, CertificateFileContent
 from ..files import CertificateChainIncluded, CertificateFileContainer, CertificateFileFormat, CertificateFileGenerator
 from ..forms import CertificateDownloadForm
 from ..models import CertificateModel
@@ -84,7 +84,34 @@ class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, Deta
     context_object_name = 'cert'
 
 
-class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, PrimaryKeyFromUrlToQuerysetMixin, ListView):
+class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
+
+    model = CertificateModel
+    success_url = reverse_lazy('pki:certificates')
+    ignore_url = reverse_lazy('pki:certificates')
+    template_name = 'pki/certificates/download.html'
+    context_object_name = 'cert'
+
+    def get(self, *args, **kwargs):
+        file_format = self.kwargs.get('file_format')
+        file_content = self.kwargs.get('file_content')
+        if file_format is None and file_content is None:
+            return super().get(*args, **kwargs)
+
+        if file_format is None or file_content is None:
+            raise Http404
+
+        pk = self.kwargs.get('pk')
+
+        return CertificateDownloadResponseBuilder(pk, file_format, file_content).as_django_http_response()
+
+
+class CertificateMultipleDownloadView(
+    CertificatesContextMixin,
+    TpLoginRequiredMixin,
+    PrimaryKeyFromUrlToQuerysetMixin,
+    ListView):
+
     model = CertificateModel
     success_url = reverse_lazy('pki:certificates')
     ignore_url = reverse_lazy('pki:certificates')
@@ -119,7 +146,7 @@ class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, Pr
             cert_file_format=cert_file_format
         )
         response = HttpResponse(file_content, content_type=cert_file_format.mime_type)
-        response['Content-Disposition'] = f'inline; filename={filename}'
+        response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
 
     def get(self, request, *args: Any, **kwargs: Any) -> HttpResponse:

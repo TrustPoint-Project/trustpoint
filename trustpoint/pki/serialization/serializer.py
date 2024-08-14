@@ -52,6 +52,8 @@ API Documentation
 from __future__ import annotations
 
 import abc
+import enum
+
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
@@ -82,18 +84,6 @@ class Serializer(abc.ABC):
 
         abc.ABC <|-- Serializer
     """
-
-    # @abc.abstractmethod
-    # def __str__(self) -> str:
-    #     pass
-    #
-    # @abc.abstractmethod
-    # def __repr__(self) -> str:
-    #     pass
-    #
-    # @abc.abstractmethod
-    # def load(self, data: bytes) -> bytes:
-    #     pass
 
 
 class CertificateSerializer(Serializer):
@@ -215,6 +205,22 @@ class CertificateSerializer(Serializer):
             bytes: Bytes that contains the certificate in DER format.
         """
         return self._certificate.public_bytes(encoding=serialization.Encoding.DER)
+
+    def as_pkcs7_pem(self) -> bytes:
+        """Gets the associated certificate as bytes in PKCS#7 PEM format.
+
+        Returns:
+            bytes: Bytes that contains the certificate in PKCS#7 PEM format.
+        """
+        return pkcs7.serialize_certificates([self._certificate], serialization.Encoding.PEM)
+
+    def as_pkcs7_der(self) -> bytes:
+        """Gets the associated certificate as bytes in PKCS#7 DER format.
+
+        Returns:
+            bytes: Bytes that contains the certificate in PKCS#7 DER format.
+        """
+        return pkcs7.serialize_certificates([self._certificate], serialization.Encoding.DER)
 
     def as_crypto(self) -> x509.Certificate:
         """Gets the associated certificate as x509.Certificate instance.
@@ -531,7 +537,6 @@ class PrivateKeySerializer(Serializer):
         Returns:
             bytes: Bytes that contains the private key in PKCS#1 DER format.
         """
-        print(password)
         return self._private_key.private_bytes(
             encoding=Encoding.DER,
             format=PrivateFormat.TraditionalOpenSSL,
