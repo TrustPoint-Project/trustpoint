@@ -4,6 +4,8 @@ from pyasn1.codec.der import decoder
 from pyasn1_modules import rfc4210
 
 from pki.models import DomainModel
+from pki.pki.cmp.validator.header_validator import GenericHeaderValidator
+from pki.pki.cmp.validator.initialization_req_validator import InitializationReqValidator
 from pki.pki.request.message import (
     PkiRequestMessage,
     PkiResponseMessage,
@@ -98,7 +100,6 @@ class PkiCmpInitializationRequestMessage(PkiRequestMessage):
             mimetype=MimeType.APPLICATION_PKIXCMP)
 
     def _init_raw_request(self, raw_request: bytes) -> None:
-        # TODO: use serializer
         try:
             loaded_request, _ = decoder.decode(raw_request, asn1Spec=rfc4210.PKIMessage())
         except ValueError:
@@ -106,11 +107,14 @@ class PkiCmpInitializationRequestMessage(PkiRequestMessage):
             self._is_valid = False
             raise ValueError
 
-            # TODO: check if msg is IR, if not -> build Error Message
-
         try:
-            pass
-            # TODO: check if msg is IR, if not -> build Error Message
+            header = loaded_request.getComponentByName('header')
+            validate_header = GenericHeaderValidator(header)
+            validate_header.validate()
+
+            body = loaded_request.getComponentByName('body')
+            validator = InitializationReqValidator(body)
+            validator.validate()
 
         except ValueError:
             self._build_not_ir_message_response()
@@ -121,15 +125,19 @@ class PkiCmpInitializationRequestMessage(PkiRequestMessage):
 
     def _build_malformed_cmp_response(self) -> None:
         # TODO: Build CMP error message -> raw_message
-        error_msg = f'Failed to parse HTTP Body content. Does not seem to be a PKCS#10 CSR.'
+        error_msg = f'The formal ASN.1 syntax of the whole message is not compliant with the definitions given in CMP'
         self._invalid_response = PkiResponseMessage(
             raw_response=error_msg,
             http_status=HttpStatusCode.BAD_REQUEST,
             mimetype=MimeType.APPLICATION_PKIXCMP)
 
     def _build_not_ir_message_response(self) -> None:
-        # TODO: CMP error message
-        pass
+        # TODO: Build CMP error message -> wrong header or body
+        error_msg = f'CMP message (header & body) does not comply with RFC 9483.'
+        self._invalid_response = PkiResponseMessage(
+            raw_response=error_msg,
+            http_status=HttpStatusCode.BAD_REQUEST,
+            mimetype=MimeType.APPLICATION_PKIXCMP)
 
     @property
     def cmp(self) -> Asn1Type:
