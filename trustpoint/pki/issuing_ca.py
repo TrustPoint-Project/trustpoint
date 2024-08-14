@@ -46,6 +46,10 @@ class IssuingCa(ABC):
     ) -> CertificateCollectionSerializer:
         return self._issuing_ca_model.get_issuing_ca_certificate_chain_serializer(certificate_chain_serializer)
 
+    @property
+    def issuing_ca_model(self) -> IssuingCaModel:
+        return self._issuing_ca_model
+
 
 class UnprotectedLocalIssuingCa(IssuingCa):
 

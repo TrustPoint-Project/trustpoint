@@ -1014,6 +1014,10 @@ class CertificateModel(models.Model):
             return True
         return False
 
+    @property
+    def is_end_entity(self) -> bool:
+        return not self.is_ca
+
     def __str__(self) -> str:
         return f'Certificate(CN={self.common_name})'
 
