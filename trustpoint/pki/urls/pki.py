@@ -21,7 +21,7 @@ urlpatterns = [
         certificates.CertificateDownloadView.as_view(),
         name='certificate-download'),
     path(
-        'certificates/download/<int:pk>/<str:file_format>/',
+        'certificates/download/<int:pk>/<str:file_format>/<str:file_content>/',
         certificates.CertificateDownloadView.as_view(),
         name='certificate-file-download'),
     re_path(

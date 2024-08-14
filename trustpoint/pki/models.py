@@ -906,25 +906,32 @@ class CertificateModel(models.Model):
             public_key_serializer_class: type(PublicKeySerializer) = PublicKeySerializer) -> PublicKeySerializer:
         return public_key_serializer_class.from_string(self.public_key_pem)
 
-    def get_certificate_chains(self) -> list[list[CertificateModel]]:
+    # TODO: check order of chains
+    def get_certificate_chains(self, include_self: bool = True) -> list[list[CertificateModel]]:
         if self.is_root_ca:
-            return [[self]]
+            if include_self:
+                return [[self]]
+            else:
+                return [[]]
 
         cert_chains = []
         for issuer_reference in self.issuer_references.all():
             cert_chains.extend(issuer_reference.get_certificate_chains())
 
-        for cert_chain in cert_chains:
-            cert_chain.append(self)
+        if include_self:
+            for cert_chain in cert_chains:
+                cert_chain.append(self)
 
         return cert_chains
 
+    # TODO: check order of chains
     def get_certificate_chain_serializers(
             self,
+            include_self: bool = True,
             certificate_chain_serializer_class: type(CertificateCollectionSerializer) = CertificateCollectionSerializer
     ) -> list[CertificateCollectionSerializer]:
         certificate_chain_serializers = []
-        for cert_chain in self.get_certificate_chains():
+        for cert_chain in self.get_certificate_chains(include_self=include_self):
             certificate_chain_serializers.append(certificate_chain_serializer_class(
                 [cert.get_certificate_serializer().as_crypto() for cert in cert_chain]))
         return certificate_chain_serializers
