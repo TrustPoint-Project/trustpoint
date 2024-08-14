@@ -4,11 +4,11 @@ import abc
 import enum
 from django.http import HttpResponse
 
+from pki.models import CertificateModel, DomainModel
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Union
-    from pki.models import DomainModel
     from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
@@ -24,6 +24,7 @@ class MimeType(enum.Enum):
     APPLICATION_PKCS7_CERTS_ONLY = 'application/pkcs7-mime; smime-type=certs-only'
     APPLICATION_PKCS8 = 'application/pkcs8'
     APPLICATION_PKCS10 = 'application/pkcs10'
+    APPLICATION_PKCS12 = 'application/x-pkcs12'
     APPLICATION_CSRATTRS = 'application/csrattrs'
     APPLICATION_PKIXCMP = 'application/pkixcmp'
     MULTIPART_MIXED = 'multipart/mixed'
@@ -62,6 +63,21 @@ class PkiRequestMessage(abc.ABC):
         self._protocol = protocol
         self._operation = operation
         self._domain_unique_name = domain_unique_name
+
+    def _init_domain_model(self, domain_unique_name: str) -> None:
+        try:
+            self._domain_model = DomainModel.objects.get(unique_name=domain_unique_name)
+        except DomainModel.DoesNotExist:
+            self._build_domain_does_not_exist()
+            self._is_valid = False
+            raise ValueError
+        
+    def _build_domain_does_not_exist(self) -> None:
+        error_msg = f'Domain {self._domain_unique_name} does not exist.'
+        self._invalid_response = PkiResponseMessage(
+            raw_response=error_msg,
+            http_status=HttpStatusCode.BAD_REQUEST,
+            mimetype=MimeType.TEXT_PLAIN)
 
     @property
     def protocol(self) -> Protocol:
@@ -104,11 +120,16 @@ class PkiResponseMessage:
     _raw_response: str | bytes
     _http_status: HttpStatusCode
     _mimetype: MimeType
+    _cert_model: None | CertificateModel = None
 
-    def __init__(self, raw_response: str | bytes, http_status: HttpStatusCode, mimetype: MimeType) -> None:
+    def __init__(self, raw_response: str | bytes,
+                 http_status: HttpStatusCode,
+                 mimetype: MimeType,
+                 cert_model: None | CertificateModel = None) -> None:
         self._raw_response = raw_response
         self._http_status = http_status
         self._mimetype = mimetype
+        self._cert_model = cert_model
 
     @property
     def raw_response(self) -> bytes:
@@ -121,6 +142,10 @@ class PkiResponseMessage:
     @property
     def mimetype(self) -> MimeType:
         return self._mimetype
+    
+    @property
+    def cert_model(self) -> CertificateModel:
+        return self._cert_model
 
     def to_django_http_response(self) -> HttpResponse:
         return HttpResponse(
