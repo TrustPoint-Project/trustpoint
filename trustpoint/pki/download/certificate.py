@@ -11,8 +11,8 @@ class CertificateFileFormat(enum.Enum):
 
     PEM: str = ('pem', 'application/x-pem-file', '.pem')
     DER: str = ('der', 'application/pkix-cert', '.cer')
-    PKCS7_PEM: str = ('pkcs7-pem', 'application/x-pkcs7-certificates', '.p7b')
-    PKCS7_DER: str = ('pkcs7-der', 'application/x-pkcs7-certificates', '.p7b')
+    PKCS7_PEM: str = ('pkcs7_pem', 'application/x-pkcs7-certificates', '.p7b')
+    PKCS7_DER: str = ('pkcs7_der', 'application/x-pkcs7-certificates', '.p7b')
 
     def __new__(cls, value: str, mime_type: str, file_extension: str) -> CertificateFileFormat:
         obj = object.__new__(cls)
@@ -22,44 +22,54 @@ class CertificateFileFormat(enum.Enum):
         return obj
 
 
-class CertificateCollectionFileFormat(enum.Enum):
+class CertificateFileContent(enum.Enum):
 
-    PEM: str = 'pem'
-    PKCS7_PEM: str = 'pkcs7_pem'
-    PKCS7_DER: str = 'pkcs7_der'
+    CERT_ONLY: str = 'cert_only'
+    CERT_AND_CHAIN: str = 'cert_and_chain'
+    CHAIN_ONLY: str = 'chain_only'
 
 
 class CertificateDownloadResponseBuilder:
-    _django_http_response: HttpResponse | Http404
+    _django_http_response: HttpResponse
 
-    def __init__(self, pk: int, file_format: str) -> None:
+    def __init__(self, pk: int, file_format: str, file_content: str) -> None:
+        print(f'PK: {pk}')
+        print(f'FORMAT: {file_format}')
+        print(f'CONTENT: {file_content}')
         try:
-            print('aa')
             file_format = CertificateFileFormat(file_format)
-            print('')
         except ValueError:
-            self._set_http_404_response()
-            return
+            raise Http404
+
+        try:
+            file_content = CertificateFileContent(file_content)
+        except ValueError:
+            raise Http404
 
         try:
             certificate_model = CertificateModel.objects.get(pk=pk)
         except CertificateModel.DoesNotExist:
-            self._set_http_404_response()
-            return
+            raise Http404
 
-        certificate_serializer = certificate_model.get_certificate_serializer()
+        if file_content == CertificateFileContent.CERT_ONLY:
+            certificate_serializer = certificate_model.get_certificate_serializer()
+        elif file_content == CertificateFileContent.CERT_AND_CHAIN:
+            certificate_serializer = certificate_model.get_certificate_chain_serializers(include_self=False)[0]
+        elif file_content == CertificateFileContent.CHAIN_ONLY:
+            certificate_serializer = certificate_model.get_certificate_chain_serializers()[0]
+        else:
+            raise Http404
 
         if file_format == CertificateFileFormat.PEM:
             data = certificate_serializer.as_pem()
-        elif file_format == CertificateFileFormat.DER:
+        elif file_content == CertificateFileContent.CERT_ONLY and file_format == CertificateFileFormat.DER:
             data = certificate_serializer.as_der()
         elif file_format == CertificateFileFormat.PKCS7_PEM:
             data = certificate_serializer.as_pkcs7_pem()
         elif file_format == CertificateFileFormat.PKCS7_DER:
             data = certificate_serializer.as_pkcs7_der()
         else:
-            self._set_http_404_response()
-            return
+            raise Http404
 
         self._set_django_http_response(data, content_type=file_format.mime_type, filename='certificate' + file_format.file_extension)
 
@@ -68,8 +78,6 @@ class CertificateDownloadResponseBuilder:
         self._django_http_response = HttpResponse(data, content_type=content_type)
         self._django_http_response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
-    def _set_http_404_response(self) -> None:
-        self._django_response = Http404()
-
     def as_django_http_response(self) -> HttpResponse:
         return self._django_http_response
+

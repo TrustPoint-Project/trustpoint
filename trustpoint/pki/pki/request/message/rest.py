@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import base64
 from cryptography import x509
+from cryptography.hazmat.primitives.asymmetric.types import CertificatePublicKeyTypes
 
 from pki.models import DomainModel
 from pki.pki.request.message import (
@@ -12,7 +13,6 @@ from pki.pki.request.message import (
     PkiResponseMessage,
     Protocol,
     MimeType,
-    ContentTransferEncoding,
     HttpStatusCode,
     Operation)
 
@@ -26,14 +26,16 @@ if TYPE_CHECKING:
 
 class RestOperation(Operation):
     ISSUE_CERT_CSR = 'issue_cert_csr'
-    ISSUE_CERT_PUBKEY = 'issue_cert_pubkey'
+    ISSUE_CERT_PKCS12 = 'issue_cert_pkcs12'
 
 class PkiRestCsrRequestMessage(PkiRequestMessage):
     _csr = x509.CertificateSigningRequest
+    _serial_number = str
 
     def __init__(self,
                  domain_unique_name: str,
-                 csr: x509.CertificateSigningRequest):
+                 csr: x509.CertificateSigningRequest,
+                 serial_number: str):
         super().__init__(
             protocol=Protocol.REST,
             operation=RestOperation.ISSUE_CERT_CSR,
@@ -49,16 +51,15 @@ class PkiRestCsrRequestMessage(PkiRequestMessage):
         except ValueError:
             return
 
+        try:
+            self._serial_number = serial_number
+        except ValueError:
+            return
+
         # TODO: check domain configurations, if protocol and operation are enabled
 
 
-    def _init_domain_model(self, domain_unique_name: str) -> None:
-        try:
-            self._domain_model = DomainModel.objects.get(unique_name=domain_unique_name)
-        except DomainModel.DoesNotExist:
-            self._build_domain_does_not_exist()
-            self._is_valid = False
-            raise ValueError
+    
 
     def _init_csr(self, csr: x509.CertificateSigningRequest) -> None:
         try:
@@ -82,13 +83,49 @@ class PkiRestCsrRequestMessage(PkiRequestMessage):
             http_status=HttpStatusCode.BAD_REQUEST,
             mimetype=MimeType.TEXT_PLAIN)
 
-    def _build_domain_does_not_exist(self) -> None:
-        error_msg = f'Domain {self._domain_unique_name} does not exist.'
+    @property
+    def csr(self) -> x509.CertificateSigningRequest:
+        return self._csr
+
+    @property
+    def serial_number(self) -> str:
+        return self._serial_number
+
+
+class PkiRestPkcs12RequestMessage(PkiRequestMessage):
+    _subject = x509.Name
+
+    def __init__(self,
+                domain_unique_name: str,
+                subject: x509.Name):
+        super().__init__(
+            protocol=Protocol.REST,
+            operation=RestOperation.ISSUE_CERT_PKCS12,
+            domain_unique_name=domain_unique_name)
+        
+        try:
+            self._init_domain_model(domain_unique_name)
+        except ValueError:
+            return
+        
+        try:
+            self._init_subject(subject)
+        except ValueError:
+            return
+
+    def _init_subject(self, subject: x509.Name) -> None:
+        try:
+            self._subject = subject
+            if not subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER):
+                raise ValueError
+        except ValueError:
+            self._build_malformed_subject_response()
+            self._is_valid = False
+            raise ValueError
+        
+    def _build_malformed_subject_response(self) -> None:
+        error_msg = f'Subject not an x509.Name or does not contain required attribute OIDs.'
         self._invalid_response = PkiResponseMessage(
             raw_response=error_msg,
             http_status=HttpStatusCode.BAD_REQUEST,
             mimetype=MimeType.TEXT_PLAIN)
-
-    @property
-    def csr(self) -> x509.CertificateSigningRequest:
-        return self._csr

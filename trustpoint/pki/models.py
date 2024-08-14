@@ -906,25 +906,32 @@ class CertificateModel(models.Model):
             public_key_serializer_class: type(PublicKeySerializer) = PublicKeySerializer) -> PublicKeySerializer:
         return public_key_serializer_class.from_string(self.public_key_pem)
 
-    def get_certificate_chains(self) -> list[list[CertificateModel]]:
+    # TODO: check order of chains
+    def get_certificate_chains(self, include_self: bool = True) -> list[list[CertificateModel]]:
         if self.is_root_ca:
-            return [[self]]
+            if include_self:
+                return [[self]]
+            else:
+                return [[]]
 
         cert_chains = []
         for issuer_reference in self.issuer_references.all():
             cert_chains.extend(issuer_reference.get_certificate_chains())
 
-        for cert_chain in cert_chains:
-            cert_chain.append(self)
+        if include_self:
+            for cert_chain in cert_chains:
+                cert_chain.append(self)
 
         return cert_chains
 
+    # TODO: check order of chains
     def get_certificate_chain_serializers(
             self,
+            include_self: bool = True,
             certificate_chain_serializer_class: type(CertificateCollectionSerializer) = CertificateCollectionSerializer
     ) -> list[CertificateCollectionSerializer]:
         certificate_chain_serializers = []
-        for cert_chain in self.get_certificate_chains():
+        for cert_chain in self.get_certificate_chains(include_self=include_self):
             certificate_chain_serializers.append(certificate_chain_serializer_class(
                 [cert.get_certificate_serializer().as_crypto() for cert in cert_chain]))
         return certificate_chain_serializers
@@ -1334,20 +1341,6 @@ class IssuingCaModel(models.Model):
     ) -> CertificateCollectionSerializer:
         return certificate_chain_serializer(
             [cert.get_certificate_serializer().as_crypto() for cert in self.get_issuing_ca_certificate_chain()])
-
-    # def get_issued_certificates(self) -> list[CertificateModel]:
-    #     return list(self.get_issued_certificates_queryset())
-    #
-    # def get_issued_certificates_queryset(self) -> QuerySet:
-    #     return CertificateModel.objects.filter(
-    #         issuer_references__in=[self.issuing_ca_certificate.id]).distinct().order_by('order')
-    #
-    # def get_issued_certificates_serializer(
-    #         self,
-    #         certificate_chain_serializer: type(CertificateCollectionSerializer) = CertificateCollectionSerializer
-    # ) -> CertificateCollectionSerializer:
-    #     return certificate_chain_serializer(
-    #         [cert.get_certificate_serializer().as_crypto() for cert in self.get_issued_certificates()])
 
     def get_issuing_ca(self) -> UnprotectedLocalIssuingCa:
         if self.private_key_pem:

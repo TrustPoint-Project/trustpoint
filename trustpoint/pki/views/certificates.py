@@ -15,7 +15,7 @@ from django.views.generic.list import ListView
 from django_tables2 import SingleTableView
 
 from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, PrimaryKeyFromUrlToQuerysetMixin
-from pki.download.certificate import CertificateDownloadResponseBuilder
+from pki.download.certificate import CertificateDownloadResponseBuilder, CertificateFileContent
 from ..files import CertificateChainIncluded, CertificateFileContainer, CertificateFileFormat, CertificateFileGenerator
 from ..forms import CertificateDownloadForm
 from ..models import CertificateModel
@@ -94,12 +94,16 @@ class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, De
 
     def get(self, *args, **kwargs):
         file_format = self.kwargs.get('file_format')
-        if file_format is None:
+        file_content = self.kwargs.get('file_content')
+        if file_format is None and file_content is None:
             return super().get(*args, **kwargs)
+
+        if file_format is None or file_content is None:
+            raise Http404
 
         pk = self.kwargs.get('pk')
 
-        return CertificateDownloadResponseBuilder(pk, file_format).as_django_http_response()
+        return CertificateDownloadResponseBuilder(pk, file_format, file_content).as_django_http_response()
 
 
 class CertificateMultipleDownloadView(
