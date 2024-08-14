@@ -43,7 +43,7 @@
                     <div class="tp-card-btn-footer">
                         <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
                         <a href="{% url 'pki:certificates' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
-                        <a href="{% url 'pki:certificates-download' pks=cert.id %}" class="btn btn-primary">{% trans 'Download' %}</a>
+                        <a href="{% url 'pki:certificate-download' pk=cert.id %}" class="btn btn-primary">{% trans 'Download' %}</a>
                     </div>
                 </div>
         </div>
