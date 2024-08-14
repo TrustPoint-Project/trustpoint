@@ -48,12 +48,12 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
     success_url = reverse_lazy('devices:devices')
 
 
-class UpdateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
-    """Device Update View."""
+class EditDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
+    """Device Edit View."""
 
     model = Device
     fields = ['device_name', 'onboarding_protocol', 'domain']  # noqa: RUF012
-    template_name = 'devices/update.html'
+    template_name = 'devices/edit.html'
     success_url = reverse_lazy('devices:devices')
 
 
