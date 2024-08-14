@@ -115,57 +115,74 @@ class CertificateMultipleDownloadView(
     model = CertificateModel
     success_url = reverse_lazy('pki:certificates')
     ignore_url = reverse_lazy('pki:certificates')
-    template_name = 'pki/certificates/download.html'
+    template_name = 'pki/certificates/download_multiple.html'
     context_object_name = 'certs'
 
-    def get_context_data(self, *, object_list=None, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['form'] = CertificateDownloadForm()
-        context['cert_count'] = len(self.get_pks())
-        return context
+    def get(self, *args, **kwargs):
+        self.extra_context = {'pks_url_path': self.get_pks_path()}
 
-    def get_ignore_url(self) -> str:
-        if self.ignore_url is not None:
-            return str(self.ignore_url)
-        return str(self.success_url)
+        file_format = self.kwargs.get('file_format')
+        file_content = self.kwargs.get('file_content')
+        if file_format is None and file_content is None:
+            return super().get(*args, **kwargs)
 
-    @staticmethod
-    def get_download_response(
-            certs: list[CertificateModel],
-            cert_file_container: str,
-            cert_chain_incl: str,
-            cert_file_format: str) -> HttpResponse:
+        if file_format is None or file_content is None:
+            raise Http404
 
-        cert_file_container = CertificateFileContainer(cert_file_container)
-        cert_chain_incl = CertificateChainIncluded(cert_chain_incl)
-        cert_file_format = CertificateFileFormat(cert_file_format)
-        file_content, filename = CertificateFileGenerator.generate(
-            certs=certs,
-            cert_file_container=cert_file_container,
-            cert_chain_incl=cert_chain_incl,
-            cert_file_format=cert_file_format
-        )
-        response = HttpResponse(file_content, content_type=cert_file_format.mime_type)
-        response['Content-Disposition'] = f'attachment; filename={filename}'
-        return response
+        pks = self.kwargs.get('pks')
 
-    def get(self, request, *args: Any, **kwargs: Any) -> HttpResponse:
-        form = CertificateDownloadForm(request.GET)
-        if form.is_valid():
-            form.clean()
-            certs = CertificateModel.objects.filter(id__in=self.get_pks())
-            cert_file_container = form.cleaned_data['cert_file_container']
-            cert_chain_incl = form.cleaned_data['cert_chain_incl']
-            cert_file_format = form.cleaned_data['cert_file_format']
+        # TODO:
+        raise Http404
+        # return CertificateCollectionDownloadResponseBuilder(pks, file_format, file_content).as_django_http_response()
 
-            return self.get_download_response(
-                certs=certs,
-                cert_file_container=cert_file_container,
-                cert_chain_incl=cert_chain_incl,
-                cert_file_format=cert_file_format
-            )
-
-        if self.get_queryset() is None:
-            return redirect(self.get_ignore_url())
-
-        return super().get(request, *args, **kwargs)
+    # def get_context_data(self, *, object_list=None, **kwargs):
+    #     context = super().get_context_data(**kwargs)
+    #     context['form'] = CertificateDownloadForm()
+    #     context['cert_count'] = len(self.get_pks())
+    #     return context
+    #
+    # def get_ignore_url(self) -> str:
+    #     if self.ignore_url is not None:
+    #         return str(self.ignore_url)
+    #     return str(self.success_url)
+    #
+    # @staticmethod
+    # def get_download_response(
+    #         certs: list[CertificateModel],
+    #         cert_file_container: str,
+    #         cert_chain_incl: str,
+    #         cert_file_format: str) -> HttpResponse:
+    #
+    #     cert_file_container = CertificateFileContainer(cert_file_container)
+    #     cert_chain_incl = CertificateChainIncluded(cert_chain_incl)
+    #     cert_file_format = CertificateFileFormat(cert_file_format)
+    #     file_content, filename = CertificateFileGenerator.generate(
+    #         certs=certs,
+    #         cert_file_container=cert_file_container,
+    #         cert_chain_incl=cert_chain_incl,
+    #         cert_file_format=cert_file_format
+    #     )
+    #     response = HttpResponse(file_content, content_type=cert_file_format.mime_type)
+    #     response['Content-Disposition'] = f'attachment; filename={filename}'
+    #     return response
+    #
+    # def get(self, request, *args: Any, **kwargs: Any) -> HttpResponse:
+    #     form = CertificateDownloadForm(request.GET)
+    #     if form.is_valid():
+    #         form.clean()
+    #         certs = CertificateModel.objects.filter(id__in=self.get_pks())
+    #         cert_file_container = form.cleaned_data['cert_file_container']
+    #         cert_chain_incl = form.cleaned_data['cert_chain_incl']
+    #         cert_file_format = form.cleaned_data['cert_file_format']
+    #
+    #         return self.get_download_response(
+    #             certs=certs,
+    #             cert_file_container=cert_file_container,
+    #             cert_chain_incl=cert_chain_incl,
+    #             cert_file_format=cert_file_format
+    #         )
+    #
+    #     if self.get_queryset() is None:
+    #         return redirect(self.get_ignore_url())
+    #
+    #     return super().get(request, *args, **kwargs)

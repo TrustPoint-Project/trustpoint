@@ -125,11 +125,14 @@ class PrimaryKeyFromUrlToQuerysetMixin:
     model: Model
 
     def get_pks(self) -> list[str]:
-        pks = self.kwargs.get('pks')
+        pks = self.get_pks_path()
         if pks:
             return pks.split('/')
 
         return []
+
+    def get_pks_path(self) -> str:
+        return self.kwargs.get('pks')
 
     def get_queryset(self) -> None | QuerySet:
         if self.queryset:
