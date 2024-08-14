@@ -14,6 +14,8 @@ from django.db import models
 from onboarding.crypto_backend import CryptoBackend as Crypt
 from onboarding.crypto_backend import OnboardingError
 
+from pki.models import ReasonCode
+
 if TYPE_CHECKING:
     from typing import TypeVar
 
@@ -143,7 +145,7 @@ class OnboardingProcess:
             return process.cancel()
         if device and device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
             device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
-            device.revoke_ldevid('abc')
+            device.revoke_ldevid(ReasonCode.CESSATION)
             device.save()
             log.info(f'Request to cancel non-existing onboarding process for device {device.device_name}.')
             return (OnboardingProcessState.CANCELED, None)
@@ -158,7 +160,7 @@ class OnboardingProcess:
         if self.device and self.device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
             # actual cancellation (cancel() may be called just to remove the process from onboarding_processes)
             self.device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
-            self.device.revoke_ldevid('abc')
+            self.device.revoke_ldevid(ReasonCode.CESSATION)
             self.device.save()
             self.state = OnboardingProcessState.CANCELED
             log.info(f'Onboarding process {self.id} for device {self.device.device_name} canceled.')
@@ -174,7 +176,7 @@ class OnboardingProcess:
         self.error_reason = reason
         self.timer.cancel()
         self.device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_FAILED
-        self.device.revoke_ldevid('abc')
+        self.device.revoke_ldevid(ReasonCode.CESSATION)
         self.device.save()
         log.error(f'Onboarding process {self.id} for device {self.device.device_name} failed: {reason}')
 
@@ -251,6 +253,7 @@ class ManualOnboardingProcess(OnboardingProcess):
             ldevid = Crypt.sign_ldevid_from_csr(csr, self.device)
         except Exception as e:
             self._fail(str(e))  # TODO(Air): is it safe to print exception messages to the user UI?
+            log.exception('Error signing LDevID certificate.', exc_info=True)
             raise
         if ldevid:
             self.state = OnboardingProcessState.LDEVID_SENT

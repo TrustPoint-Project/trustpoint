@@ -90,9 +90,9 @@ def update_device(request: HttpRequest, device_id: int, data: DeviceUpdateSchema
         dev.device_name = data.name
 
     if data.serial_number:
-        if dev.serial_number:
+        if dev.device_serial_number:
             return 422, {'error': 'Serial number cannot be changed once set.'}
-        dev.serial_number = data.serial_number
+        dev.device_serial_number = data.serial_number
 
     dev.save()
     return 200, device_api_dict(dev)
