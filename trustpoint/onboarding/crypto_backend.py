@@ -17,6 +17,8 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.hazmat.primitives.serialization import NoEncryption, pkcs12
 from util.strings import StringValidator
 from pki.models import CertificateModel
+from pki.pki.request.message.rest import PkiRestCsrRequestMessage
+from pki.pki.request.handler.rest import LocalCaRestCsrRequestHandler
 
 if TYPE_CHECKING:
     from cryptography.hazmat.primitives.asymmetric.types import CertificatePublicKeyTypes, PrivateKeyTypes
@@ -117,6 +119,8 @@ class CryptoBackend:
         # private_ca_key = ca_certificate.get_private_key_as_crypto()
         ca_cert = ca_certificate.get_cert_as_crypto()
 
+        log.debug('Issuing LDevID for device %s', device.device_name)
+
         cert = (
             x509.CertificateBuilder()
             .subject_name(subject)
@@ -141,41 +145,9 @@ class CryptoBackend:
         # need to keep track of the device once we send out a cert, even if onboarding fails afterwards
         # TODO(Air): but do it here?
         device.save()
+        log.info('Issued and stored LDevID for device %s', device.device_name)
 
-        # return cert
-        # ca_certificate = CryptoBackend._get_ca(device)
-        # private_ca_key = ca_certificate.get_private_key_as_crypto()
-        # ca_cert = ca_certificate.get_cert_as_crypto()
-        #
-        # log.debug('Issuing LDevID for device %s', device.device_name)
-        #
-        # cert = (
-        #     x509.CertificateBuilder()
-        #     .subject_name(subject)
-        #     .issuer_name(ca_cert.subject)
-        #     .public_key(pub_key)
-        #     .serial_number(x509.random_serial_number())  # This is NOT the device serial number
-        #     .not_valid_before(
-        #         datetime.now(timezone.utc) - timedelta(hours=1)  # backdate a bit in case of client clock skew
-        #     )
-        #     .not_valid_after(
-        #         # TODO(Air): configurable validity period
-        #         datetime.now(timezone.utc) + timedelta(days=365)
-        #         # Sign our certificate with our private key
-        #     )
-        #     .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
-        #     .sign(private_ca_key, hashes.SHA256())
-        # )
-        #
-        # device_cert = CertificateModel()
-        # device.ldevid = device_cert.save_certificate(cert)
-        #
-        # # keep track of the device once we send out a cert, even if onboarding fails afterwards
-        # device.save()
-        # log.info('Issued and stored LDevID for device %s', device.device_name)
-        #
-        # return cert
-
+        return cert
 
     @staticmethod
     def sign_ldevid_from_csr(csr_pem: bytes, device: Device) -> bytes:
@@ -212,7 +184,17 @@ class CryptoBackend:
         serial_no = device.device_serial_number or csr_serial
         device.device_serial_number = serial_no
 
-        return CryptoBackend._sign_ldevid(csr.public_key(), device).public_bytes(serialization.Encoding.PEM)
+        request_message = PkiRestCsrRequestMessage(domain_unique_name=device.domain.unique_name, csr=csr)
+        request_handler = LocalCaRestCsrRequestHandler(request_message)
+        cert_model = request_handler.process_request().raw_response
+        if (not isinstance(cert_model, CertificateModel)):
+            exc_msg = 'PKI response error: not a certificate: %s' % cert_model
+            raise OnboardingError(exc_msg)
+
+        device.ldevid = cert_model
+        device.save()
+        log.info('Issued and stored LDevID for device %s', device.device_name)
+        return cert_model.get_certificate_serializer().as_pem()
 
     @staticmethod
     def get_cert_chain(device: Device) -> bytes:
@@ -225,7 +207,7 @@ class CryptoBackend:
         """
         ca_certificate = CryptoBackend._get_ca(device)
 
-        return ca_certificate.get_certificate_serializer().get_as_pem()
+        return ca_certificate.get_certificate_serializer().as_pem()
 
     @staticmethod
     def _gen_private_key() -> PrivateKeyTypes:

@@ -717,6 +717,19 @@ class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExten
 # class MsCertificateTemplateExtension(CertificateExtension, models.Model):
 #     pass
 
+class ReasonCode(models.TextChoices):
+    """Revocation reasons per RFC 5280"""
+    UNSPECIFIED = 'unspecified', _('Unspecified')
+    KEY_COMPROMISE = 'keyCompromise', _('Key Compromise')
+    CA_COMPROMISE = 'cACompromise', _('CA Compromise')
+    AFFILIATION_CHANGED = 'affiliationChanged', _('Affiliation Changed')
+    SUPERSEDED = 'superseded', _('Superseded')
+    CESSATION = 'cessationOfOperation', _('Cessation of Operation')
+    CERTIFICATE_HOLD = 'certificateHold', _('Certificate Hold')
+    PRIVILEGE_WITHDRAWN = 'privilegeWithdrawn', _('Privilege Withdrawn')
+    AA_COMPROMISE = 'aACompromise', _('AA Compromise')
+    REMOVE_FROM_CRL = 'removeFromCRL', _('Remove from CRL')
+
 
 class CertificateModel(models.Model):
     """X509 Certificate Model.
@@ -740,19 +753,6 @@ class CertificateModel(models.Model):
         """X509 RFC 5280 - Certificate Version."""
         # We only allow version 3 or later if any are available in the future.
         V3 = 2, _('Version 3')
-
-    class ReasonCode(models.TextChoices):
-        """Revocation reasons per RFC 5280"""
-        UNSPECIFIED = 'unspecified', _('Unspecified')
-        KEY_COMPROMISE = 'keyCompromise', _('Key Compromise')
-        CA_COMPROMISE = 'cACompromise', _('CA Compromise')
-        AFFILIATION_CHANGED = 'affiliationChanged', _('Affiliation Changed')
-        SUPERSEDED = 'superseded', _('Superseded')
-        CESSATION = 'cessationOfOperation', _('Cessation of Operation')
-        CERTIFICATE_HOLD = 'certificateHold', _('Certificate Hold')
-        PRIVILEGE_WITHDRAWN = 'privilegeWithdrawn', _('Privilege Withdrawn')
-        AA_COMPROMISE = 'aACompromise', _('AA Compromise')
-        REMOVE_FROM_CRL = 'removeFromCRL', _('Remove from CRL')
 
     SignatureAlgorithmOidChoices = models.TextChoices(
         'SIGNATURE_ALGORITHM_OID', [(x.dotted_string, x.dotted_string) for x in SignatureAlgorithmOid])
