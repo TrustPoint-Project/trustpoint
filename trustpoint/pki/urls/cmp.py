@@ -8,5 +8,12 @@ app_name = 'cmp'
 
 urlpatterns = [
     path('p/<str:domain>/initialization/', cmp.CmpInitializationRequestView.as_view()),
-    # TODO: default domain
+    path('p/<str:domain>/certification/', cmp.CmpCertificationRequestView.as_view()),
+    path('p/<str:domain>/keyupdate/', cmp.CmpKeyUpdateRequestView.as_view()),
+    path('p/<str:domain>/pkcs10/', cmp.CmpPkcs10RequestView.as_view()),
+    path('p/<str:domain>/revocation/', cmp.CmpRevocationRequestView.as_view()),
+    path('p/<str:domain>/getcacerts/', cmp.CmpGetCaCertsRequestView.as_view()),
+    path('p/<str:domain>/getrootupdate/', cmp.CmpGetRootUpdateRequestView.as_view()),
+    path('p/<str:domain>/getcertreqtemplate/', cmp.CmpGetCertReqTemplateRequestView.as_view()),
+    path('p/<str:domain>/getcrls/', cmp.CmpGetCrlsRequestView.as_view()),
 ]
