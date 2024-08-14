@@ -1342,20 +1342,6 @@ class IssuingCaModel(models.Model):
         return certificate_chain_serializer(
             [cert.get_certificate_serializer().as_crypto() for cert in self.get_issuing_ca_certificate_chain()])
 
-    # def get_issued_certificates(self) -> list[CertificateModel]:
-    #     return list(self.get_issued_certificates_queryset())
-    #
-    # def get_issued_certificates_queryset(self) -> QuerySet:
-    #     return CertificateModel.objects.filter(
-    #         issuer_references__in=[self.issuing_ca_certificate.id]).distinct().order_by('order')
-    #
-    # def get_issued_certificates_serializer(
-    #         self,
-    #         certificate_chain_serializer: type(CertificateCollectionSerializer) = CertificateCollectionSerializer
-    # ) -> CertificateCollectionSerializer:
-    #     return certificate_chain_serializer(
-    #         [cert.get_certificate_serializer().as_crypto() for cert in self.get_issued_certificates()])
-
     def get_issuing_ca(self) -> UnprotectedLocalIssuingCa:
         if self.private_key_pem:
             return UnprotectedLocalIssuingCa(self)

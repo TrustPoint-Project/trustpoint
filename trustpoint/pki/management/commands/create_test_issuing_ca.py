@@ -24,6 +24,11 @@ import shutil
 
 from pki.models import CertificateModel, IssuingCaModel
 
+from typing import Union
+from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
+PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
+PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
+
 
 class Command(BaseCommand):
     """Django management command for adding issuing CA test data."""
@@ -194,6 +199,19 @@ class Command(BaseCommand):
             print(f'Stored EE certificate: {cert_path}')
 
     @staticmethod
+    def store_ee_keys(keys: dict[str, PrivateKey]) -> None:
+        tests_data_path = Path(__file__).parent.parent.parent.parent.parent / Path('tests/data/issuing_ca')
+
+        for name, key in keys.items():
+            key_path = tests_data_path / Path(f'{name}.pem')
+            with open(key_path, 'wb') as f:
+                f.write(key.private_bytes(
+                    encoding=Encoding.PEM,
+                    format=PrivateFormat.TraditionalOpenSSL,
+                    encryption_algorithm=NoEncryption()))
+            print(f'Stored EE certificate: {key_path}')
+
+    @staticmethod
     def save_ee_certs(certs: dict[str, x509.Certificate]) -> None:
         for name, cert in certs.items():
             print(f'Saving EE certificate in DB: {name}')
@@ -230,11 +248,14 @@ class Command(BaseCommand):
         self.save_issuing_ca(issuing_1, root_1, [], issuing_1_key)
 
         ee_certs = {}
+        ee_keys = {}
         for i in range(0, 100):
-            ee, _ = self.create_ee(issuing_1_key, 'Issuing CA', f'EE {i}')
+            ee, key = self.create_ee(issuing_1_key, 'Issuing CA', f'EE {i}')
             ee_certs[f'ee{i}'] = ee
+            ee_keys[f'key{i}'] = key
 
         self.store_ee_certs(ee_certs)
+        self.store_ee_keys(ee_keys)
         self.save_ee_certs(ee_certs)
 
         self.create_csr(10)
