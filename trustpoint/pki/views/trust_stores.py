@@ -14,21 +14,9 @@ from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, Primar
 from pki.download.certificate import CertificateDownloadResponseBuilder, MultiCertificateDownloadResponseBuilder
 
 
-from ..forms import TrustStoreAddForm, TruststoresDownloadForm
-from ..models import TrustStoreModel, CertificateModel
-from ..tables import TrustStoreTable
-
-class CertificatesContextMixin(TpLoginRequiredMixin, ContextDataMixin):
-    """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
-
-    context_page_category = 'pki'
-    context_page_name = 'certificates'
-
-class IssuingCaContextMixin(TpLoginRequiredMixin, ContextDataMixin):
-    """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
-
-    context_page_category = 'pki'
-    context_page_name = 'issuing_cas'
+from pki.forms import TrustStoreAddForm, TruststoresDownloadForm
+from pki.models import TrustStoreModel, CertificateModel
+from pki.tables import TrustStoreTable
 
 
 class TrustStoresContextMixin(TpLoginRequiredMixin, ContextDataMixin):
@@ -46,7 +34,7 @@ class TrustStoresTableView(TrustStoresContextMixin, TpLoginRequiredMixin, Single
     template_name = 'pki/truststores/truststores.html'
 
 
-class TrustStoreAddView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
+class TrustStoreAddView(TrustStoresContextMixin, TpLoginRequiredMixin, FormView):
 
     template_name = 'pki/truststores/add.html'
     form_class = TrustStoreAddForm
@@ -63,7 +51,7 @@ class TrustStoresDetailView(TrustStoresContextMixin, TpLoginRequiredMixin, Detai
     context_object_name = 'truststore'
 
 
-class TrustStoresDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
+class TrustStoresDownloadView(TrustStoresContextMixin, TpLoginRequiredMixin, DetailView):
 
     model = CertificateModel
     success_url = reverse_lazy('pki:truststores')
@@ -87,7 +75,7 @@ class TrustStoresDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, De
 
 
 class TrustStoresMultipleDownloadView(
-    CertificatesContextMixin,
+    TrustStoresContextMixin,
     TpLoginRequiredMixin,
     PrimaryKeyFromUrlToQuerysetMixin,
     ListView):
