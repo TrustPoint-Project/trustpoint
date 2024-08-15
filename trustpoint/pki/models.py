@@ -1261,7 +1261,7 @@ class CertificateModel(models.Model):
         self.revocation_reason = revocation_reason
         qs = self.issuer_references.all()
         for entry in qs:
-            issuing_ca = entry.issuing_ca_certificate
+            issuing_ca = entry.issuing_ca_model
             rc = RevokedCertificate(cert=self)
             rc.issuing_ca = issuing_ca
             rc.save()
@@ -1331,7 +1331,7 @@ class IssuingCaModel(models.Model):
         return self.issuing_ca_certificate.get_public_key_serializer()
 
     def get_issuing_ca_certificate_chain(self) -> list[CertificateModel]:
-        print('HHHHHHHH')
+        # TODO: through table -> order_by order
         cert_chain = [self.root_ca_certificate]
         # print(self.intermediate_ca_certificates.all())
         # cert_chain.extend(self.intermediate_ca_certificates.all().order_by('order').asc())

@@ -7,6 +7,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.serialization import pkcs12
+from django.forms import ValidationError
 
 from pki.models import (
     CertificateModel,
@@ -15,12 +16,20 @@ from pki.models import (
     TrustStoreModel,
     TrustStoreOrderModel)
 
+from pki.serialization.serializer import PrivateKeySerializer, CertificateSerializer, CertificateCollectionSerializer
+
 from typing import TYPE_CHECKING
+
+from util.x509.credentials import UnsupportedKeyTypeError
 
 if TYPE_CHECKING:
     from typing import Union
     from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
+
+
+# TODO: Exception Handling for whole module!!!
+# TODO: Certificate Validation / Issuing CA validation for whole module!!!
 
 
 # TODO: Validators
@@ -90,8 +99,6 @@ class LocalUnprotectedIssuingCaFromP12FileInitializer(LocalIssuingCaFromFileInit
 
     _unique_name: str
     _p12: pkcs12
-    _private_key: PrivateKey
-    _private_key_pem: str
     _issuing_ca_cert: x509.Certificate
     _full_cert_chain: list[x509.Certificate]
     _validator: IssuingCaValidator
@@ -106,7 +113,6 @@ class LocalUnprotectedIssuingCaFromP12FileInitializer(LocalIssuingCaFromFileInit
             issuing_ca_model_class: type(IssuingCaModel) = IssuingCaModel,
             cert_chain_order_model: type(CertificateChainOrderModel) = CertificateChainOrderModel) -> None:
 
-        # TODO
         if isinstance(p12, bytes):
             p12 = pkcs12.load_pkcs12(p12, password)
 
@@ -191,15 +197,25 @@ class LocalUnprotectedIssuingCaFromP12FileInitializer(LocalIssuingCaFromFileInit
         self._full_cert_chain.reverse()
 
     def _validate_issuing_ca(self) -> None:
+        # TODO
         pass
 
     @transaction.atomic
     def save(self):
 
-        saved_certs = []
+        print('saving')
+        try:
+            saved_certs = [self._cert_model_class.save_certificate(self._issuing_ca_cert)]
+        except Exception as exception:
+            # TODO: Proper filter
+            cert_model = CertificateModel.objects.get(
+                cert_pem=self._issuing_ca_cert.public_bytes(encoding=serialization.Encoding.PEM).decode()
+            )
+            raise ValueError(
+                f'Provided Issuing CA already configured. Unique Name: {cert_model.issuing_ca_model.unique_name}')
 
-        for certificate in self._full_cert_chain:
-            saved_certs.append(self._cert_model_class.save_certificate(certificate))
+        for certificate in self._full_cert_chain[1:]:
+            saved_certs.append(self._cert_model_class.save_certificate(certificate, exist_ok=True))
 
         issuing_ca_model = self._issuing_ca_model_class(
             unique_name=self._unique_name,
@@ -216,3 +232,83 @@ class LocalUnprotectedIssuingCaFromP12FileInitializer(LocalIssuingCaFromFileInit
             cert_chain_order_model.certificate = certificate
             cert_chain_order_model.issuing_ca = issuing_ca_model
             cert_chain_order_model.save()
+
+
+class LocalUnprotectedIssuingCaFromSeparateFilesInitializer(LocalIssuingCaFromFileInitializer):
+
+    _unique_name: str
+    _private_key: PrivateKeySerializer
+    _issuing_ca_cert: None | CertificateSerializer
+    _cert_chain: None | CertificateCollectionSerializer
+    _full_cert_chain: CertificateCollectionSerializer
+    _validator: IssuingCaValidator
+
+    def __init__(
+            self,
+            unique_name: str,
+            private_key_file_raw: bytes,
+            password: None | bytes,
+            issuing_ca_cert_raw: bytes,
+            certificate_chain_raw: None | bytes,
+            validator: IssuingCaValidator = IssuingCaValidator,
+            cert_model_class: type(CertificateModel) = CertificateModel,
+            issuing_ca_model_class: type(IssuingCaModel) = IssuingCaModel,
+            cert_chain_order_model: type(CertificateChainOrderModel) = CertificateChainOrderModel
+    ) -> None:
+
+        self._cert_model_class = cert_model_class
+        self._issuing_ca_model_class = issuing_ca_model_class
+        self._cert_chain_order_model = cert_chain_order_model
+
+        self._unique_name = unique_name
+        self._private_key = PrivateKeySerializer.from_bytes(private_key_file_raw, password=password)
+
+        self._issuing_ca_cert = CertificateSerializer.from_bytes(issuing_ca_cert_raw)
+
+        if certificate_chain_raw is None:
+            self._cert_chain = None
+        else:
+            self._cert_chain = CertificateCollectionSerializer.from_bytes(certificate_chain_raw)
+
+
+    #     if not self._issuing_ca_cert:
+    #         self._issuing_ca_cert = self._extract_issuing_ca_cert
+    #
+    #     # self._validate_issuing_ca()
+    #
+    # def _extract_issuing_ca_cert(self) -> CertificateSerializer:
+    #     public_key_from_private_key =
+    #     for cert in self._cert_chain.as_crypto():
+    #         if
+    #
+    #
+    #
+    #
+    # def _validate_issuing_ca(self) -> None:
+    #     # TODO
+    #     pass
+
+    # @transaction.atomic
+    # def save(self):
+    #
+    #     saved_certs = []
+    #
+    #     for certificate in self._full_cert_chain:
+    #         saved_certs.append(self._cert_model_class.save_certificate(certificate))
+    #
+    #     issuing_ca_model = self._issuing_ca_model_class(
+    #         unique_name=self._unique_name,
+    #         private_key_pem=self._private_key_pem,
+    #     )
+    #
+    #     issuing_ca_model.issuing_ca_certificate = saved_certs[-1]
+    #     issuing_ca_model.root_ca_certificate = saved_certs[0]
+    #     issuing_ca_model.save()
+    #
+    #     for number, certificate in enumerate(saved_certs[1:-1]):
+    #         cert_chain_order_model = self._cert_chain_order_model()
+    #         cert_chain_order_model.order = number
+    #         cert_chain_order_model.certificate = certificate
+    #         cert_chain_order_model.issuing_ca = issuing_ca_model
+    #         cert_chain_order_model.save()
+
