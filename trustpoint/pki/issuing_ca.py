@@ -40,11 +40,8 @@ class IssuingCa(ABC):
     def get_issuing_ca_certificate_chain(self) -> list[CertificateModel]:
         return self._issuing_ca_model.get_issuing_ca_certificate_chain()
 
-    def get_issuing_ca_certificate_chain_serializer(
-            self,
-            certificate_chain_serializer: type(CertificateCollectionSerializer) = CertificateCollectionSerializer
-    ) -> CertificateCollectionSerializer:
-        return self._issuing_ca_model.get_issuing_ca_certificate_chain_serializer(certificate_chain_serializer)
+    def get_issuing_ca_certificate_chain_serializer(self) -> CertificateCollectionSerializer:
+        return self._issuing_ca_model.get_issuing_ca_certificate_chain_serializer()
 
     @property
     def issuing_ca_model(self) -> IssuingCaModel:
