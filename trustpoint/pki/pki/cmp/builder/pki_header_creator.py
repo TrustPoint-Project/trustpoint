@@ -164,7 +164,7 @@ class PKIHeaderCreator:
         Sets the sender key identifier in the PKIHeader.
         """
 
-        ski = self.ca_cert.extensions.get_extension_for_oid(x509.ExtensionOID.SUBJECT_KEY_IDENTIFIER).value.public_bytes()
+        ski = self.ca_cert.extensions.get_extension_for_oid(x509.ExtensionOID.SUBJECT_KEY_IDENTIFIER).value.digest
         sender_kid = univ.OctetString(ski).subtype(
             explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2)
         )

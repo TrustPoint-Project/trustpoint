@@ -36,6 +36,8 @@ class CertMessageHandler:
         self.protection = protection
         self.domain = domain
         self.ca_cert = None
+        self.issuing_ca_object = None
+        self.ca_cert_chain = None
 
         #self._validate()
         self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
@@ -51,23 +53,26 @@ class CertMessageHandler:
         validator.validate()
         self.logger.debug("Validation completed.")
 
-    def handle(self, ca_cert, ca_key):
+    def handle(self, issuing_ca_object):
         """
         Handles the certificate request and generates an appropriate response PKI message.
 
-        :param ca_cert: The CA certificate.
-        :param ca_key: The CA private key.
+        :param issuing_ca_object: The IssuingCa object.
         :return: str, the response PKI message.
         """
         self.logger.info("Handling certificate request.")
-        self.ca_cert = ca_cert
+        self.ca_cert = issuing_ca_object.get_issuing_ca_certificate_serializer().as_crypto()
+        self.ca_key = issuing_ca_object.private_key
+        root_cert = issuing_ca_object.issuing_ca_model.root_ca_certificate.get_certificate_serializer().as_crypto()
+        self.ca_cert_chain = [root_cert, self.ca_cert]
+
         cert_req_msg = self._get_cert_req_msg()
 
         self.logger.debug("Preparing subject and SAN for the certificate.")
         subject_name, san_list, public_key = self._prepare_subject_san(cert_req_msg)
 
         self.logger.debug("Generating signed certificate.")
-        cert_pem = self._generate_signed_certificate(subject_name, san_list, public_key, self.ca_cert, ca_key)
+        cert_pem = self._generate_signed_certificate(subject_name, san_list, public_key, self.ca_cert, self.ca_key)
 
         self.logger.debug("Creating PKI body.")
         pki_body = self._create_pki_body(cert_req_msg, cert_pem, self.ca_cert)
@@ -76,7 +81,7 @@ class CertMessageHandler:
         pki_header = self._create_pki_header()
 
         self.logger.debug("Handling extra certificates.")
-        extra_certs = self._handle_extra_certs(ca_cert)
+        extra_certs = self._handle_extra_certs(self.ca_cert)
 
         self.logger.debug("Computing response protection.")
         response_protection = self.protection.compute_protection(pki_header, pki_body)
@@ -203,7 +208,8 @@ class CertMessageHandler:
         cert_req_id = cert_req_msg.getComponentByName('certReqId')
         body_creator.set_cert_req_id(cert_req_id)
         body_creator.set_body_type(self.pki_body_type)
-        body_creator.add_ca_pub(ca_cert=ca_cert)
+        for cert in self.ca_cert_chain:
+            body_creator.add_ca_pub(ca_cert=cert)
         return body_creator.create_pki_body(cert_pem=cert_pem)
 
     def _create_pki_header(self):

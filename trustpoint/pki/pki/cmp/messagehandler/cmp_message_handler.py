@@ -42,6 +42,7 @@ class CMPMessageHandler:
         self.shared_secret = None
         self.client_cert = None
         self.authorized_clients = None
+        self.cert_chain = None
 
         self.protection = None
         self.header = self.pki_message.getComponentByName('header')
@@ -95,21 +96,16 @@ class CMPMessageHandler:
         raise NotImplementedError("Protection mode None is not supported")
 
 
-    def set_issuing_ca(self, issuing_ca):
+    def set_issuing_ca(self, issuing_ca_object):
         """
         Define params for a local testing setup.
 
-        :param ca_cert: bytes, the CA certificate.
-        :param ca_key: bytes, the CA private key (optional, required for Signature mode).
+        :param issuing_ca_object: an IssuingCa object.
         """
-        self.issuing_ca = issuing_ca
+        self.issuing_ca_object = issuing_ca_object
 
-        self.ca_cert = issuing_ca.get_issuing_ca_certificate_serializer().as_crypto()
-        ca_chain = issuing_ca.get_issuing_ca_certificate_chain_serializer()
-
-        self.logger.debug(ca_chain)
-
-        self.ca_key = issuing_ca.private_key
+        self.ca_cert = issuing_ca_object.get_issuing_ca_certificate_serializer().as_crypto()
+        self.ca_key = issuing_ca_object.private_key
         self.logger.info("Issuing CA set with certificate and key.")
 
 
@@ -208,7 +204,7 @@ class CMPMessageHandler:
         pop_verifier.verify()
         self.logger.debug("Proof of Possession verification completed.")
 
-    def _handle_request(self) -> str:
+    def _handle_request(self) -> bytes:
         """
         Handles the request and generates the appropriate response.
 
@@ -238,7 +234,7 @@ class CMPMessageHandler:
         :return: str, the response PKI message.
         """
         cert_req_msg_handler = CertMessageHandler(self.body, self.header, self.pki_body_type, self.protection)
-        return cert_req_msg_handler.handle(self.ca_cert, self.ca_key)
+        return cert_req_msg_handler.handle(self.issuing_ca_object)
 
     def _handle_revocation_request(self) -> bytes:
         """

@@ -50,7 +50,7 @@ class LocalCmpInitializationRequestHandler(CaCmpRequestHandler):
         print(cert)
         try:
             cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp)
-            cmp_message.set_issuing_ca(issuing_ca=self._issuing_ca)
+            cmp_message.set_issuing_ca(issuing_ca_object=self._issuing_ca)
             if authorized_clients:
                 cmp_message.set_signature_based_protection(authorized_clients=authorized_clients)
             # if shared_secret:
