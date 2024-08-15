@@ -1,8 +1,5 @@
 from enum import Enum
 from cryptography import x509
-from cryptography.x509.oid import ExtensionOID
-from cryptography.hazmat.primitives.asymmetric import rsa, ec
-
 from django.utils.translation import gettext_lazy as _
 
 
