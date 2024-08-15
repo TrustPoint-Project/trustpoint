@@ -303,3 +303,25 @@ class TrustStoreAddForm(forms.Form):
             raise ValidationError('Unexpected Error. Failed to save validated Trust Store in DB.')
 
 
+
+class TruststoresDownloadForm(forms.Form):
+    cert_file_container = forms.ChoiceField(
+        label=_('Select Truststore Container Type'),
+        choices=[
+            ('single_file', _('Single File')),
+            ('zip', _('Separate Certificate Files (as .zip file)')),
+            ('tar_gz', _('Separate Certificate Files (as .tar.gz file)'))
+        ],
+        initial='single_file',
+        required=True)
+
+    cert_file_format = forms.ChoiceField(
+        label=_('Select Truststore File Format'),
+        choices=[
+            ('pem', _('PEM (.pem, .crt, .ca-bundle)')),
+            ('der', _('DER (.der, .cer)')),
+            ('pkcs7_pem', _('PKCS#7 (PEM) (.p7b, .p7c, .keystore)')),
+            ('pkcs7_der', _('PKCS#7 (DER) (.p7b, .p7c, .keystore)'))
+        ],
+        initial='pem',
+        required=True)
