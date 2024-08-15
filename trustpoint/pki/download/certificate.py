@@ -184,4 +184,3 @@ class MultiCertificateDownloadResponseBuilder(DownloadResponseBuilder):
                 tar.addfile(cert_io_bytes_info, cert_io_bytes)
 
         self._set_django_http_response(bytes_io.getvalue(), 'application/gzip', 'certificates.tar.gz')
-

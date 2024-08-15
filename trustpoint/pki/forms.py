@@ -7,8 +7,9 @@ from django.utils.translation import gettext_lazy as _
 
 from django.core.exceptions import ValidationError
 
-from .serialization.initializer import LocalUnprotectedIssuingCaFromP12FileInitializer, TrustStoreInitializer
-from .models import IssuingCaModel, DomainModel
+from pki.serialization.initializer import LocalUnprotectedIssuingCaFromP12FileInitializer, TrustStoreInitializer
+from pki.models import IssuingCaModel, DomainModel
+from pki.validator.field import UniqueNameValidator
 
 
 class CertificateDownloadForm(forms.Form):
@@ -74,9 +75,10 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
 
     unique_name = forms.CharField(
         max_length=256,
-        label='Unique Name (Issuing CA)',
+        label=f'Unique Name ' + UniqueNameValidator.form_label,
         widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
-        required=True)
+        required=True,
+        validators=[UniqueNameValidator()])
 
     pkcs12_file = forms.FileField(label=_('PKCS#12 File (.p12, .pfx)'), required=True)
     pkcs12_password = forms.CharField(
@@ -139,8 +141,9 @@ class IssuingCaAddFileImportOtherForm(forms.Form):
 
     unique_name = forms.CharField(
         max_length=256,
-        label='Unique Name (Issuing CA)',
-        widget=forms.TextInput(attrs={'autocomplete': 'nope'}))
+        label=f'Unique Name ' + UniqueNameValidator.form_label,
+        widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
+        validators=[UniqueNameValidator()])
     private_key_file = forms.FileField(
         label=_('Private key file (.key, .pem, .keystore)'), required=True)
     private_key_password = forms.CharField(
@@ -168,6 +171,7 @@ class DomainBaseForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.fields['unique_name'].label += UniqueNameValidator.form_label
         if self.instance.pk:  # If updating an existing instance
             self.fields['auto_crl'].initial = self.instance.auto_crl
 
@@ -204,9 +208,10 @@ class TrustStoreAddForm(forms.Form):
 
     unique_name = forms.CharField(
         max_length=256,
-        label='Unique Name (Trust Store)',
+        label=f'Unique Name ' + UniqueNameValidator.form_label,
         widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
-        required=True)
+        required=True,
+        validators=[UniqueNameValidator()])
 
     trust_store_file = forms.FileField(label=_('PEM or PKCS#7 File'), required=True)
 
