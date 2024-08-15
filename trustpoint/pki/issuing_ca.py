@@ -75,6 +75,10 @@ class UnprotectedLocalIssuingCa(IssuingCa):
     def issuer_name(self) -> x509.Name:
         # TODO: store issuer and subject bytes in DB
         return self._issuing_ca_model.get_issuing_ca_certificate_serializer().as_crypto().issuer
+    
+    @property
+    def subject_name(self) -> x509.Name:
+        return self._issuing_ca_model.get_issuing_ca_certificate_serializer().as_crypto().subject
 
     @property
     def private_key(self) -> PrivateKey:

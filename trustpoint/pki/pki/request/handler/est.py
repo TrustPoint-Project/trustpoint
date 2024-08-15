@@ -41,7 +41,7 @@ class LocalEstCaSimpleEnrollRequestHandler(CaEstRequestHandler):
     # TODO: Store issued certificate in DB
     def process_request(self) -> PkiResponseMessage:
         cert_builder = self._get_certificate_builder_from_csr()
-        cert_builder = cert_builder.issuer_name(self._issuing_ca.issuer_name)
+        cert_builder = cert_builder.issuer_name(self._issuing_ca.subject_name)
         cert = cert_builder.sign(
             private_key=self._issuing_ca.private_key,
             algorithm=self._request_message.csr.signature_hash_algorithm)
