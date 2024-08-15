@@ -6,6 +6,8 @@ from pki.pki.cmp.errorhandling.pki_failures import (
 )
 from pyasn1.type import univ, namedtype, tag, constraint, namedval, char
 
+from pki.pki.request.message import HttpStatusCode
+
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -66,7 +68,7 @@ class PKIMessageCreator:
             decoded_data, _ = decoder.decode(response_data, asn1Spec=rfc4210.PKIMessage())
 
             logger.info("PKI message created successfully.")
-            return response_data, 200, {'Content-Type': 'application/pkixcmp'}
+            return response_data
         except Exception as e:
             logger.error("Error creating PKI message: %s", e)
             raise SystemFailure("Failed to create PKI message") from e

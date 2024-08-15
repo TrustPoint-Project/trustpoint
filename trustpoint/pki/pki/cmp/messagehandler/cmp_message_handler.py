@@ -1,8 +1,5 @@
 from cryptography import x509
-from cryptography.hazmat.backends import default_backend
-from pyasn1.codec.der import decoder
 from pyasn1_modules import rfc4210, rfc2511
-from pyasn1.type import univ
 import logging
 import traceback
 
@@ -23,18 +20,19 @@ from pki.pki.cmp.protection.protection import RFC4210Protection
 from pki.pki.cmp.messagehandler.cert_message_handler import CertMessageHandler
 from pki.pki.cmp.messagehandler.revocation_message_handler import RevocationMessageHandler
 from pki.pki.cmp.messagehandler.general_message_handler import GeneralMessageHandler
+from pki.pki.request.message import HttpStatusCode
 
 
 class CMPMessageHandler:
-    def __init__(self, request_data: rfc4210.PKIMessage, alias: str = None):
+    def __init__(self, pki_message: rfc4210.PKIMessage, alias: str = None):
         """
         Initialize the CMPMessageHandler with the necessary components.
 
         :param alias: str, the alias for the endpoint (optional).
-        :param request_data: rfc4210.PKIMessage, the decoded request data containing the PKI message.
+        :param pki_message: rfc4210.PKIMessage, the decoded request data containing the PKI message.
         """
+        self.pki_message = pki_message
         self.alias = alias
-        self.request_data = request_data
         self.issuing_ca = None
         self.ca_cert = None
         self.ca_key = None
@@ -45,11 +43,15 @@ class CMPMessageHandler:
         self.client_cert = None
         self.authorized_clients = None
 
-        self.pki_message = None
         self.protection = None
-        self.header = None
+        self.header = self.pki_message.getComponentByName('header')
         self.body = None
         self.pki_body_type = None
+
+        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
+        self.logger.info("CMPMessageHandler initialized with alias: %s", self.alias)
+
 
     def set_signature_based_protection(self, authorized_clients: list):
         """
@@ -59,8 +61,10 @@ class CMPMessageHandler:
         """
         self.protection_mode_signature = True
         self.authorized_clients = authorized_clients
+        self.logger.info("Signature-based protection mode set with %d authorized clients", len(authorized_clients))
 
     def _is_valid_authorized_clients(self):
+        self.logger.debug("Validating authorized clients list.")
         if self.authorized_clients:
             if not isinstance(self.authorized_clients, list):
                 ValueError(f"authorized_clients must be a list")
@@ -80,6 +84,7 @@ class CMPMessageHandler:
         """
         self.protection_mode_pbm = True
         self.shared_secret = shared_secret
+        self.logger.info("PBM-based protection mode set with shared secret.")
 
     def set_none_protection(self):
         """
@@ -98,15 +103,25 @@ class CMPMessageHandler:
         :param ca_key: bytes, the CA private key (optional, required for Signature mode).
         """
         self.issuing_ca = issuing_ca
-        self.ca_cert = issuing_ca.get_issuing_ca_certificate()
-        self.ca_key = issuing_ca.private_key()
 
-    def process_request(self) -> str:
+        self.ca_cert = issuing_ca.get_issuing_ca_certificate_serializer().as_crypto()
+        ca_chain = issuing_ca.get_issuing_ca_certificate_chain_serializer()
+
+        self.logger.debug(ca_chain)
+
+        self.ca_key = issuing_ca.private_key
+        self.logger.info("Issuing CA set with certificate and key.")
+
+
+    def process_request(self) -> tuple[bytes, HttpStatusCode]:
         """
         Processes the incoming CMP request and returns the response.
 
         :return: str, the response PKI message.
         """
+        self.logger.info("Processing CMP request.")
+        http_status_code = HttpStatusCode.OK
+
         try:
             self._is_valid_authorized_clients()
             #self._decode_request()
@@ -117,82 +132,81 @@ class CMPMessageHandler:
             self._verify_pop()
 
             response = self._handle_request()
+            self.logger.info("Request processed successfully.")
+
         except (PKIFailure, BadAlg, BadMessageCheck, BadRequest, BadTime, BadCertId,
                 BadDataFormat, WrongAuthority, IncorrectData, MissingTimeStamp, BadPOP,
                 CertRevoked, CertConfirmed, WrongIntegrity, BadRecipientNonce, TimeNotAvailable,
                 UnacceptedPolicy, UnacceptedExtension, AddInfoNotAvailable, BadSenderNonce,
                 BadCertTemplate, SignerNotTrusted, TransactionIdInUse, UnsupportedVersion,
                 NotAuthorized, SystemUnavail, SystemFailure, DuplicateCertReq) as e:
-            logging.error(traceback.format_exc())
+            self.logger.error(traceback.format_exc())
             response = self._handle_error(e, e.code)
+            http_status_code = HttpStatusCode.BAD_REQUEST
         except Exception as e:
-            logging.error(traceback.format_exc())
+            self.logger.error(traceback.format_exc())
             response = self._handle_error(e, 25)
+            http_status_code = HttpStatusCode.BAD_REQUEST
 
-        return response
-
-    def _decode_request(self):
-        """
-        Decodes the incoming PKI message from the request data.
-        """
-        try:
-            self.pki_message, _ = decoder.decode(self.request_data, asn1Spec=rfc4210.PKIMessage())
-        except Exception as e:
-            raise BadDataFormat("The formal ASN.1 syntax of the whole message is not compliant with the definitions given in CMP") from e
+        return response, http_status_code
 
     def _configure_protection(self):
         """
-        Configures the protection mechanism for the PKI message.
-        """
-        self.protection = self.configure_protection(self.pki_message)
-
-    def configure_protection(self, pki_message: univ.Sequence) -> RFC4210Protection:
-        """
         Configures the protection mechanism for the incoming PKI message.
-
-        :param pki_message: univ.Sequence, the PKI message.
-        :return: RFC4210Protection, the configured protection object.
         """
-        protection = RFC4210Protection(pki_message, self.ca_cert)
+        self.logger.debug("Configuring protection.")
+
+        self.protection = RFC4210Protection(self.pki_message, self.ca_cert)
 
         if self.protection_mode_pbm:
-            protection.pbm_protection(shared_secret=self.shared_secret)
+            self.logger.debug("Applying PBM protection mode.")
+            self.protection.pbm_protection(shared_secret=self.shared_secret)
 
         if self.protection_mode_signature:
-            protection.signature_protection(ca_private_key=self.ca_key, client_cert=self.client_cert)
+            self.logger.debug("Applying signature protection mode.")
+            self.protection.signature_protection(ca_private_key=self.ca_key, authorized_clients=self.authorized_clients)
 
-        protection.validate_protection()
-        return protection
+        self.protection.validate_protection()
 
     def _validate_header(self):
         """
         Validates the header of the PKI message.
         """
-        self.header = self.pki_message.getComponentByName('header')
+        self.logger.debug("Validating PKI message header.")
         validate_header = GenericHeaderValidator(self.header)
         validate_header.validate()
+        self.logger.debug("Header validation completed.")
+
 
     def _determine_body_type(self):
         """
         Determines the body type of the PKI message.
         """
+        self.logger.debug("Determining body type of PKI message.")
         self.body = self.pki_message.getComponentByName('body')
         self.pki_body_type = PKIBodyTypes()
         self.pki_body_type.get_response(self.body.getName())
+        self.logger.info("Body type determined as %s.", self.body.getName())
+
 
     def _validate_extra_certs(self):
         """
         Validates the extra certificates in the PKI message.
         """
+        self.logger.debug("Validating extra certificates in PKI message.")
         validate_extracerts = ExtraCertsValidator(self.pki_message, self.protection.protection_mode, self.pki_body_type.request_short_name)
         validate_extracerts.validate()
+        self.logger.debug("Extra certificates validation completed.")
+
 
     def _verify_pop(self):
         """
         Verifies the Proof of Possession (PoP) in the PKI message.
         """
+        self.logger.debug("Verifying Proof of Possession (PoP).")
         pop_verifier = PoPVerifier(self.pki_message, self.pki_body_type)
         pop_verifier.verify()
+        self.logger.debug("Proof of Possession verification completed.")
 
     def _handle_request(self) -> str:
         """
@@ -200,20 +214,24 @@ class CMPMessageHandler:
 
         :return: str, the response PKI message.
         """
+        self.logger.debug("Handling request based on body type.")
         incoming = self.body.getComponentByName(self.pki_body_type.request_short_name)
         if not isinstance(incoming, type(self.pki_body_type.request_class)):
             raise BadRequest(f"Expected {self.pki_body_type.request_class}, got {type(incoming)}")
 
         if isinstance(incoming, rfc2511.CertReqMessages):
+            self.logger.debug("Handling certificate request.")
             return self._handle_cert_request()
         elif isinstance(incoming, rfc4210.RevReqContent):
+            self.logger.debug("Handling revocation request.")
             return self._handle_revocation_request()
         elif isinstance(incoming, rfc4210.GenMsgContent):
+            self.logger.debug("Handling general request.")
             return self._handle_general_request()
         else:
             raise SystemFailure("PKI Body not supported")
 
-    def _handle_cert_request(self) -> str:
+    def _handle_cert_request(self) -> bytes:
         """
         Handles a certificate request.
 
@@ -222,7 +240,7 @@ class CMPMessageHandler:
         cert_req_msg_handler = CertMessageHandler(self.body, self.header, self.pki_body_type, self.protection)
         return cert_req_msg_handler.handle(self.ca_cert, self.ca_key)
 
-    def _handle_revocation_request(self) -> str:
+    def _handle_revocation_request(self) -> bytes:
         """
         Handles a revocation request.
 
@@ -231,7 +249,7 @@ class CMPMessageHandler:
         revocation_msg_handler = RevocationMessageHandler(self.body, self.header, self.pki_body_type, self.protection)
         return revocation_msg_handler.handle()
 
-    def _handle_general_request(self) -> str:
+    def _handle_general_request(self) -> bytes:
         """
         Handles a general request.
 
@@ -240,7 +258,7 @@ class CMPMessageHandler:
         general_msg_handler = GeneralMessageHandler(self.body, self.header, self.pki_body_type, self.protection)
         return general_msg_handler.handle()
 
-    def _handle_error(self, exception: Exception, error_code: int) -> str:
+    def _handle_error(self, exception: Exception, error_code: int) -> bytes:
         """
         Handles any errors encountered during the processing of the request.
 
@@ -248,5 +266,9 @@ class CMPMessageHandler:
         :param error_code: int, the error code to return in the response.
         :return: str, the error response PKI message.
         """
+        self.logger.error("Handling error: %s with code %d", str(exception), error_code)
         error_handler = ErrorHandler()
-        return error_handler.handle_error(str(exception), error_code, self.header, self.protection)
+        result = error_handler.handle_error(str(exception), error_code, self.header, self.protection)
+        self.logger.debug("Error handled, response generated.")
+
+        return result

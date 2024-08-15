@@ -8,6 +8,7 @@ from cryptography.x509 import Certificate
 from pyasn1.codec.der import decoder
 from pyasn1_modules import rfc2459
 import datetime
+import logging
 
 from pki.pki.cmp.builder.pki_body_creator import PkiBodyCreator
 from pki.pki.cmp.builder.pki_message_creator import PKIMessageCreator
@@ -34,15 +35,21 @@ class CertMessageHandler:
         self.pki_body_type = pki_body_type
         self.protection = protection
         self.domain = domain
+        self.ca_cert = None
 
         #self._validate()
+        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)  # Adjust logging level as needed
+        self.logger.info("CertMessageHandler initialized for domain: %s", domain)
 
     def _validate(self):
         """
         Validates the initialization request using InitializationReqValidator.
         """
+        self.logger.debug("Validating initialization request.")
         validator = InitializationReqValidator(self.body)
         validator.validate()
+        self.logger.debug("Validation completed.")
 
     def handle(self, ca_cert, ca_key):
         """
@@ -52,23 +59,39 @@ class CertMessageHandler:
         :param ca_key: The CA private key.
         :return: str, the response PKI message.
         """
+        self.logger.info("Handling certificate request.")
+        self.ca_cert = ca_cert
         cert_req_msg = self._get_cert_req_msg()
-        subject_name, san_list, public_key = self._prepare_subject_san(cert_req_msg)
-        cert_pem = self._generate_signed_certificate(subject_name, san_list, public_key, ca_cert, ca_key)
 
-        pki_body = self._create_pki_body(cert_req_msg, cert_pem, ca_cert)
+        self.logger.debug("Preparing subject and SAN for the certificate.")
+        subject_name, san_list, public_key = self._prepare_subject_san(cert_req_msg)
+
+        self.logger.debug("Generating signed certificate.")
+        cert_pem = self._generate_signed_certificate(subject_name, san_list, public_key, self.ca_cert, ca_key)
+
+        self.logger.debug("Creating PKI body.")
+        pki_body = self._create_pki_body(cert_req_msg, cert_pem, self.ca_cert)
+
+        self.logger.debug("Creating PKI header.")
         pki_header = self._create_pki_header()
+
+        self.logger.debug("Handling extra certificates.")
         extra_certs = self._handle_extra_certs(ca_cert)
 
+        self.logger.debug("Computing response protection.")
         response_protection = self.protection.compute_protection(pki_header, pki_body)
 
+        self.logger.debug("Creating PKI message.")
         pki_message = self._create_pki_message(pki_body, pki_header, response_protection, extra_certs)
 
+        self.logger.info("Certificate request handled successfully.")
         return pki_message
 
-    def _prepare_subject_san(self, cert_template):
+    def _prepare_subject_san(self, cert_req_msg):
         subject_name = []
         san_list = []
+
+        cert_template = cert_req_msg.getComponentByName('certTemplate')
 
         subject = cert_template.getComponentByName('subject')
 
@@ -155,7 +178,7 @@ class CertMessageHandler:
 
         :return: bytes, the PEM-encoded CA certificate.
         """
-        return client_cert.public_bytes(encoding=Encoding.PEM)
+        return client_cert.public_bytes(encoding=Encoding.DER)
 
     def _get_cert_req_msg(self):
         """
@@ -166,69 +189,6 @@ class CertMessageHandler:
         cert_req_msg = self.incoming.getComponentByPosition(0)
         cert_req = cert_req_msg.getComponentByName('certReq')
         return cert_req
-
-    def _generate_signed_certificate(self, cert_req_msg, ca_cert, ca_key):
-        """
-        Generates a signed certificate based on the certificate request message.
-
-        :param cert_req_msg: The certificate request message.
-        :param ca_cert: The CA certificate.
-        :param ca_key: The CA private key.
-        :return: The signed certificate in PEM format.
-        """
-        cert_template = cert_req_msg.getComponentByName('certTemplate')
-        return generate_signed_cert(cert_template, ca_cert, ca_key)
-
-    def _extract_certificate_information(self, cert_template):
-        subject_name = []
-        san_list = []
-
-        subject = cert_template.getComponentByName('subject')
-
-        public_key_info = cert_template.getComponentByName('publicKey')
-
-        public_key_der = public_key_info.getComponentByName('subjectPublicKey').asOctets()
-        public_key = load_der_public_key(public_key_der, backend=default_backend())
-
-        extensions = cert_template.getComponentByName('extensions')
-
-        for extension in extensions:
-            extn_id = extension.getComponentByName('extnID')
-            if extn_id == rfc2459.id_ce_subjectAltName:
-                extn_value = extension.getComponentByName('extnValue')
-                san, _ = decoder.decode(extn_value, asn1Spec=rfc2459.SubjectAltName())
-                for general_name in san:
-                    name_type = general_name.getName()
-                    if name_type == 'dNSName':
-                        san_list.append(x509.DNSName(str(general_name.getComponent())))
-                    elif name_type == 'iPAddress':
-                        binary_ip = general_name.getComponent().asOctets()
-                        ip_address = ipaddress.ip_address(binary_ip)
-                        san_list.append(x509.IPAddress(ip_address))
-                    elif name_type == 'uniformResourceIdentifier':
-                        san_list.append(x509.UniformResourceIdentifier(str(general_name.getComponent())))
-
-        for rdn in subject[0]:
-            for atv in rdn:
-
-                oid = atv.getComponentByName('type')
-                value = atv.getComponentByName('value')
-
-                value, _ = decoder.decode(bytes(value))
-
-                # print(f"OID: {oid} ({len(oid)}), Value: >{str(value)}< ({len(str(value))})")
-                if oid == rfc2459.id_at_commonName:
-                    subject_name.append(x509.NameAttribute(NameOID.COMMON_NAME, str(value)))
-                elif oid == rfc2459.id_at_countryName:
-                    subject_name.append(x509.NameAttribute(NameOID.COUNTRY_NAME, str(value)))
-                elif oid == rfc2459.id_at_stateOrProvinceName:
-                    subject_name.append(x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, str(value)))
-                elif oid == rfc2459.id_at_localityName:
-                    subject_name.append(x509.NameAttribute(NameOID.LOCALITY_NAME, str(value)))
-                elif oid == rfc2459.id_at_organizationName:
-                    subject_name.append(x509.NameAttribute(NameOID.ORGANIZATION_NAME, str(value)))
-                elif oid == rfc2459.id_at_organizationalUnitName:
-                    subject_name.append(x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, str(value)))
 
     def _create_pki_body(self, cert_req_msg, cert_pem, ca_cert):
         """
@@ -252,7 +212,7 @@ class CertMessageHandler:
 
         :return: PKIHeader, the created PKI header.
         """
-        header_creator = PKIHeaderCreator(self.header, self.protection.ca_cert)
+        header_creator = PKIHeaderCreator(self.header, self.ca_cert)
         return header_creator.create_header()
 
     def _handle_extra_certs(self, ca_cert):

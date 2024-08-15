@@ -1,3 +1,4 @@
+from cryptography.x509 import Certificate
 from pyasn1_modules import rfc4210
 from pyasn1.type.univ import ObjectIdentifier
 from pki.pki.cmp.protection.pbm_protection import PBMProtection
@@ -5,6 +6,7 @@ from pki.pki.cmp.protection.signature_protection import SignatureProtection
 from pki.pki.cmp.parsing.parse_helper import ParseHelper
 from pyasn1.type import univ
 from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography import x509
 
 from pki.pki.cmp.errorhandling.pki_failures import (
     BadRequest, UnacceptedPolicy, NotAuthorized
@@ -29,12 +31,12 @@ class RFC4210Protection:
         _valid_protection (bool): Indicates if the protection is valid.
         _algorithm_oid (str): The OID of the protection algorithm.
     """
-    def __init__(self, pki_message: univ.Sequence, ca_cert: str):
+    def __init__(self, pki_message: univ.Sequence, ca_cert: x509.Certificate):
         """
         Initializes the RFC4210Protection with a PKI message and a CA certificate.
 
         :param pki_message: Sequence, the PKI message to be protected or validated
-        :param ca_cert: str, the PEM-encoded CA certificate
+        :param ca_cert: x509.Certificate, the PEM-encoded CA certificate
         """
         self._pki_message = pki_message
         self._ca_cert = ca_cert
@@ -180,7 +182,7 @@ class RFC4210Protection:
         return self._ca_private_key
 
     @property
-    def ca_cert(self) -> str:
+    def ca_cert(self) -> Certificate:
         """Returns the CA certificate."""
         return self._ca_cert
 

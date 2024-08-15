@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from pyasn1.codec.der import decoder
 from pyasn1_modules import rfc4210
+import logging
 
 from pki.models import DomainModel
 from pki.pki.cmp.validator.header_validator import GenericHeaderValidator
@@ -39,6 +40,9 @@ class PkiCmpInitializationRequestMessage(PkiRequestMessage):
             protocol=Protocol.CMP,
             operation=CmpOperation.INITIALIZATION_REQUEST,
             domain_unique_name=domain_unique_name)
+
+        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
 
         try:
             self._init_mimetype(mimetype)
@@ -78,6 +82,8 @@ class PkiCmpInitializationRequestMessage(PkiRequestMessage):
         else:
             error_msg = (
                 f'Expected MimeType {MimeType.APPLICATION_PKIXCMP.value}, but received {received_mimetype}.')
+
+        self.logger.error(error_msg)
         self._invalid_response = PkiResponseMessage(
             raw_response=error_msg,
             http_status=HttpStatusCode.UNSUPPORTED_MEDIA_TYPE,
@@ -94,6 +100,7 @@ class PkiCmpInitializationRequestMessage(PkiRequestMessage):
     def _build_domain_does_not_exist(self) -> None:
         # TODO: Build CMP error message -> raw_message
         error_msg = f'Domain {self._domain_unique_name} does not exist.'
+        self.logger.error(error_msg)
         self._invalid_response = PkiResponseMessage(
             raw_response=error_msg,
             http_status=HttpStatusCode.BAD_REQUEST,
@@ -126,6 +133,7 @@ class PkiCmpInitializationRequestMessage(PkiRequestMessage):
     def _build_malformed_cmp_response(self) -> None:
         # TODO: Build CMP error message -> raw_message
         error_msg = f'The formal ASN.1 syntax of the whole message is not compliant with the definitions given in CMP'
+        self.logger.error(error_msg)
         self._invalid_response = PkiResponseMessage(
             raw_response=error_msg,
             http_status=HttpStatusCode.BAD_REQUEST,
@@ -134,6 +142,7 @@ class PkiCmpInitializationRequestMessage(PkiRequestMessage):
     def _build_not_ir_message_response(self) -> None:
         # TODO: Build CMP error message -> wrong header or body
         error_msg = f'CMP message (header & body) does not comply with RFC 9483.'
+        self.logger.error(error_msg)
         self._invalid_response = PkiResponseMessage(
             raw_response=error_msg,
             http_status=HttpStatusCode.BAD_REQUEST,

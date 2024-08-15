@@ -88,6 +88,9 @@ class Command(BaseCommand):
         builder = builder.add_extension(
             x509.BasicConstraints(ca=True, path_length=None), critical=True,
         )
+        builder = builder.add_extension(
+                x509.SubjectKeyIdentifier.from_public_key(private_key.public_key()), critical=False
+            )
         certificate = builder.sign(
             private_key=issuer_private_key, algorithm=hashes.SHA256(),
         )

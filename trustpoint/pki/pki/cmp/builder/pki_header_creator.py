@@ -9,7 +9,6 @@ import logging
 
 from pki.pki.cmp.validator.header_validator import GenericHeaderValidator
 
-# Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -18,16 +17,16 @@ class PKIHeaderCreator:
     """
     A class to create a PKIHeader for the PKIMessage.
     """
-    def __init__(self, incoming_header: rfc4210.PKIHeader, ca_cert_pem: x509.Certificate):
+    def __init__(self, incoming_header: rfc4210.PKIHeader, ca_cert: x509.Certificate):
         """
         Initialize the PKIHeaderCreator with the incoming header and CA certificate.
 
         Args:
             incoming_header (rfc4210.PKIHeader): The incoming PKIHeader.
-            ca_cert_pem (x509.Certificate): The CA certificate in PEM format.
+            ca_cert (x509.Certificate): The CA certificate in PEM format.
         """
         self.incoming_header = incoming_header
-        self.ca_cert_pem = ca_cert_pem
+        self.ca_cert = ca_cert
 
         self.pki_header = rfc4210.PKIHeader()
         self.pki_header.setComponentByName('pvno', 2)
@@ -109,31 +108,31 @@ class PKIHeaderCreator:
         rdn_sequence = rfc2459.RDNSequence()
 
         # Add countryName RDN
-        rdn_sequence.setComponentByPosition(0, rfc2459.RelativeDistinguishedName().setComponentByPosition(
-            0, rfc2459.AttributeTypeAndValue().setComponentByName('type', rfc2459.id_at_countryName).setComponentByName(
-                'value', char.PrintableString('DE'))
-        ))
-
-        # Add stateOrProvinceName RDN
-        rdn_sequence.setComponentByPosition(1, rfc2459.RelativeDistinguishedName().setComponentByPosition(
-            0, rfc2459.AttributeTypeAndValue().setComponentByName('type', rfc2459.id_at_stateOrProvinceName).setComponentByName(
-                'value', char.PrintableString('BW'))
-        ))
-
-        # Add stateOrProvinceName RDN
-        rdn_sequence.setComponentByPosition(2, rfc2459.RelativeDistinguishedName().setComponentByPosition(
-            0, rfc2459.AttributeTypeAndValue().setComponentByName('type',
-                                                                  rfc2459.id_at_localityName).setComponentByName(
-                'value', char.PrintableString('Freudenstadt'))
-        ))
-
-        # Add organizationName RDN
-        rdn_sequence.setComponentByPosition(3, rfc2459.RelativeDistinguishedName().setComponentByPosition(
-            0,
-            rfc2459.AttributeTypeAndValue().setComponentByName('type',
-                                                               rfc2459.id_at_organizationName).setComponentByName(
-                'value', char.PrintableString('Campus Schwarzwald'))
-        ))
+        # rdn_sequence.setComponentByPosition(0, rfc2459.RelativeDistinguishedName().setComponentByPosition(
+        #     0, rfc2459.AttributeTypeAndValue().setComponentByName('type', rfc2459.id_at_countryName).setComponentByName(
+        #         'value', char.PrintableString('DE'))
+        # ))
+        #
+        # # Add stateOrProvinceName RDN
+        # rdn_sequence.setComponentByPosition(1, rfc2459.RelativeDistinguishedName().setComponentByPosition(
+        #     0, rfc2459.AttributeTypeAndValue().setComponentByName('type', rfc2459.id_at_stateOrProvinceName).setComponentByName(
+        #         'value', char.PrintableString('BW'))
+        # ))
+        #
+        # # Add stateOrProvinceName RDN
+        # rdn_sequence.setComponentByPosition(2, rfc2459.RelativeDistinguishedName().setComponentByPosition(
+        #     0, rfc2459.AttributeTypeAndValue().setComponentByName('type',
+        #                                                           rfc2459.id_at_localityName).setComponentByName(
+        #         'value', char.PrintableString('Freudenstadt'))
+        # ))
+        #
+        # # Add organizationName RDN
+        # rdn_sequence.setComponentByPosition(3, rfc2459.RelativeDistinguishedName().setComponentByPosition(
+        #     0,
+        #     rfc2459.AttributeTypeAndValue().setComponentByName('type',
+        #                                                        rfc2459.id_at_organizationName).setComponentByName(
+        #         'value', char.PrintableString('Campus Schwarzwald'))
+        # ))
 
         # Add commonName RDN
         rdn_sequence.setComponentByPosition(4, rfc2459.RelativeDistinguishedName().setComponentByPosition(
@@ -141,7 +140,7 @@ class PKIHeaderCreator:
             rfc2459.AttributeTypeAndValue().setComponentByName('type', rfc2459.id_at_commonName).setComponentByName(
                 'value',
                 char.PrintableString(
-                    'CA Trustpoint'))
+                    'Issuing CA'))
         ))
 
         directory_name.setComponentByPosition(0, rdn_sequence)
@@ -164,7 +163,8 @@ class PKIHeaderCreator:
         """
         Sets the sender key identifier in the PKIHeader.
         """
-        ski = self.ca_cert_pem.extensions.get_extension_for_oid(x509.ExtensionOID.SUBJECT_KEY_IDENTIFIER).value.digest
+
+        ski = self.ca_cert.extensions.get_extension_for_oid(x509.ExtensionOID.SUBJECT_KEY_IDENTIFIER).value.public_bytes()
         sender_kid = univ.OctetString(ski).subtype(
             explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2)
         )
