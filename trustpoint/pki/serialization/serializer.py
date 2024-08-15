@@ -52,7 +52,6 @@ API Documentation
 from __future__ import annotations
 
 import abc
-import enum
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization

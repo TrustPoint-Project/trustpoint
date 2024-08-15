@@ -18,11 +18,11 @@ urlpatterns = [
         name='issued_certificates'),
     re_path(
         r'^certificates/download/(?P<pk>[0-9]+)/?$',
-        certificates.CertificateDownloadView.as_view(),
+        certificates.CertificateDownloadView.as_view(short=True),
         name='certificate-download'),
     re_path(
-        r'^certificates/download/(?P<pk>[0-9]+)/(?P<file_format>[a-zA-Z0-9_]+)/(?P<file_content>[a-zA-Z0-9_]+)/?$',
-        certificates.CertificateDownloadView.as_view(),
+        r'^certificates/download/(?P<file_format>[a-zA-Z0-9_]+)/(?P<file_content>[a-zA-Z0-9_]+)/(?P<pk>[0-9]+)/?$',
+        certificates.CertificateDownloadView.as_view(short=False),
         name='certificate-file-download',
     ),
     re_path(
@@ -31,7 +31,11 @@ urlpatterns = [
         name='certificates-download'
     ),
     re_path(
-        r'^certificates/download/multiple/(?P<pks>([0-9]+/)+[0-9]+)/(?P<file_format>[a-zA-Z0-9_]+)/(?P<file_content>[a-zA-Z0-9_]+)/?$',
+        r'^certificates/download/multiple/'
+        r'(?P<file_format>[a-zA-Z0-9_]+)/'
+        r'(?P<file_content>[a-zA-Z0-9_]+)/'
+        r'(?P<archive_format>[a-zA-Z0-9_]+)/'
+        r'(?P<pks>([0-9]+/)+[0-9]+)/?$',
         certificates.CertificateMultipleDownloadView.as_view(),
         name='certificates-file-download'
     ),
