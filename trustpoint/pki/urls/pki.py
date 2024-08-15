@@ -46,19 +46,14 @@ urlpatterns = [
         issuing_cas.IssuingCaAddMethodSelectView.as_view(),
         name='issuing_cas-add-method_select'),
     path(
-        'issuing-cas/add/file-import/file-type-select/',
-        issuing_cas.IssuingCaAddFileTypeSelectView.as_view(),
-        name='issuing_cas-add-file_import-file_type_select'
-    ),
-    path(
         'issuing-cas/add/file-import/pkcs12',
         issuing_cas.IssuingCaAddFileImportPkcs12View.as_view(),
         name='issuing_cas-add-file_import-pkcs12'
     ),
     path(
-        'issuing-cas/add/file-import/other',
-        issuing_cas.IssuingCaAddFileImportOtherView.as_view(),
-        name='issuing_cas-add-file_import-other'
+        'issuing-cas/add/file-import/separate-files',
+        issuing_cas.IssuingCaAddFileImportSeparateFilesView.as_view(),
+        name='issuing_cas-add-file_import-separate_files'
     ),
     path('issuing-cas/detail/<int:pk>/', issuing_cas.IssuingCaDetailView.as_view(), name='issuing_cas-detail'),
     re_path(

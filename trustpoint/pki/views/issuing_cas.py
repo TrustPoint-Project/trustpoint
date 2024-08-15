@@ -10,7 +10,7 @@ from django_tables2 import SingleTableView
 from trustpoint.views.base import BulkDeleteView, ContextDataMixin, TpLoginRequiredMixin
 
 from ..forms import (
-    IssuingCaAddFileImportOtherForm,
+    IssuingCaAddFileImportSeparateFilesForm,
     IssuingCaAddFileImportPkcs12Form,
     IssuingCaAddMethodSelectForm,
     IssuingCaFileTypeSelectForm,
@@ -51,23 +51,6 @@ class IssuingCaAddMethodSelectView(IssuingCaContextMixin, TpLoginRequiredMixin, 
         return HttpResponseRedirect(reverse_lazy('pki:issuing_cas-add-method_select'))
 
 
-class IssuingCaAddFileTypeSelectView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
-    template_name = 'pki/issuing_cas/add/file_type_select.html'
-    form_class = IssuingCaFileTypeSelectForm
-
-    def form_valid(self, form) -> HttpResponse:
-        method_select = form.cleaned_data.get('method_select')
-        if not method_select:
-            return HttpResponseRedirect(reverse_lazy('pki:issuing_cas-add-file_import-file_type_select'))
-
-        if method_select == 'pkcs_12':
-            return HttpResponseRedirect(reverse_lazy('pki:issuing_cas-add-file_import-pkcs12'))
-        elif method_select == 'other':
-            return HttpResponseRedirect(reverse_lazy('pki:issuing_cas-add-file_import-other'))
-
-        return HttpResponseRedirect(reverse_lazy('pki:issuing_cas-add-file_import-file_type_select'))
-
-
 class IssuingCaAddFileImportPkcs12View(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
 
     template_name = 'pki/issuing_cas/add/file_import.html'
@@ -75,10 +58,10 @@ class IssuingCaAddFileImportPkcs12View(IssuingCaContextMixin, TpLoginRequiredMix
     success_url = reverse_lazy('pki:issuing_cas')
 
 
-class IssuingCaAddFileImportOtherView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
+class IssuingCaAddFileImportSeparateFilesView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
 
     template_name = 'pki/issuing_cas/add/file_import.html'
-    form_class = IssuingCaAddFileImportOtherForm
+    form_class = IssuingCaAddFileImportSeparateFilesForm
     success_url = reverse_lazy('pki:issuing_cas')
 
 

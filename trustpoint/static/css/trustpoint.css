@@ -536,6 +536,24 @@ svg.theme-icon {
     min-width: 20rem;
 }
 
+.min-width-25 {
+    min-width: 25rem;
+}
+
+.min-width-30 {
+    min-width: 30rem;
+}
+
+.min-width-35 {
+    min-width: 35rem;
+}
+
+.min-width-40 {
+    min-width: 40rem;
+}
+
+
+
 .tp-grid { /* unused class */
     display: grid !important;
     grid-template-columns: 1fr;

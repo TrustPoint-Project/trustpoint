@@ -123,6 +123,78 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
                 p12=pkcs12_raw,
                 password=pkcs12_password)
         except Exception as e:
+            raise ValidationError(
+                'Failed to load PKCS#12 file. Either malformed file or wrong password.',
+                code='pkcs12-loading-failed')
+
+        try:
+            initializer.save()
+        except Exception as e:
+            raise ValidationError('Unexpected Error. Failed to save validated Issuing CA in DB.')
+
+
+class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
+
+    unique_name = forms.CharField(
+        max_length=256,
+        label=f'Unique Name ' + UniqueNameValidator.form_label,
+        widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
+        validators=[UniqueNameValidator()])
+    private_key_file = forms.FileField(
+        label=_('Private Key File (.key, .pem, .keystore)'), required=True)
+    private_key_file_password = forms.CharField(
+        # hack, force autocomplete off in chrome with: one-time-code
+        widget=forms.PasswordInput(attrs={'autocomplete': 'one-time-code'}),
+        label=_('[Optional] Private Key File Password'),
+        required=False)
+    issuing_ca_certificate = forms.FileField(
+        label=_('[Optional] Issuing CA Certificate (.cer, .der, .pem, .p7b)'),
+        required=False)
+    certificate_chain = forms.FileField(
+        label=_('Certificate Chain (.pem, .p7b)'), required=True)
+
+    def clean_unique_name(self) -> str:
+        unique_name = self.cleaned_data['unique_name']
+        if IssuingCaModel.objects.filter(unique_name=unique_name).exists():
+            raise ValidationError('Unique name is already taken. Choose another one.')
+        return unique_name
+
+    def clean(self):
+        cleaned_data = super().clean()
+        unique_name = cleaned_data.get('unique_name')
+        if unique_name is None:
+            return
+
+        try:
+            # This should not throw any exceptions, even if invalid data was sent via HTTP POST request.
+            # However, just in case.
+            private_key_file_raw = cleaned_data.get('private_key_file').read()
+            certificate_chain_raw = cleaned_data.get('certificate_chain').read()
+            issuing_ca_cert_raw = cleaned_data.get('issuing_ca_certificate')
+            if issuing_ca_cert_raw is not None:
+                issuing_ca_cert_raw = issuing_ca_cert_raw.read()
+            private_key_file_password = cleaned_data.get('private_key_file_password')
+        except Exception:
+            raise ValidationError(
+                _('Unexpected error occurred while trying to get file contents. Please see logs for further details.'),
+                code='unexpected-error')
+
+        if private_key_file_password:
+            try:
+                private_key_file_password = private_key_file_password.encode()
+            except Exception:
+                raise ValidationError('The Private Key File Password contains invalid data, that cannot be encoded in UTF-8.')
+        else:
+            pkcs12_password = None
+
+        try:
+            initializer = LocalUnprotectedIssuingCaFromSeparateFilesInitializer(
+                unique_name=cleaned_data['unique_name'],
+                private_key_file_raw=private_key_file_raw,
+                password=private_key_file_password,
+                issuing_ca_cert_raw=issuing_ca_cert_raw,
+                certificate_chain_raw=certificate_chain_raw)
+        except Exception as e:
             print(e)
             print(traceback.format_exc())
             raise ValidationError(
@@ -135,26 +207,6 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
             print(e)
             print(traceback.format_exc())
             raise ValidationError('Unexpected Error. Failed to save validated Issuing CA in DB.')
-
-
-class IssuingCaAddFileImportOtherForm(forms.Form):
-
-    unique_name = forms.CharField(
-        max_length=256,
-        label=f'Unique Name ' + UniqueNameValidator.form_label,
-        widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
-        validators=[UniqueNameValidator()])
-    private_key_file = forms.FileField(
-        label=_('Private key file (.key, .pem, .keystore)'), required=True)
-    private_key_password = forms.CharField(
-        # hack, force autocomplete off in chrome with: one-time-code
-        widget=forms.PasswordInput(attrs={'autocomplete': 'one-time-code'}),
-        label=_('[Optional] Private key file password'),
-        required=False)
-    cert_chain = forms.FileField(
-        label=_('Certificate chain (.pem, .p7b, .p7c)'), required=True)
-    auto_crl = forms.BooleanField(label='Generate CRL upon certificate revocation.', initial=True, required=False)
-
 
 
 class DomainBaseForm(forms.ModelForm):
