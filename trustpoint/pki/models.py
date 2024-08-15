@@ -20,6 +20,7 @@ from django.utils.translation import gettext_lazy as _
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
 from .serialization.serializer import CertificateCollectionSerializer, CertificateSerializer, PublicKeySerializer
+from .validator.field import UniqueNameValidator
 
 if TYPE_CHECKING:
     from typing import Union
@@ -1275,9 +1276,9 @@ class IssuingCaModel(models.Model):
     """Issuing CA model."""
 
     unique_name = models.CharField(
-        verbose_name=_('Unique Name'),
+        verbose_name=f'Unique Name',
         max_length=100,
-        validators=[MinLengthValidator(3)],
+        validators=[UniqueNameValidator()],
         unique=True
     )
 
@@ -1330,8 +1331,10 @@ class IssuingCaModel(models.Model):
         return self.issuing_ca_certificate.get_public_key_serializer()
 
     def get_issuing_ca_certificate_chain(self) -> list[CertificateModel]:
+        print('HHHHHHHH')
         cert_chain = [self.root_ca_certificate]
-        cert_chain.extend(self.intermediate_ca_certificates.all().order_by('order').asc())
+        # print(self.intermediate_ca_certificates.all())
+        # cert_chain.extend(self.intermediate_ca_certificates.all().order_by('order').asc())
         cert_chain.append(self.issuing_ca_certificate)
         return cert_chain
 
@@ -1374,7 +1377,11 @@ class CertificateChainOrderModel(models.Model):
 class DomainModel(models.Model):
     """Endpoint Profile model."""
 
-    unique_name = models.CharField(_('Unique Name'), max_length=100, unique=True)
+    unique_name = models.CharField(
+        f'Unique Name',
+        max_length=100,
+        unique=True,
+        validators=[UniqueNameValidator()])
 
     issuing_ca = models.ForeignKey(
         IssuingCaModel,
@@ -1382,7 +1389,7 @@ class DomainModel(models.Model):
         blank=True,
         null=True,
         verbose_name=_('Issuing CA'),
-        related_name='domain'
+        related_name='domain',
     )
 
     def __str__(self) -> str:
@@ -1495,9 +1502,9 @@ class CRLStorage(models.Model):
 class TrustStoreModel(models.Model):
 
     unique_name = models.CharField(
-        verbose_name=_('Unique Name'),
+        verbose_name=f'Unique Name',
         max_length=100,
-        validators=[MinLengthValidator(3)],
+        validators=[UniqueNameValidator()],
         unique=True
     )
 
