@@ -14,7 +14,7 @@ class ErrorHandler:
     """
 
     def handle_error(self, error_str: str, error_code: int, header: univ.Sequence,
-                     protection: RFC4210Protection) -> str:
+                     protection: RFC4210Protection, issuing_ca_object) -> bytes:
         """
         Handles errors by generating an appropriate error response.
 
@@ -22,12 +22,13 @@ class ErrorHandler:
         :param error_code: int, the error code.
         :param header: univ.Sequence, the header of the incoming PKI message.
         :param protection: RFC4210Protection, the protection information.
+        :param issuing_ca_object: The IssuingCa object of the domain
         :return: str, the error response PKI message.
         """
         try:
             pki_body_type = self._get_error_body_type()
             pki_body = self._create_pki_body(error_str, error_code, pki_body_type)
-            pki_header = self._create_pki_header(header, protection)
+            pki_header = self._create_pki_header(header, protection, issuing_ca_object)
 
             response_protection = protection.compute_protection(pki_header, pki_body)
 
@@ -64,15 +65,15 @@ class ErrorHandler:
         body_creator.set_fail(int_fail=error_code, str_fail=error_str)
         return body_creator.create_pki_body(int_status=2)
 
-    def _create_pki_header(self, header, protection):
+    def _create_pki_header(self, header, protection, issuing_ca_object):
         """
         Creates the PKI header for the error response.
 
         :param header: univ.Sequence, the header of the incoming PKI message.
-        :param protection: RFC4210Protection, the protection information.
+        :param issuing_ca_object: The IssuingCa object of the domain
         :return: PKIHeader, the created PKI header.
         """
-        header_creator = PKIHeaderCreator(header, protection.ca_cert)
+        header_creator = PKIHeaderCreator(header, issuing_ca_object)
         return header_creator.create_header()
 
     def _create_pki_message(self, pki_body, pki_header, pki_body_type, response_protection):

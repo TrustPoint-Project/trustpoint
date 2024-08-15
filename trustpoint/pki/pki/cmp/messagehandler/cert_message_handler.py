@@ -61,6 +61,7 @@ class CertMessageHandler:
         :return: str, the response PKI message.
         """
         self.logger.info("Handling certificate request.")
+        self.issuing_ca_object = issuing_ca_object
         self.ca_cert = issuing_ca_object.get_issuing_ca_certificate_serializer().as_crypto()
         self.ca_key = issuing_ca_object.private_key
         root_cert = issuing_ca_object.issuing_ca_model.root_ca_certificate.get_certificate_serializer().as_crypto()
@@ -218,7 +219,7 @@ class CertMessageHandler:
 
         :return: PKIHeader, the created PKI header.
         """
-        header_creator = PKIHeaderCreator(self.header, self.ca_cert)
+        header_creator = PKIHeaderCreator(self.header, self.issuing_ca_object)
         return header_creator.create_header()
 
     def _handle_extra_certs(self, ca_cert):

@@ -1,10 +1,11 @@
-from pyasn1_modules import rfc2459, rfc4210
+from pyasn1_modules import rfc2459, rfc4210, rfc5280
 from pyasn1.codec.der import decoder
 from pyasn1.type import univ, namedtype, char, useful, tag
 import datetime
 import os
 import traceback
 from cryptography import x509
+from cryptography.x509 import NameOID
 import logging
 
 from pki.pki.cmp.validator.header_validator import GenericHeaderValidator
@@ -17,16 +18,16 @@ class PKIHeaderCreator:
     """
     A class to create a PKIHeader for the PKIMessage.
     """
-    def __init__(self, incoming_header: rfc4210.PKIHeader, ca_cert: x509.Certificate):
+    def __init__(self, incoming_header: rfc4210.PKIHeader, issuing_ca_object):
         """
         Initialize the PKIHeaderCreator with the incoming header and CA certificate.
 
-        Args:
-            incoming_header (rfc4210.PKIHeader): The incoming PKIHeader.
-            ca_cert (x509.Certificate): The CA certificate in PEM format.
+        :param incoming_header (rfc4210.PKIHeader): The incoming PKIHeader.
+        :param issuing_ca_object: The IssuingCa object of the domain
         """
         self.incoming_header = incoming_header
-        self.ca_cert = ca_cert
+        self.issuing_ca_object = issuing_ca_object
+        self.ca_cert = issuing_ca_object.get_issuing_ca_certificate_serializer().as_crypto()
 
         self.pki_header = rfc4210.PKIHeader()
         self.pki_header.setComponentByName('pvno', 2)
@@ -102,46 +103,34 @@ class PKIHeaderCreator:
         """
         sender = rfc2459.GeneralName()
 
-        # Define the directoryName using RDNSequence encapsulated in Name
         directory_name = rfc2459.Name().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))
-
         rdn_sequence = rfc2459.RDNSequence()
 
-        # Add countryName RDN
-        # rdn_sequence.setComponentByPosition(0, rfc2459.RelativeDistinguishedName().setComponentByPosition(
-        #     0, rfc2459.AttributeTypeAndValue().setComponentByName('type', rfc2459.id_at_countryName).setComponentByName(
-        #         'value', char.PrintableString('DE'))
-        # ))
-        #
-        # # Add stateOrProvinceName RDN
-        # rdn_sequence.setComponentByPosition(1, rfc2459.RelativeDistinguishedName().setComponentByPosition(
-        #     0, rfc2459.AttributeTypeAndValue().setComponentByName('type', rfc2459.id_at_stateOrProvinceName).setComponentByName(
-        #         'value', char.PrintableString('BW'))
-        # ))
-        #
-        # # Add stateOrProvinceName RDN
-        # rdn_sequence.setComponentByPosition(2, rfc2459.RelativeDistinguishedName().setComponentByPosition(
-        #     0, rfc2459.AttributeTypeAndValue().setComponentByName('type',
-        #                                                           rfc2459.id_at_localityName).setComponentByName(
-        #         'value', char.PrintableString('Freudenstadt'))
-        # ))
-        #
-        # # Add organizationName RDN
-        # rdn_sequence.setComponentByPosition(3, rfc2459.RelativeDistinguishedName().setComponentByPosition(
-        #     0,
-        #     rfc2459.AttributeTypeAndValue().setComponentByName('type',
-        #                                                        rfc2459.id_at_organizationName).setComponentByName(
-        #         'value', char.PrintableString('Campus Schwarzwald'))
-        # ))
 
-        # Add commonName RDN
-        rdn_sequence.setComponentByPosition(4, rfc2459.RelativeDistinguishedName().setComponentByPosition(
-            0,
-            rfc2459.AttributeTypeAndValue().setComponentByName('type', rfc2459.id_at_commonName).setComponentByName(
-                'value',
-                char.PrintableString(
-                    'Issuing CA'))
-        ))
+        for i, attribute in enumerate(self.ca_cert.subject):
+            rdn = rfc2459.RelativeDistinguishedName()
+
+            rfc_oid = None
+            if attribute.oid == NameOID.COUNTRY_NAME:
+                rfc_oid = rfc2459.id_at_countryName
+            elif attribute.oid == NameOID.STATE_OR_PROVINCE_NAME:
+                rfc_oid = rfc2459.id_at_stateOrProvinceName
+            elif attribute.oid == NameOID.LOCALITY_NAME:
+                rfc_oid = rfc2459.id_at_localityName
+            elif attribute.oid == NameOID.ORGANIZATION_NAME:
+                rfc_oid = rfc2459.id_at_organizationName
+            elif attribute.oid == NameOID.ORGANIZATIONAL_UNIT_NAME:
+                rfc_oid = rfc2459.id_at_organizationalUnitName
+            elif attribute.oid == NameOID.COMMON_NAME:
+                rfc_oid = rfc2459.id_at_commonName
+            else:
+                raise ValueError("OID of subject issuer is not supported")
+
+            if rfc_oid:
+                atv = rfc2459.AttributeTypeAndValue().setComponentByName('type', rfc_oid)
+                atv.setComponentByName('value', char.PrintableString(attribute.value))
+                rdn.setComponentByPosition(0, atv)
+                rdn_sequence.setComponentByPosition(i, rdn)
 
         directory_name.setComponentByPosition(0, rdn_sequence)
 

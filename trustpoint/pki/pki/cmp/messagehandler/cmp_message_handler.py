@@ -264,7 +264,7 @@ class CMPMessageHandler:
         """
         self.logger.error("Handling error: %s with code %d", str(exception), error_code)
         error_handler = ErrorHandler()
-        result = error_handler.handle_error(str(exception), error_code, self.header, self.protection)
+        result = error_handler.handle_error(str(exception), error_code, self.header, self.protection, self.issuing_ca_object)
         self.logger.debug("Error handled, response generated.")
 
         return result
