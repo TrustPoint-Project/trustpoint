@@ -63,7 +63,7 @@ class TrustStoresDetailView(TrustStoresContextMixin, TpLoginRequiredMixin, Detai
     context_object_name = 'truststore'
 
 
-class TruststoresDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
+class TrustStoresDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
 
     model = CertificateModel
     success_url = reverse_lazy('pki:truststores')
@@ -86,7 +86,7 @@ class TruststoresDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, De
         return CertificateDownloadResponseBuilder(pk, file_format, file_content).as_django_http_response()
 
 
-class TruststoresMultipleDownloadView(
+class TrustStoresMultipleDownloadView(
     CertificatesContextMixin,
     TpLoginRequiredMixin,
     PrimaryKeyFromUrlToQuerysetMixin,
