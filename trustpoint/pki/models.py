@@ -19,7 +19,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
-from .serialization.serializer import CertificateCollectionSerializer, CertificateSerializer, PublicKeySerializer
+from .serializer import CertificateCollectionSerializer, CertificateSerializer, PublicKeySerializer
 from .validator.field import UniqueNameValidator
 
 if TYPE_CHECKING:

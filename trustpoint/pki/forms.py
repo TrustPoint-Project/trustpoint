@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-import traceback
-
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from django.core.exceptions import ValidationError
 
-from pki.serialization.initializer import LocalUnprotectedIssuingCaFromP12FileInitializer, TrustStoreInitializer
+from pki.initializer.issuing_ca.local.db import LocalUnprotectedIssuingCaFromP12FileInitializer
 from pki.models import IssuingCaModel, DomainModel
 from pki.validator.field import UniqueNameValidator
 
@@ -289,16 +287,18 @@ class TrustStoreAddForm(forms.Form):
                 code='unexpected-error')
 
         try:
-            initializer = TrustStoreInitializer(
-                unique_name=cleaned_data['unique_name'],
-                trust_store=trust_store_file)
+            # initializer = TrustStoreInitializer(
+            #     unique_name=cleaned_data['unique_name'],
+            #     trust_store=trust_store_file)
+            pass
         except Exception as e:
             raise ValidationError(
                 'Failed to load file. Seems to be malformed.',
                 code='trust-store-file-loading-failed')
 
         try:
-            initializer.save()
+            # initializer.save()
+            pass
         except Exception:
             raise ValidationError('Unexpected Error. Failed to save validated Trust Store in DB.')
 

@@ -7,7 +7,6 @@ from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.serialization import pkcs12
-from django.forms import ValidationError
 
 from pki.models import (
     CertificateModel,
@@ -16,11 +15,9 @@ from pki.models import (
     TrustStoreModel,
     TrustStoreOrderModel)
 
-from pki.serialization.serializer import PrivateKeySerializer, CertificateSerializer, CertificateCollectionSerializer
+from pki.serializer import PrivateKeySerializer, CertificateSerializer, CertificateCollectionSerializer
 
 from typing import TYPE_CHECKING
-
-from util.x509.credentials import UnsupportedKeyTypeError
 
 if TYPE_CHECKING:
     from typing import Union
