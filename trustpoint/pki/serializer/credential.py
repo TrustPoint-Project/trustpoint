@@ -1,3 +1,5 @@
+"""The credential module provides Serializer classes for X.509 Credential serialization."""
+
 from __future__ import annotations
 
 from cryptography import x509
@@ -22,48 +24,6 @@ class CredentialSerializer(Serializer):
     Warnings:
         The CredentialSerializer class does not evaluate or validate any contents of the credential,
         i.e. neither the certificate chain nor if the private key matches the certificate is validated.
-
-    .. uml::
-
-        skinparam linetype ortho
-        set separator none
-
-        abstract class Serializer
-        class PrivateKeySerializer
-        class CertificateSerializer
-        class CertificateCollectionSerializer
-        class CredentialSerializer {
-            -_credential_private_key: PrivateKey
-            -_credential_certificate: x509.Certificate
-            -_additional_certificates: list[x509.Certificate]
-
-            _private_key_serializer_class: type[PrivateKeySerializer]
-            _certificate_serializer_class: type[CertificateSerializer]
-            _certificate_collection_serializer_class: type[CertificateCollectionSerializer]
-            --
-            +<<create>> CredentialSerializer(credential_private_key, credential_certificate, additional_certificates)
-            {static} +<<create>> from_crypto(certificate_collection)
-            {static} +<<create>> from_crypto_pkcs12(p12)
-            {static} +<<create>> from_bytes(credential_data, password)
-
-            +as_pem() : bytes
-            +as_pkcs7_der() : bytes
-            +as_pkcs7_pem() : bytes
-            +as_crypto() : bytes
-
-            {static} -_get_encryption_algorithm(password) : serialization.KeySerializationEncryption
-            {static} -_load_pkcs12(p12_data, password) : pkcs12.PKCS12KeyAndCertificates
-        }
-
-        Serializer <|-- PrivateKeySerializer
-        Serializer <|-- CertificateSerializer
-        Serializer <|-- CertificateCollectionSerializer
-        Serializer <|-- CredentialSerializer
-
-        CredentialSerializer --o PrivateKeySerializer
-        CredentialSerializer --o CertificateSerializer
-        CredentialSerializer --o CertificateCollectionSerializer
-
     """
 
     _credential_private_key: PrivateKey

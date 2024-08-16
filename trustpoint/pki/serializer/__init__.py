@@ -50,9 +50,6 @@ API Documentation
 """
 
 
-from __future__ import annotations
-
-
 from .base import Serializer
 from .key import PublicKeySerializer, PrivateKeySerializer
 from .certificate import CertificateSerializer, CertificateCollectionSerializer

@@ -1,3 +1,6 @@
+"""The key module provides Serializer classes for cryptographic key serialization."""
+
+
 from __future__ import annotations
 
 from cryptography.hazmat.primitives import serialization
@@ -16,31 +19,6 @@ class PublicKeySerializer(Serializer):
 
     Warnings:
         The PublicKeySerializer class does not evaluate or validate any contents of the public key.
-
-    .. uml::
-
-        skinparam linetype ortho
-        set separator none
-
-        abstract class Serializer
-        class PublicKeySerializer {
-            -_public_key: PublicKey
-            --
-            +<<create>> PublicKeySerializer(public_key)
-            {static} +<<create>> from_crypto(public_key)
-            {static} +<<create>> from_bytes(public_key_data)
-            {static} +<<create>> from_string(public_key_data)
-            {static} +<<create>> from_private_key(private_key)
-
-            +as_pem() : bytes
-            +as_der() : bytes
-            +as_crypto() : PublicKey
-
-            {static} -_load_pem_public_key(public_key_data) : PublicKey
-            {static} -_load_der_public_key(public_key_data) : PublicKey
-        }
-
-        Serializer <|-- PublicKeySerializer
     """
 
     _public_key: PublicKey
@@ -174,46 +152,9 @@ class PrivateKeySerializer(Serializer):
 
     Warnings:
         The PrivateKeySerializer class does not evaluate or validate any contents of the private key.
-
-    .. uml::
-
-        skinparam linetype ortho
-        set separator none
-
-        abstract class Serializer
-        class PublicKeySerializer
-        class PrivateKeySerializer {
-            -_private_key: PrivateKey
-
-            -_public_key_serializer_class: type[PublicKeySerializer]
-            --
-            +<<create>> PrivateKeySerializer(private_key)
-            {static} +<<create>> from_crypto(private_key)
-            {static} +<<create>> from_bytes(private_key_data, password)
-            {static} +<<create>> from_string(private_key_data, password)
-
-            +as_pkcs1_pem(password) : bytes
-            +as_pkcs1_der(password) : bytes
-            +as_pkcs8_pem(password) : bytes
-            +as_pkcs8_der(password) : bytes
-            +as_pkcs12(password, friendly_name) : bytes
-            +as_crypto() : PrivateKey
-            +get_public_key_serializer() : PublicKeySerializer
-
-            {static} -_get_encryption_algorithm(password) : serialization.KeySerializationEncryption
-            {static} -_load_pem_private_key(private_key_data, password) : PrivateKey
-            {static} -_load_der_private_key(private_key_data, password) : PrivateKey
-            {static} -_load_pkcs12_private_key(p12_data, password) : PrivateKey
-        }
-
-        Serializer <|-- PrivateKeySerializer
-        Serializer <|-- PublicKeySerializer
-
-        PrivateKeySerializer --o PublicKeySerializer
     """
 
     _private_key: PrivateKey
-
     _public_key_serializer_class: type[PublicKeySerializer] = PublicKeySerializer
 
     def __init__(self, private_key: PrivateKey) -> None:

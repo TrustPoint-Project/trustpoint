@@ -1,3 +1,5 @@
+"""The certificate module provides Serializer classes for X.509 Certificate serialization."""
+
 from __future__ import annotations
 
 from cryptography import x509
@@ -14,34 +16,6 @@ class CertificateSerializer(Serializer):
 
     Warnings:
         The CertificateSerializer class does not evaluate or validate any contents of the certificate.
-
-    **CertificateSerializer UML Class Diagram**
-
-    .. uml::
-
-        skinparam linetype ortho
-        set separator none
-
-        abstract class Serializer
-
-        class CertificateSerializer {
-            -_certificate: x509.Certificate
-            --
-            +<<create>> CertificateSerializer(certificate)
-            {static} +<<create>> from_crypto(certificate)
-            {static} +<<create>> from_bytes(certificate_data)
-            {static} +<<create>> from_string(certificate_data)
-
-            +public_key_serializer() : PublicKeySerializer
-
-            +as_der() : bytes
-            +as_crypto() : x509.Certificate
-
-            {static} -_load_pem_certificate(certificate_data) : x509.Certificate
-            {static} -_load_der_certificate(certificate_data) : x509.Certificate
-        }
-
-        Serializer <|-- CertificateSerializer
     """
 
     _certificate: x509.Certificate
@@ -191,44 +165,9 @@ class CertificateCollectionSerializer(Serializer):
     Warnings:
         The CertificateCollectionSerializer class does not evaluate or validate any contents of the certificate
         collection, i.e. no certificate chains are validated.
-
-    .. uml::
-
-        skinparam linetype ortho
-        set separator none
-
-        abstract class Serializer
-        class CertificateSerializer
-        class CertificateCollectionSerializer {
-            -_certificate_collection: list[x509.Certificate]
-            -_certificate_serializer_class: type[CertificateSerializer]
-            --
-            +<<create>> CertificateCollectionSerializer(certificate_collection)
-            {static} +<<create>> from_crypto(credential_private_key, credential_certificate, additional_certificates)
-            {static} +<<create>> from_crypto_pkcs12(p12)
-            {static} +<<create>> from_bytes(credential_data, password)
-            {static} +<<create>> from_string(certificate_collection_data)
-            {static} +<<create>> from_list_of_bytes(certificate_collection_data)
-            {static} +<<create>> from_list_of_strings(certificate_collection_data)
-
-            +as_pkcs12(friendly_name, password) : bytes
-            +as_crypto() : bytes
-
-            +get_credential_private_key_serializer() : PrivateKeySerializer
-            +get_credential_certificate_serializer() : CertificateSerializer
-            +get_additional_certificate_serializer() : CertificateCollectionSerializer
-            +get_certificate_collection_serializer() : CertificateCollectionSerializer
-
-            {static} -_load_pkcs12(p12_data, password) : pkcs12.PKCS12KeyAndCertificates
-        }
-
-        Serializer <|-- CertificateCollectionSerializer
-        Serializer <|-- CertificateSerializer
-        CertificateCollectionSerializer --o CertificateSerializer
     """
 
     _certificate_collection: list[x509.Certificate]
-    _certificate_serializer_class: type[CertificateSerializer] = CertificateSerializer
 
     def __init__(self, certificate_collection: list[x509.Certificate]) -> None:
         """Inits the CertificateCollectionSerializer class.

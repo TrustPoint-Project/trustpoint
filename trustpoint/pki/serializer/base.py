@@ -1,3 +1,5 @@
+"""The base module provides abstract base Serializer classes."""
+
 import abc
 
 
@@ -7,17 +9,5 @@ class Serializer(abc.ABC):
     Warnings:
         Serializer classes do not include any type of validation.
         They are merely converting between formats.
-
-    **Serializer UML Class Diagram**
-
-    .. uml::
-
-        skinparam linetype ortho
-        set separator none
-
-        abstract class abc.ABC
-        abstract class Serializer
-
-        abc.ABC <|-- Serializer
     """
     pass
