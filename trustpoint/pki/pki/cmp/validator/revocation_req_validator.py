@@ -88,8 +88,6 @@ class RevocationReqValidator:
 
         reasonCode = self.extract_reason_code(self._crlEntryDetails)
 
-        print(reasonCode)
-
         if reasonCode is None:
             raise BadMessageCheck("The 'reasonCode' field is required and must be a valid CRLReason value.")
 

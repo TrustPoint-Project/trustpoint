@@ -10,6 +10,7 @@ from pyasn1_modules import rfc2459
 import datetime
 import logging
 
+from pki.models import CertificateModel
 from pki.pki.cmp.builder.pki_body_creator import PkiBodyCreator
 from pki.pki.cmp.builder.pki_message_creator import PKIMessageCreator
 from pki.pki.cmp.builder.pki_header_creator import PKIHeaderCreator
@@ -53,12 +54,12 @@ class CertMessageHandler:
         validator.validate()
         self.logger.debug("Validation completed.")
 
-    def handle(self, issuing_ca_object):
+    def handle(self, issuing_ca_object) -> bytes:
         """
         Handles the certificate request and generates an appropriate response PKI message.
 
         :param issuing_ca_object: The IssuingCa object.
-        :return: str, the response PKI message.
+        :return: bytes, the response PKI message.
         """
         self.logger.info("Handling certificate request.")
         self.issuing_ca_object = issuing_ca_object
@@ -73,7 +74,12 @@ class CertMessageHandler:
         subject_name, san_list, public_key = self._prepare_subject_san(cert_req_msg)
 
         self.logger.debug("Generating signed certificate.")
-        cert_pem = self._generate_signed_certificate(subject_name, san_list, public_key, self.ca_cert, self.ca_key)
+        cert = self._generate_signed_certificate(subject_name, san_list, public_key, self.ca_cert, self.ca_key)
+
+        self.logger.debug("Save the certificate in the database.")
+        CertificateModel.save_certificate(certificate=cert)
+
+        cert_pem = self._serialize_client_cert(cert)
 
         self.logger.debug("Creating PKI body.")
         pki_body = self._create_pki_body(cert_req_msg, cert_pem, self.ca_cert)
@@ -174,9 +180,8 @@ class CertMessageHandler:
         )
 
         cert = cert_builder.sign(ca_key, hashes.SHA256())
-        cert_pem = self._serialize_client_cert(cert)
 
-        return cert_pem
+        return cert
 
     def _serialize_client_cert(self, client_cert: Certificate) -> bytes:
         """

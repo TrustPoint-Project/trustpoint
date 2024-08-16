@@ -197,32 +197,3 @@ class PKIBodyTypes:
             f")"
         )
 
-
-if __name__ == '__main__':
-
-    pki_body = PKIBodyTypes()
-    input_name = "ir"
-    request_class, request_friendly_name, response_short_name, \
-        response_class, response_friendly_name, supported, valid = pki_body.get_response(
-        input_name)
-    print(f"Input name: {input_name}")
-    print(f"Request class: {request_class}")
-    print(f"Request friendly name: {request_friendly_name}")
-    print(f"Response short name: {response_short_name}")
-    print(f"Response class: {response_class}")
-    print(f"Response friendly name: {response_friendly_name}")
-
-    input_name = "CertReqMessages"
-    request_class, request_friendly_name, response_short_name, \
-        response_class, response_friendly_name, supported, valid = pki_body.get_response(
-        input_name)
-    print(f"\nInput name: {input_name}")
-    print(f"Request class: {request_class}")
-    print(f"Request friendly name: {request_friendly_name}")
-    print(f"Response short name: {response_short_name}")
-    print(f"Response class: {response_class}")
-    print(f"Response friendly name: {response_friendly_name}")
-
-    pki_body.get_response("kur")
-
-    print(pki_body.valid_request)

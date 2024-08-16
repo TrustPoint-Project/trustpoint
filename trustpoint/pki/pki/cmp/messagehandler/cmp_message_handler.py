@@ -77,11 +77,11 @@ class CMPMessageHandler:
                 if not isinstance(cert, x509.Certificate):
                     ValueError(f"Each item in authorized_clients must be an instance of x509.Certificate")
 
-    def set_pbm_based_protection(self, shared_secret: str):
+    def set_pbm_based_protection(self, shared_secret: bytes):
         """
         Define params for a PBM protection.
 
-        :param shared_secret: str, the shared secret (optional, required for PBM mode).
+        :param shared_secret: bytes, the shared secret (required for PBM mode).
         """
         self.protection_mode_pbm = True
         self.shared_secret = shared_secret
@@ -138,11 +138,11 @@ class CMPMessageHandler:
                 NotAuthorized, SystemUnavail, SystemFailure, DuplicateCertReq) as e:
             self.logger.error(traceback.format_exc())
             response = self._handle_error(e, e.code)
-            http_status_code = HttpStatusCode.BAD_REQUEST
+            #http_status_code = HttpStatusCode.BAD_REQUEST
         except Exception as e:
             self.logger.error(traceback.format_exc())
             response = self._handle_error(e, 25)
-            http_status_code = HttpStatusCode.BAD_REQUEST
+            #http_status_code = HttpStatusCode.BAD_REQUEST
 
         return response, http_status_code
 
@@ -243,7 +243,7 @@ class CMPMessageHandler:
         :return: str, the response PKI message.
         """
         revocation_msg_handler = RevocationMessageHandler(self.body, self.header, self.pki_body_type, self.protection)
-        return revocation_msg_handler.handle()
+        return revocation_msg_handler.handle(self.issuing_ca_object)
 
     def _handle_general_request(self) -> bytes:
         """

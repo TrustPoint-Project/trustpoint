@@ -1,21 +1,17 @@
 from __future__ import annotations
 
-from pyasn1.codec.der import decoder
 from pyasn1_modules import rfc4210
 import logging
 
 from pki.models import DomainModel
-from pki.pki.cmp.validator.header_validator import GenericHeaderValidator
-from pki.pki.cmp.validator.initialization_req_validator import InitializationReqValidator
 from pki.pki.request.message import (
     PkiRequestMessage,
-    PkiResponseMessage,
     Protocol,
-    MimeType,
-    HttpStatusCode,
     Operation)
 
 from typing import TYPE_CHECKING
+
+from pki.pki.request.message.cmp_validator import CmpRequestMessageValidator
 
 if TYPE_CHECKING:
     from typing import Union
@@ -26,7 +22,8 @@ if TYPE_CHECKING:
 
 class CmpOperation(Operation):
     INITIALIZATION_REQUEST = 'ir'
-
+    REVOCATION_REQUEST = 'rr'
+    GENERAL_MESSAGE = 'genm'
 
 class PkiCmpInitializationRequestMessage(PkiRequestMessage):
     _cmp: Asn1Type
@@ -44,110 +41,232 @@ class PkiCmpInitializationRequestMessage(PkiRequestMessage):
         self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
 
-        try:
-            self._init_mimetype(mimetype)
-        except ValueError:
-            return
+        self.logger.info("Initializing PkiCmpInitializationRequestMessage for domain: %s", domain_unique_name)
 
+        self.validator = CmpRequestMessageValidator(self.logger)
         self._content_transfer_encoding = None
 
-        try:
-            self._init_domain_model(domain_unique_name)
-        except ValueError:
+        result = self.validator.validate_initialization_request(mimetype, domain_unique_name, DomainModel, raw_request,
+                                                                rfc4210.PKIMessage())
+        if not result:
+            self._invalid_response = self.validator.invalid_response
+            self._is_valid = False
+            self.logger.error("Validation failed during initialization.")
             return
 
-        try:
-            self._init_raw_request(raw_request)
-        except ValueError:
-            return
-
-        # TODO: check domain configurations, if protocol and operation are enabled
-
-    def _init_mimetype(self, mimetype: None | str) -> None:
-        try:
-            self._mimetype = MimeType(mimetype)
-            if self._mimetype != MimeType.APPLICATION_PKIXCMP:
-                raise ValueError
-        except ValueError:
-            self._build_wrong_mimetype_response(mimetype)
-            self._is_valid = False
-            raise ValueError
-
-    def _build_wrong_mimetype_response(self, received_mimetype: None | str = None) -> None:
-        # TODO: Build CMP error message -> raw_message
-        if received_mimetype is None:
-            error_msg = (
-                f'Request is missing a MimeType (ContentType). '
-                f'Expected MimeType {MimeType.APPLICATION_PKIXCMP.value}.')
-        else:
-            error_msg = (
-                f'Expected MimeType {MimeType.APPLICATION_PKIXCMP.value}, but received {received_mimetype}.')
-
-        self.logger.error(error_msg)
-        self._invalid_response = PkiResponseMessage(
-            raw_response=error_msg,
-            http_status=HttpStatusCode.UNSUPPORTED_MEDIA_TYPE,
-            mimetype=MimeType.APPLICATION_PKIXCMP)
-
-    def _init_domain_model(self, domain_unique_name: str) -> None:
-        try:
-            self._domain_model = DomainModel.objects.get(unique_name=domain_unique_name)
-        except DomainModel.DoesNotExist:
-            self._build_domain_does_not_exist()
-            self._is_valid = False
-            raise ValueError
-
-    def _build_domain_does_not_exist(self) -> None:
-        # TODO: Build CMP error message -> raw_message
-        error_msg = f'Domain {self._domain_unique_name} does not exist.'
-        self.logger.error(error_msg)
-        self._invalid_response = PkiResponseMessage(
-            raw_response=error_msg,
-            http_status=HttpStatusCode.BAD_REQUEST,
-            mimetype=MimeType.APPLICATION_PKIXCMP)
-
-    def _init_raw_request(self, raw_request: bytes) -> None:
-        try:
-            loaded_request, _ = decoder.decode(raw_request, asn1Spec=rfc4210.PKIMessage())
-        except ValueError:
-            self._build_malformed_cmp_response()
-            self._is_valid = False
-            raise ValueError
-
-        try:
-            header = loaded_request.getComponentByName('header')
-            validate_header = GenericHeaderValidator(header)
-            validate_header.validate()
-
-            body = loaded_request.getComponentByName('body')
-            validator = InitializationReqValidator(body)
-            validator.validate()
-
-        except ValueError:
-            self._build_not_ir_message_response()
-            self._is_valid = False
-            raise ValueError
-
+        loaded_request, domain_model = result
         self._cmp = loaded_request
+        self._domain_model = domain_model
 
-    def _build_malformed_cmp_response(self) -> None:
-        # TODO: Build CMP error message -> raw_message
-        error_msg = f'The formal ASN.1 syntax of the whole message is not compliant with the definitions given in CMP'
-        self.logger.error(error_msg)
-        self._invalid_response = PkiResponseMessage(
-            raw_response=error_msg,
-            http_status=HttpStatusCode.BAD_REQUEST,
-            mimetype=MimeType.APPLICATION_PKIXCMP)
+        self._is_valid = self.validator.is_valid
+        self.logger.info("PkiCmpInitializationRequestMessage initialized successfully for domain: %s",
+                         domain_unique_name)
+    @property
+    def cmp(self) -> Asn1Type:
+        return self._cmp
 
-    def _build_not_ir_message_response(self) -> None:
-        # TODO: Build CMP error message -> wrong header or body
-        error_msg = f'CMP message (header & body) does not comply with RFC 9483.'
-        self.logger.error(error_msg)
-        self._invalid_response = PkiResponseMessage(
-            raw_response=error_msg,
-            http_status=HttpStatusCode.BAD_REQUEST,
-            mimetype=MimeType.APPLICATION_PKIXCMP)
+class PkiCmpRevocationRequestMessage(PkiRequestMessage):
+    _cmp: Asn1Type
+
+    def __init__(self,
+                 mimetype: None | str,
+                 content_transfer_encoding: None | str,
+                 domain_unique_name: str,
+                 raw_request: bytes):
+        super().__init__(
+            protocol=Protocol.CMP,
+            operation=CmpOperation.REVOCATION_REQUEST,
+            domain_unique_name=domain_unique_name)
+
+        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
+
+        self.logger.info("Initializing %s for domain: %s", self.__class__.__name__, domain_unique_name)
+
+        self.validator = CmpRequestMessageValidator(self.logger)
+        self._content_transfer_encoding = None
+
+        result = self.validator.validate_revocation_request(mimetype, domain_unique_name, DomainModel, raw_request,
+                                                                rfc4210.PKIMessage())
+        if not result:
+            self._invalid_response = self.validator.invalid_response
+            self._is_valid = False
+            self.logger.error("Validation failed during initialization.")
+            return
+
+        loaded_request, domain_model = result
+        self._cmp = loaded_request
+        self._domain_model = domain_model
+
+        self._is_valid = self.validator.is_valid
+        self.logger.info("%s initialized successfully for domain: %s", self.__class__.__name__,
+                         domain_unique_name)
 
     @property
     def cmp(self) -> Asn1Type:
         return self._cmp
+
+class PkiCmpGetRootUpdateRequestMessage(PkiRequestMessage):
+    _cmp: Asn1Type
+
+    def __init__(self,
+                 mimetype: None | str,
+                 content_transfer_encoding: None | str,
+                 domain_unique_name: str,
+                 raw_request: bytes):
+        super().__init__(
+            protocol=Protocol.CMP,
+            operation=CmpOperation.GENERAL_MESSAGE,
+            domain_unique_name=domain_unique_name)
+
+        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
+
+        self.logger.info("Initializing %s for domain: %s", self.__class__.__name__, domain_unique_name)
+
+        self.validator = CmpRequestMessageValidator(self.logger)
+        self._content_transfer_encoding = None
+
+        result = self.validator.validate_general_message(mimetype, domain_unique_name, DomainModel, raw_request,
+                                                            rfc4210.PKIMessage())
+        if not result:
+            self._invalid_response = self.validator.invalid_response
+            self._is_valid = False
+            self.logger.error("Validation failed during initialization.")
+            return
+
+        loaded_request, domain_model = result
+        self._cmp = loaded_request
+        self._domain_model = domain_model
+
+        self._is_valid = self.validator.is_valid
+        self.logger.info("%s initialized successfully for domain: %s", self.__class__.__name__,
+                         domain_unique_name)
+
+    @property
+    def cmp(self) -> Asn1Type:
+        return self._cmp
+
+class PkiCmpGetCrlsRequestMessage(PkiRequestMessage):
+    _cmp: Asn1Type
+
+    def __init__(self,
+                 mimetype: None | str,
+                 content_transfer_encoding: None | str,
+                 domain_unique_name: str,
+                 raw_request: bytes):
+        super().__init__(
+            protocol=Protocol.CMP,
+            operation=CmpOperation.GENERAL_MESSAGE,
+            domain_unique_name=domain_unique_name)
+
+        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
+
+        self.logger.info("Initializing %s for domain: %s", self.__class__.__name__, domain_unique_name)
+
+        self.validator = CmpRequestMessageValidator(self.logger)
+        self._content_transfer_encoding = None
+
+        result = self.validator.validate_general_message(mimetype, domain_unique_name, DomainModel, raw_request,
+                                                            rfc4210.PKIMessage())
+        if not result:
+            self._invalid_response = self.validator.invalid_response
+            self._is_valid = False
+            self.logger.error("Validation failed during initialization.")
+            return
+
+        loaded_request, domain_model = result
+        self._cmp = loaded_request
+        self._domain_model = domain_model
+
+        self._is_valid = self.validator.is_valid
+        self.logger.info("%s initialized successfully for domain: %s", self.__class__.__name__,
+                         domain_unique_name)
+
+    @property
+    def cmp(self) -> Asn1Type:
+        return self._cmp
+
+class PkiCmpGetCertReqTemplateRequestMessage(PkiRequestMessage):
+    _cmp: Asn1Type
+
+    def __init__(self,
+                 mimetype: None | str,
+                 content_transfer_encoding: None | str,
+                 domain_unique_name: str,
+                 raw_request: bytes):
+        super().__init__(
+            protocol=Protocol.CMP,
+            operation=CmpOperation.GENERAL_MESSAGE,
+            domain_unique_name=domain_unique_name)
+
+        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
+
+        self.logger.info("Initializing %s for domain: %s", self.__class__.__name__, domain_unique_name)
+
+        self.validator = CmpRequestMessageValidator(self.logger)
+        self._content_transfer_encoding = None
+
+        result = self.validator.validate_general_message(mimetype, domain_unique_name, DomainModel, raw_request,
+                                                            rfc4210.PKIMessage())
+        if not result:
+            self._invalid_response = self.validator.invalid_response
+            self._is_valid = False
+            self.logger.error("Validation failed during initialization.")
+            return
+
+        loaded_request, domain_model = result
+        self._cmp = loaded_request
+        self._domain_model = domain_model
+
+        self._is_valid = self.validator.is_valid
+        self.logger.info("%s initialized successfully for domain: %s", self.__class__.__name__,
+                         domain_unique_name)
+
+    @property
+    def cmp(self) -> Asn1Type:
+        return self._cmp
+
+class PkiCmpGetCaCertsRequestMessage(PkiRequestMessage):
+    _cmp: Asn1Type
+
+    def __init__(self,
+                 mimetype: None | str,
+                 content_transfer_encoding: None | str,
+                 domain_unique_name: str,
+                 raw_request: bytes):
+        super().__init__(
+            protocol=Protocol.CMP,
+            operation=CmpOperation.GENERAL_MESSAGE,
+            domain_unique_name=domain_unique_name)
+
+        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
+
+        self.logger.info("Initializing %s for domain: %s", self.__class__.__name__, domain_unique_name)
+
+        self.validator = CmpRequestMessageValidator(self.logger)
+        self._content_transfer_encoding = None
+
+        result = self.validator.validate_general_message(mimetype, domain_unique_name, DomainModel, raw_request,
+                                                            rfc4210.PKIMessage())
+        if not result:
+            self._invalid_response = self.validator.invalid_response
+            self._is_valid = False
+            self.logger.error("Validation failed during initialization.")
+            return
+
+        loaded_request, domain_model = result
+        self._cmp = loaded_request
+        self._domain_model = domain_model
+
+        self._is_valid = self.validator.is_valid
+        self.logger.info("%s initialized successfully for domain: %s", self.__class__.__name__,
+                         domain_unique_name)
+
+    @property
+    def cmp(self) -> Asn1Type:
+        return self._cmp
+

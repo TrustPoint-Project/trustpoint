@@ -59,7 +59,6 @@ class RevocationRespValidator:
         """
         Validates the 'status' field within the 'rp' field.
         """
-        print(self._rp)
         status_info = self._rp['status'][0]
         self._status = self._rp['status'][0]['status']
 
@@ -73,14 +72,7 @@ class RevocationRespValidator:
         if str(self._status) not in valid_statuses:
             raise BadMessageCheck(f"The 'status' field must be one of {valid_statuses}. Current value: {status_str}")
 
-
-        print(self._rp[0])
-
         self._statusString = self._rp['status'][0]['statusString']
-        print("FFFFF")
-        print(self._statusString)
-        print(dir(self._statusString))
-        print(self._statusString.hasValue())
 
         if self._statusString.hasValue():
             if self._statusString and not isinstance(self._statusString, str):

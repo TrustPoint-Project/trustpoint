@@ -9,7 +9,7 @@ from pyasn1_modules import rfc2511, rfc2459
 from pyasn1.codec.der.encoder import encode
 from cryptography.x509.oid import NameOID
 from pki.pki.cmp.errorhandling.pki_failures import (
-    BadMessageCheck, SystemFailure
+    BadMessageCheck, SystemFailure, BadPOP
 )
 
 
@@ -31,7 +31,7 @@ class PoPVerifier:
 
         popo = self.cert_req_message.getComponentByName('pop')
         if popo is None:
-            raise BadMessageCheck("Proof of possesion is missing")
+            raise BadPOP("Proof of possesion is missing")
 
         pop_type = popo.getName()
         if pop_type == 'signature':
@@ -67,13 +67,12 @@ class PoPVerifier:
             else:
                 raise BadMessageCheck("Public key is not an RSA public key")
         except InvalidSignature as e:
-            raise BadMessageCheck("Signature of proof of possesion is invalid")
+            raise BadPOP("Signature of proof of possesion is invalid")
         except Exception as e:
             raise SystemFailure(f"Unexpected error while verifing the proof of possesion: {e}")
 
     def extract_certificate(self):
         if self.extra_certs and len(self.extra_certs) > 0:
-            print(f"len(self.extra_certs): {len(self.extra_certs)}")
             cert = self.extra_certs[0]
             return encode(cert)
         return None

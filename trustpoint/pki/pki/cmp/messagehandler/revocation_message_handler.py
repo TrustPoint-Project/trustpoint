@@ -3,6 +3,7 @@ from pki.pki.cmp.builder.pki_message_creator import PKIMessageCreator
 from pki.pki.cmp.builder.revocation_handler import RevocationHandler
 from pki.pki.cmp.validator.revocation_req_validator import RevocationReqValidator
 from pki.pki.cmp.builder.pki_header_creator import PKIHeaderCreator
+import logging
 
 class RevocationMessageHandler:
     def __init__(self, body, header, pki_body_type, protection):
@@ -19,6 +20,11 @@ class RevocationMessageHandler:
         self.header = header
         self.pki_body_type = pki_body_type
         self.protection = protection
+        self.issuing_ca_object = None
+
+        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)  # Adjust logging level as needed
+        self.logger.info("RevocationMessageHandler initialized")
 
         #self._validate()
 
@@ -26,21 +32,33 @@ class RevocationMessageHandler:
         validate_ir = RevocationReqValidator(self.body)
         validate_ir.validate()
 
-    def handle(self):
+    def handle(self, issuing_ca_object) -> bytes:
         """
         Handles the revocation request and generates an appropriate response PKI message.
 
-        :return: str, the response PKI message.
+        :param issuing_ca_object: The IssuingCa object.
+        :return: bytes, the response PKI message.
         """
-        revocation_handler = RevocationHandler(self.incoming)
+        self.issuing_ca_object = issuing_ca_object
+
+        logging.info("Handling revocation request")
+        revocation_handler = RevocationHandler(self.incoming, self.issuing_ca_object)
+        logging.debug("RevocationHandler initialized with incoming request")
+
         revocation_response = revocation_handler.generate_response()
+        logging.info("Revocation response generated")
 
         pki_body = self._create_pki_body(revocation_response)
+        logging.debug("PKI body created for the response")
+
         pki_header = self._create_pki_header()
+        logging.debug("PKI header created for the response")
 
         response_protection = self.protection.compute_protection(pki_header, pki_body)
+        logging.info("Protection computed for the response PKI message")
 
         pki_message = self._create_pki_message(pki_body, pki_header, response_protection)
+        logging.info("PKI message created successfully")
 
         return pki_message
 
@@ -61,7 +79,7 @@ class RevocationMessageHandler:
 
         :return: PKIHeader, the created PKI header.
         """
-        header_creator = PKIHeaderCreator(self.header, self.protection.ca_cert)
+        header_creator = PKIHeaderCreator(self.header, self.issuing_ca_object)
         return header_creator.create_header()
 
     def _create_pki_message(self, pki_body, pki_header, response_protection):

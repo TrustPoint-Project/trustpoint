@@ -7,8 +7,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views import View
 
 
-from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage
 from pki.pki.request.handler.factory import CaRequestHandlerFactory
+from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage, PkiCmpRevocationRequestMessage, PkiCmpGetRootUpdateRequestMessage, PkiCmpGetCrlsRequestMessage, PkiCmpGetCertReqTemplateRequestMessage, PkiCmpGetCaCertsRequestMessage
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -98,7 +98,7 @@ class CmpRevocationRequestView(View):
     def post(self, request, *args, **kwargs):
 
         # TODO: content-length
-        pki_request = PkiCmpInitializationRequestMessage(
+        pki_request = PkiCmpRevocationRequestMessage(
             mimetype=request.headers.get('Content-Type'),
             content_transfer_encoding=request.headers.get('Content-Transfer-Encoding'),
             domain_unique_name=self.kwargs.get('domain'),
@@ -118,7 +118,7 @@ class CmpGetCaCertsRequestView(View):
     def post(self, request, *args, **kwargs):
 
         # TODO: content-length
-        pki_request = PkiCmpInitializationRequestMessage(
+        pki_request = PkiCmpGetCaCertsRequestMessage(
             mimetype=request.headers.get('Content-Type'),
             content_transfer_encoding=request.headers.get('Content-Transfer-Encoding'),
             domain_unique_name=self.kwargs.get('domain'),
@@ -138,7 +138,7 @@ class CmpGetRootUpdateRequestView(View):
     def post(self, request, *args, **kwargs):
 
         # TODO: content-length
-        pki_request = PkiCmpInitializationRequestMessage(
+        pki_request = PkiCmpGetRootUpdateRequestMessage(
             mimetype=request.headers.get('Content-Type'),
             content_transfer_encoding=request.headers.get('Content-Transfer-Encoding'),
             domain_unique_name=self.kwargs.get('domain'),
@@ -158,7 +158,7 @@ class CmpGetCertReqTemplateRequestView(View):
     def post(self, request, *args, **kwargs):
 
         # TODO: content-length
-        pki_request = PkiCmpInitializationRequestMessage(
+        pki_request = PkiCmpGetCertReqTemplateRequestMessage(
             mimetype=request.headers.get('Content-Type'),
             content_transfer_encoding=request.headers.get('Content-Transfer-Encoding'),
             domain_unique_name=self.kwargs.get('domain'),
@@ -178,7 +178,7 @@ class CmpGetCrlsRequestView(View):
     def post(self, request, *args, **kwargs):
 
         # TODO: content-length
-        pki_request = PkiCmpInitializationRequestMessage(
+        pki_request = PkiCmpGetCrlsRequestMessage(
             mimetype=request.headers.get('Content-Type'),
             content_transfer_encoding=request.headers.get('Content-Transfer-Encoding'),
             domain_unique_name=self.kwargs.get('domain'),

@@ -1260,7 +1260,7 @@ class CertificateModel(models.Model):
         self.revocation_reason = revocation_reason
         qs = self.issuer_references.all()
         for entry in qs:
-            issuing_ca = entry.issuing_ca_certificate
+            issuing_ca = entry.issuing_ca_model
             rc = RevokedCertificate(cert=self)
             rc.issuing_ca = issuing_ca
             rc.save()

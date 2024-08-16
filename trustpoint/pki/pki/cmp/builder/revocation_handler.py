@@ -2,8 +2,11 @@ from pyasn1.codec.der.decoder import decode
 from pyasn1_modules import rfc5280
 from pyasn1.type import univ
 import json
-from pki.pki.cmp.parsing.parse_helper import ParseHelper
+from cryptography.hazmat.primitives.serialization import Encoding
 
+from pki.models import CertificateModel
+from pki.pki.cmp.parsing.parse_helper import ParseHelper
+from pki.pki.cmp.errorhandling.pki_failures import BadRequest
 class RevocationHandler:
     """
     A class to handle the parsing and processing of revocation requests in PKI messages.
@@ -13,15 +16,20 @@ class RevocationHandler:
         revocation_requests (list): List of parsed revocation requests.
     """
 
-    def __init__(self, decoded_message: univ.Sequence):
+    def __init__(self, decoded_message: univ.Sequence, issuing_ca_object):
         """
         Initializes the RevocationHandler with a decoded PKI message.
 
         :param decoded_message: Sequence, the decoded PKI message containing revocation requests
         """
         self.decoded_message = decoded_message
+        self.issuing_ca_object = issuing_ca_object
         self.revocation_requests = []
         self._parse_message()
+
+    def _is_hexadecimal(self, s):
+        hex_chars = set('0123456789abcdefABCDEF')
+        return all(c in hex_chars for c in s)
 
     def _parse_message(self):
         """
@@ -32,20 +40,32 @@ class RevocationHandler:
         cert_details = rev_req_content.getComponentByName('certDetails')
         serial_number = cert_details.getComponentByName('serialNumber')
         issuer = cert_details.getComponentByName('issuer')
-        issuer_name = self._parse_issuer(issuer)
+
+        issuer_ca = self.issuing_ca_object.get_issuing_ca_certificate_serializer().as_crypto()
+
+        if not self._parse_issuer(issuer) == self._parse_issuer(issuer):
+            raise BadRequest("Wrong issuer")
 
         reason_code = None
         crl_entry_details = rev_req_content.getComponentByName('crlEntryDetails')
         if crl_entry_details:
             reason_code = self.extract_reason_code(crl_entry_details)
 
-        revocation_request = {
-            'issuer_name': issuer_name,
-            'serial_number': str(serial_number),
-            'reason_code': reason_code
-        }
+        serial_number_hex = hex(serial_number)[2:].upper()
 
-        self.revocation_requests.append(revocation_request)
+        # TODO: Filter the Issuing CA
+        #issuer_public_bytes = issuer_ca.public_bytes(Encoding.DER)
+        #issuer_public_bytes_hex = issuer_public_bytes.hex().upper()
+
+        certificate_query = CertificateModel.objects.filter(serial_number=serial_number_hex)
+
+        if len(certificate_query) == 0:
+            raise BadRequest("Certificate not found")
+
+        if len(certificate_query) > 1:
+            raise BadRequest("Several certificates for serial number found")
+
+        revocation_status =  certificate_query[0].revoke(revocation_reason=reason_code)
 
     def _parse_issuer(self, issuer: univ.Sequence) -> str:
         """
