@@ -12,7 +12,7 @@ from django.views.generic.edit import CreateView, FormMixin, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_tables2 import SingleTableView
 
-from trustpoint.views import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
+from trustpoint.views.base import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
 
 from .models import Device
 from .tables import DeviceTable
@@ -43,17 +43,17 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
     """Device Create View."""
 
     model = Device
-    fields = ['device_name', 'onboarding_protocol', 'domain_profile']  # noqa: RUF012
+    fields = ['device_name', 'onboarding_protocol', 'domain']  # noqa: RUF012
     template_name = 'devices/add.html'
     success_url = reverse_lazy('devices:devices')
 
 
-class UpdateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
-    """Device Update View."""
+class EditDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
+    """Device Edit View."""
 
     model = Device
-    fields = ['device_name', 'onboarding_protocol', 'domain_profile']  # noqa: RUF012
-    template_name = 'devices/update.html'
+    fields = ['device_name', 'onboarding_protocol', 'domain']  # noqa: RUF012
+    template_name = 'devices/edit.html'
     success_url = reverse_lazy('devices:devices')
 
 

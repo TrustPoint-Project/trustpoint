@@ -1,10 +1,8 @@
-import random, json
-from django.shortcuts import render
+import json
 from django.views.generic.base import RedirectView, TemplateView
 from datetime import datetime, timedelta
-from devices.models import Device
 
-from trustpoint.views import TpLoginRequiredMixin
+from trustpoint.views.base import TpLoginRequiredMixin
 
 
 class IndexView(TpLoginRequiredMixin, RedirectView):

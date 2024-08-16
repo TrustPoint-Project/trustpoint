@@ -1,5 +1,5 @@
 from devices.models import Device
-from pki.models import Certificate
+from pki.models import CertificateModel
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 

@@ -222,3 +222,9 @@ function togglePemSelectDisable() {
             certFileFormatSelect.value = 'pem';
     }
 }
+
+// ----------------------------------------------- Global Popper Enable ------------------------------------------------
+
+$(function () {
+  $('[data-toggle="popover"]').popover()
+})

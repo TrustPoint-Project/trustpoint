@@ -10,16 +10,17 @@ Welcome to Trustpoint's documentation!
    :maxdepth: 2
    :caption: Contents:
 
-   devices
-   home
-   manage
-   onboarding
+   architecture
+   issuing_cas_gui
+   domains_gui
    pki
-   sysconf
-   trustpoint
-   users
-   util
+   pki_models
+   pki_issuing_ca
+   domains
 
+   serializers
+   validators
+   api_serializers
 
 
 Indices and tables

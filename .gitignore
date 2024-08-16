@@ -165,3 +165,5 @@ media/
 migrations/
 
 .python-version
+
+tests/data/issuing_ca/*

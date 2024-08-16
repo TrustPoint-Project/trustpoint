@@ -152,7 +152,7 @@ def start(request: HttpRequest, device_id: int):
     if (device.onboarding_protocol == Device.OnboardingProtocol.MANUAL):
         onboarding_process = OnboardingProcess.make_onboarding_process(device, DownloadOnboardingProcess)
         response = HttpResponse(onboarding_process.get_pkcs12(), status=200, content_type='application/x-pkcs12')
-        response['Content-Disposition'] = f'attachment; filename="{device.serial_number}.p12"'
+        response['Content-Disposition'] = f'attachment; filename="{device.device_serial_number}.p12"'
         onboarding_process.cancel()
         return response
 
@@ -167,7 +167,7 @@ def start(request: HttpRequest, device_id: int):
         'device': {
             'name': device.device_name,
             'id': device.id,
-            'sn': device.serial_number,
+            'sn': device.device_serial_number,
         }
     }
     return 200, properties

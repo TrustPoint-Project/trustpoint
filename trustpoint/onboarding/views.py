@@ -7,13 +7,12 @@ from typing import TYPE_CHECKING
 from devices.models import Device
 from django.contrib import messages
 from django.http import Http404, HttpResponse
-from django.http.request import HttpRequest
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.translation import gettext as _
 from django.views.generic import DetailView, RedirectView, TemplateView, View
 
-from trustpoint.views import TpLoginRequiredMixin
+from trustpoint.views.base import TpLoginRequiredMixin
 
 from .cli_builder import CliCommandBuilder
 from .forms import RevokeCertificateForm
@@ -113,6 +112,9 @@ class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
         return HttpResponse(onboarding_process.get_pkcs12(), content_type='application/x-pkcs12')
 
 
+# class ManualOnboardingView(TpLoginRequiredMixin, )
+
+
 class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
     """View for the manual onboarding with Trustpoint client (cli command and status display) page."""
 
@@ -146,7 +148,7 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             'tssalt': onboarding_process.tssalt,
             'host': request.get_host(),
             'url': onboarding_process.url,
-            'sn': device.serial_number,
+            'sn': device.device_serial_number,
             'device_name': device.device_name,
             'device_id': device.id,
         }

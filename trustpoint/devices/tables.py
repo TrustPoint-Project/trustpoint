@@ -36,12 +36,12 @@ class DeviceTable(tables.Table):
             'row_checkbox',
             'device_name',
             'device_serial_number',
-            'domain_profile',
+            'domain',
             'onboarding_protocol',
             'device_onboarding_status',
             'onboarding_action',
             'details',
-            'update',
+            'edit',
             'delete',
         )
 
@@ -50,15 +50,15 @@ class DeviceTable(tables.Table):
     device_serial_number = tables.Column(empty_values=(), orderable=True, verbose_name=_('Serial Number'))
     onboarding_protocol = tables.Column(empty_values=(), orderable=True, verbose_name=_('Onboarding Protocol'))
     device_onboarding_status = tables.Column(empty_values=(), orderable=True, verbose_name=_('Onboarding Status'))
-    domain_profile = tables.Column(
+    domain = tables.Column(
         empty_values=(None, ''),
         orderable=True,
-        accessor='domain_profile.unique_name',
-        verbose_name=_('Domain Profile'),
+        accessor='domain.unique_name',
+        verbose_name=_('Domain'),
     )
     onboarding_action = tables.Column(empty_values=(), orderable=False, verbose_name=_('Onboarding Action'))
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
-    update = tables.Column(empty_values=(), orderable=False, verbose_name=_('Update'))
+    edit = tables.Column(empty_values=(), orderable=False, verbose_name=_('Edit'))
     delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
 
     @staticmethod
@@ -71,8 +71,8 @@ class DeviceTable(tables.Table):
         Returns:
             str: The html hyperlink for the details-view.
         """
-        if not record.domain_profile:
-            return format_html('<span class="text-danger">' + _('Select Domain Profile') + '</span>')
+        if not record.domain:
+            return format_html('<span class="text-danger">' + _('Select Domain') + '</span>')
         return format_html(
             f'<span class="text-{Device.DeviceOnboardingStatus.get_color(record.device_onboarding_status)}">'
             f'{record.get_device_onboarding_status_display()}'
@@ -156,7 +156,7 @@ class DeviceTable(tables.Table):
             UnknownOnboardingProtocolError:
                 Raised when an unknown onboarding protocol was found and thus cannot be rendered appropriately.
         """
-        if not record.domain_profile:
+        if not record.domain:
             return ''
 
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
@@ -199,16 +199,16 @@ class DeviceTable(tables.Table):
                            record.pk, _('Details'))
 
     @staticmethod
-    def render_update(record: Device) -> SafeString:
-        """Creates the html hyperlink for the update-view.
+    def render_edit(record: Device) -> SafeString:
+        """Creates the html hyperlink for the edit-view.
 
         Args:
             record (Device): The current record of the Device model.
 
         Returns:
-            SafeString: The html hyperlink for the update-view.
+            SafeString: The html hyperlink for the edit-view.
         """
-        return format_html('<a href="update/{}/" class="btn btn-primary tp-table-btn">{}</a>', record.pk, _('Update'))
+        return format_html('<a href="edit/{}/" class="btn btn-primary tp-table-btn">{}</a>', record.pk, _('Edit'))
 
     @staticmethod
     def render_delete(record: Device) -> SafeString:
