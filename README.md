@@ -172,7 +172,7 @@ Use the username and password which you previously provided through the **create
 #### Management commands for testing and development purposes
 
 ```bash
-python manage.py clear_db
+python manage.py reset_db
 ```
 
 Clears all IssuingCA, EndpointProfile, and Device instances from the database.
