@@ -2,19 +2,18 @@
 
 from __future__ import annotations
 
-import secrets
 import logging
+import secrets
 import threading
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
 from devices.models import Device
 from django.db import models
+from pki.models import ReasonCode
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
 from onboarding.crypto_backend import OnboardingError
-
-from pki.models import ReasonCode
 
 if TYPE_CHECKING:
     from typing import TypeVar
@@ -169,6 +168,20 @@ class OnboardingProcess:
 
         return (self.state, self)
 
+    def get_pkcs12(self) -> bytes | None:
+        """Returns the keypair and LDevID certificate as PKCS12 serialized bytes and ends the onboarding process."""
+        log.debug(f'PKCS12 requested for onboarding process {self.id}.')
+        self.gen_thread.join()
+        self._success()
+        return self.pkcs12
+
+    def get_pem(self) -> bytes | None:
+        """Returns the keypair and LDevID certificate as PEM-formatted bytes."""
+        log.debug(f'PKCS12 requested for onboarding process {self.id}.')
+        self.gen_thread.join()
+        self._success()
+        return Crypt.convert_pkcs12_to_pem(self.pkcs12)
+
     def _gen_keypair_and_ldevid(self) -> None:
         """Generates a keypair and LDevID certificate for the device."""
         try:
@@ -316,12 +329,5 @@ class BrowserOnboardingProcess(OnboardingProcess):
         self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
         self.gen_thread.start()
         self.pkcs12 = None
-
-    def get_pem(self) -> bytes | None:
-        """Returns the keypair and LDevID certificate as PKCS12 serialized bytes and ends the onboarding process."""
-        log.debug(f'PKCS12 requested for onboarding process {self.id}.')
-        self.gen_thread.join()
-        self._success()
-        return Crypt.convert_pkcs12_to_pem(self.pkcs12)
 
 onboarding_processes = []
