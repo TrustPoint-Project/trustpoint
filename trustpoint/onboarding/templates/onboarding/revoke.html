@@ -13,6 +13,15 @@
 
                 <hr>
 
+                <div class="form-group">
+                    <label for="id_revocation_reason">Revocation Reason</label>
+                    <select id="id_revocation_reason" name="revocation_reason" class="form-control">
+                        {% for value, name in form.revocation_reason.field.choices %}
+                            <option value="{{ value }}" {% if form.revocation_reason.value == value %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
                 <div class="tp-form-btn-group tp-form-btn-group pt-5">
                     <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Cancel</a>
                     <input type="submit" class="btn btn-danger" value="Revoke certificate"

@@ -59,7 +59,7 @@ class CliCommandBuilder:
         Returns (str): The CLI command.
         """
         return (
-            f'curl -k -X GET https://{ctx.get("host", "")}/onboarding/api/trust-store/{ctx.get("url", "")}'
+            f'curl -k -X GET https://{ctx.get("host", "")}/api/onboarding/trust-store/{ctx.get("url", "")}'
             f' -o tp-trust-store.pem -D tp-headers.txt')
 
     @staticmethod
@@ -129,7 +129,7 @@ class CliCommandBuilder:
         Returns (str): The CLI command.
         """
         return (
-            f'curl -X POST https://{ctx.get("host", "")}/onboarding/api/ldevid/{ctx.get("url", "")} \\\n'
+            f'curl -X POST https://{ctx.get("host", "")}/api/onboarding/ldevid/{ctx.get("url", "")} \\\n'
             f'--user {ctx.get("salt", "")}:{ctx.get("otp", "")} \\\n'
             '-F "ldevid.csr=@ldevid.csr" \\\n'
             '--cacert trust-store.pem > ldevid.pem')
@@ -153,6 +153,6 @@ class CliCommandBuilder:
         Returns (str): The CLI command.
         """
         return (
-            f'curl -X GET https://{ctx.get("host", "")}/onboarding/api/ldevid/cert-chain/{ctx.get("url", "")} \\\n'
+            f'curl -X GET https://{ctx.get("host", "")}/api/onboarding/ldevid/cert-chain/{ctx.get("url", "")} \\\n'
             '--cert ldevid.pem --key ldevid-private-key.pem \\\n'
             '--cacert trust-store.pem > ldevid-cert-chain.pem')

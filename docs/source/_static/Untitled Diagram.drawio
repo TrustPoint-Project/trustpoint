@@ -1,0 +1,40 @@
+<mxfile host="app.diagrams.net" agent="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36" version="24.7.6">
+  <diagram name="Page-1" id="Z_7MZZCQvowd-CT9IY2r">
+    <mxGraphModel dx="2074" dy="2240" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="D7aQ3iQ9P1D_-AtR2_2V-2" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="80" y="80" width="160" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="D7aQ3iQ9P1D_-AtR2_2V-3" value="CertificateModel" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="80" y="80" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D7aQ3iQ9P1D_-AtR2_2V-4" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="360" y="80" width="160" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="D7aQ3iQ9P1D_-AtR2_2V-5" value="revoke()" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="80" y="200" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D7aQ3iQ9P1D_-AtR2_2V-6" value="CrlModel" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="360" y="80" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D7aQ3iQ9P1D_-AtR2_2V-7" value="newly_revoked_certs = models.Foreignkey()" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="360" y="160" width="160" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D7aQ3iQ9P1D_-AtR2_2V-8" value="" style="rounded=0;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="600" y="80" width="210" height="240" as="geometry" />
+        </mxCell>
+        <mxCell id="D7aQ3iQ9P1D_-AtR2_2V-9" value="NewlyRevokedCerts" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="600" y="80" width="200" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D7aQ3iQ9P1D_-AtR2_2V-10" value="certs = models.Foreignkey(CertificateModel)" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="600" y="120" width="210" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="D7aQ3iQ9P1D_-AtR2_2V-11" value="models.OneToOne(CrlModel)" style="text;html=1;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="1">
+          <mxGeometry x="160" y="-160" width="160" height="30" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

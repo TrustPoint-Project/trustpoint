@@ -162,7 +162,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     font-weight: var(--tp-font-weight);
     background-color: transparent;
     border-radius: 0.5rem;
-    border: 0px solid black;
+    border: 0 solid black;
     color: var(--bs-emphasis-color);
     text-decoration: none;
     text-align: left;
@@ -225,7 +225,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 }
 
 .tp-menu-collapse {
-    height: 0px;
+    height: 0;
     overflow: hidden;
 }
 
@@ -273,6 +273,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 .tp-card-split {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
+    align-items: center;
 }
 
 .tp-card-btn-footer > * {
@@ -288,19 +289,12 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     margin-right: 0;
 }
 
-
 /*.tp-card {*/
 /*    border: 0.1rem solid #424549;*/
 /*    padding: 0;*/
 /*    margin: 0;*/
 /*    border-radius: 0.5rem;*/
 /*}*/
-
-.tp-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
 
 /*.tp-card-body {*/
 /*    padding: 0.75rem;*/
@@ -444,6 +438,10 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     column-gap: 1rem;
 }
 
+.card-footer a, .card-footer button {
+    width: 15rem;
+}
+
 /* ----- General layout utility classes ----- */
 
 .tp-d-none {
@@ -538,6 +536,24 @@ svg.theme-icon {
     min-width: 20rem;
 }
 
+.min-width-25 {
+    min-width: 25rem;
+}
+
+.min-width-30 {
+    min-width: 30rem;
+}
+
+.min-width-35 {
+    min-width: 35rem;
+}
+
+.min-width-40 {
+    min-width: 40rem;
+}
+
+
+
 .tp-grid { /* unused class */
     display: grid !important;
     grid-template-columns: 1fr;
@@ -606,7 +622,7 @@ svg.theme-icon {
         transform: translateX(-101%);
         position: fixed;
         top: 4rem;
-        bottom: 0px;
+        bottom: 0;
         z-index: 10;
     }
 
@@ -632,7 +648,7 @@ svg.theme-icon {
 
 pre {
   background-color: var(--bs-secondary-bg);
-  padding: 10px 0px;
+  padding: 10px 0;
   text-align: left;
 }
 

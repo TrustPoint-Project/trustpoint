@@ -1,18 +1,37 @@
 from django.contrib import admin
-
+from django.urls import reverse
+from django.utils.html import format_html
 
 from .models import (
-    Certificate,
-    IssuingCa,
-    BasicConstraintsExtension,
-    KeyUsageExtension,
     AttributeTypeAndValue,
+    BasicConstraintsExtension,
+    CertificateChainOrderModel,
+    CertificateModel,
+    CRLStorage,
     IssuerAlternativeNameExtension,
-    SubjectAlternativeNameExtension)
+    IssuingCaModel,
+    KeyUsageExtension,
+    SubjectAlternativeNameExtension,
+)
 
 
 class IssuingCaAdmin(admin.ModelAdmin):
-    pass
+    readonly_fields = [
+        'unique_name',
+        'root_ca_certificate',
+        'intermediate_ca_certificates',
+        'issuing_ca_certificate',
+        'private_key_pem',
+        'added_at'
+    ]
+
+
+class CertificateChainOrderModelAdmin(admin.ModelAdmin):
+    readonly_fields = [
+        'order',
+        'certificate',
+        'issuing_ca'
+    ]
 
 
 class TrustStoreAdmin(admin.ModelAdmin):
@@ -70,8 +89,8 @@ class KeyUsageExtensionAdmin(admin.ModelAdmin):
 
 class CertificateAdmin(admin.ModelAdmin):
     readonly_fields = (
-        'certificate_hierarchy_type',
-        'certificate_hierarchy_depth',
+        # 'certificate_hierarchy_type',
+        # 'certificate_hierarchy_depth',
 
         'sha256_fingerprint',
         'common_name',
@@ -101,7 +120,7 @@ class CertificateAdmin(admin.ModelAdmin):
 
         'cert_pem',
         'public_key_pem',
-        'private_key_pem',
+        # 'private_key_pem',
 
         'key_usage_extension',
         'subject_alternative_name_extension',
@@ -109,11 +128,20 @@ class CertificateAdmin(admin.ModelAdmin):
         'basic_constraints_extension'
     )
 
+class CRLStorageAdmin(admin.ModelAdmin):
+    readonly_fields = (
+        'crl',
+        'issued_at',
+        'ca'
+    )
 
-admin.site.register(IssuingCa, IssuingCaAdmin)
+
+admin.site.register(IssuingCaModel, IssuingCaAdmin)
 admin.site.register(SubjectAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(IssuerAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(AttributeTypeAndValue, AttributeTypeAndValueAdmin)
 admin.site.register(BasicConstraintsExtension, BasicConstraintsExtensionAdmin)
 admin.site.register(KeyUsageExtension, KeyUsageExtensionAdmin)
-admin.site.register(Certificate, CertificateAdmin)
+admin.site.register(CertificateModel, CertificateAdmin)
+admin.site.register(CertificateChainOrderModel, CertificateChainOrderModelAdmin)
+admin.site.register(CRLStorage, CRLStorageAdmin)

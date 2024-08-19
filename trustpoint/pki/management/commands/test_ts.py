@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives import serialization
 from itertools import product
 
 from django.core.management import BaseCommand
-from pki.models import Certificate
+from pki.models import CertificateModel
 
 from . import Algorithm
 
@@ -39,6 +39,6 @@ class Command(BaseCommand):
                 cert_pem = f.read()
 
             ext_cert = x509.load_pem_x509_certificate(cert_pem)
-            Certificate.save_certificate_and_key(cert=ext_cert, priv_key=ext_key)
+            CertificateModel.save_certificate(ext_cert)
 
     print('\nDONE\n')

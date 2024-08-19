@@ -1,0 +1,26 @@
+{% extends 'trustpoint/base.html' %}
+{% load crispy_forms_filters %}
+{% block content %}
+    <div class="card card-main text-center">
+        <div class="card-header d-flex">
+            <h1>Edit Device</h1>
+        </div>
+        <div class="card-body tp-main-centered pt-3 pb-4">
+
+            <h2>Edit Device</h2>
+            <hr>
+
+            <form method="POST" class="tp-main-form text-start" id="edit-device-form">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <div class="tp-form-btn-group tp-form-btn-group mt-5">
+                    <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Cancel</a>
+                    <button class="btn btn-primary w-100 mt-1" type="submit" name="edit-device">Apply Changes</button>
+                </div>
+            </form>
+
+        </div>
+
+
+    </div>
+{% endblock content %}
