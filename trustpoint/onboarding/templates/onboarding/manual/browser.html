@@ -7,6 +7,8 @@
     <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:exit' device_id %}"</script>
     <script src="{% url 'javascript-catalog' %}"></script>
     <script src="{% static 'js/onboarding.js' %}"></script>
+    <!-- Laden der separaten JavaScript-Datei -->
+    <script src="{% static 'js/browser.js' %}"></script>
 {% endblock head %}
 {% block content %}
     <div class="card card-main text-center">
@@ -22,9 +24,18 @@
             {{ device_id }}
             <hr>
             <h2>OTP</h2>
-            {{ otp }}
-            <h2>Download url</h2>
-            {{ download_url }}
+            <div class="d-flex justify-content-center align-items-center">
+                <span id="otp-value">{{ otp }}</span>
+                <button id="copy-button" class="btn btn-secondary btn-sm ml-2">
+                    {% trans "Copy" %}
+                </button>
+            </div>
+            <h2>Download URL</h2>
+            <div>
+                <a href="{{ download_url }}" target="_blank" rel="noopener noreferrer">
+                    {{ download_url }}
+                </a>
+            </div>
             <div class="text-center">
               <!-- <a href="{% url 'onboarding:api-p12-download' device_id %}" download="{{ device_name }}.p12" class="btn btn-primary mt-2 w-50">{% trans "Download PKCS12" %}</a> -->
             </div>

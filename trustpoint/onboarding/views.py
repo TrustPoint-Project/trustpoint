@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.http.request import HttpRequest
 from django.shortcuts import redirect, render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext as _
 from django.views.generic import DetailView, FormView, RedirectView, TemplateView, View
 
@@ -69,11 +69,11 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
     redirection_view = 'devices:devices'
     context_object_name = 'device'
 
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:  # noqa: ARG002
         """Renders a template view for downloading certificate data."""
-        if (not self.get_device(request)
-            or not self.check_onboarding_prerequisites(request, [Device.OnboardingProtocol.MANUAL])
-           ):
+        if not self.get_device(request) or not self.check_onboarding_prerequisites(
+            request, [Device.OnboardingProtocol.MANUAL]
+        ):
             return redirect(self.redirection_view)
 
         device = self.device
@@ -93,17 +93,19 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
 
         return render(request, self.template_name, context)
 
+
 class BrowserInitializationView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView, FormView):
-    """View for downloading the certificate, and if applicable, the private key of a device."""
+    """View for initializing browser-based onboarding and downloading certificates."""
+
     template_name = 'onboarding/manual/browser.html'
     redirection_view = 'devices:devices'
     context_object_name = 'device'
 
-    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:  # noqa: ARG002
         """Renders a template view for downloading certificate data."""
-        if (not self.get_device(request)
-            or not self.check_onboarding_prerequisites(request, [Device.OnboardingProtocol.BROWSER])
-           ):
+        if not self.get_device(request) or not self.check_onboarding_prerequisites(
+            request, [Device.OnboardingProtocol.BROWSER]
+        ):
             return redirect(self.redirection_view)
 
         device = self.device
@@ -127,16 +129,19 @@ class BrowserInitializationView(TpLoginRequiredMixin, OnboardingUtilMixin, Templ
 
 
 class BrowserDownloadView(OnboardingUtilMixin, TemplateView):
+    """View for handling browser download requests."""
+
     template_name = 'onboarding/manual/browser-download.html'
     redirection_view = 'devices:devices'
 
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        if (not self.get_device(request)
-            or not self.check_onboarding_prerequisites(request, [Device.OnboardingProtocol.BROWSER])
-           ):
+        """Handles POST request for downloading certificates in the browser."""
+        if not self.get_device(request) or not self.check_onboarding_prerequisites(
+            request, [Device.OnboardingProtocol.BROWSER]
+        ):
             return redirect(self.redirection_view)
+
         device = self.device
-        print('device: ', device)
         onboarding_process = OnboardingProcess.get_by_device(device)
         onboarding_process.start_onboarding()
 
@@ -153,13 +158,15 @@ class BrowserDownloadView(OnboardingUtilMixin, TemplateView):
 
 class BrowserLoginView(OnboardingUtilMixin, FormView):
     """View to handle certificate download requests."""
+
     template_name = 'onboarding/manual/browser-login.html'
     form_class = BrowserLoginForm
 
     def post(self, request, *args, **kwargs):
+        """Handles POST request for browser login form submission."""
         form = BrowserLoginForm(request.POST)
         if not form.is_valid():
-            messages.error(request, 'Device or PW does not match')
+            messages.error(request, _('Device or password does not match.'))
             return redirect(request.path)
 
         device_id = form.cleaned_data['device_id']
@@ -170,9 +177,8 @@ class BrowserLoginView(OnboardingUtilMixin, FormView):
         if onboarding_process and otp == onboarding_process.otp:
             return BrowserDownloadView.as_view()(request, device_id=device_id, *args, **kwargs)
 
-        messages.error(request, 'Device or PW does not match')
+        messages.error(request, _('Device or password does not match.'))
         return redirect(request.path)
-
 
 
 class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
@@ -182,7 +188,7 @@ class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
 
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
         """GET method that returns the PKCS12 file of a device."""
-        if not self.get_device(request) and (self.device.onboarding_protocol != Device.OnboardingProtocol.MANUAL or self.device.onboarding_protocol != Device.OnboardingProtocol.BROWSER):
+        if not self.get_device(request) and (self.device.onboarding_protocol in (Device.OnboardingProtocol.MANUAL, Device.OnboardingProtocol.BROWSER)):
             return HttpResponse('Not found.', status=404)
 
         device = self.device
@@ -197,10 +203,11 @@ class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
     """View for downloading the PKCS12 file of a device."""
 
     redirection_view = 'devices:devices'
+    success_url = reverse_lazy('devices:devices')
 
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse: # noqa: ARG002
         """GET method that returns the PKCS12 file of a device."""
-        if not self.get_device(request) and (self.device.onboarding_protocol != Device.OnboardingProtocol.MANUAL or self.device.onboarding_protocol != Device.OnboardingProtocol.BROWSER):
+        if not self.get_device(request) and (self.device.onboarding_protocol in (Device.OnboardingProtocol.MANUAL, Device.OnboardingProtocol.BROWSER)):
             return HttpResponse('Not found.', status=404)
 
         device = self.device
@@ -215,10 +222,11 @@ class PemDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
     """View for downloading the PEM file of a device."""
 
     redirection_view = 'devices:devices'
+    success_url = reverse_lazy('devices:devices')
 
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         """GET method that returns the PEM file of a device."""
-        if not self.get_device(request) and (self.device.onboarding_protocol != Device.OnboardingProtocol.MANUAL or self.device.onboarding_protocol != Device.OnboardingProtocol.BROWSER):
+        if not self.get_device(request) and (self.device.onboarding_protocol in (Device.OnboardingProtocol.MANUAL, Device.OnboardingProtocol.BROWSER)):
             return HttpResponse('Not found.', status=404)
 
         device = self.device
