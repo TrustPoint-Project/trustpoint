@@ -8,11 +8,7 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 
 
 from . import Serializer, PrivateKeySerializer, CertificateSerializer, CertificateCollectionSerializer
-
-from typing import TYPE_CHECKING, get_args
-
-if TYPE_CHECKING:
-    from . import PrivateKey
+from . import PrivateKey
 
 
 class CredentialSerializer(Serializer):

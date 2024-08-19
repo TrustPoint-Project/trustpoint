@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from django.core.exceptions import ValidationError
 
-from pki.initializer.issuing_ca.local.db import LocalUnprotectedIssuingCaFromP12FileInitializer
+from pki.initializer import UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer
 from pki.models import IssuingCaModel, DomainModel
 from pki.validator.field import UniqueNameValidator
 
@@ -95,14 +95,13 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
         cleaned_data = super().clean()
         unique_name = cleaned_data.get('unique_name')
         if unique_name is None:
-            return
+            raise ValidationError('No Unique Name was specified.')
 
         try:
-            # This should not throw any exceptions, even if invalid data was sent via HTTP POST request.
-            # However, just in case.
             pkcs12_raw = cleaned_data.get('pkcs12_file').read()
             pkcs12_password = cleaned_data.get('pkcs12_password')
         except Exception:
+            # This should not throw any exceptions, this data should always be available and readable.
             raise ValidationError(
                 _('Unexpected error occurred while trying to get file contents. Please see logs for further details.'),
                 code='unexpected-error')
@@ -116,7 +115,7 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
             pkcs12_password = None
 
         try:
-            initializer = LocalUnprotectedIssuingCaFromP12FileInitializer(
+            initializer = UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(
                 unique_name=cleaned_data['unique_name'],
                 p12=pkcs12_raw,
                 password=pkcs12_password)
@@ -125,10 +124,12 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
                 'Failed to load PKCS#12 file. Either malformed file or wrong password.',
                 code='pkcs12-loading-failed') from exception
 
-        try:
-            initializer.save()
-        except Exception as exception:
-            raise ValidationError(f'{exception}')
+        initializer.initialize()
+
+        # try:
+        initializer.save()
+        # except Exception as exception:
+        #     raise ValidationError(f'{exception}')
 
 
 class IssuingCaAddFileImportSeparateFilesForm(forms.Form):

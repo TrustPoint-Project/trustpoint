@@ -6,12 +6,10 @@ from __future__ import annotations
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, pkcs12
 
+from typing import get_args
+
 from . import Serializer
-
-from typing import TYPE_CHECKING, get_args
-
-if TYPE_CHECKING:
-    from . import PublicKey, PrivateKey
+from . import PublicKey, PrivateKey
 
 
 class PublicKeySerializer(Serializer):

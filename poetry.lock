@@ -459,6 +459,20 @@ files = [
 ]
 
 [[package]]
+name = "docutils-stubs"
+version = "0.0.22"
+description = "PEP 561 type stubs for docutils"
+optional = false
+python-versions = ">=3.5"
+files = [
+    {file = "docutils-stubs-0.0.22.tar.gz", hash = "sha256:1736d9650cfc20cff8c72582806c33a5c642694e2df9e430717e7da7e73efbdf"},
+    {file = "docutils_stubs-0.0.22-py3-none-any.whl", hash = "sha256:157807309de24e8c96af9a13afe207410f1fc6e5aab5d974fd6b9191f04de327"},
+]
+
+[package.dependencies]
+docutils = ">=0.14"
+
+[[package]]
 name = "executing"
 version = "2.0.1"
 description = "Get the currently executing AST node of a frame, and other information"
@@ -1198,4 +1212,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.12"
-content-hash = "67ba3cae6d5aec4c08586b8a22906975937c803e3e3326851d25d0deeb81b7d8"
+content-hash = "fbdf6ef90336f57da2621e30573ef7813a7ee9d6b055c7259cb8aa0fc2fda080"

@@ -18,6 +18,7 @@ sphinxcontrib-plantuml = "^0.30"
 pillow = "^10.4.0"
 pyasn1 = "^0.6.0"
 pyasn1-modules = "^0.4.0"
+docutils-stubs = "^0.0.22"
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^7.2.6"

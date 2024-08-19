@@ -50,22 +50,14 @@ API Documentation
 """
 
 
-from .base import Serializer
+from .base import Serializer, PublicKey, PrivateKey
 from .key import PublicKeySerializer, PrivateKeySerializer
 from .certificate import CertificateSerializer, CertificateCollectionSerializer
 from .credential import CredentialSerializer
 
-
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from typing import Union
-    from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
-    PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
-    PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
-
-
 __all__ = [
+    'PublicKey',
+    'PrivateKey',
     'Serializer',
     'CertificateSerializer',
     'CertificateCollectionSerializer',
