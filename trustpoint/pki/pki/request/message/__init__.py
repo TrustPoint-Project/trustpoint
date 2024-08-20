@@ -54,6 +54,7 @@ class PkiRequestMessage(abc.ABC):
     _mimetype: None | MimeType = None
     _content_transfer_encoding: None | ContentTransferEncoding = None
     _domain_unique_name: None | str = None
+    _alias_unique_name: None | str = None
     _domain_model: None | DomainModel = None
     _raw_request: None | bytes = None
     _is_valid: bool = True
@@ -114,6 +115,10 @@ class PkiRequestMessage(abc.ABC):
     @property
     def invalid_response(self) -> PkiResponseMessage:
         return self._invalid_response
+
+    @property
+    def alias(self) -> str:
+        return self._alias_unique_name
 
 
 class PkiResponseMessage:

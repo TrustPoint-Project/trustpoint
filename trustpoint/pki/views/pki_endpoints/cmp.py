@@ -8,7 +8,9 @@ from django.views import View
 
 
 from pki.pki.request.handler.factory import CaRequestHandlerFactory
-from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage, PkiCmpRevocationRequestMessage, PkiCmpGetRootUpdateRequestMessage, PkiCmpGetCrlsRequestMessage, PkiCmpGetCertReqTemplateRequestMessage, PkiCmpGetCaCertsRequestMessage
+from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage, PkiCmpRevocationRequestMessage, \
+    PkiCmpGetRootUpdateRequestMessage, PkiCmpGetCrlsRequestMessage, PkiCmpGetCertReqTemplateRequestMessage, \
+    PkiCmpGetCaCertsRequestMessage, PkiCmpCertificationRequestMessage, PkiCmpKeyUpdateRequestMessage
 
 
 @method_decorator(csrf_exempt, name='dispatch')
@@ -22,7 +24,8 @@ class CmpInitializationRequestView(View):
             mimetype=request.headers.get('Content-Type'),
             content_transfer_encoding=request.headers.get('Content-Transfer-Encoding'),
             domain_unique_name=self.kwargs.get('domain'),
-            raw_request=request.read()
+            raw_request=request.read(),
+            alias_unique_name=self.kwargs.get('alias')
         )
 
         if pki_request.is_invalid:
@@ -38,7 +41,7 @@ class CmpCertificationRequestView(View):
     def post(self, request, *args, **kwargs):
 
         # TODO: content-length
-        pki_request = PkiCmpInitializationRequestMessage(
+        pki_request = PkiCmpCertificationRequestMessage(
             mimetype=request.headers.get('Content-Type'),
             content_transfer_encoding=request.headers.get('Content-Transfer-Encoding'),
             domain_unique_name=self.kwargs.get('domain'),
@@ -58,7 +61,7 @@ class CmpKeyUpdateRequestView(View):
     def post(self, request, *args, **kwargs):
 
         # TODO: content-length
-        pki_request = PkiCmpInitializationRequestMessage(
+        pki_request = PkiCmpKeyUpdateRequestMessage(
             mimetype=request.headers.get('Content-Type'),
             content_transfer_encoding=request.headers.get('Content-Transfer-Encoding'),
             domain_unique_name=self.kwargs.get('domain'),

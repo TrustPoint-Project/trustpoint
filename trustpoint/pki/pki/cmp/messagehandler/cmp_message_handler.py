@@ -21,18 +21,22 @@ from pki.pki.cmp.messagehandler.cert_message_handler import CertMessageHandler
 from pki.pki.cmp.messagehandler.revocation_message_handler import RevocationMessageHandler
 from pki.pki.cmp.messagehandler.general_message_handler import GeneralMessageHandler
 from pki.pki.request.message import HttpStatusCode
+from pki.pki.cmp.cert_template import cert_templates
+
 
 
 class CMPMessageHandler:
-    def __init__(self, pki_message: rfc4210.PKIMessage, alias: str = None):
+    def __init__(self, pki_message: rfc4210.PKIMessage, operation: str, alias: str = None):
         """
         Initialize the CMPMessageHandler with the necessary components.
 
         :param alias: str, the alias for the endpoint (optional).
+        :param operation: str, the operation [one of ir,cr,kur,rr or genm] which should be performed.
         :param pki_message: rfc4210.PKIMessage, the decoded request data containing the PKI message.
         """
         self.pki_message = pki_message
         self.alias = alias
+        self.operation = operation
         self.issuing_ca = None
         self.ca_cert = None
         self.ca_key = None
@@ -43,6 +47,7 @@ class CMPMessageHandler:
         self.client_cert = None
         self.authorized_clients = None
         self.cert_chain = None
+        self.cert_req_template = None
 
         self.protection = None
         self.header = self.pki_message.getComponentByName('header')
@@ -76,6 +81,17 @@ class CMPMessageHandler:
             for cert in self.authorized_clients:
                 if not isinstance(cert, x509.Certificate):
                     ValueError(f"Each item in authorized_clients must be an instance of x509.Certificate")
+
+    def _configure_alias(self):
+        self.logger.debug("Configureing alias.")
+
+        if self.alias:
+            print("TRUE")
+            if self.alias in cert_templates:
+                self.cert_req_template = cert_templates.get(self.alias)
+            else:
+                ValueError("No corresponding certificate template for provided alias")
+
 
     def set_pbm_based_protection(self, shared_secret: bytes):
         """
@@ -120,6 +136,7 @@ class CMPMessageHandler:
 
         try:
             self._is_valid_authorized_clients()
+            self._configure_alias()
             #self._decode_request()
             self._configure_protection()
             #self._validate_header()
@@ -183,6 +200,8 @@ class CMPMessageHandler:
         self.pki_body_type = PKIBodyTypes()
         self.pki_body_type.get_response(self.body.getName())
         self.logger.info("Body type determined as %s.", self.body.getName())
+        if not self.pki_body_type.request_short_name == self.operation:
+            raise BadRequest(f"Expected {self.operation}, got {self.pki_body_type.request_short_name}")
 
 
     def _validate_extra_certs(self):
@@ -234,6 +253,7 @@ class CMPMessageHandler:
         :return: str, the response PKI message.
         """
         cert_req_msg_handler = CertMessageHandler(self.body, self.header, self.pki_body_type, self.protection)
+        cert_req_msg_handler.configure_request_template(self.cert_req_template)
         return cert_req_msg_handler.handle(self.issuing_ca_object)
 
     def _handle_revocation_request(self) -> bytes:

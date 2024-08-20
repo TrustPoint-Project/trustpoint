@@ -4,9 +4,8 @@ import logging
 from pki.pki.cmp.errorhandling.pki_failures import (
     SystemFailure
 )
-from pyasn1.type import univ, namedtype, tag, constraint, namedval, char
+from pyasn1.type import univ, namedtype, tag
 
-from pki.pki.request.message import HttpStatusCode
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -44,12 +43,12 @@ class PKIMessageCreator:
 
         logger.info("PKIMessageCreator initialized.")
 
-    def create_pki_message(self) -> tuple:
+    def create_pki_message(self) -> bytes:
         """
         Create the PKI message.
 
         Returns:
-            tuple: Encoded PKI message, status code, and content type.
+            bytes: Encoded PKI message.
         """
         try:
             response = rfc4210.PKIMessage()

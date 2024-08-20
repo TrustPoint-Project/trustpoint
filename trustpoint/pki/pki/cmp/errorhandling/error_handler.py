@@ -5,7 +5,6 @@ from ..parsing.pki_body_types import PKIBodyTypes
 from ..protection.protection import RFC4210Protection
 from .pki_failures import SystemFailure
 from ..builder.pki_header_creator import PKIHeaderCreator
-from ...request.message import HttpStatusCode
 
 
 class ErrorHandler:

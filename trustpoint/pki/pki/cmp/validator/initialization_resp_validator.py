@@ -3,9 +3,38 @@ from pki.pki.cmp.errorhandling.pki_failures import (
     BadMessageCheck
 )
 
-
-
 class InitializationRespValidator:
+    def __init__(self, cmp_body):
+        """
+        Initializes the validator for a ip body with ASN.1 encoded data.
+
+        Args:
+        - cmp_body (bytes): The ASN.1 encoded CMP body.
+        """
+        self.cmp_body = cmp_body
+        self.cert_resp_validator = CertRespValidator(self.cmp_body)
+
+    def validate(self):
+        self.cert_resp_validator.validate_ip()
+
+
+class CertificationRespValidator:
+    def __init__(self, cmp_body):
+        """
+        Initializes the validator for a cp body with ASN.1 encoded data.
+
+        Args:
+        - cmp_body (bytes): The ASN.1 encoded CMP body.
+        """
+        self.cmp_body = cmp_body
+        self.cert_resp_validator = CertRespValidator(self.cmp_body)
+
+    def validate(self):
+        self.cert_resp_validator.validate_cp()
+
+
+
+class CertRespValidator:
     def __init__(self, cmp_body):
         """
         Initializes the validator with ASN.1 encoded data.
@@ -14,13 +43,19 @@ class InitializationRespValidator:
         - cmp_body (bytes): The ASN.1 encoded CMP body.
         """
         self.cmp_body = cmp_body
+        self._response = None
         self._ip = None
+        self._cp = None
         self._certResponse = None
         self._certifiedKeyPair = None
 
     @property
     def ip(self):
         return self._ip
+
+    @property
+    def cp(self):
+        return self._cp
 
     @property
     def certResponse(self):
@@ -30,32 +65,64 @@ class InitializationRespValidator:
     def certifiedKeyPair(self):
         return self._certifiedKeyPair
 
-    def validate(self):
+    def validate_ip(self):
         """
-        Validates the decoded CMP body according to the specified requirements.
+        Validates the decoded CMP ip body according to the specified requirements.
 
         Returns:
         - bool: True if the CMP body is valid, False otherwise.
         - list: A list of validation error messages if the body is invalid.
         """
-        self._validate_ip()
+        self._validate_response_ip()
+        self._validate_cert_response()
+        self._validate_certified_key_pair()
+
+    def validate_cp(self):
+        """
+        Validates the decoded CMP cp body according to the specified requirements.
+
+        Returns:
+        - bool: True if the CMP body is valid, False otherwise.
+        - list: A list of validation error messages if the body is invalid.
+        """
+        self._validate_response_cp()
+        self._validate_ca_pubs_absent()
         self._validate_cert_response()
         self._validate_certified_key_pair()
 
 
-    def _validate_ip(self):
+    def _validate_response_ip(self):
         """
         Validates the 'ip' (Initialization Response) field of the CMP body.
         """
         self._ip = self.cmp_body['ip']
+        self._response = self._ip
         if not self._ip.hasValue():
             raise BadMessageCheck("The 'ip' field is required.")
+
+    def _validate_response_cp(self):
+        """
+        Validates the 'cp' (Certification Response) field of the CMP body.
+        """
+        self._cp = self.cmp_body['cp']
+        self._response = self._cp
+        if not self._cp.hasValue():
+            raise BadMessageCheck("The 'cp' field is required.")
+
+    def _validate_ca_pubs_absent(self):
+        """
+        Validates that 'caPubs' field is absent within the 'cp' filed.
+        """
+        ca_pubs = self._response['caPubs']
+        if ca_pubs.hasValue():
+            raise BadMessageCheck("The 'caPubs' field is not absent.")
+
 
     def _validate_cert_response(self):
         """
         Validates the 'response' field within the 'ip' field.
         """
-        response = self._ip['response']
+        response = self._response['response']
         if not response.hasValue() or len(response) != 1:
             raise BadMessageCheck("The 'response' field is required and must contain exactly one 'CertResponse'.")
 

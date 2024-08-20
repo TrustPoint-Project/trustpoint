@@ -6,7 +6,28 @@ from pki.pki.cmp.errorhandling.pki_failures import (
 )
 
 
+class CertificateReqValidator:
+
+    def __init__(self, cmp_body):
+
+        self.cmp_body = cmp_body
+        self.cert_req_validator = CertReqValidator(self.cmp_body)
+
+    def validate(self):
+        self.cert_req_validator.validate_cr()
+
+
 class InitializationReqValidator:
+
+    def __init__(self, cmp_body):
+        self.cmp_body = cmp_body
+        self.cert_req_validator = CertReqValidator(self.cmp_body)
+
+    def validate(self):
+        self.cert_req_validator.validate_ir()
+
+
+class CertReqValidator:
     def __init__(self, cmp_body):
         """
         Initializes the validator with ASN.1 encoded data.
@@ -15,7 +36,9 @@ class InitializationReqValidator:
         - cmp_body (bytes): The ASN.1 encoded CMP body.
         """
         self.cmp_body = cmp_body
+        self._request = None
         self._ir = None
+        self._cr = None
         self._certReqMsg = None
         self._certReq = None
         self._certTemplate = None
@@ -24,6 +47,10 @@ class InitializationReqValidator:
     @property
     def ir(self):
         return self._ir
+
+    @property
+    def cr(self):
+        return self._cr
 
     @property
     def certReq(self):
@@ -37,35 +64,59 @@ class InitializationReqValidator:
     def popo(self):
         return self._popo
 
-    def validate(self):
+    def validate_ir(self):
         """
         Validates the decoded CMP body according to the specified requirements.
+
+        Returns:
+        - bool: True if the ir CMP body is valid, False otherwise.
+        - list: A list of validation error messages if the body is invalid.
+        """
+
+        self._validate_request_ir()
+        self._validate_cert_req()
+        self._validate_cert_template()
+        self._validate_popo()
+
+    def validate_cr(self):
+        """
+        Validates the decoded cr CMP body according to the specified requirements.
 
         Returns:
         - bool: True if the CMP body is valid, False otherwise.
         - list: A list of validation error messages if the body is invalid.
         """
 
-        self._validate_ir()
+        self._validate_request_cr()
         self._validate_cert_req()
         self._validate_cert_template()
         self._validate_popo()
 
 
-    def _validate_ir(self):
+    def _validate_request_ir(self):
         """
         Validates the 'ir' field of the CMP body.
         """
         self._ir = self.cmp_body['ir']
+        self._request = self._ir
         if not self._ir or len(self._ir) != 1:
             raise BadMessageCheck("The 'ir' field is required and must contain exactly one 'CertReqMsg'.")
+
+    def _validate_request_cr(self):
+        """
+        Validates the 'ir' field of the CMP body.
+        """
+        self._cr = self.cmp_body['cr']
+        self._request = self._cr
+        if not self._cr or len(self._cr) != 1:
+            raise BadMessageCheck("The 'cr' field is required and must contain exactly one 'CertReqMsg'.")
 
     def _validate_cert_req(self):
         """
         Validates the 'certReq' field within the 'ir' field.
         """
-        self._certReqMsg = self._ir[0]
-        self._certReq = self._ir[0]['certReq']
+        self._certReqMsg = self._request[0]
+        self._certReq = self._request[0]['certReq']
         certReqId = self._certReq['certReqId']
 
         if certReqId != 0:

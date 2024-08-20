@@ -4,7 +4,9 @@ from pki.pki.request.handler import est, cmp, rest
 from pki.issuing_ca import UnprotectedLocalIssuingCa
 from pki.pki.request.message.est import PkiEstSimpleEnrollRequestMessage
 
-from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage, PkiCmpRevocationRequestMessage, PkiCmpGetRootUpdateRequestMessage, PkiCmpGetCrlsRequestMessage, PkiCmpGetCertReqTemplateRequestMessage, PkiCmpGetCaCertsRequestMessage
+from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage, PkiCmpRevocationRequestMessage, \
+    PkiCmpGetRootUpdateRequestMessage, PkiCmpGetCrlsRequestMessage, PkiCmpGetCertReqTemplateRequestMessage, \
+    PkiCmpGetCaCertsRequestMessage, PkiCmpCertificationRequestMessage, PkiCmpKeyUpdateRequestMessage
 
 from pki.pki.request.message.rest import PkiRestCsrRequestMessage, PkiRestPkcs12RequestMessage
 
@@ -26,6 +28,12 @@ class CaRequestHandlerFactory:
 
             if isinstance(request, PkiCmpInitializationRequestMessage):
                 return cmp.LocalCmpInitializationRequestHandler(request)
+
+            if isinstance(request, PkiCmpCertificationRequestMessage):
+                return cmp.LocalCmpCertificationRequestHandler(request)
+
+            if isinstance(request, PkiCmpKeyUpdateRequestMessage):
+                return cmp.LocalCmpKeyUpdateRequestHandler(request)
 
             if isinstance(request, PkiCmpRevocationRequestMessage):
                 return cmp.LocalCmpRevocationRequestHandler(request)

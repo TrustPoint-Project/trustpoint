@@ -1,13 +1,12 @@
-from pyasn1_modules import rfc2459, rfc4210, rfc5280
-from pyasn1.codec.der import decoder
-from pyasn1.type import univ, namedtype, char, useful, tag
+from pyasn1_modules import rfc2459, rfc4210
+from pyasn1.type import univ, char, useful, tag, constraint
 import datetime
 import os
-import traceback
 from cryptography import x509
 from cryptography.x509 import NameOID
 import logging
 
+from pki.pki.cmp.asn1_modules import CertProfileOids
 from pki.pki.cmp.validator.header_validator import GenericHeaderValidator
 
 logging.basicConfig(level=logging.INFO)
@@ -96,6 +95,29 @@ class PKIHeaderCreator:
         #pbm_params, _ = decoder.decode(protectionAlg.getComponentByName('parameters'), asn1Spec=rfc2459.AlgorithmIdentifier())
 
         self.pki_header.setComponentByName('protectionAlg', protectionAlg)
+
+    def set_cert_template(self, profiles: list):
+
+        profile_seq = univ.SequenceOf(componentType=char.UTF8String())
+
+        for profile in profiles:
+            profile_seq.append(char.UTF8String(profile))
+
+        info_type_and_value = rfc4210.InfoTypeAndValue().subtype(
+            sizeSpec=constraint.ValueSizeConstraint(1, rfc4210.MAX)
+        )
+        info_type_and_value.setComponentByName('infoType', CertProfileOids.id_certProfile)  # Set the infoType
+        info_type_and_value.setComponentByName('infoValue', profile_seq)
+
+        general_info = univ.SequenceOf(componentType=rfc4210.InfoTypeAndValue().subtype(
+            sizeSpec=constraint.ValueSizeConstraint(1, rfc4210.MAX)
+        )
+        ).subtype(
+            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 8))
+
+        general_info.append(info_type_and_value)
+
+        self.pki_header.setComponentByName('generalInfo', general_info)
 
     def set_sender(self):
         """

@@ -2,7 +2,6 @@ from pyasn1.codec.der.decoder import decode
 from pyasn1_modules import rfc5280
 from pyasn1.type import univ
 import json
-from cryptography.hazmat.primitives.serialization import Encoding
 
 from pki.models import CertificateModel
 from pki.pki.cmp.parsing.parse_helper import ParseHelper

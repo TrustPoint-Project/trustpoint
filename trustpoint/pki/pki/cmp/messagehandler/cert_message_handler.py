@@ -5,8 +5,9 @@ from cryptography.hazmat.primitives.serialization import Encoding, load_der_publ
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.x509 import Certificate
-from pyasn1.codec.der import decoder
-from pyasn1_modules import rfc2459
+from pyasn1.codec.der import decoder, encoder
+from pyasn1.type import char, univ
+from pyasn1_modules import rfc2459, rfc5280
 import datetime
 import logging
 
@@ -17,6 +18,7 @@ from pki.pki.cmp.builder.pki_header_creator import PKIHeaderCreator
 from pki.pki.cmp.builder.extra_certs import ExtraCerts
 from pki.pki.cmp.validator.extracerts_validator import ExtraCertsValidator
 from pki.pki.cmp.validator.initialization_req_validator import InitializationReqValidator
+from pki.pki.cmp.cert_template import CertTemplateLoader
 
 
 class CertMessageHandler:
@@ -39,8 +41,9 @@ class CertMessageHandler:
         self.ca_cert = None
         self.issuing_ca_object = None
         self.ca_cert_chain = None
+        self.cert_request_template = None
 
-        #self._validate()
+        # self._validate()
         self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)  # Adjust logging level as needed
         self.logger.info("CertMessageHandler initialized for domain: %s", domain)
@@ -53,6 +56,11 @@ class CertMessageHandler:
         validator = InitializationReqValidator(self.body)
         validator.validate()
         self.logger.debug("Validation completed.")
+
+    def configure_request_template(self, cert_request_template):
+        # print("CERT_REQUEST_TEMPLATE")
+        self.cert_request_template = cert_request_template
+        # print(cert_request_template.prettyPrint())
 
     def handle(self, issuing_ca_object) -> bytes:
         """
@@ -70,8 +78,13 @@ class CertMessageHandler:
 
         cert_req_msg = self._get_cert_req_msg()
 
+        subject_update = self._update_subject(cert_req_msg)
+        extensions_update = self._update_san(cert_req_msg)
+
         self.logger.debug("Preparing subject and SAN for the certificate.")
-        subject_name, san_list, public_key = self._prepare_subject_san(cert_req_msg)
+        subject_name = self._prepare_subject(subject_update)
+        san_list = self._prepare_san(extensions_update)
+        public_key = self._prepare_public_key(cert_req_msg)
 
         self.logger.debug("Generating signed certificate.")
         cert = self._generate_signed_certificate(subject_name, san_list, public_key, self.ca_cert, self.ca_key)
@@ -98,6 +111,270 @@ class CertMessageHandler:
 
         self.logger.info("Certificate request handled successfully.")
         return pki_message
+
+    def _update_subject(self, cert_req_msg):
+        client_cert_template = cert_req_msg.getComponentByName('certTemplate')
+        client_subject = client_cert_template.getComponentByName('subject')
+
+        if self.cert_request_template:
+            subject_final = rfc2459.Name()
+            template_info_value = self.cert_request_template.getComponentByName('infoValue')
+            template_cert_template = template_info_value.getComponentByName('certTemplate')
+            template_subject = template_cert_template.getComponentByName('subject')
+
+            template_rdn_sequence = template_subject.getComponentByName('')
+            client_rdn_sequence = client_subject.getComponentByPosition(0)
+
+            rdn_final_sequence = rfc2459.RDNSequence()
+
+            for template_rdn in template_rdn_sequence:
+                template_attr = template_rdn[0]
+                template_oid = template_attr.getComponentByName('type')
+                template_value = template_attr.getComponentByName('value')
+
+                client_value = None
+                for id, client_rdn in enumerate(client_rdn_sequence):
+                    client_attr = client_rdn[0]
+                    client_oid = client_attr.getComponentByName('type')
+                    if client_oid == template_oid:
+                        client_value = client_attr.getComponentByName('value')
+                        break
+
+                if template_value.prettyPrint() != '':
+                    encoded_value = encoder.encode(template_value)
+                    final_value = rfc2459.AttributeValue()
+                    final_value._value = encoded_value
+                elif client_value is not None:
+                    final_value = client_value
+                else:
+                    raise ValueError(f"Required OID {template_oid.prettyPrint()} not found in client subject")
+
+                final_attr = rfc2459.AttributeTypeAndValue()
+                final_attr.setComponentByName('type', template_oid)
+                final_attr.setComponentByName('value', final_value)
+
+                final_rdn = rfc2459.RelativeDistinguishedName()
+                final_rdn.setComponentByPosition(0, final_attr)
+
+                rdn_final_sequence.setComponentByPosition(len(rdn_final_sequence), final_rdn)
+
+            subject_final.setComponentByName('', rdn_final_sequence)
+
+        else:
+            subject_final = client_subject
+
+        return subject_final
+
+    def _update_san(self, cert_req_msg):
+        client_cert_template = cert_req_msg.getComponentByName('certTemplate')
+        client_extensions = client_cert_template.getComponentByName('extensions')
+
+        if not self.cert_request_template:
+            return client_extensions
+
+        extensions_final = rfc2459.Extensions()
+        template_info_value = self.cert_request_template.getComponentByName('infoValue')
+        template_cert_template = template_info_value.getComponentByName('certTemplate')
+        template_extensions = template_cert_template.getComponentByName('extensions')
+
+        client_general_names = None
+
+        # Find the client's SAN extension and decode it if present
+        for client_extension in client_extensions:
+            if client_extension.getComponentByName('extnID') == rfc5280.id_ce_subjectAltName:
+                client_extn_value = client_extension.getComponentByName('extnValue')
+                if isinstance(client_extn_value, univ.OctetString):
+                    client_general_names, _ = decoder.decode(bytes(client_extn_value), asn1Spec=rfc5280.GeneralNames())
+                    print("Client GeneralNames:", client_general_names.prettyPrint())
+                break
+
+        for template_extension in template_extensions:
+            extn_id = template_extension.getComponentByName('extnID')
+            extn_value = template_extension.getComponentByName('extnValue')
+            extn_critical = template_extension.getComponentByName('critical')
+
+            if extn_id == rfc5280.id_ce_subjectAltName:
+                octet_bytes = bytes(extn_value)
+                template_general_names, _ = decoder.decode(octet_bytes, asn1Spec=rfc5280.GeneralNames())
+                final_general_names = rfc5280.GeneralNames()
+
+                for general_name in template_general_names:
+                    general_name_type = general_name.getComponent()
+                    general_name_name = general_name.getName()
+
+                    if general_name_type.prettyPrint() == '' and client_general_names:
+                        match_found = False
+                        for client_general_name in client_general_names:
+                            if client_general_name.getName() == general_name_name:
+                                updated_general_name = rfc5280.GeneralName()
+                                updated_general_name.setComponentByName(
+                                    general_name_name,
+                                    client_general_name.getComponentByName(general_name_name)
+                                )
+                                final_general_names.append(updated_general_name)
+                                match_found = True
+                                break
+
+                        if not match_found:
+                            raise ValueError(
+                                f"Required GeneralName {general_name_name} not found in client GeneralNames")
+
+                    else:
+                        final_general_names.append(general_name)
+
+                final_extn_value = univ.OctetString(encoder.encode(final_general_names))
+            else:
+                final_extn_value = extn_value  # Use the original value if it's not a SAN extension
+
+            # Create the final extension and add it to the final extensions sequence
+            final_extension = rfc2459.Extension()
+            final_extension.setComponentByName('extnID', extn_id)
+            final_extension.setComponentByName('critical', extn_critical)
+            final_extension.setComponentByName('extnValue', final_extn_value)
+
+            extensions_final.setComponentByPosition(len(extensions_final), final_extension)
+
+        return extensions_final
+
+    def _update_san_2(self, cert_req_msg):
+        client_cert_template = cert_req_msg.getComponentByName('certTemplate')
+        client_extensions = client_cert_template.getComponentByName('extensions')
+
+        print(f"client_extensions: {client_extensions}")
+
+        if self.cert_request_template:
+            print("UPDATE SAN")
+            extensions_final = rfc2459.Extensions()
+            template_info_value = self.cert_request_template.getComponentByName('infoValue')
+            template_cert_template = template_info_value.getComponentByName('certTemplate')
+            template_extensions = template_cert_template.getComponentByName('extensions')
+
+            for template_extension in template_extensions:
+                extn_id = template_extension.getComponentByName('extnID')
+                extn_value = template_extension.getComponentByName('extnValue')
+                extn_critical = template_extension.getComponentByName('critical')
+
+                print(f"template_extension: {template_extension}")
+                print(f"client_extensions: {client_extensions}")
+
+                client_extn_value = None
+                for client_extension in client_extensions:
+                    client_extn_id = client_extension.getComponentByName('extnID')
+
+                    if client_extn_id == extn_id:
+                        client_extn_value = client_extension.getComponentByName('extnValue')
+                        break
+
+                if client_extn_value is not None:
+                    if isinstance(client_extn_value, univ.OctetString):
+                        # Decode the client's GeneralNames from the OctetString
+                        octet_bytes = bytes(client_extn_value)
+                        client_general_names, _ = decoder.decode(octet_bytes, asn1Spec=rfc5280.GeneralNames())
+                        print("Client GeneralNames:", client_general_names.prettyPrint())
+                    else:
+                        raise TypeError("Expected an OctetString for the SAN extension")
+
+                octet_bytes = bytes(extn_value)
+                template_general_names, _ = decoder.decode(octet_bytes, asn1Spec=rfc5280.GeneralNames())
+                final_general_names = rfc2459.GeneralNames()
+                for general_name in template_general_names:
+                    general_name_type = general_name.getComponent()
+                    general_name_name = general_name.getName()
+
+                    if general_name_type.prettyPrint() == '':
+                        if client_extn_value is not None:
+                            match_found = False
+                            for client_general_name in client_general_names:
+                                print("FFFF")
+                                print(client_general_name.getName())
+                                if client_general_name.getName() == general_name_name:
+                                    updated_general_name = rfc5280.GeneralName()
+                                    updated_general_name.setComponentByName(
+                                        general_name_name,
+                                        client_general_name.getComponentByName(general_name_name)
+                                    )
+                                    final_general_names.append(updated_general_name)
+                                    match_found = True
+                                    break
+
+                            if not match_found:
+                                raise ValueError(
+                                    f"Required GeneralName {general_name_name} not found in client GeneralNames")
+
+                    else:
+                        final_general_names.append(general_name)
+
+                final_extn_value = univ.OctetString(encoder.encode(final_general_names))
+
+                final_extension = rfc2459.Extension()
+                final_extension.setComponentByName('extnID', extn_id)
+                final_extension.setComponentByName('critical', extn_critical)
+                final_extension.setComponentByName('extnValue', final_extn_value)
+
+                extensions_final.setComponentByPosition(len(extensions_final), final_extension)
+
+        else:
+            extensions_final = client_extensions
+
+        return extensions_final
+
+    def _prepare_subject(self, subject):
+        subject_name = []
+
+        for rdn in subject[0]:
+            for atv in rdn:
+
+                oid = atv.getComponentByName('type')
+                value = atv.getComponentByName('value')
+
+                value, _ = decoder.decode(bytes(value))
+
+                # print(f"OID: {oid} ({len(oid)}), Value: >{str(value)}< ({len(str(value))})")
+                if oid == rfc2459.id_at_commonName:
+                    subject_name.append(x509.NameAttribute(NameOID.COMMON_NAME, str(value)))
+                elif oid == rfc2459.id_at_countryName:
+                    subject_name.append(x509.NameAttribute(NameOID.COUNTRY_NAME, str(value)))
+                elif oid == rfc2459.id_at_stateOrProvinceName:
+                    subject_name.append(x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, str(value)))
+                elif oid == rfc2459.id_at_localityName:
+                    subject_name.append(x509.NameAttribute(NameOID.LOCALITY_NAME, str(value)))
+                elif oid == rfc2459.id_at_organizationName:
+                    subject_name.append(x509.NameAttribute(NameOID.ORGANIZATION_NAME, str(value)))
+                elif oid == rfc2459.id_at_organizationalUnitName:
+                    subject_name.append(x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, str(value)))
+
+        return subject_name
+
+    def _prepare_san(self, extensions):
+        san_list = []
+
+        for extension in extensions:
+            extn_id = extension.getComponentByName('extnID')
+            if extn_id == rfc2459.id_ce_subjectAltName:
+                extn_value = extension.getComponentByName('extnValue')
+                san, _ = decoder.decode(extn_value, asn1Spec=rfc5280.GeneralNames())
+                for general_name in san:
+                    name_type = general_name.getName()
+                    if name_type == 'dNSName':
+                        san_list.append(x509.DNSName(str(general_name.getComponent())))
+                    elif name_type == 'iPAddress':
+                        binary_ip = general_name.getComponent().asOctets()
+                        ip_address = ipaddress.ip_address(binary_ip)
+                        san_list.append(x509.IPAddress(ip_address))
+                    elif name_type == 'uniformResourceIdentifier':
+                        san_list.append(x509.UniformResourceIdentifier(str(general_name.getComponent())))
+
+        return san_list
+
+    def _prepare_public_key(self, cert_req_msg):
+        cert_template = cert_req_msg.getComponentByName('certTemplate')
+
+        public_key_info = cert_template.getComponentByName('publicKey')
+
+        public_key_der = public_key_info.getComponentByName('subjectPublicKey').asOctets()
+        public_key = load_der_public_key(public_key_der, backend=default_backend())
+
+        return public_key
 
     def _prepare_subject_san(self, cert_req_msg):
         subject_name = []
@@ -214,8 +491,9 @@ class CertMessageHandler:
         cert_req_id = cert_req_msg.getComponentByName('certReqId')
         body_creator.set_cert_req_id(cert_req_id)
         body_creator.set_body_type(self.pki_body_type)
-        for cert in self.ca_cert_chain:
-            body_creator.add_ca_pub(ca_cert=cert)
+        if self.pki_body_type.request_short_name == "ir":
+            for cert in self.ca_cert_chain:
+                body_creator.add_ca_pub(ca_cert=cert)
         return body_creator.create_pki_body(cert_pem=cert_pem)
 
     def _create_pki_header(self):
@@ -245,7 +523,7 @@ class CertMessageHandler:
             return extra_certs_seq
         return None
 
-    def _create_pki_message(self, pki_body, pki_header, response_protection, extra_certs=None):
+    def _create_pki_message(self, pki_body, pki_header, response_protection, extra_certs=None) -> bytes:
         """
         Helper method to create the PKI message for the response.
 
@@ -255,7 +533,6 @@ class CertMessageHandler:
         :param extra_certs: Optional extra certificates to include in the message.
         :return: str, the created PKI message.
         """
-        pki_message_creator = PKIMessageCreator(pki_body, pki_header, self.pki_body_type, response_protection, extraCerts=extra_certs)
+        pki_message_creator = PKIMessageCreator(pki_body, pki_header, self.pki_body_type, response_protection,
+                                                extraCerts=extra_certs)
         return pki_message_creator.create_pki_message()
-
-

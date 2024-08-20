@@ -8,11 +8,12 @@ import logging
 from pki.pki.request.message import PkiResponseMessage, MimeType
 from pki.pki.cmp.messagehandler.cmp_message_handler import CMPMessageHandler
 from pki.pki.request.handler import CaRequestHandler
+from pki.pki.cmp.cert_template import cert_templates
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage, PkiCmpRevocationRequestMessage, PkiCmpGetRootUpdateRequestMessage, PkiCmpGetCrlsRequestMessage, PkiCmpGetCertReqTemplateRequestMessage, PkiCmpGetCaCertsRequestMessage
+    from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage, PkiCmpCertificationRequestMessage, PkiCmpKeyUpdateRequestMessage, PkiCmpRevocationRequestMessage, PkiCmpGetRootUpdateRequestMessage, PkiCmpGetCrlsRequestMessage, PkiCmpGetCertReqTemplateRequestMessage, PkiCmpGetCaCertsRequestMessage
     from pki.issuing_ca import UnprotectedLocalIssuingCa
 
 
@@ -39,14 +40,82 @@ class LocalCmpInitializationRequestHandler(CaCmpRequestHandler):
 
     # TODO: Validation if Certificate is allowed to be issued
     # TODO: check if certificate was already issued etc.
-    # TODO: Store issued certificate in DB
+    def process_request(self) -> PkiResponseMessage:
+        domain = self._request_message.domain_model
+
+        cert=domain.issuing_ca.issuing_ca_certificate.issued_certificate_references.first().get_certificate_serializer().as_crypto()
+        authorized_clients = [cert]
+        shared_secret = b"foo123"
+        try:
+            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp, operation="ir", alias=self._request_message.alias)
+            cmp_message.set_issuing_ca(issuing_ca_object=self._issuing_ca)
+            if authorized_clients:
+                cmp_message.set_signature_based_protection(authorized_clients=authorized_clients)
+            #if shared_secret:
+            #    cmp_message.set_pbm_based_protection(shared_secret=shared_secret)
+            encoded_response, http_status_code = cmp_message.process_request()
+
+            return PkiResponseMessage(
+                raw_response=encoded_response,
+                http_status=http_status_code,
+                mimetype=MimeType.APPLICATION_PKIXCMP)
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+
+class LocalCmpCertificationRequestHandler(CaCmpRequestHandler):
+    _request_message: PkiCmpCertificationRequestMessage
+    _issuing_ca: UnprotectedLocalIssuingCa
+
+    def __init__(self, request: PkiCmpCertificationRequestMessage):
+        self._request_message = request
+        self._issuing_ca = self._request_message.domain_model.issuing_ca.get_issuing_ca()
+
+        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
+
+    # TODO: Validation if Certificate is allowed to be issued
+    # TODO: check if certificate was already issued etc.
     def process_request(self) -> PkiResponseMessage:
         domain = self._request_message.domain_model
         cert=domain.issuing_ca.issuing_ca_certificate.issued_certificate_references.first().get_certificate_serializer().as_crypto()
         authorized_clients = [cert]
         shared_secret = b"foo123"
         try:
-            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp)
+            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp, operation="cr")
+            cmp_message.set_issuing_ca(issuing_ca_object=self._issuing_ca)
+            if authorized_clients:
+                cmp_message.set_signature_based_protection(authorized_clients=authorized_clients)
+            #if shared_secret:
+            #    cmp_message.set_pbm_based_protection(shared_secret=shared_secret)
+            encoded_response, http_status_code = cmp_message.process_request()
+
+            return PkiResponseMessage(
+                raw_response=encoded_response,
+                http_status=http_status_code,
+                mimetype=MimeType.APPLICATION_PKIXCMP)
+        except Exception as e:
+            self.logger.error(traceback.format_exc())
+
+class LocalCmpKeyUpdateRequestHandler(CaCmpRequestHandler):
+    _request_message: PkiCmpKeyUpdateRequestMessage
+    _issuing_ca: UnprotectedLocalIssuingCa
+
+    def __init__(self, request: PkiCmpKeyUpdateRequestMessage):
+        self._request_message = request
+        self._issuing_ca = self._request_message.domain_model.issuing_ca.get_issuing_ca()
+
+        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger.setLevel(logging.DEBUG)
+
+    # TODO: Validation if Certificate is allowed to be issued
+    # TODO: check if certificate was already issued etc.
+    def process_request(self) -> PkiResponseMessage:
+        domain = self._request_message.domain_model
+        cert=domain.issuing_ca.issuing_ca_certificate.issued_certificate_references.first().get_certificate_serializer().as_crypto()
+        authorized_clients = [cert]
+        shared_secret = b"foo123"
+        try:
+            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp, operation="kur")
             cmp_message.set_issuing_ca(issuing_ca_object=self._issuing_ca)
             if authorized_clients:
                 cmp_message.set_signature_based_protection(authorized_clients=authorized_clients)
@@ -72,16 +141,13 @@ class LocalCmpRevocationRequestHandler(CaCmpRequestHandler):
         self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
 
-    # TODO: Validation if Certificate is allowed to be issued
-    # TODO: check if certificate was already issued etc.
-    # TODO: Store issued certificate in DB
     def process_request(self) -> PkiResponseMessage:
         domain = self._request_message.domain_model
         cert=domain.issuing_ca.issuing_ca_certificate.issued_certificate_references.first().get_certificate_serializer().as_crypto()
         authorized_clients = [cert]
         shared_secret = b"foo123"
         try:
-            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp)
+            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp, operation="rr")
             cmp_message.set_issuing_ca(issuing_ca_object=self._issuing_ca)
             if authorized_clients:
                 cmp_message.set_signature_based_protection(authorized_clients=authorized_clients)
@@ -116,7 +182,7 @@ class LocalCmpGetRootUpdateHandler(CaCmpRequestHandler):
         authorized_clients = [cert]
         shared_secret = b"foo123"
         try:
-            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp)
+            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp, operation="genm")
             cmp_message.set_issuing_ca(issuing_ca_object=self._issuing_ca)
             if authorized_clients:
                 cmp_message.set_signature_based_protection(authorized_clients=authorized_clients)
@@ -151,7 +217,7 @@ class LocalCmpGetCrlsHandler(CaCmpRequestHandler):
         authorized_clients = [cert]
         shared_secret = b"foo123"
         try:
-            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp)
+            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp, operation="genm")
             cmp_message.set_issuing_ca(issuing_ca_object=self._issuing_ca)
             if authorized_clients:
                 cmp_message.set_signature_based_protection(authorized_clients=authorized_clients)
@@ -186,7 +252,7 @@ class LocalCmpGetCertReqTemplateHandler(CaCmpRequestHandler):
         authorized_clients = [cert]
         shared_secret = b"foo123"
         try:
-            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp)
+            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp, operation="genm")
             cmp_message.set_issuing_ca(issuing_ca_object=self._issuing_ca)
             if authorized_clients:
                 cmp_message.set_signature_based_protection(authorized_clients=authorized_clients)
@@ -221,7 +287,7 @@ class LocalCmpGetCaCertsHandler(CaCmpRequestHandler):
         authorized_clients = [cert]
         shared_secret = b"foo123"
         try:
-            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp)
+            cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp, operation="genm")
             cmp_message.set_issuing_ca(issuing_ca_object=self._issuing_ca)
             if authorized_clients:
                 cmp_message.set_signature_based_protection(authorized_clients=authorized_clients)
