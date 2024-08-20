@@ -1285,7 +1285,7 @@ class IssuingCaModel(models.Model):
     root_ca_certificate = models.ForeignKey(
         to=CertificateModel,
         verbose_name=_('Root CA Certificate'),
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='root_ca_certificate',
         editable=False
     )
@@ -1298,7 +1298,7 @@ class IssuingCaModel(models.Model):
     issuing_ca_certificate = models.OneToOneField(
         to=CertificateModel,
         verbose_name=_('Issuing CA Certificate'),
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name='issuing_ca_model',
         editable=False)
 
