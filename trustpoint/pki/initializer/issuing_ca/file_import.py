@@ -11,8 +11,13 @@ from cryptography.hazmat.primitives.hashes import SHA256
 
 from pki.models import CertificateModel, IssuingCaModel, CertificateChainOrderModel
 
-from pki.serializer import CredentialSerializer, PublicKeySerializer, PrivateKeySerializer, \
-    CertificateCollectionSerializer, CertificateSerializer
+from pki.serializer import (
+    PublicKeySerializer,
+    PrivateKeySerializer,
+    CertificateSerializer,
+    CertificateCollectionSerializer,
+    CredentialSerializer
+)
 
 from . import IssuingCaInitializer
 from . import IssuingCaInitializerError
@@ -116,6 +121,16 @@ class FileImportLocalIssuingCaInitializer(IssuingCaInitializer, abc.ABC):
     @abc.abstractmethod
     def _construct_credential_serializer(self) -> None:
         pass
+
+    @property
+    def password(self) -> None | bytes:
+        return self._password
+
+    @password.setter
+    def password(self, password: None | bytes) -> None:
+        if password == b'':
+            password = None
+        self._password = password
 
     def _check_certificate_upload_file_limit(self) -> None:
         cert_count = self._credential_serializer.get_count_of_certificates() + 1
@@ -270,51 +285,50 @@ class UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(FileImportLocalIs
 
     _p12: bytes
 
-
     def __init__(self, unique_name: str, p12: bytes, password: None | bytes = None) -> None:
 
-        if password == b'':
-            password = None
+        self.password = password
 
         self._unique_name = unique_name
         self._p12 = p12
-        self._password = password
 
     def _construct_credential_serializer(self) -> None:
         self._credential_serializer = self._credential_serializer_class.from_bytes_pkcs12(self._p12, self._password)
 
 
-class LocalUnprotectedIssuingCaFromSeparateFilesInitializer(FileImportLocalIssuingCaInitializer):
+class UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer(FileImportLocalIssuingCaInitializer):
 
     _private_key: bytes
     _issuing_ca_certificate: bytes
-    _additional_certificates: bytes
+    _additional_certificates: bytes | None
 
     def __init__(
             self,
             unique_name: str,
-            private_key: bytes,
+            private_key_raw: bytes,
             password: None | bytes,
-            issuing_ca_certificate: bytes,
-            additional_certificates: bytes) -> None:
+            issuing_ca_certificate_raw: bytes,
+            additional_certificates_raw: bytes | None) -> None:
 
-        if password == b'':
-            password = None
+        self.password = password
 
         self._unique_name = unique_name
-        self._private_key = private_key
-        self._password = password
-        self._issuing_ca_certificate = issuing_ca_certificate
-        self._additional_certificates = additional_certificates
+        self._private_key = private_key_raw
+        self._issuing_ca_certificate = issuing_ca_certificate_raw
+        self._additional_certificates = additional_certificates_raw
 
     def _construct_credential_serializer(self) -> None:
+
+        if self._additional_certificates:
+            additional_certificates = self._certificate_collection_serializer_class.from_bytes(
+                self._additional_certificates).as_crypto()
+        else:
+            additional_certificates = None
+
         self._credential_serializer = self._credential_serializer_class(
             credential_private_key=self._private_key_serializer_class.from_bytes(
                 self._private_key, self._password).as_crypto(),
             credential_certificate=self._certificate_serializer_class.from_bytes(
                 self._issuing_ca_certificate).as_crypto(),
-            additional_certificates=self._certificate_collection_serializer_class.from_bytes(
-                self._additional_certificates).as_crypto(),
+            additional_certificates=additional_certificates,
         )
-
-

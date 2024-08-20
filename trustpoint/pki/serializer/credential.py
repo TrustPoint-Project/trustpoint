@@ -76,7 +76,7 @@ class CredentialSerializer(Serializer):
         cls,
         credential_private_key: PrivateKey,
         credential_certificate: x509.Certificate,
-        additional_certificates: list[x509.Certificate],
+        additional_certificates: None | list[x509.Certificate],
     ) -> CredentialSerializer:
         """Inits the CredentialSerializer class from a PrivateKey, x509.Certificate and additional x509.Certificates.
 
