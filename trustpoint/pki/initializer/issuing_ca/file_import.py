@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import abc
-import traceback
 
 from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from cryptography.exceptions import InvalidSignature
 from cryptography import x509
-from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.hashes import SHA256
 from cryptography.hazmat.primitives.serialization import pkcs12
 
@@ -24,6 +22,9 @@ if TYPE_CHECKING:
     from typing import Union
     from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
+
+
+# TODO: USE SERIALIZERS ONLY, NO x509 directly
 
 
 class FileImportLocalIssuingCaInitializerError(IssuingCaInitializerError):
@@ -67,7 +68,7 @@ class CertificateChainContainsCycleError(FileImportLocalIssuingCaInitializerErro
 class IssuingCaAlreadyExistsError(FileImportLocalIssuingCaInitializerError):
 
     def __init__(self, name: str) -> None:
-        super().__init__(message=_(f'Issuing CA already exists. Unique Name: {name}.'))
+        super().__init__(message=_(f'Issuing CA already exists with unique name: {name}.'))
 
 
 class FileImportLocalIssuingCaInitializer(IssuingCaInitializer, abc.ABC):
@@ -197,6 +198,10 @@ class UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(FileImportLocalIs
     @transaction.atomic
     def save(self):
 
+        print(self._issuing_ca_certificate)
+        print(self._additional_certificates)
+        print(self._full_cert_chain)
+
         try:
             saved_certs = [self._cert_model_class.save_certificate(self._issuing_ca_certificate)]
         except ValueError:
@@ -209,7 +214,7 @@ class UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(FileImportLocalIs
 
             saved_certs = [cert_model]
 
-        for certificate in self._full_cert_chain[1:]:
+        for certificate in self._full_cert_chain[:-1]:
             saved_certs.append(self._cert_model_class.save_certificate(certificate, exist_ok=True))
 
         issuing_ca_model = self._issuing_ca_model_class(
@@ -217,8 +222,8 @@ class UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(FileImportLocalIs
             private_key_pem=PrivateKeySerializer(self._private_key).as_pkcs1_pem(None)
         )
 
-        issuing_ca_model.issuing_ca_certificate = saved_certs[-1]
-        issuing_ca_model.root_ca_certificate = saved_certs[0]
+        issuing_ca_model.issuing_ca_certificate = saved_certs[0]
+        issuing_ca_model.root_ca_certificate = saved_certs[-1]
         issuing_ca_model.save()
 
         for number, certificate in enumerate(saved_certs[1:-1]):

@@ -27,7 +27,6 @@ class TrustStoreInitializer:
 
     def __init__(self, unique_name: str, trust_store: bytes | list[x509.Certificate]) -> None:
 
-        # TODO
         if isinstance(trust_store, bytes):
             trust_store = x509.load_pem_x509_certificates(trust_store)
 
