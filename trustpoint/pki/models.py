@@ -1269,6 +1269,9 @@ class CertificateModel(models.Model):
                 issuing_ca.get_issuing_ca().generate_crl()
         self._save()
 
+    def remove_private_key(self):
+        self.private_key = None
+        self._save()
 
 # ------------------------------------------------- Issuing CA Models --------------------------------------------------
 

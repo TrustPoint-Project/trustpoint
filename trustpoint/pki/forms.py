@@ -150,7 +150,7 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
         label=_('Issuing CA Certificate (.cer, .der, .pem, .p7b)'),
         required=True)
     certificate_chain = forms.FileField(
-        label=_('[Optional] Certificate Chain (.pem, .p7b)'), required=False)
+        label=_('[Optional] Certificate Chain (.pem, .p7b) '), required=False)
 
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']

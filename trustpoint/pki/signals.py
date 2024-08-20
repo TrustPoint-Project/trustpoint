@@ -1,7 +1,7 @@
 import logging
 
 from django.db.backends.signals import connection_created
-from django.db.models.signals import post_delete, post_save
+from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 
 from .models import IssuingCaModel
@@ -19,6 +19,12 @@ def handle_post_save(sender, instance, created, **kwargs) -> None:
 @receiver(post_delete, sender=IssuingCaModel)
 def handle_post_delete(sender, instance, **kwargs) -> None:
     remove_crl_from_schedule(instance)
+
+
+@receiver(pre_delete, sender=IssuingCaModel)
+def handle_pre_delete(sender, instance, **kwargs) -> None:
+    print(sender)
+    instance.issuing_ca_certificate.remove_private_key()
 
 
 crl_thread_started = False

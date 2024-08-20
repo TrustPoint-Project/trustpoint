@@ -10,6 +10,8 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 from . import Serializer, PrivateKeySerializer, CertificateSerializer, CertificateCollectionSerializer
 from . import PrivateKey
 
+from typing import get_args
+
 
 class CredentialSerializer(Serializer):
     """The CredentialSerializer class provides methods for serializing and loading X.509 Credentials.
@@ -110,7 +112,7 @@ class CredentialSerializer(Serializer):
         return cls(p12.key, p12.cert.certificate, [certificate.certificate for certificate in p12.additional_certs])
 
     @classmethod
-    def from_bytes(cls, credential_data: bytes, password: None | bytes = None) -> CredentialSerializer:
+    def from_bytes_pkcs12(cls, credential_data: bytes, password: None | bytes = None) -> CredentialSerializer:
         """Inits the CredentialSerializer class from a bytes object.
 
         Args:
@@ -124,7 +126,7 @@ class CredentialSerializer(Serializer):
             ValueError: If loading the PKCS#12 object failed.
         """
         try:
-            return cls(**cls._load_pkcs12(credential_data, password))
+            return cls.from_crypto_pkcs12(pkcs12.load_pkcs12(credential_data, password))
         except ValueError:
             raise ValueError('Failed to load credential. May be an incorrect password or malformed data.')
 
@@ -183,6 +185,10 @@ class CredentialSerializer(Serializer):
         certificates = [self._credential_certificate]
         certificates.extend(self._additional_certificates)
         return self._certificate_collection_serializer_class.from_crypto(certificates)
+
+    def get_count_of_certificates(self) -> int:
+        """Returns the number of certificates contained in this credential."""
+        return len(self._additional_certificates) + 1
 
     @staticmethod
     def _get_encryption_algorithm(password: None | bytes):
