@@ -87,6 +87,8 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
         label=_('[Optional] PKCS#12 password'),
         required=False)
 
+    auto_crl = forms.BooleanField(label='Generate CRL upon certificate revocation.', initial=True, required=False)
+
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']
         if IssuingCaModel.objects.filter(unique_name=unique_name).exists():
@@ -96,6 +98,7 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         unique_name = cleaned_data.get('unique_name')
+        auto_crl = cleaned_data.get('auto_crl')
         if unique_name is None:
             return
 
@@ -121,7 +124,8 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
             initializer = LocalUnprotectedIssuingCaFromP12FileInitializer(
                 unique_name=cleaned_data['unique_name'],
                 p12=pkcs12_raw,
-                password=pkcs12_password)
+                password=pkcs12_password,
+                auto_crl=auto_crl)
         except Exception as exception:
             raise ValidationError(
                 'Failed to load PKCS#12 file. Either malformed file or wrong password.',

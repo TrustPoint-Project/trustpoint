@@ -107,6 +107,7 @@ class LocalUnprotectedIssuingCaFromP12FileInitializer(LocalIssuingCaFromFileInit
             self,
             unique_name: str,
             p12: bytes | pkcs12,
+            auto_crl: bool,
             password: None | bytes = None,
             validator: IssuingCaValidator = IssuingCaValidator,
             cert_model_class: type(CertificateModel) = CertificateModel,
@@ -119,6 +120,7 @@ class LocalUnprotectedIssuingCaFromP12FileInitializer(LocalIssuingCaFromFileInit
         self._unique_name = unique_name
         self._p12 = p12
         self._validator = validator
+        self._auto_crl = auto_crl
 
         self._cert_model_class = cert_model_class
         self._issuing_ca_model_class = issuing_ca_model_class
@@ -224,6 +226,7 @@ class LocalUnprotectedIssuingCaFromP12FileInitializer(LocalIssuingCaFromFileInit
 
         issuing_ca_model.issuing_ca_certificate = saved_certs[-1]
         issuing_ca_model.root_ca_certificate = saved_certs[0]
+        issuing_ca_model.auto_crl = self._auto_crl
         issuing_ca_model.save()
 
         for number, certificate in enumerate(saved_certs[1:-1]):

@@ -1265,9 +1265,9 @@ class CertificateModel(models.Model):
             rc = RevokedCertificate(cert=self)
             rc.issuing_ca = issuing_ca
             rc.save()
-            if issuing_ca.auto_crl:
-                issuing_ca.get_issuing_ca().generate_crl()
         self._save()
+        if issuing_ca.auto_crl:
+            issuing_ca.get_issuing_ca().generate_crl()
 
 
 # ------------------------------------------------- Issuing CA Models --------------------------------------------------
