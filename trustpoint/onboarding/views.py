@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import secrets
 from typing import TYPE_CHECKING
 
 from devices.models import Device
@@ -113,7 +114,8 @@ class BrowserInitializationView(TpLoginRequiredMixin, OnboardingUtilMixin, Templ
 
         onboarding_process = OnboardingProcess.make_onboarding_process(device, BrowserOnboardingProcess)
 
-        otp = onboarding_process.otp
+        otp = secrets.token_hex(8)
+        onboarding_process.set_otp(otp)
 
         context = {
             'page_category': 'onboarding',
@@ -175,10 +177,20 @@ class BrowserLoginView(OnboardingUtilMixin, FormView):
         self.device = Device.get_by_id(device_id)
         onboarding_process = OnboardingProcess.get_by_device(self.device)
 
-        if onboarding_process and otp == onboarding_process.otp:
-            return BrowserDownloadView.as_view()(request, device_id=device_id, *args, **kwargs)
+        if onboarding_process:
+            result, tries_left = onboarding_process.check_otp(otp)
+            if result:
+                return BrowserDownloadView.as_view()(request, device_id=device_id, *args, **kwargs)
+            if tries_left == 1:
+                msg = ('Device or password does not match. \n %s try left.' % tries_left)
+            elif tries_left == 0:
+                msg = ('There are no tries left. Onboarding aborted')
+            else:
+                msg = ('Device or password does not match. \n %s tries left.' % tries_left)
+        else:
+            msg = ('No Onboarding for device %s found.' % device_id)
 
-        messages.error(request, _('Device or password does not match.'))
+        messages.error(request, _(msg))
         return redirect(request.path)
 
 

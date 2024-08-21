@@ -318,16 +318,32 @@ class DownloadOnboardingProcess(OnboardingProcess):
 
 class BrowserOnboardingProcess(OnboardingProcess):
     """Onboarding process for a device using the download onboarding method."""
+    MAXPWTRIES = 3
 
     def __init__(self, dev: Device) -> None:
         """Initializes a new download onboarding process for a device."""
         super().__init__(dev)
-        self.otp = secrets.token_hex(8)
+        self.__otp = None
+        self.password_tries = 0
 
     def start_onboarding(self):
-        self.otp = None
+        self.__otp = None
         self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
         self.gen_thread.start()
         self.pkcs12 = None
+
+    def set_otp(self, otp: str) -> None:
+        self.__otp = otp
+
+    def check_otp(self, otp: str) -> tuple:
+        self.password_tries += 1
+        if self.password_tries < self.MAXPWTRIES:
+            if self.__otp  and self.__otp == otp:
+                return (True, None)
+        else:
+            self.cancel()
+            self._fail()
+        return (False, self.MAXPWTRIES - self.password_tries)
+
 
 onboarding_processes = []
