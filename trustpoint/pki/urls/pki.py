@@ -67,12 +67,6 @@ urlpatterns = [
     path('generate-ca-crl/<int:ca_id>/',
          crls.CRLDownloadView.generate_ca_crl,
          name='crl'),
-    path('domain-crl/<int:id>/',
-         crls.CRLDownloadView.download_domain_crl,
-         name='crl'),
-    path('generate-domain-crl/<int:id>/',
-         crls.CRLDownloadView.generate_domain_crl,
-         name='crl'),
     path('domains/', domains.DomainTableView.as_view(), name='domains'),
     path(
         'domains/add/',
