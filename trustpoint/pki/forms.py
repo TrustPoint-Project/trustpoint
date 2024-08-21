@@ -87,6 +87,8 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
         label=_('[Optional] PKCS#12 password'),
         required=False)
 
+    auto_crl = forms.BooleanField(label='Generate CRL upon certificate revocation.', initial=True, required=False)
+
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']
         if IssuingCaModel.objects.filter(unique_name=unique_name).exists():
@@ -96,6 +98,7 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         unique_name = cleaned_data.get('unique_name')
+        auto_crl = cleaned_data.get('auto_crl')
         if unique_name is None:
             raise ValidationError('No Unique Name was specified.')
 
@@ -120,7 +123,8 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
             initializer = UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(
                 unique_name=cleaned_data['unique_name'],
                 p12=pkcs12_raw,
-                password=pkcs12_password)
+                password=pkcs12_password,
+                auto_crl=auto_crl)
         except Exception as exception:
             raise ValidationError(
                 'Failed to load PKCS#12 file. Either malformed file or wrong password.',
@@ -204,29 +208,16 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
 
 class DomainBaseForm(forms.ModelForm):
     """Base form for DomainModel, containing shared logic and fields."""
-    auto_crl = forms.BooleanField(
-        label='Generate CRL upon certificate revocation.',
-        required=False,
-        help_text='Check this box to automatically generate a CRL when a certificate is revoked.'
-    )
-
     class Meta:
         model = DomainModel
-        fields = ['unique_name', 'issuing_ca', 'auto_crl']  # Base fields
+        fields = ['unique_name', 'issuing_ca']  # Base fields
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['unique_name'].label += UniqueNameValidator.form_label
-        if self.instance.pk:  # If updating an existing instance
-            self.fields['auto_crl'].initial = self.instance.auto_crl
 
     def save(self, commit=True):
         domain_instance = super().save(commit=False)
-        issuing_ca = domain_instance.issuing_ca
-
-        if issuing_ca:
-            issuing_ca.auto_crl = self.cleaned_data['auto_crl']
-            issuing_ca.save()
 
         if commit:
             domain_instance.save()
