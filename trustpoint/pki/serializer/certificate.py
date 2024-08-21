@@ -4,11 +4,11 @@ from __future__ import annotations
 
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
-from cryptography.hazmat.primitives.serialization import pkcs7, pkcs12
-
+from cryptography.hazmat.primitives.serialization import pkcs7
 
 from . import Serializer, PublicKeySerializer
 
+import typing
 
 
 class CertificateSerializer(Serializer):
@@ -21,7 +21,7 @@ class CertificateSerializer(Serializer):
     _certificate: x509.Certificate
     _public_key_serializer: None | PublicKeySerializer = None
 
-    def __init__(self, certificate: x509.Certificate) -> None:
+    def __init__(self, certificate: bytes | str | x509.Certificate | CertificateSerializer) -> None:
         """Inits the CertificateSerializer class.
 
         Args:
@@ -29,77 +29,36 @@ class CertificateSerializer(Serializer):
 
         Raises:
             TypeError: If the certificate is not a x509.Certificate instance.
+            ValueError: If the certificate failed to deserialize.
         """
-        if not isinstance(certificate, x509.Certificate):
-            raise TypeError('Certificate must be an instance of x509.Certificate.')
+        if isinstance(certificate, bytes):
+            self._certificate = self._from_bytes(certificate)
+        elif isinstance(certificate, str):
+            self._certificate = self._from_string(certificate)
+        elif isinstance(certificate, x509.Certificate):
+            self._certificate = certificate
+        elif isinstance(certificate, CertificateSerializer):
+            self._certificate = certificate.as_crypto()
+        else:
+            raise TypeError(
+                'Certificate must be of type bytes, str, x509.Certificate or CertificateSerializer, '
+                f'but got {type(certificate)}.')
 
-        self._certificate = certificate
-
-    @property
-    def public_key_serializer(self) -> PublicKeySerializer:
-        """Property to get the corresponding PublicKeySerializer object (lazy loading).
-
-        Returns:
-            PublicKeySerializer: The corresponding PublicKeySerializer object.
-        """
-        if self._public_key_serializer is None:
-            self._public_key_serializer = PublicKeySerializer(self._certificate.public_key())
-        return self._public_key_serializer
-
-    @classmethod
-    def from_crypto(cls, certificate: x509.Certificate) -> CertificateSerializer:
-        """Inits the CertificateSerializer class from a x509.Certificate instance.
-
-        Args:
-            certificate: The certificate to serialize.
-
-        Returns:
-            CertificateSerializer: CertificateSerializer instance.
-
-        Raises:
-            TypeError: If the certificate is not a x509.Certificate instance.
-        """
-        return cls(certificate)
-
-    @classmethod
-    def from_bytes(cls, certificate_data: bytes) -> CertificateSerializer:
-        """Inits the CertificateSerializer class from a bytes object.
-
-        Args:
-            certificate_data: Bytes that contains a certificate in either DER or PEM format.
-
-        Returns:
-            CertificateSerializer: CertificateSerializer instance.
-
-        Raises:
-            ValueError: If loading of the certificate from bytes failed.
-        """
+    def _from_bytes(self, certificate_data: bytes) -> x509.Certificate:
         try:
-            return cls(cls._load_pem_certificate(certificate_data))
+            return self._load_pem_certificate(certificate_data)
         except ValueError:
             pass
 
         try:
-            return cls(cls._load_der_certificate(certificate_data))
+            return self._load_der_certificate(certificate_data)
         except ValueError:
             pass
 
         raise ValueError('Failed to load certificate. May be malformed or not in a DER or PEM format.')
 
-    @classmethod
-    def from_string(cls, certificate_data: str) -> CertificateSerializer:
-        """Inits the CertificateSerializer class from a string object.
-
-        Args:
-            certificate_data: String that contains a certificate in PEM format.
-
-        Returns:
-            CertificateSerializer: CertificateSerializer instance.
-
-        Raises:
-            ValueError: If loading of the certificate from string failed.
-        """
-        return cls.from_bytes(certificate_data.encode())
+    def _from_string(self, certificate_data: str) -> x509.Certificate:
+        return self._from_bytes(certificate_data.encode())
 
     def as_pem(self) -> bytes:
         """Gets the associated certificate as bytes in PEM format.
@@ -141,6 +100,17 @@ class CertificateSerializer(Serializer):
         """
         return self._certificate
 
+    @property
+    def public_key_serializer(self) -> PublicKeySerializer:
+        """Property to get the corresponding PublicKeySerializer object (lazy loading).
+
+        Returns:
+            PublicKeySerializer: The corresponding PublicKeySerializer object.
+        """
+        if self._public_key_serializer is None:
+            self._public_key_serializer = PublicKeySerializer(self._certificate.public_key())
+        return self._public_key_serializer
+
     @staticmethod
     def _load_pem_certificate(certificate_data: bytes) -> x509.Certificate:
         try:
@@ -167,162 +137,72 @@ class CertificateCollectionSerializer(Serializer):
         collection, i.e. no certificate chains are validated.
     """
 
-    _certificate_collection: list[x509.Certificate]
+    _certificate_collection: list[CertificateSerializer]
 
-    def __init__(self, certificate_collection: list[x509.Certificate]) -> None:
+    def __init__(
+            self,
+            certificate_collection: bytes | str | list[bytes | str | x509.Certificate | CertificateSerializer] \
+                                    | CertificateCollectionSerializer
+    ) -> None:
         """Inits the CertificateCollectionSerializer class.
 
         Args:
-            certificate_collection: A list of x509.Certificates representing the collection.
+            certificate_collection: A collection of certificates.
 
         Raises:
-            ValueError: If the list is empty.
             TypeError: If certificate_collection is not a list of x509.Certificates.
+            ValueError: If the certificate_collection failed to deserialize.
         """
-        if not isinstance(certificate_collection, list):
-            raise TypeError('certificate_collection must be a list of x509.Certificates.')
+        if isinstance(certificate_collection, bytes):
+            self._certificate_collection = self._from_bytes(certificate_collection)
+        elif isinstance(certificate_collection, str):
+            self._certificate_collection = self._from_string(certificate_collection)
+        elif isinstance(certificate_collection, list):
+            certificate_serializers = []
+            for certificate in certificate_collection:
+                    certificate_serializers.append(CertificateSerializer(certificate))
+            self._certificate_collection = certificate_serializers
+        elif isinstance(certificate_collection, CertificateCollectionSerializer):
+            self._certificate_collection = certificate_collection.as_certificate_serializer_list()
+        else:
+            raise TypeError(
+                'Expected one of the types: '
+                'bytes | str | list[bytes | str | x509.Certificate | CertificateSerializer], '
+                f'but got {type(certificate_collection)}')
 
-        if not certificate_collection:
-            raise ValueError('certificate_collection must contain at least one x509.Certificate instance.')
-
-        for certificate in certificate_collection:
-            if not isinstance(certificate, x509.Certificate):
-                raise TypeError('certificate_collection contains at least one element that is not a x509.Certificate.')
-
-        self._certificate_collection = certificate_collection
-
-    @classmethod
-    def from_crypto(cls, certificate_collection: list[x509.Certificate]) -> CertificateCollectionSerializer:
-        """Inits the CertificateCollectionSerializer class from a list of x509.Certificate instances.
-
-        Args:
-            certificate_collection: A list of x509.Certificates to serialize.
-
-        Returns:
-            CertificateCollectionSerializer: CertificateCollectionSerializer instance.
-
-        Raises:
-            ValueError: If the list is empty.
-            TypeError: If certificate_collection is not a list of x509.Certificates.
-        """
-        return cls(certificate_collection)
-
-    @classmethod
-    def from_crypto_pkcs12(cls, p12: pkcs12.PKCS12KeyAndCertificates) -> CertificateCollectionSerializer:
-        """Inits the CertificateCollectionSerializer class from a pkcs12.PKCS12 instance.
-
-        Args:
-            p12: A pkcs12.PKCS12 instance containing the certificate that shall be serialized.
-
-        Returns:
-            CertificateCollectionSerializer: CertificateCollectionSerializer instance.
-
-        Raises:
-            ValueError: If the pkcs12.PKCS12 instance does not contain any certificates.
-        """
-        certificates = [p12.cert.certificate]
-        certificates.extend([certificate.certificate for certificate in p12.additional_certs])
-        return cls(certificates)
-
-    @classmethod
-    def from_bytes(
-        cls, certificate_collection_data: bytes, password: None | bytes = None
-    ) -> CertificateCollectionSerializer:
-        """Inits the CertificateCollectionSerializer class from a bytes object.
-
-        Args:
-            certificate_collection_data: Bytes that contain a collection of certificates in
-                PEM, PKCS#7 PEM, PKCS#7 DER or PKCS#12 format.
-            password: Password as bytes if the content is encrypted, None otherwise.
-
-        Returns:
-            CertificateCollectionSerializer: CertificateCollectionSerializer instance.
-
-        Raises:
-            ValueError: If loading the collection of certificates failed.
-        """
+    def _from_bytes(self, certificate_collection_data: bytes) -> list[CertificateSerializer]:
         try:
-            return cls(cls._load_pem(certificate_collection_data))
+            return [
+                CertificateSerializer(certificate) for certificate in self._load_pem(certificate_collection_data)
+            ]
         except ValueError:
             pass
 
         try:
-            return cls(cls._load_pkcs7_pem(certificate_collection_data))
+            return [
+                CertificateSerializer(certificate) for certificate in self._load_pkcs7_pem(certificate_collection_data)
+            ]
         except ValueError:
             pass
 
         try:
-            return cls(cls._load_pkcs7_der(certificate_collection_data))
-        except ValueError:
-            pass
-
-        try:
-            p12 = cls._load_pkcs12(certificate_collection_data, password)
-            return cls.from_crypto_pkcs12(p12)
+            return [
+                CertificateSerializer(certificate) for certificate in self._load_pkcs7_der(certificate_collection_data)
+            ]
         except ValueError:
             pass
 
         raise ValueError(
             'Failed to load certificate collection. '
-            'May be an incorrect password, malformed data or an unsupported format.'
+            'May be an malformed data or an unsupported format.'
         )
 
-    @classmethod
-    def from_string(cls, certificate_collection_data: str) -> CertificateCollectionSerializer:
-        """Inits the CertificateCollectionSerializer class from a string object.
+    def _from_string(self, certificate_collection_data: str) -> list[CertificateSerializer]:
+        return self._from_bytes(certificate_collection_data.encode())
 
-        Args:
-            certificate_collection_data: String that contain a collection of certificates in
-                PEM or PKCS#7 PEM format.
-
-        Returns:
-            CertificateCollectionSerializer: CertificateCollectionSerializer instance.
-
-        Raises:
-            ValueError: If loading the collection of certificates failed.
-        """
-        return cls.from_bytes(certificate_collection_data.encode())
-
-    @classmethod
-    def from_list_of_bytes(cls, certificate_collection_data: list[bytes]) -> CertificateCollectionSerializer:
-        """Inits the CertificateCollectionSerializer class from a list of bytes objects.
-
-        Args:
-            certificate_collection_data: A list of bytes that contain certificates in DER or PEM format.
-
-        Returns:
-            CertificateCollectionSerializer: CertificateCollectionSerializer instance.
-
-        Raises:
-            ValueError: If loading the collection of certificates failed.
-        """
-        try:
-            return cls(
-                [
-                    CertificateSerializer.from_bytes(certificate).as_crypto()
-                    for certificate in certificate_collection_data
-                ]
-            )
-        except Exception:   # noqa: BLE001
-            raise ValueError(
-                'Failed to load certificate collection. '
-                'May be an incorrect password, malformed data or an unsupported format.'
-            )
-
-    @classmethod
-    def from_list_of_strings(cls, certificate_collection_data: list[str]) -> CertificateCollectionSerializer:
-        """Inits the CertificateCollectionSerializer class from a list of string objects.
-
-        Args:
-            certificate_collection_data: A list of strings that contain certificates in PEM format.
-
-        Returns:
-            CertificateCollectionSerializer: CertificateCollectionSerializer instance.
-
-        Raises:
-            ValueError: If loading the collection of certificates failed.
-        """
-        return cls.from_list_of_bytes([cert.encode() for cert in certificate_collection_data])
+    def __len__(self) -> int:
+        """Returns the number of certificates contained in this credential."""
+        return len(self._certificate_collection)
 
     def as_pem(self) -> bytes:
         """Gets the associated certificate collection as bytes in PEM format.
@@ -330,7 +210,49 @@ class CertificateCollectionSerializer(Serializer):
         Returns:
             bytes: Bytes that contains certificate collection in PEM format.
         """
-        return b''.join([CertificateSerializer(certificate).as_pem() for certificate in self._certificate_collection])
+        return b''.join([certificate.as_pem() for certificate in self._certificate_collection])
+
+    def as_crypto(self) -> list[x509.Certificate]:
+        """Gets the associated certificate collection as list of x509.Certificate instances.
+
+        Shorthand for as_crypto_list().
+
+        Returns:
+            list[x509.Certificate]: List of x509.Certificate instances.
+        """
+        return self.as_crypto_list()
+
+    def as_crypto_list(self) -> list[x509.Certificate]:
+        """Gets the associated certificate collection as list of x509.Certificate instances.
+
+        Returns:
+            list[x509.Certificate]: List of x509.Certificate instances.
+        """
+        return [cert.as_crypto() for cert in self._certificate_collection]
+
+    def as_pem_list(self) -> list[bytes]:
+        """Gets the certificates as list of PEM encoded bytes.
+
+        Returns:
+            list[bytes]: Certificates as list of PEM encoded bytes.
+        """
+        return [certificate.as_pem() for certificate in self._certificate_collection]
+
+    def as_der_list(self) -> list[bytes]:
+        """Gets the certificates as list of DER encoded bytes.
+
+        Returns:
+            list[bytes]: Certificates as list of DER encoded bytes.
+        """
+        return [certificate.as_der() for certificate in self._certificate_collection]
+
+    def as_certificate_serializer_list(self) -> list[CertificateSerializer]:
+        """Gets the certificates as list of CertificateSerializer instances.
+
+        Returns:
+            list[bytes]: Certificates as list of CertificateSerializer instances.
+        """
+        return self._certificate_collection
 
     def as_pkcs7_pem(self) -> bytes:
         """Gets the associated certificate collection as bytes in PKCS#7 PEM format.
@@ -338,7 +260,7 @@ class CertificateCollectionSerializer(Serializer):
         Returns:
             bytes: Bytes that contains certificate collection in PKCS#7 PEM format.
         """
-        return pkcs7.serialize_certificates(self._certificate_collection, serialization.Encoding.PEM)
+        return pkcs7.serialize_certificates(self.as_crypto_list(), serialization.Encoding.PEM)
 
     def as_pkcs7_der(self) -> bytes:
         """Gets the associated certificate collection as bytes in PKCS#7 DER format.
@@ -346,40 +268,85 @@ class CertificateCollectionSerializer(Serializer):
         Returns:
             bytes: Bytes that contains certificate collection in PKCS#7 DER format.
         """
-        return pkcs7.serialize_certificates(self._certificate_collection, serialization.Encoding.DER)
+        return pkcs7.serialize_certificates(self.as_crypto_list(), serialization.Encoding.DER)
 
-    def as_crypto(self) -> list[x509.Certificate]:
-        """Gets the associated certificate collection as list of x509.Certificate instances.
+    def __iter__(self) -> typing.Iterator[CertificateSerializer]:
+        """Gets an iterator over the CertificateCollectionSerializer instances.
 
         Returns:
-            list[x509.Certificate]: List of x509.Certificate instances.
+            typing.Iterator[CertificateSerializer]: Iterator over the CertificateCollectionSerializer instances.
         """
-        return self._certificate_collection
+        return iter(self._certificate_collection)
 
-    @classmethod
-    def _load_pem(cls, pem_data: bytes) -> list[x509.Certificate]:
+    def certificate_serializer_iterator(self) -> typing.Iterator[CertificateSerializer]:
+        """Gets an iterator over the CertificateCollectionSerializer instances.
+
+        Returns:
+            typing.Iterator[CertificateSerializer]: Iterator over the CertificateCollectionSerializer instances.
+        """
+        return self.__iter__()
+
+    def crypto_iterator(self) -> typing.Iterator[x509.Certificate]:
+        """Gets an iterator over the x509.Certificate instances.
+
+        Returns:
+            typing.Iterator[CertificateSerializer]: Iterator over the x509.Certificate instances.
+        """
+        return iter(self.as_crypto_list())
+
+    def pem_iterator(self) -> typing.Iterator[bytes]:
+        """Gets an iterator over the associated certificates as list of PEM encoded bytes.
+
+        Returns:
+            typing.Iterator[bytes]: Iterator over the associated certificates as list of PEM encoded bytes.
+        """
+        return iter(self.as_pem_list())
+
+    def der_iterator(self) -> typing.Iterator[bytes]:
+        """Gets an iterator over the associated certificates as list of DER encoded bytes.
+
+        Returns:
+            typing.Iterator[bytes]: Iterator over the associated certificates as list of DER encoded bytes.
+        """
+        return iter(self.as_der_list())
+
+    def append(self, certificate: bytes | str | x509.Certificate | CertificateSerializer) -> None:
+        """Appends a single certificate to the collection.
+
+        Args:
+            certificate: The certificate to append.
+        """
+        self._certificate_collection.append(CertificateSerializer(certificate))
+
+    def extend(
+            self,
+            certificates: bytes | str | list[bytes | str | x509.Certificate | CertificateSerializer] \
+                          | CertificateCollectionSerializer) -> None:
+        """Extends the collection by the passed certificates.
+
+        Args:
+            certificates: The certificates to extend the collection with.
+        """
+        new_certificate_collection = CertificateCollectionSerializer(certificates)
+        self._certificate_collection.extend(new_certificate_collection.as_certificate_serializer_list())
+
+    @staticmethod
+    def _load_pem(pem_data: bytes) -> list[x509.Certificate]:
         try:
             return x509.load_pem_x509_certificates(pem_data)
-        except Exception as exception:  # noqa: BLE001
-            raise ValueError from exception
+        except Exception:  # noqa: BLE001
+            raise ValueError
 
-    @classmethod
-    def _load_pkcs7_pem(cls, p7_data: bytes) -> list[x509.Certificate]:
+    @staticmethod
+    def _load_pkcs7_pem(p7_data: bytes) -> list[x509.Certificate]:
         try:
             return pkcs7.load_pem_pkcs7_certificates(p7_data)
         except Exception:   # noqa: BLE001
             raise ValueError
 
-    @classmethod
-    def _load_pkcs7_der(cls, p7_data: bytes) -> list[x509.Certificate]:
+    @staticmethod
+    def _load_pkcs7_der(p7_data: bytes) -> list[x509.Certificate]:
         try:
             return pkcs7.load_der_pkcs7_certificates(p7_data)
-        except Exception:   # noqa: BLE001
-            raise ValueError
-
-    @classmethod
-    def _load_pkcs12(cls, p12_data: bytes, password: None | bytes = None) -> pkcs12.PKCS12KeyAndCertificates:
-        try:
-            return pkcs12.load_pkcs12(p12_data, password)
         except Exception:   # noqa: BLE001
             raise ValueError

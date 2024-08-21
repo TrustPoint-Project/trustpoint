@@ -8,6 +8,7 @@ class InitializerError(ValidationError):
 
 
 class Initializer(abc.ABC):
+    """Base class for all Initializer classes."""
 
     @abc.abstractmethod
     def initialize(self):

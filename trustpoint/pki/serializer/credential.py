@@ -10,8 +10,6 @@ from cryptography.hazmat.primitives.serialization import pkcs12
 from . import Serializer, PrivateKeySerializer, CertificateSerializer, CertificateCollectionSerializer
 from . import PrivateKey
 
-from typing import get_args
-
 
 class CredentialSerializer(Serializer):
     """The CredentialSerializer class provides methods for serializing and loading X.509 Credentials.
@@ -24,109 +22,88 @@ class CredentialSerializer(Serializer):
         i.e. neither the certificate chain nor if the private key matches the certificate is validated.
     """
 
-    _credential_private_key: PrivateKey
-    _credential_certificate: x509.Certificate
-    _additional_certificates: list[x509.Certificate]
-
-    _private_key_serializer_class: type[PrivateKeySerializer] = PrivateKeySerializer
-    _certificate_serializer_class: type[CertificateSerializer] = CertificateSerializer
-    _certificate_collection_serializer_class: type[CertificateCollectionSerializer] = CertificateCollectionSerializer
+    _credential_private_key: PrivateKeySerializer
+    _credential_certificate: CertificateSerializer
+    _additional_certificates: None | CertificateCollectionSerializer = None
 
     def __init__(
-        self,
-        credential_private_key: PrivateKey,
-        credential_certificate: x509.Certificate,
-        additional_certificates: None | list[x509.Certificate] = None,
+            self,
+            credential: None | bytes | pkcs12.PKCS12KeyAndCertificates | CredentialSerializer,
+            password: None | bytes = None,
+            credential_private_key: None | bytes | str | PrivateKey | PrivateKeySerializer = None,
+            credential_certificate: None | bytes | str | x509.Certificate | CertificateSerializer = None,
+            additional_certificates: None | bytes | str | \
+                                     list[bytes | str | x509.Certificate | CertificateSerializer] | \
+                                     CertificateCollectionSerializer = None
     ) -> None:
-        """Inits the CertificateCollectionSerializer class.
+        """Inits the CredentialSerializer class.
+
+        Either a credential or both credential_private_key and credential_certificate must be provided.
 
         Args:
-            credential_private_key: The private key corresponding to the credential (rsa, ec, ed448, ed25519).
-            credential_certificate: The certificate corresponding to the private key.
-            additional_certificates: Usually only contains the ca certificats (certificate chain).
+            credential:
+                A PKCS#12 credential as bytes or pkcs12.PKCS12KeyAndCertificates, or a CredentialSerializer instance.
+            password: The password for either the credential or the credential_private_key, if any.
+            credential_private_key: The credential private key.
+            credential_certificate: The credential certificate matching the private key.
+            additional_certificates: Additional certificates, typically the certificate chain.
 
         Raises:
-            TypeError:
-                If credential_private_key is not an instance of PrivateKey.
-                if credential_certificate is not an instance of x509.Certificate.
-                If additional_certificates is not None or and instance of list[x509.Certificate].
+            TypeError: If an invalid argument type was provided for any of the parameters.
+            ValueError: If the credential failed to deserialize.
         """
-        if not isinstance(credential_private_key, get_args(PrivateKey)):
-            raise TypeError('credential_private_key must be an instance of PrivateKey.')
 
-        if not isinstance(credential_certificate, x509.Certificate):
-            raise TypeError('credential_certificate must be an instance of x509.Certificate.')
+        if password == b'':
+            password = None
 
-        if additional_certificates is None:
-            additional_certificates = []
+        if credential is not None:
+            if isinstance(credential, bytes):
+                cred_priv_key, cred_cert, add_certs = self._from_bytes_pkcs12(credential, password)
+                self._credential_private_key = cred_priv_key
+                self._credential_certificate = cred_cert
+                self._additional_certificates = add_certs
+            elif isinstance(credential, pkcs12.PKCS12KeyAndCertificates):
+                cred_priv_key, cred_cert, add_certs = self._from_crypto_pkcs12(credential)
+                self._credential_private_key = cred_priv_key
+                self._credential_certificate = cred_cert
+                self._additional_certificates = add_certs
+            elif isinstance(credential, CredentialSerializer):
+                self._credential_private_key = credential.credential_private_key
+                self._credential_certificate = credential.credential_certificate
+                self._additional_certificates = credential.additional_certificates
+            else:
+                raise TypeError(
+                    'credential must be of type bytes, pkcs12.PKCS12KeyAndCertificates or CredentialSerializer, '
+                    f'but got {type(credential)}.')
+            return
 
-        if not isinstance(additional_certificates, list):
-            raise TypeError('additional_certificates must be None or a list of x509.Certificates.')
+        if credential_private_key is not None and credential_certificate is not None:
+            self._credential_private_key = PrivateKeySerializer(credential_private_key)
+            self._credential_certificate = CertificateSerializer(credential_certificate)
 
-        for certificate in additional_certificates:
-            if not isinstance(certificate, x509.Certificate):
-                raise TypeError('additional_certificates contains at least one element that is not a x509.Certificate.')
+            if additional_certificates is not None:
+                additional_certificates = CertificateCollectionSerializer(additional_certificates)
+            self._additional_certificates = additional_certificates
+        else:
+            raise TypeError(
+                'To instantiate a CredentialSerializer, either credential or '
+                'credential_private_key and credential_certificate must be provided.')
 
-        self._credential_private_key = credential_private_key
-        self._credential_certificate = credential_certificate
-        self._additional_certificates = additional_certificates
 
-    @classmethod
-    def from_crypto(
-        cls,
-        credential_private_key: PrivateKey,
-        credential_certificate: x509.Certificate,
-        additional_certificates: None | list[x509.Certificate],
-    ) -> CredentialSerializer:
-        """Inits the CredentialSerializer class from a PrivateKey, x509.Certificate and additional x509.Certificates.
+    @staticmethod
+    def _from_crypto_pkcs12(p12: pkcs12.PKCS12KeyAndCertificates
+                            ) -> tuple[PrivateKeySerializer, CertificateSerializer, CertificateCollectionSerializer]:
+        additional_certificates = [
+            CertificateSerializer(certificate.certificate) for certificate in p12.additional_certs]
+        return (
+            PrivateKeySerializer(p12.key),
+            CertificateSerializer(p12.cert.certificate),
+            CertificateCollectionSerializer(additional_certificates))
 
-        Args:
-            credential_private_key: The private key corresponding to the credential.
-            credential_certificate: The credential certificate containing the public key that matches the private key.
-            additional_certificates: A list of x509.Certificates. Usually the corresponding certificate chain.
-
-        Returns:
-            CredentialSerializer: CredentialSerializer instance.
-
-        Raises:
-            TypeError:
-                If credential_private_key is not an instance of PrivateKey.
-                if credential_certificate is not an instance of x509.Certificate.
-                If additional_certificates is not None or and instance of list[x509.Certificate].
-        """
-        return cls(credential_private_key, credential_certificate, additional_certificates)
-
-    @classmethod
-    def from_crypto_pkcs12(cls, p12: pkcs12.PKCS12KeyAndCertificates) -> CredentialSerializer:
-        """Inits the CredentialSerializer class from a pkcs12.PKCS12 instance.
-
-        Args:
-            p12: A pkcs12.PKCS12 instance containing the credential.
-
-        Returns:
-            CredentialSerializer: CredentialSerializer instance.
-
-        Raises:
-            ValueError: If the pkcs12.PKCS12 instance does not contain the credential private key and certificate.
-        """
-        return cls(p12.key, p12.cert.certificate, [certificate.certificate for certificate in p12.additional_certs])
-
-    @classmethod
-    def from_bytes_pkcs12(cls, credential_data: bytes, password: None | bytes = None) -> CredentialSerializer:
-        """Inits the CredentialSerializer class from a bytes object.
-
-        Args:
-            credential_data: Bytes that contain PKCS#12 object.
-            password: Password as bytes if the content is encrypted, None otherwise.
-
-        Returns:
-            CredentialSerializer: CredentialSerializer instance.
-
-        Raises:
-            ValueError: If loading the PKCS#12 object failed.
-        """
+    def _from_bytes_pkcs12(self, credential_data: bytes, password: None | bytes = None
+                          ) -> tuple[PrivateKeySerializer, CertificateSerializer, CertificateCollectionSerializer]:
         try:
-            return cls.from_crypto_pkcs12(pkcs12.load_pkcs12(credential_data, password))
+            return self._from_crypto_pkcs12(pkcs12.load_pkcs12(credential_data, password))
         except ValueError:
             raise ValueError('Failed to load credential. May be an incorrect password or malformed data.')
 
@@ -142,53 +119,60 @@ class CredentialSerializer(Serializer):
         """
         return pkcs12.serialize_key_and_certificates(
             name=friendly_name,
-            key=self._credential_private_key,
-            cert=self._credential_certificate,
-            cas=self._additional_certificates,
+            key=self._credential_private_key.as_crypto(),
+            cert=self._credential_certificate.as_crypto(),
+            cas=self._additional_certificates.as_crypto(),
             encryption_algorithm=self._get_encryption_algorithm(password),
         )
 
-    def get_credential_private_key_serializer(self) -> PrivateKeySerializer:
-        """Gets the PrivateKeySerializer instance of the associated credential private key.
-
-        Returns:
-            PrivateKeySerializer: PrivateKeySerializer instance of the associated credential private key.
-        """
-        return self._private_key_serializer_class(self._credential_private_key)
-
-    def get_credential_certificate_serializer(self) -> CertificateSerializer:
-        """Gets the CertificateSerializer instance of the associated credential certificate.
-
-        Returns:
-            CertificateSerializer: CertificateSerializer instance of the associated credential certificate.
-        """
-        return self._certificate_serializer_class(self._credential_certificate)
-
-    def get_additional_certificate_serializer(self) -> CertificateCollectionSerializer:
-        """Gets the CertificateCollectionSerializer instance of the associated additional certificates.
-
-        Returns:
-            CertificateCollectionSerializer:
-                CertificateCollectionSerializer instance of the associated additional certificates.
-        """
-        return self._certificate_collection_serializer_class.from_crypto(self._additional_certificates)
-
-    def get_certificate_collection_serializer(self) -> CertificateCollectionSerializer:
-        """Gets the CertificateCollectionSerializer instance of the associated additional certificates
-        including the credential certificate.
-
-        Returns:
-            CertificateCollectionSerializer:
-                CertificateCollectionSerializer instance of the associated additional certificates
-                including the credential certificate.
-        """
-        certificates = [self._credential_certificate]
-        certificates.extend(self._additional_certificates)
-        return self._certificate_collection_serializer_class.from_crypto(certificates)
-
-    def get_count_of_certificates(self) -> int:
+    def __len__(self) -> int:
         """Returns the number of certificates contained in this credential."""
-        return len(self._additional_certificates) + 1
+        if self._additional_certificates is None:
+            return 0
+        else:
+            return len(self._additional_certificates) + 1
+
+    @property
+    def credential_private_key(self) -> PrivateKeySerializer:
+        """Returns the credential private key as PrivateKeySerializer instance."""
+        return self._credential_private_key
+
+    @credential_private_key.setter
+    def credential_private_key(self, credential_private_key: PrivateKeySerializer) -> None:
+        """Sets the credential private key."""
+        self._credential_private_key = credential_private_key
+
+    @property
+    def credential_certificate(self) -> CertificateSerializer:
+        """Returns the credential certificate as CertificateSerializer instance."""
+        return self._credential_certificate
+
+    @credential_certificate.setter
+    def credential_certificate(self, credential_certificate: CertificateSerializer) -> None:
+        """Sets the credential certificate."""
+        self._credential_certificate = credential_certificate
+
+    @property
+    def additional_certificates(self) -> CertificateCollectionSerializer:
+        """Returns the additional certificates as CertificateCollectionSerializer instance."""
+        return self._additional_certificates
+
+    @additional_certificates.setter
+    def additional_certificates(
+            self,
+            additional_certificates: CertificateCollectionSerializer) -> None:
+        """Sets the additional certificates."""
+        self._additional_certificates = additional_certificates
+
+    @property
+    def all_certificates(self) -> CertificateCollectionSerializer:
+        """Returns both the credential and additional certificates as CertificateCollectionSerializer instance."""
+        if self._additional_certificates is None:
+            return CertificateCollectionSerializer([self._credential_certificate])
+        else:
+            new_collection = CertificateCollectionSerializer(self._additional_certificates)
+            new_collection.append(self._credential_certificate)
+            return new_collection
 
     @staticmethod
     def _get_encryption_algorithm(password: None | bytes):

@@ -12,9 +12,7 @@ from trustpoint.views.base import BulkDeleteView, ContextDataMixin, TpLoginRequi
 from ..forms import (
     IssuingCaAddFileImportSeparateFilesForm,
     IssuingCaAddFileImportPkcs12Form,
-    IssuingCaAddMethodSelectForm,
-    IssuingCaFileTypeSelectForm,
-)
+    IssuingCaAddMethodSelectForm)
 
 from ..models import IssuingCaModel
 

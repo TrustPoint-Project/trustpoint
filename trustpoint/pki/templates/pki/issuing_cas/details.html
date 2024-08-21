@@ -55,7 +55,14 @@
                             </div>
                         {% endif %}
 
-                        <br><br><h2>Issuing CA Certificate</h2>
+
+                        <br><br><h2>
+                            {% if issuing_ca.issuing_ca_certificate.subject_public_bytes == issuing_ca.issuing_ca_certificate.issuer_public_bytes %}
+                                Issuing CA Certificate (This is a self-signed Root CA Certificate)
+                            {% else %}
+                                Issuing CA Certificate
+                            {% endif %}
+                        </h2>
                         <hr>
                         <div class="tp-card-split">
                             <div>{% trans 'Issuing CA Certificate' %}</div>
@@ -117,7 +124,8 @@
                             </div>
                         </div>
 
-                    <br><br><h2>Root CA Certificate</h2>
+                    {% if issuing_ca.issuing_ca_certificate.subject_public_bytes != issuing_ca.issuing_ca_certificate.issuer_public_bytes %}
+                        <br><br><h2>Root CA Certificate</h2>
                         <hr>
                         <div class="tp-card-split">
                             <div>{% trans 'Root CA Certificate' %}</div>
@@ -178,9 +186,9 @@
                                 {{ issuing_ca.root_ca_certificate.spki_key_size }} Bits
                             </div>
                         </div>
-
-                    </div>
+                    {% endif %}
                 </div>
+            </div>
                 <div class="card-footer">
                     <div class="tp-card-btn-footer">
                         <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
