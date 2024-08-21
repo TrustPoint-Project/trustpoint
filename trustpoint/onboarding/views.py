@@ -91,6 +91,7 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
             'sn': device.device_serial_number,
             'device_name': device.device_name,
             'device_id': device.id,
+            'download_token': onboarding_process.download_token,
         }
 
         return render(request, self.template_name, context)
@@ -152,9 +153,9 @@ class BrowserDownloadView(OnboardingUtilMixin, TemplateView):
             'page_category': 'onboarding',
             'page_name': 'browser',
             'url': onboarding_process.url,
-            'sn': device.device_serial_number,
             'device_name': device.device_name,
             'device_id': device.id,
+            'download_token': onboarding_process.download_token,
         }
         return render(request, self.template_name, context)
 
@@ -194,7 +195,7 @@ class BrowserLoginView(OnboardingUtilMixin, FormView):
         return redirect(request.path)
 
 
-class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
+class P12DownloadView(OnboardingUtilMixin, View):
     """View for downloading the PKCS12 file of a device."""
 
     redirection_view = 'devices:devices'
@@ -206,14 +207,17 @@ class P12DownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             return HttpResponse('Not found.', status=404)
 
         device = self.device
+        download_token = request.GET.get('token')
         onboarding_process = OnboardingProcess.get_by_device(device)
-        if not onboarding_process or not onboarding_process.pkcs12:
+        if not onboarding_process or not onboarding_process.pkcs12 or not download_token:
             return HttpResponse('Not found.', status=404)
 
-        return HttpResponse(onboarding_process.get_pkcs12(), content_type='application/x-pkcs12')
+        if download_token == onboarding_process.download_token:
+            return HttpResponse(onboarding_process.get_pkcs12(), content_type='application/x-pkcs12')
+        return HttpResponse('Not found.', status=404)
 
 
-class PemDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
+class PemDownloadView(OnboardingUtilMixin, View):
     """View for downloading the PEM file of a device."""
 
     redirection_view = 'devices:devices'
@@ -225,14 +229,17 @@ class PemDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             return HttpResponse('Not found.', status=404)
 
         device = self.device
+        download_token = request.GET.get('token')
         onboarding_process = OnboardingProcess.get_by_device(device)
         if not onboarding_process or not onboarding_process.pkcs12:
             return HttpResponse('Not found.', status=404)
 
-        pem_data = onboarding_process.get_pem()
-        response = HttpResponse(pem_data, content_type='application/x-pem-file')
-        response['Content-Disposition'] = f'attachment; filename="{device.device_name}.pem"'
-        return response
+        if download_token == onboarding_process.download_token:
+            pem_data = onboarding_process.get_pem()
+            response = HttpResponse(pem_data, content_type='application/x-pem-file')
+            response['Content-Disposition'] = f'attachment; filename="{device.device_name}.pem"'
+            return response
+        return HttpResponse('Not found.', status=404)
 
 
 class JavaKeyStoreDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):

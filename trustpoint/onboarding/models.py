@@ -75,6 +75,7 @@ class OnboardingProcess:
         self.timer.start()
         self.active = True
         OnboardingProcess.id_counter += 1
+        self.download_token = secrets.token_hex(32)
         log.info(f'Onboarding process {self.id} started for device {self.device.device_name}.')
 
     def __str__(self) -> str:
