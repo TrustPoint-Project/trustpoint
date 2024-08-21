@@ -1414,31 +1414,6 @@ class DomainModel(models.Model):
             return self.issuing_ca.auto_crl
         return False  # Fallback if no CA is associated
 
-    @auto_crl.setter
-    def auto_crl(self, value: bool) -> None:
-        """Set the auto_crl value in the related IssuingCaModel.
-
-        Args:
-            value (bool): The new value for auto_crl to be set.
-        """
-        if self.issuing_ca:
-            self.issuing_ca.auto_crl = value
-            self.issuing_ca.save()
-
-    def generate_crl(self) -> bool:
-        """Generate CRL."""
-        if self.issuing_ca.get_issuing_ca().generate_crl():
-            return True
-        return False
-
-    def get_crl(self) -> str | None:
-        """Retrieve the latest CRL from the database.
-
-        Returns:
-            str or None: The latest CRL if exists, None otherwise.
-        """
-        return self.issuing_ca.get_issuing_ca().get_crl()
-
 
 class RevokedCertificate(models.Model):
     """Certificate Revocation model."""

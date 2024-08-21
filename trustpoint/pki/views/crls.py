@@ -43,33 +43,3 @@ class CRLDownloadView(View):
         else:
             messages.warning(self, _('CRL could not be generated'))
         return redirect('pki:issuing_cas')
-
-    @staticmethod
-    def download_domain_crl(self: CRLDownloadView, id_):
-        try:
-            domain = DomainModel.objects.get(pk=id_)
-        except IssuingCaModel.DoesNotExist:
-            messages.error(self, _('Domain not found.'))
-            return redirect('pki:domains')
-
-        crl_data = domain.get_crl()
-        if not crl_data:
-            messages.warning(self, _('No CRL available for domain %s.') % domain.unique_name)
-            return redirect('pki:domains')
-        response = HttpResponse(crl_data, content_type='text/plain')
-        response['Content-Disposition'] = f'attachment; filename="{domain.unique_name}.crl"'
-        return response
-
-    @staticmethod
-    def generate_domain_crl(self: CRLDownloadView, id_):
-        try:
-            domain = DomainModel.objects.get(pk=id_)
-        except IssuingCaModel.DoesNotExist:
-            messages.error(self, _('Domain not found.'))
-            return redirect('pki:domains')
-
-        if domain.generate_crl():
-            messages.info(self, _('CRL generated'))
-        else:
-            messages.warning(self, _('CRL could not be generated'))
-        return redirect('pki:domains')

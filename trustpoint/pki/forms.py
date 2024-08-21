@@ -211,29 +211,16 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
 
 class DomainBaseForm(forms.ModelForm):
     """Base form for DomainModel, containing shared logic and fields."""
-    auto_crl = forms.BooleanField(
-        label='Generate CRL upon certificate revocation.',
-        required=False,
-        help_text='Check this box to automatically generate a CRL when a certificate is revoked.'
-    )
-
     class Meta:
         model = DomainModel
-        fields = ['unique_name', 'issuing_ca', 'auto_crl']  # Base fields
+        fields = ['unique_name', 'issuing_ca']  # Base fields
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['unique_name'].label += UniqueNameValidator.form_label
-        if self.instance.pk:  # If updating an existing instance
-            self.fields['auto_crl'].initial = self.instance.auto_crl
 
     def save(self, commit=True):
         domain_instance = super().save(commit=False)
-        issuing_ca = domain_instance.issuing_ca
-
-        if issuing_ca:
-            issuing_ca.auto_crl = self.cleaned_data['auto_crl']
-            issuing_ca.save()
 
         if commit:
             domain_instance.save()
