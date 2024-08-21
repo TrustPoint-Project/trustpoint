@@ -235,9 +235,9 @@ class PemDownloadView(OnboardingUtilMixin, View):
             return HttpResponse('Not found.', status=404)
 
         if download_token == onboarding_process.download_token:
-            pem_data = onboarding_process.get_pem()
-            response = HttpResponse(pem_data, content_type='application/x-pem-file')
-            response['Content-Disposition'] = f'attachment; filename="{device.device_name}.pem"'
+            zip_data = onboarding_process.get_pem_zip()
+            response = HttpResponse(zip_data, content_type='application/zip')
+            response['Content-Disposition'] = f'attachment; filename="{device.device_name}.zip"'
             return response
         return HttpResponse('Not found.', status=404)
 

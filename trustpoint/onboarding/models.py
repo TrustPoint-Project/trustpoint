@@ -176,12 +176,12 @@ class OnboardingProcess:
         self._success()
         return self.pkcs12
 
-    def get_pem(self) -> bytes | None:
-        """Returns the keypair and LDevID certificate as PEM-formatted bytes."""
+    def get_pem_zip(self) -> bytes | None:
+        """Returns the certificate, chain and key as PEM-formatted bytes in a zip file."""
         log.debug(f'PKCS12 requested for onboarding process {self.id}.')
         self.gen_thread.join()
         self._success()
-        return Crypt.convert_pkcs12_to_pem(self.pkcs12)
+        return Crypt.convert_pkcs12_to_pem_zip(self.pkcs12)
 
     def _gen_keypair_and_ldevid(self) -> None:
         """Generates a keypair and LDevID certificate for the device."""

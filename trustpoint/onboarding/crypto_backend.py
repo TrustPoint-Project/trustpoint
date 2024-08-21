@@ -6,8 +6,10 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+import io
 import logging
 import secrets
+import zipfile
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -208,15 +210,15 @@ class CryptoBackend:
         return pki_response.raw_response
 
     @staticmethod
-    def convert_pkcs12_to_pem(pkcs12_data: bytes, p12_password: bytes=b'') -> bytes:
-        """Converts PKCS12 data to PEM format.
+    def convert_pkcs12_to_pem_zip(pkcs12_data: bytes, p12_password: bytes=b'') -> bytes:
+        """Converts PKCS12 data to a ZIP file containing PEM-formatted data.
 
         Args:
             pkcs12_data (bytes): The PKCS12 data.
             p12_password (bytes): The password for the PKCS12 file.
 
         Returns:
-            bytes: The PEM data.
+            bytes: The ZIP file data containing the PEM files.
         """
         private_key, certificate, additional_certificates = pkcs12.load_key_and_certificates(pkcs12_data, p12_password)
 
@@ -232,9 +234,17 @@ class CryptoBackend:
             for ca_certificate in additional_certificates:
                 pem_additional_certificates += ca_certificate.public_bytes(serialization.Encoding.PEM)
 
-        pem_combined = pem_certificate + pem_additional_certificates
+        zip_buffer = io.BytesIO()
 
-        return (pem_combined, pem_private_key)
+        with zipfile.ZipFile(zip_buffer, 'w') as zip_file:
+            zip_file.writestr('certificate.pem', pem_certificate)
+            if pem_additional_certificates:
+                zip_file.writestr('certificate_chain.pem', pem_additional_certificates)
+            zip_file.writestr('private_key.pem', pem_private_key)
+
+        zip_buffer.seek(0)
+
+        return zip_buffer.getvalue()
 
 
     @staticmethod
