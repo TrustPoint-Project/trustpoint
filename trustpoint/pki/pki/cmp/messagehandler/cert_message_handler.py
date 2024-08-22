@@ -17,7 +17,7 @@ from pki.pki.cmp.builder.pki_message_creator import PKIMessageCreator
 from pki.pki.cmp.builder.pki_header_creator import PKIHeaderCreator
 from pki.pki.cmp.builder.extra_certs import ExtraCerts
 from pki.pki.cmp.validator.extracerts_validator import ExtraCertsValidator
-from pki.pki.cmp.validator.initialization_req_validator import InitializationReqValidator
+from pki.pki.cmp.validator.cert_req_validator import InitializationReqValidator
 from pki.pki.cmp.cert_template import CertTemplateLoader
 
 

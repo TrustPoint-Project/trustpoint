@@ -6,7 +6,7 @@ from pyasn1_modules import rfc4210
 
 from pki.pki.cmp.validator.general_message_validator import GeneralMessageValidator
 from pki.pki.cmp.validator.header_validator import GenericHeaderValidator
-from pki.pki.cmp.validator.initialization_req_validator import InitializationReqValidator, CertificateReqValidator, \
+from pki.pki.cmp.validator.cert_req_validator import InitializationReqValidator, CertificateReqValidator, \
     KeyUpdateReqValidator
 from pki.pki.cmp.validator.revocation_req_validator import RevocationReqValidator
 from pki.pki.request.message import PkiResponseMessage, HttpStatusCode, MimeType
