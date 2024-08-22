@@ -68,7 +68,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
             "data": {
                 "labels": self.last_week_dates,
                 "datasets": [{
-                    "label": "Number of devices",
+                    "label": "Number of Root CAs",
                     "data": self.get_line_chart_data(),
                     "borderColor": "#0d6efd",
                     "backgroundColor": "rgba(13.0, 110.0, 253.0, 0.3)",
