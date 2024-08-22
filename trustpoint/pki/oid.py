@@ -344,8 +344,3 @@ class SignatureAlgorithmOid(Enum):
         obj.public_key_algo_oid = public_key_algo_oid
         obj.padding_scheme = padding_scheme
         return obj
-
-
-def abc():
-    a = SignatureAlgorithmOid.RSASSA_PSS
-    print(a.name)

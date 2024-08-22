@@ -273,7 +273,6 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 .tp-card-split {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
-    align-items: center;
 }
 
 .tp-card-btn-footer > * {
@@ -288,33 +287,6 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 .tp-card-btn-footer > *:last-child {
     margin-right: 0;
 }
-
-/*.tp-card {*/
-/*    border: 0.1rem solid #424549;*/
-/*    padding: 0;*/
-/*    margin: 0;*/
-/*    border-radius: 0.5rem;*/
-/*}*/
-
-/*.tp-card-body {*/
-/*    padding: 0.75rem;*/
-/*}*/
-
-/*.tp-card-footer {*/
-/*    background: #272B2F;*/
-/*    border-top: 0.1rem solid #424549;*/
-/*    padding: 0.75rem;*/
-/*}*/
-
-/*.tp-card-center {*/
-/*    display: flex;*/
-/*    flex-grow: 1;*/
-/*    flex-basis: 50rem;*/
-/*}*/
-
-/*.tp-card-centered-content {*/
-/*    border: 1px solid red;*/
-/*}*/
 
 .tp-main-users {
     width: max-content;
@@ -339,11 +311,6 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 #bs-override .form-select, #bs-override .form-control {
     font-weight: var(--tp-font-weight);
 }
-
-/* #bs-override .btn-primary {
-    background-color: var(--trustpoint-ci);
-    border-color: var(--trustpoint-ci);
-} */     
 
 .cursor, .cursor:hover {
     cursor: pointer;
@@ -536,6 +503,24 @@ svg.theme-icon {
     min-width: 20rem;
 }
 
+.min-width-25 {
+    min-width: 25rem;
+}
+
+.min-width-30 {
+    min-width: 30rem;
+}
+
+.min-width-35 {
+    min-width: 35rem;
+}
+
+.min-width-40 {
+    min-width: 40rem;
+}
+
+
+
 .tp-grid { /* unused class */
     display: grid !important;
     grid-template-columns: 1fr;
@@ -568,7 +553,6 @@ svg.theme-icon {
 
 .count:hover {
   transform: scale(1.025);
-  /* box-shadow: rgba(0, 0, 0, 0.24) 0px 5px 10px */
 }
 
 
@@ -577,17 +561,6 @@ svg.theme-icon {
     min-height: 1.2rem;
     line-height: 1.2rem;
 }
-
-/*aside {*/
-/*    min-height: calc(100vh - 4rem);*/
-/*    width: 16rem;*/
-/*    overflow-x: auto;*/
-/*    overflow-y: hidden;*/
-/*}*/
-
-/*aside > div {*/
-/*    width: 16rem;*/
-/*}*/
 
 /* ----- Media queries for responsive design ----- */
 

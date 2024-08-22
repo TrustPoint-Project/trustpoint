@@ -13,7 +13,7 @@ from pki.pki.request.message import PkiResponseMessage, HttpStatusCode, MimeType
 from pki.pki.request.handler import CaRequestHandler
 from pki.models import CertificateModel
 
-from util.x509.enrollment import Enrollment
+# from util_deprecated.x509.enrollment import Enrollment
 
 from typing import TYPE_CHECKING
 
@@ -34,7 +34,7 @@ class LocalCaRestCsrRequestHandler(CaRequestHandler):
     # TODO: Store issued certificate in DB
     def process_request(self) -> PkiResponseMessage:
         cert_builder = self._get_certificate_builder_from_csr()
-        cert_builder = cert_builder.issuer_name(self._issuing_ca.issuer_name)
+        cert_builder = cert_builder.issuer_name(self._issuing_ca.subject_name)
         cert = cert_builder.sign(
             private_key=self._issuing_ca.private_key,
             algorithm=self._request_message.csr.signature_hash_algorithm)
@@ -81,7 +81,7 @@ class LocalCaRestPkcs12RequestHandler(CaRequestHandler):
 
         cert_builder = x509.CertificateBuilder()
         cert_builder = cert_builder.subject_name(self._request_message._subject)
-        cert_builder = cert_builder.issuer_name(self._issuing_ca.issuer_name)
+        cert_builder = cert_builder.issuer_name(self._issuing_ca.subject_name)
         cert_builder = cert_builder.not_valid_before(datetime.datetime.today() - ONE_DAY)
         cert_builder = cert_builder.not_valid_after(datetime.datetime.today() + ONE_DAY * 365)
         cert_builder = cert_builder.serial_number(x509.random_serial_number())

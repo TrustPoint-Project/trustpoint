@@ -46,23 +46,18 @@ urlpatterns = [
         issuing_cas.IssuingCaAddMethodSelectView.as_view(),
         name='issuing_cas-add-method_select'),
     path(
-        'issuing-cas/add/file-import/file-type-select/',
-        issuing_cas.IssuingCaAddFileTypeSelectView.as_view(),
-        name='issuing_cas-add-file_import-file_type_select'
-    ),
-    path(
         'issuing-cas/add/file-import/pkcs12',
         issuing_cas.IssuingCaAddFileImportPkcs12View.as_view(),
         name='issuing_cas-add-file_import-pkcs12'
     ),
     path(
-        'issuing-cas/add/file-import/other',
-        issuing_cas.IssuingCaAddFileImportOtherView.as_view(),
-        name='issuing_cas-add-file_import-other'
+        'issuing-cas/add/file-import/separate-files',
+        issuing_cas.IssuingCaAddFileImportSeparateFilesView.as_view(),
+        name='issuing_cas-add-file_import-separate_files'
     ),
     path('issuing-cas/detail/<int:pk>/', issuing_cas.IssuingCaDetailView.as_view(), name='issuing_cas-detail'),
     re_path(
-        r'^issuing-cas/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
+        r'^issuing-cas/delete/(?P<pks>([0-9]+/)+[0-9]*)/?$',
         issuing_cas.IssuingCaBulkDeleteConfirmView.as_view(),
         name='issuing_cas-delete_confirm',
     ),
@@ -71,12 +66,6 @@ urlpatterns = [
          name='crl'),
     path('generate-ca-crl/<int:ca_id>/',
          crls.CRLDownloadView.generate_ca_crl,
-         name='crl'),
-    path('domain-crl/<int:id>/',
-         crls.CRLDownloadView.download_domain_crl,
-         name='crl'),
-    path('generate-domain-crl/<int:id>/',
-         crls.CRLDownloadView.generate_domain_crl,
          name='crl'),
     path('domains/', domains.DomainTableView.as_view(), name='domains'),
     path(
@@ -103,5 +92,31 @@ urlpatterns = [
         'truststores/add/',
         trust_stores.TrustStoreAddView.as_view(),
         name='truststores-add'
-    )
+    ),
+    re_path(
+        r'^truststores/download/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
+        trust_stores.TrustStoresDownloadView.as_view(),
+        name='truststores-download',
+    ),
+    # re_path(
+    #     r'^truststores/download/(?P<file_format>[a-zA-Z0-9_]+)/(?P<file_content>[a-zA-Z0-9_]+)/(?P<pk>[0-9]+)/?$',
+    #     trust_stores.CertificateDownloadView.as_view(short=False),
+    #     name='truststores-file-download',
+    # ),
+    # re_path(
+    #     r'^truststores/download/multiple/(?P<pks>([0-9]+/)+[0-9]+)/?$',
+    #     trust_stores.CertificateMultipleDownloadView.as_view(),
+    #     name='truststores-download'
+    # ),
+    # re_path(
+    #     r'^truststores/download/multiple/'
+    #     r'(?P<file_format>[a-zA-Z0-9_]+)/'
+    #     r'(?P<file_content>[a-zA-Z0-9_]+)/'
+    #     r'(?P<archive_format>[a-zA-Z0-9_]+)/'
+    #     r'(?P<pks>([0-9]+/)+[0-9]+)/?$',
+    #     trust_stores.CertificateMultipleDownloadView.as_view(),
+    #     name='truststores-file-download'
+    # ),
+    path('truststores/detail/<pk>/', trust_stores.TrustStoresDetailView.as_view(), name='truststore_details'),
+
 ]
