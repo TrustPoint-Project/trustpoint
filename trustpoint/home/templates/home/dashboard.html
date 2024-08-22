@@ -1,7 +1,9 @@
 {% extends 'trustpoint/base.html' %} {% block content %}
-<!-- Number panels row -->
-<div class="row p-3 shadow">
+<div class="row py-3 px-0">
   <h1>Summary</h1>
+</div>
+<!-- Number panels row -->
+<div class="row py-3 shadow">
   <!-- number of root CAs -->
   <div class="col-3">
     <div class="row p-2">
@@ -146,20 +148,21 @@
 {% else %}
 <p>The content is hidden because 'show_content' is False.</p>
 {% endif %} -->
-<!-- empty row -->
-<div class="row p-3"></div>
+<div class="row py-3 px-0">
+  <h1>Tables</h1>
+</div>
 <!-- Tables row -->
 <div class="row p-3 shadow">
   <!-- table  Tab Navigation -->
   <ul class="nav nav-tabs" id="tableTabs">
     <li class="nav-alert">
-      <a class="nav-link active" data-bs-toggle="tab" href="#alert">Alerts</a>
+      <a class="nav-link active" data-bs-toggle="tab" href="#alert">Alert</a>
     </li>
     <li class="nav-alert">
-      <a class="nav-link" data-bs-toggle="tab" href="#certificate">Certificates</a>
+      <a class="nav-link" data-bs-toggle="tab" href="#certificate">Certificate</a>
     </li>
     <li class="nav-alert">
-      <a class="nav-link" data-bs-toggle="tab" href="#device">Devices</a>
+      <a class="nav-link" data-bs-toggle="tab" href="#device">Device</a>
     </li>
   </ul>
 
@@ -211,8 +214,9 @@
     </div>
   </div>
 </div>
-<!-- empty row -->
-<div class="row p-3"></div>
+<div class="row py-3 px-0">
+  <h1>Charts</h1>
+</div>
 <!-- Chart row -->
 <div class="row p-3 shadow">
   <!-- table  Tab Navigation -->
@@ -229,15 +233,21 @@
   </ul>
 
   <!-- chart Tab Content -->
-  <div class="tab-content px-0 shadow">
+  <div class="tab-content px-0">
+    <div class="text-end py-2">
+      <button class="btn btn-blue">Today</button>
+      <button class="btn btn-blue">Last Week</button>
+      <button class="btn btn-blue">Last Month</button>
+      <button class="btn btn-blue">Life</button>
+    </div>
     <!-- device chart tab content -->
     <div class="tab-pane fade show active" id="deviceChartTab">
       <div class="row p-3">
-        <div class="col-4 shadow">
+        <div class="col-4 px-1 shadow">
           <h2>Current Devices</h2>
           <canvas id="donutChartDevice" width="200" height="200"></canvas>
         </div>
-        <div class="col-8 shadow">
+        <div class="col-8 px-1 shadow">
           <h2>Devices</h2>
           <canvas id="stackChartDevice" width="400" height="200"></canvas>
         </div>
