@@ -631,6 +631,10 @@ code {
   }
 }
 
+.text-blue {
+  color: rgb(13, 110, 253) !important;
+}
+
 /* Custom Nav Bar */
 .nav-tabs {
   :first-child .nav-link {
