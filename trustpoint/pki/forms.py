@@ -153,6 +153,8 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
         required=True)
     certificate_chain = forms.FileField(
         label=_('[Optional] Certificate Chain (.pem, .p7b, .p7c) '), required=False)
+    
+    auto_crl = forms.BooleanField(label='Generate CRL upon certificate revocation.', initial=True, required=False)
 
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']
@@ -163,6 +165,7 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         unique_name = cleaned_data.get('unique_name')
+        auto_crl = cleaned_data.get('auto_crl')
         if unique_name is None:
             return
 
@@ -193,13 +196,14 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
         try:
             initializer = UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer(
                 unique_name=cleaned_data['unique_name'],
+                auto_crl=auto_crl,
                 private_key_raw=private_key_file_raw,
                 password=private_key_file_password,
                 issuing_ca_certificate_raw=issuing_ca_cert_raw,
                 additional_certificates_raw=certificate_chain_raw)
         except Exception as e:
             raise ValidationError(
-                'Failed to load PKCS#12 file. Either malformed file or wrong password.',
+                'Failed to load CA from files. Either malformed file or wrong password.',
                 code='pkcs12-loading-failed')
 
         initializer.initialize()
