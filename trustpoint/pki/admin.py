@@ -120,7 +120,7 @@ class CertificateAdmin(admin.ModelAdmin):
 
         'cert_pem',
         'public_key_pem',
-        # 'private_key_pem',
+        'issuing_ca_model',
 
         'key_usage_extension',
         'subject_alternative_name_extension',

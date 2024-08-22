@@ -13,7 +13,7 @@ from pki.pki.request.message import PkiResponseMessage, HttpStatusCode, MimeType
 from pki.pki.request.handler import CaRequestHandler
 from pki.models import CertificateModel
 
-from util.x509.enrollment import Enrollment
+# from util_deprecated.x509.enrollment import Enrollment
 
 from typing import TYPE_CHECKING
 

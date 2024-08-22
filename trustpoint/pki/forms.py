@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-import traceback
-
 from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from django.core.exceptions import ValidationError
 
-from pki.serialization.initializer import LocalUnprotectedIssuingCaFromP12FileInitializer, TrustStoreInitializer
+from pki.initializer import (
+    UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer,
+    UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer)
 from pki.models import IssuingCaModel, DomainModel
 from pki.validator.field import UniqueNameValidator
 
@@ -100,14 +100,13 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
         unique_name = cleaned_data.get('unique_name')
         auto_crl = cleaned_data.get('auto_crl')
         if unique_name is None:
-            return
+            raise ValidationError('No Unique Name was specified.')
 
         try:
-            # This should not throw any exceptions, even if invalid data was sent via HTTP POST request.
-            # However, just in case.
             pkcs12_raw = cleaned_data.get('pkcs12_file').read()
             pkcs12_password = cleaned_data.get('pkcs12_password')
         except Exception:
+            # This should not throw any exceptions, this data should always be available and readable.
             raise ValidationError(
                 _('Unexpected error occurred while trying to get file contents. Please see logs for further details.'),
                 code='unexpected-error')
@@ -121,7 +120,7 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
             pkcs12_password = None
 
         try:
-            initializer = LocalUnprotectedIssuingCaFromP12FileInitializer(
+            initializer = UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(
                 unique_name=cleaned_data['unique_name'],
                 p12=pkcs12_raw,
                 password=pkcs12_password,
@@ -131,10 +130,8 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
                 'Failed to load PKCS#12 file. Either malformed file or wrong password.',
                 code='pkcs12-loading-failed') from exception
 
-        try:
-            initializer.save()
-        except Exception as exception:
-            raise ValidationError(f'{exception}')
+        initializer.initialize()
+        initializer.save()
 
 
 class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
@@ -145,17 +142,19 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
         widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
         validators=[UniqueNameValidator()])
     private_key_file = forms.FileField(
-        label=_('Private Key File (.key, .pem, .keystore)'), required=True)
+        label=_('Private Key File (.key, .pem)'), required=True)
     private_key_file_password = forms.CharField(
         # hack, force autocomplete off in chrome with: one-time-code
         widget=forms.PasswordInput(attrs={'autocomplete': 'one-time-code'}),
         label=_('[Optional] Private Key File Password'),
         required=False)
     issuing_ca_certificate = forms.FileField(
-        label=_('Issuing CA Certificate (.cer, .der, .pem, .p7b)'),
+        label=_('Issuing CA Certificate (.cer, .der, .pem, .p7b, .p7c)'),
         required=True)
     certificate_chain = forms.FileField(
-        label=_('[Optional] Certificate Chain (.pem, .p7b)'), required=False)
+        label=_('[Optional] Certificate Chain (.pem, .p7b, .p7c) '), required=False)
+    
+    auto_crl = forms.BooleanField(label='Generate CRL upon certificate revocation.', initial=True, required=False)
 
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']
@@ -163,54 +162,52 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
             raise ValidationError('Unique name is already taken. Choose another one.')
         return unique_name
 
-    # def clean(self):
-    #     cleaned_data = super().clean()
-    #     unique_name = cleaned_data.get('unique_name')
-    #     if unique_name is None:
-    #         return
-    #
-    #     try:
-    #         # This should not throw any exceptions, even if invalid data was sent via HTTP POST request.
-    #         # However, just in case.
-    #         private_key_file_raw = cleaned_data.get('private_key_file').read()
-    #         certificate_chain_raw = cleaned_data.get('certificate_chain').read()
-    #         issuing_ca_cert_raw = cleaned_data.get('issuing_ca_certificate')
-    #         if issuing_ca_cert_raw is not None:
-    #             issuing_ca_cert_raw = issuing_ca_cert_raw.read()
-    #         private_key_file_password = cleaned_data.get('private_key_file_password')
-    #     except Exception:
-    #         raise ValidationError(
-    #             _('Unexpected error occurred while trying to get file contents. Please see logs for further details.'),
-    #             code='unexpected-error')
-    #
-    #     if private_key_file_password:
-    #         try:
-    #             private_key_file_password = private_key_file_password.encode()
-    #         except Exception:
-    #             raise ValidationError('The Private Key File Password contains invalid data, that cannot be encoded in UTF-8.')
-    #     else:
-    #         pkcs12_password = None
-    #
-    #     try:
-    #         initializer = LocalUnprotectedIssuingCaFromSeparateFilesInitializer(
-    #             unique_name=cleaned_data['unique_name'],
-    #             private_key_file_raw=private_key_file_raw,
-    #             password=private_key_file_password,
-    #             issuing_ca_cert_raw=issuing_ca_cert_raw,
-    #             certificate_chain_raw=certificate_chain_raw)
-    #     except Exception as e:
-    #         print(e)
-    #         print(traceback.format_exc())
-    #         raise ValidationError(
-    #             'Failed to load PKCS#12 file. Either malformed file or wrong password.',
-    #             code='pkcs12-loading-failed')
-    #
-    #     try:
-    #         initializer.save()
-    #     except Exception as e:
-    #         print(e)
-    #         print(traceback.format_exc())
-    #         raise ValidationError('Unexpected Error. Failed to save validated Issuing CA in DB.')
+    def clean(self):
+        cleaned_data = super().clean()
+        unique_name = cleaned_data.get('unique_name')
+        auto_crl = cleaned_data.get('auto_crl')
+        if unique_name is None:
+            return
+
+        try:
+            # This should not throw any exceptions, even if invalid data was sent via HTTP POST request.
+            # However, just in case.
+            private_key_file_raw = cleaned_data.get('private_key_file').read()
+            certificate_chain_raw = cleaned_data.get('certificate_chain')
+
+            if certificate_chain_raw is not None:
+                certificate_chain_raw = certificate_chain_raw.read()
+
+            issuing_ca_cert_raw = cleaned_data.get('issuing_ca_certificate').read()
+            private_key_file_password = cleaned_data.get('private_key_file_password')
+        except Exception:
+            raise ValidationError(
+                _('Unexpected error occurred while trying to get file contents. Please see logs for further details.'),
+                code='unexpected-error')
+
+        if private_key_file_password:
+            try:
+                private_key_file_password = private_key_file_password.encode()
+            except Exception:
+                raise ValidationError('The Private Key File Password contains invalid data, that cannot be encoded in UTF-8.')
+        else:
+            private_key_file_password = None
+
+        try:
+            initializer = UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer(
+                unique_name=cleaned_data['unique_name'],
+                auto_crl=auto_crl,
+                private_key_raw=private_key_file_raw,
+                password=private_key_file_password,
+                issuing_ca_certificate_raw=issuing_ca_cert_raw,
+                additional_certificates_raw=certificate_chain_raw)
+        except Exception as e:
+            raise ValidationError(
+                'Failed to load CA from files. Either malformed file or wrong password.',
+                code='pkcs12-loading-failed')
+
+        initializer.initialize()
+        initializer.save()
 
 
 class DomainBaseForm(forms.ModelForm):
@@ -280,16 +277,18 @@ class TrustStoreAddForm(forms.Form):
                 code='unexpected-error')
 
         try:
-            initializer = TrustStoreInitializer(
-                unique_name=cleaned_data['unique_name'],
-                trust_store=trust_store_file)
+            # initializer = TrustStoreInitializer(
+            #     unique_name=cleaned_data['unique_name'],
+            #     trust_store=trust_store_file)
+            pass
         except Exception as e:
             raise ValidationError(
                 'Failed to load file. Seems to be malformed.',
                 code='trust-store-file-loading-failed')
 
         try:
-            initializer.save()
+            # initializer.save()
+            pass
         except Exception:
             raise ValidationError('Unexpected Error. Failed to save validated Trust Store in DB.')
 

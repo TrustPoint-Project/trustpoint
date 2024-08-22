@@ -10,6 +10,7 @@ from typing import Any, Callable
 
 from django import forms as dj_forms
 from django.contrib import messages
+from django.http import Http404
 from django.core.exceptions import ImproperlyConfigured
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponseRedirect
@@ -127,7 +128,16 @@ class PrimaryKeyFromUrlToQuerysetMixin:
     def get_pks(self) -> list[str]:
         pks = self.get_pks_path()
         if pks:
-            return pks.split('/')
+            pks_list = pks.split('/')
+
+            # removing possible trailing emtpy string
+            if pks_list[-1] == '':
+                del pks_list[-1]
+
+            if len(pks_list) != len(set(pks_list)):
+                raise Http404('Duplicate Issuing CA primary keys found.')
+
+            return pks_list
 
         return []
 

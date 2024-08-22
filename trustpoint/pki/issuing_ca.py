@@ -11,7 +11,7 @@ from cryptography import x509
 from django.conf import settings
 from django.db import transaction
 
-from .serialization.serializer import PrivateKeySerializer, CertificateCollectionSerializer
+from .serializer import PrivateKeySerializer, CertificateCollectionSerializer
 
 if TYPE_CHECKING:
     from typing import Union
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from .models import CertificateModel, IssuingCaModel, RevokedCertificate, CRLStorage
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
-    from serialization.serializer import CertificateSerializer, PublicKeySerializer
+    from serializer import CertificateSerializer, PublicKeySerializer
 
 
 log = logging.getLogger('tp.pki')
