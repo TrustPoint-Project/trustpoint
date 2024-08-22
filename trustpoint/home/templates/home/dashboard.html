@@ -150,7 +150,7 @@
 <div class="row p-3"></div>
 <!-- Tables row -->
 <div class="row p-3 shadow">
-  <!-- Tab Navigation -->
+  <!-- table  Tab Navigation -->
   <ul class="nav nav-tabs" id="tableTabs">
     <li class="nav-alert">
       <a class="nav-link active" data-bs-toggle="tab" href="#alert">Alerts</a>
@@ -163,7 +163,7 @@
     </li>
   </ul>
 
-  <!-- Tab Content -->
+  <!-- table Tab Content -->
   <div class="tab-content px-0 shadow">
     <!-- alert tab content -->
     <div class="tab-pane fade show active" id="alert">
@@ -214,67 +214,108 @@
 <!-- empty row -->
 <div class="row p-3"></div>
 <!-- Chart row -->
-<div class="row p-2 shadow">
-  <h2>Charts</h2>
-  <div class="row p-3">
-    <div class="col-6 shadow">
-      <canvas id="lineChart" width="400" height="200"></canvas>
+<div class="row p-3 shadow">
+  <!-- table  Tab Navigation -->
+  <ul class="nav nav-tabs" id="chartTabs">
+    <li class="nav-alert">
+      <a class="nav-link active" data-bs-toggle="tab" href="#deviceChartTab">Device</a>
+    </li>
+    <li class="nav-alert">
+      <a class="nav-link" data-bs-toggle="tab" href="#certChartTab">Certificate</a>
+    </li>
+    <li class="nav-alert">
+      <a class="nav-link" data-bs-toggle="tab" href="#caChartTab">CA</a>
+    </li>
+  </ul>
+
+  <!-- chart Tab Content -->
+  <div class="tab-content px-0 shadow">
+    <!-- device chart tab content -->
+    <div class="tab-pane fade show active" id="deviceChartTab">
+      <div class="row p-3">
+        <div class="col-4 shadow">
+          <h2>Current Devices</h2>
+          <canvas id="donutChartDevice" width="200" height="200"></canvas>
+        </div>
+        <div class="col-8 shadow">
+          <h2>Devices</h2>
+          <canvas id="stackChartDevice" width="400" height="200"></canvas>
+        </div>
+      </div>
     </div>
-    <div class="col-6 shadow">
-      <canvas id="barChart" width="400" height="200"></canvas>
+    <!-- certificate chart tab content -->
+    <div class="tab-pane fade" id="certChartTab">
+      <div class="row p-3">
+        <div class="col-4 shadow">
+          <h2>Current Certificates</h2>
+          <canvas id="donutChartCert" width="200" height="200"></canvas>
+        </div>
+        <div class="col-8 shadow">
+          <h2>Certificates</h2>
+          <canvas id="stackedAreaChartCert" width="400" height="200"></canvas>
+        </div>
+      </div>
     </div>
-  </div>
-  <div class="row p-3">
-    <div class="col-8 shadow">
-      <h2>Number of Endpoints</h2>
-      <canvas id="stackedAreaChart" width="400" height="200"></canvas>
-    </div>
-    <div class="col-4 shadow">
-      <h2>Number of Devices</h2>
-      <canvas id="donutChartDevice" width="200" height="200"></canvas>
-    </div>
-  </div>
-  <div class="row p-3">
-    <div class="col-4 shadow">
-      <h2>Number of Endpoints</h2>
-      <canvas id="donutChartEndpoint" width="200" height="200"></canvas>
-    </div>
-    <div class="col-8 shadow">
-      <h2>Number of Devices</h2>
-      <canvas id="stackChart" width="400" height="200"></canvas>
+    <!-- CA chart tab content -->
+    <div class="tab-pane fade" id="caChartTab">
+      <div class="row p-3">
+        <div class="col-6 shadow">
+          <h2>Root CAs</h2>
+          <canvas id="lineChart" width="400" height="200"></canvas>
+        </div>
+        <div class="col-6 shadow">
+          <h2>Issuing CA</h2>
+          <canvas id=" barChartCA" width="400" height="200"></canvas>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    var ctx = document.getElementById("lineChart").getContext("2d");
-    var lineChartConfig = JSON.parse("{{ line_chart_config|escapejs }}");
-    var lineChart = new Chart(ctx, lineChartConfig);
     var alerts = JSON.parse("{{alerts|escapejs }}");
     var certs = JSON.parse("{{certs|escapejs }}");
     var devices = JSON.parse("{{devices|escapejs }}");
-    const alertTableBody = document.getElementById("alerts-table-body");
-    const certTableBody = document.getElementById("certs-table-body");
-    const deviceTableBody = document.getElementById("devices-table-body");
-    console.log("helo");
-    var tabEl = document.querySelector("#tableTabs");
-    console.log("tabEl", tabEl);
-    var tab = new bootstrap.Tab(tabEl);
+    // const alertTableBody = document.getElementById("alerts-table-body");
+    // const certTableBody = document.getElementById("certs-table-body");
+    // const deviceTableBody = document.getElementById("devices-table-body");
+    //console.log("helo");
+    var tableTabEl = document.getElementById("tableTabs");
+    //console.log("tableTabEl", tabEl);
+    var tableTab = new bootstrap.Tab(tableTabEl);
     // Initial update for the active tab
-    var activeTabId = document.querySelector(".nav-link.active").getAttribute("href").substring(1);
-    updateContent(activeTabId);
+    var activeTabId = document
+      .querySelector("#tableTabs .nav-link.active")
+      .getAttribute("href")
+      .substring(1);
+    updateTableContent(activeTabId);
 
     // Add event listener for the 'shown.bs.tab' event
-    tabEl.addEventListener("shown.bs.tab", function (event) {
-      console.log("changed");
+    tableTabEl.addEventListener("shown.bs.tab", function (event) {
       var targetId = event.target.getAttribute("href").substring(1);
-      updateContent(targetId);
+      updateTableContent(targetId);
     });
 
-    function updateContent(tabId) {
+    var chartTabEl = document.getElementById("chartTabs");
+    console.log("chartTabEl", chartTabEl);
+    var chartTab = new bootstrap.Tab(chartTabEl);
+    // Initial update for the active tab
+    var activeChartTabId = document
+      .querySelector("#chartTabs .nav-link.active")
+      .getAttribute("href")
+      .substring(1);
+    updateChartContent(activeChartTabId);
+
+    // Add event listener for the 'shown.bs.tab' event
+    chartTabEl.addEventListener("shown.bs.tab", function (event) {
+      var targetId = event.target.getAttribute("href").substring(1);
+      updateChartContent(targetId);
+    });
+
+    function updateTableContent(tabId) {
       // Find the content element in the active tab
-      var tableBody = document.querySelector(`#${tabId}-table-body`);
+      var tableBody = document.getElementById(`${tabId}-table-body`);
       tableBody.innerHTML = ""; // Clear existing content
       console.log(tableBody, tabId, alerts);
       // Update the content
@@ -309,9 +350,6 @@
           }
         }
       } else if (tabId == "certificate") {
-        // Find the content element in the active tab
-        //var certTableBody = document.querySelector(`#${tabId}-table-body`);
-        console.log(certTableBody, tabId, certs);
         if (certs) {
           certs.forEach((cert) => {
             const row = document.createElement("tr");
@@ -371,31 +409,34 @@
         }
       }
     }
-  });
-  document.addEventListener("DOMContentLoaded", function () {
-    var ctx = document.getElementById("barChart").getContext("2d");
-    var barChartConfig = JSON.parse("{{ bar_chart_config|escapejs }}");
-    var lineChart = new Chart(ctx, barChartConfig);
-  });
-  document.addEventListener("DOMContentLoaded", function () {
-    var ctx = document.getElementById("stackChart").getContext("2d");
-    var stackChartConfig = JSON.parse("{{ stack_chart_config|escapejs }}");
-    var lineChart = new Chart(ctx, stackChartConfig);
-  });
-  document.addEventListener("DOMContentLoaded", function () {
-    var ctx = document.getElementById("donutChartDevice").getContext("2d");
-    var donutChartConfig = JSON.parse("{{ donut_chart_config|escapejs }}");
-    var lineChart = new Chart(ctx, donutChartConfig);
-  });
-  document.addEventListener("DOMContentLoaded", function () {
-    var ctx = document.getElementById("donutChartEndpoint").getContext("2d");
-    var donutChartConfig = JSON.parse("{{ endpoint_donut_chart_config|escapejs }}");
-    var lineChart = new Chart(ctx, donutChartConfig);
-  });
-  document.addEventListener("DOMContentLoaded", function () {
-    var ctx = document.getElementById("stackedAreaChart").getContext("2d");
-    var stackedAreaChartConfig = JSON.parse("{{ stack_area_chart_config|escapejs }}");
-    var lineChart = new Chart(ctx, stackedAreaChartConfig);
+
+    function updateChartContent(chartTabId) {
+      console.log("chartTabId", chartTabId);
+      if (chartTabId == "deviceChartTab") {
+        var ctx = document.getElementById("stackChartDevice").getContext("2d");
+        var stackChartConfig = JSON.parse("{{ stack_chart_config|escapejs }}");
+        var stackChartDevice = new Chart(ctx, stackChartConfig);
+
+        var ctx = document.getElementById("donutChartDevice").getContext("2d");
+        var donutChartDeviceConfig = JSON.parse("{{ donut_chart_config|escapejs }}");
+        var donutChartDevice = new Chart(ctx, donutChartDeviceConfig);
+      } else if (chartTabId == "certChartTab") {
+        var ctx = document.getElementById("donutChartCert").getContext("2d");
+        var donutChartCertConfig = JSON.parse("{{ endpoint_donut_chart_config|escapejs }}");
+        var donutChartCert = new Chart(ctx, donutChartCertConfig);
+
+        var ctx = document.getElementById("stackedAreaChartCert").getContext("2d");
+        var stackedAreaCertChartConfig = JSON.parse("{{ stack_area_chart_config|escapejs }}");
+        var stackedAreaCertChart = new Chart(ctx, stackedAreaCertChartConfig);
+      } else if (chartTabId == "caChartTab") {
+        var ctx = document.getElementById(" barChartCA").getContext("2d");
+        var barChartCAConfig = JSON.parse("{{ bar_chart_config|escapejs }}");
+        var barChartCA = new Chart(ctx, barChartCAConfig);
+        var ctx = document.getElementById("lineChart").getContext("2d");
+        var lineChartConfig = JSON.parse("{{ line_chart_config|escapejs }}");
+        var lineChart = new Chart(ctx, lineChartConfig);
+      }
+    }
   });
 </script>
 
