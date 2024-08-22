@@ -1,14 +1,47 @@
-{% extends 'trustpoint/base.html' %}
+{% extends 'users/base.html' %}
+{% load static %}
 {% load i18n %}
-{% load render_table from django_tables2 %}
-
+{% load crispy_forms_filters %}
 {% block content %}
-    
-<h1>Login</h1>
-<form action="{% url 'onboarding:browser-login'%}" method="post" enctype="multipart/form-data">
-  {% csrf_token %}
-  {{ form }}
-  <button type="submit">Submit</button>
-</form>
+
+    {% if messages %}
+        <div class="messages tp-messages text-center">
+            {% for message in messages %}
+                <div class="tp-message alert
+                    {% if message.tags %}
+                        {% if message.tags == "error" %}
+                            alert-danger
+                        {% else %}
+                            alert-{{ message.tags }}
+                        {% endif %}
+                    {% endif %} d-flex align-items-center" role="alert">
+
+                    <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="{{ message.tags }}:">
+                        <use xlink:href="{% static 'img/icons.svg' %}#icon-{{ message.tags }}"/></svg>
+                    <div>
+                        {{ message }}
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    <div class="card card-main tp-card-users text-center">
+        <div class="card-header">
+            <h1>{% trans "Trustpoint - Browser Onboarding" %}</h1>
+        </div>
+        <div class="card-body tp-main-centered pt-3 pb-4">
+            <form action="{% url 'onboarding:browser-login'%}" method="post" enctype="multipart/form-data" class="tp-main-form text-start">
+                {% csrf_token %}
+                <fieldset class="form-group tp-form-group">
+                    {{form|crispy }}
+                </fieldset>
+                <hr>
+                <div class="tp-form-btn-group tp-form-btn-group">
+                    <button class="btn btn-primary w-100 mt-1" type="submit">{% trans "Download credentials" %}</button>
+                </div>
+            </form>
+        </div>
+    </div>
 
 {% endblock content %}
