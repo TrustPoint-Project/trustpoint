@@ -213,6 +213,11 @@ class UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(FileImportLocalIs
         self._private_key_serializer = credential_serializer.credential_private_key
         self._certificate_collection_serializer = credential_serializer.all_certificates
 
+        with open('/home/alex/Dev/trustpoint/cred.zip', 'wb') as f:
+            f.write(credential_serializer.as_pem_zip())
+
+        with open('/home/alex/Dev/trustpoint/cred.tar.gz', 'wb') as f:
+            f.write(credential_serializer.as_pem_tar_gz())
 
 class UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer(FileImportLocalIssuingCaInitializer):
     """Responsible for initializing an Issuing CA from separate files."""

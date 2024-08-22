@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+import io
+import zipfile
+import tarfile
+
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
@@ -131,6 +135,108 @@ class CredentialSerializer(Serializer):
             return 0
         else:
             return len(self._additional_certificates) + 1
+
+    def get_as_separate_pem_files(self, password: None | bytes = None, pkcs1: bool = False
+                                  ) -> tuple[bytes, bytes, bytes]:
+        """Gets the credential as separate bytes in PEM format.
+
+        A tuple of the following three values (bytes) is returned:
+
+        - private key
+        - credential certificate
+        - additional certificates
+
+        Args:
+            password: A password used to encrypt the private key.
+            pkcs1: If False, the private key is stored in PKCS#8 format, PKCS#1 otherwise.
+
+        Returns:
+            (bytes, bytes, bytes):
+                (private key as PKCS#1 or PKCS#8 PEM bytes,
+                credential certificate as PEM bytes,
+                additional certificates as PEM bytes)
+
+        """
+        if password == b'':
+            password = None
+
+        if pkcs1:
+            key_pem = self.credential_private_key.as_pkcs1_pem(password)
+        else:
+            key_pem = self.credential_private_key.as_pkcs8_pem(password)
+
+        return key_pem, self.credential_certificate.as_pem(), self.additional_certificates.as_pem()
+
+    def as_pem_zip(self, password: None | bytes = None, pkcs1: bool = False) -> bytes:
+        """Gets the credential as bytes in zip format containing all credential files in PEM format.
+
+        Contains the certificate chain and the credential certificate in separate PEM files. The private key file is
+        stored as PKCS#8 encrypted file if a password is given.
+
+        Note:
+            Only the private key is encrypted and protected utilizing the password.
+            The zip file is NOT encrypted or protected by the password.
+
+        Args:
+            password: A password used to encrypt the private key.
+            pkcs1: If False, the private key is stored in PKCS#8 format, PKCS#1 otherwise.
+
+        Returns:
+            bytes: The zip file containing all credential files in PEM format.
+        """
+        key_pem, cert_pem, additional_certs_pem = self.get_as_separate_pem_files(password, pkcs1)
+
+        bytes_io = io.BytesIO()
+        zip_file = zipfile.ZipFile(bytes_io, 'w')
+        zip_file.writestr('private_key.pem', key_pem)
+        zip_file.writestr('certificate.pem', cert_pem)
+
+        if self.additional_certificates:
+            zip_file.writestr('additional_certificates.pem', additional_certs_pem)
+
+        zip_file.close()
+
+        return bytes_io.getvalue()
+
+    def as_pem_tar_gz(self, password: None | bytes = None, pkcs1: bool = False) -> bytes:
+        """Gets the credential as bytes in tar.gz format containing all credential files in PEM format.
+
+        Contains the certificate chain and the credential certificate in separate PEM files. The private key file is
+        stored as PKCS#8 encrypted file if a password is given.
+
+        Note:
+            Only the private key is encrypted and protected utilizing the password.
+            The tar.gz file is NOT encrypted or protected by the password.
+
+        Args:
+            password: A password used to encrypt the private key.
+            pkcs1: If False, the private key is stored in PKCS#8 format, PKCS#1 otherwise.
+
+        Returns:
+            bytes: The tar.gz file containing all credential files in PEM format.
+        """
+        key_pem, cert_pem, additional_certs_pem = self.get_as_separate_pem_files(password, pkcs1)
+
+        bytes_io = io.BytesIO()
+        with tarfile.open(fileobj=bytes_io, mode='w:gz') as tar:
+
+            key_io_bytes = io.BytesIO(key_pem)
+            key_io_bytes_info = tarfile.TarInfo('private_key.pem')
+            key_io_bytes_info.size = len(key_pem)
+            tar.addfile(key_io_bytes_info, key_io_bytes)
+
+            cert_io_bytes = io.BytesIO(cert_pem)
+            cert_io_bytes_info = tarfile.TarInfo('certificate.pem')
+            cert_io_bytes_info.size = len(cert_pem)
+            tar.addfile(cert_io_bytes_info, cert_io_bytes)
+
+            if self.additional_certificates:
+                additional_certs_io_bytes = io.BytesIO(additional_certs_pem)
+                additional_certs_io_bytes_info = tarfile.TarInfo('additional_certificates.pem')
+                additional_certs_io_bytes_info.size = len(additional_certs_pem)
+                tar.addfile(additional_certs_io_bytes_info, additional_certs_io_bytes)
+
+        return bytes_io.getvalue()
 
     @property
     def credential_private_key(self) -> PrivateKeySerializer:

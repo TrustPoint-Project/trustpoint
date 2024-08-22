@@ -179,7 +179,7 @@ class PrivateKeySerializer(Serializer):
             encryption_algorithm=self._get_encryption_algorithm(password),
         )
 
-    def as_pkcs1_pem(self, password: None | bytes) -> bytes:
+    def as_pkcs1_pem(self, password: None | bytes = None) -> bytes:
         """Gets the associated private key as bytes in PKCS#1 PEM format.
 
         Args:
@@ -194,7 +194,7 @@ class PrivateKeySerializer(Serializer):
             encryption_algorithm=self._get_encryption_algorithm(password),
         )
 
-    def as_pkcs8_der(self, password: None | bytes) -> bytes:
+    def as_pkcs8_der(self, password: None | bytes = None) -> bytes:
         """Gets the associated private key as bytes in PKCS#8 DER format.
 
         Args:
@@ -209,7 +209,7 @@ class PrivateKeySerializer(Serializer):
             encryption_algorithm=self._get_encryption_algorithm(password),
         )
 
-    def as_pkcs8_pem(self, password: None | bytes) -> bytes:
+    def as_pkcs8_pem(self, password: None | bytes = None) -> bytes:
         """Gets the associated private key as bytes in PKCS#8 DER format.
 
         Args:
@@ -224,7 +224,7 @@ class PrivateKeySerializer(Serializer):
             encryption_algorithm=self._get_encryption_algorithm(password),
         )
 
-    def as_pkcs12(self, password: None | bytes, friendly_name: bytes = b'') -> bytes:
+    def as_pkcs12(self, password: None | bytes = None, friendly_name: bytes = b'') -> bytes:
         """Gets the associated private key as bytes in PKCS#12 format.
 
         Args:
