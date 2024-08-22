@@ -26,6 +26,18 @@ class InitializationReqValidator:
     def validate(self):
         self.cert_req_validator.validate_ir()
 
+class KeyUpdateReqValidator:
+
+    def __init__(self, cmp_body):
+        self.cmp_body = cmp_body
+        self.cert_req_validator = CertReqValidator(self.cmp_body)
+
+    def validate(self):
+        # TODO: The certificate the EE wishes to update MUST NOT be expired or
+        #       revoked and MUST have been issued by the addressed CA.
+        # TODO: A new public-private key pair should be used.
+        self.cert_req_validator.validate_kur()
+
 
 class CertReqValidator:
     def __init__(self, cmp_body):
@@ -39,6 +51,7 @@ class CertReqValidator:
         self._request = None
         self._ir = None
         self._cr = None
+        self._kur = None
         self._certReqMsg = None
         self._certReq = None
         self._certTemplate = None
@@ -51,6 +64,10 @@ class CertReqValidator:
     @property
     def cr(self):
         return self._cr
+
+    @property
+    def kur(self):
+        return self._kur
 
     @property
     def certReq(self):
@@ -92,6 +109,20 @@ class CertReqValidator:
         self._validate_cert_template()
         self._validate_popo()
 
+    def validate_kur(self):
+        """
+        Validates the decoded kur CMP body according to the specified requirements.
+
+        Returns:
+        - bool: True if the CMP body is valid, False otherwise.
+        - list: A list of validation error messages if the body is invalid.
+        """
+
+        self._validate_request_kur()
+        self._validate_cert_req()
+        self._validate_cert_template()
+        self._validate_popo()
+
 
     def _validate_request_ir(self):
         """
@@ -104,12 +135,21 @@ class CertReqValidator:
 
     def _validate_request_cr(self):
         """
-        Validates the 'ir' field of the CMP body.
+        Validates the 'cr' field of the CMP body.
         """
         self._cr = self.cmp_body['cr']
         self._request = self._cr
         if not self._cr or len(self._cr) != 1:
             raise BadMessageCheck("The 'cr' field is required and must contain exactly one 'CertReqMsg'.")
+
+    def _validate_request_kur(self):
+        """
+        Validates the 'kur' field of the CMP body.
+        """
+        self._kur = self.cmp_body['kur']
+        self._request = self._kur
+        if not self._kur or len(self._kur) != 1:
+            raise BadMessageCheck("The 'kur' field is required and must contain exactly one 'CertReqMsg'.")
 
     def _validate_cert_req(self):
         """

@@ -33,8 +33,8 @@ class PKIBodyTypes:
             "p10cr": (rfc2314.CertificationRequest, "CertificationRequest", False),  # PKCS #10 Cert. Req.
             "popdecc": (rfc4210.POPODecKeyChallContent, "POPODecKeyChallContent", False),  # pop Challenge
             "popdecr": (rfc4210.POPODecKeyRespContent, "POPODecKeyRespContent", False),  # pop Response
-            "kur": (rfc2511.CertReqMessages, "CertReqMessages", False),  # Key Update Request
-            "kup": (rfc4210.CertRepMessage, "CertRepMessage", False),  # Key Update Response
+            "kur": (rfc2511.CertReqMessages, "CertReqMessages", True),  # Key Update Request
+            "kup": (rfc4210.CertRepMessage, "CertRepMessage", True),  # Key Update Response
             "krr": (rfc2511.CertReqMessages, "CertReqMessages", False),  # Key Recovery Req
             "krp": (rfc4210.KeyRecRepContent, "KeyRecRepContent", False),  # Key Recovery Resp
             "rr": (rfc4210.RevReqContent, "RevReqContent", True),  # Revocation Request

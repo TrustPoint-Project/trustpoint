@@ -32,7 +32,19 @@ class CertificationRespValidator:
     def validate(self):
         self.cert_resp_validator.validate_cp()
 
+class KeyUpdateRespValidator:
+    def __init__(self, cmp_body):
+        """
+        Initializes the validator for a kup body with ASN.1 encoded data.
 
+        Args:
+        - cmp_body (bytes): The ASN.1 encoded CMP body.
+        """
+        self.cmp_body = cmp_body
+        self.cert_resp_validator = CertRespValidator(self.cmp_body)
+
+    def validate(self):
+        self.cert_resp_validator.validate_kup()
 
 class CertRespValidator:
     def __init__(self, cmp_body):
@@ -46,6 +58,7 @@ class CertRespValidator:
         self._response = None
         self._ip = None
         self._cp = None
+        self._kup = None
         self._certResponse = None
         self._certifiedKeyPair = None
 
@@ -56,6 +69,10 @@ class CertRespValidator:
     @property
     def cp(self):
         return self._cp
+
+    @property
+    def kup(self):
+        return self._kup
 
     @property
     def certResponse(self):
@@ -90,6 +107,19 @@ class CertRespValidator:
         self._validate_cert_response()
         self._validate_certified_key_pair()
 
+    def validate_kup(self):
+        """
+        Validates the decoded CMP kup body according to the specified requirements.
+
+        Returns:
+        - bool: True if the CMP body is valid, False otherwise.
+        - list: A list of validation error messages if the body is invalid.
+        """
+        self._validate_response_kup()
+        self._validate_ca_pubs_absent()
+        self._validate_cert_response()
+        self._validate_certified_key_pair()
+
 
     def _validate_response_ip(self):
         """
@@ -108,6 +138,15 @@ class CertRespValidator:
         self._response = self._cp
         if not self._cp.hasValue():
             raise BadMessageCheck("The 'cp' field is required.")
+
+    def _validate_response_kup(self):
+        """
+        Validates the 'cp' (Certification Response) field of the CMP body.
+        """
+        self._kup = self.cmp_body['kup']
+        self._response = self._kup
+        if not self._kup.hasValue():
+            raise BadMessageCheck("The 'kup' field is required.")
 
     def _validate_ca_pubs_absent(self):
         """

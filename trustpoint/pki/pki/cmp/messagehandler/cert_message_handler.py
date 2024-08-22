@@ -58,9 +58,12 @@ class CertMessageHandler:
         self.logger.debug("Validation completed.")
 
     def configure_request_template(self, cert_request_template):
-        # print("CERT_REQUEST_TEMPLATE")
+        """
+        Configures the certificate request template.
+
+        :param cert_request_template: The certificate request template.
+        """
         self.cert_request_template = cert_request_template
-        # print(cert_request_template.prettyPrint())
 
     def handle(self, issuing_ca_object) -> bytes:
         """
@@ -70,14 +73,38 @@ class CertMessageHandler:
         :return: bytes, the response PKI message.
         """
         self.logger.info("Handling certificate request.")
+        self._initialize_ca_data(issuing_ca_object)
+
+        cert_req_msg = self._get_cert_req_msg()
+        subject_name, san_list, public_key = self._process_cert_request(cert_req_msg)
+
+        cert = self._generate_and_store_certificate(subject_name, san_list, public_key)
+
+        pki_message = self._generate_pki_response(cert_req_msg, cert)
+
+        self.logger.info("Certificate request handled successfully.")
+        return pki_message
+
+    def _initialize_ca_data(self, issuing_ca_object):
+        """
+        Initializes CA-related data needed for certificate issuance.
+
+        :param issuing_ca_object: The IssuingCa object.
+        """
         self.issuing_ca_object = issuing_ca_object
         self.ca_cert = issuing_ca_object.get_issuing_ca_certificate_serializer().as_crypto()
         self.ca_key = issuing_ca_object.private_key
         root_cert = issuing_ca_object.issuing_ca_model.root_ca_certificate.get_certificate_serializer().as_crypto()
         self.ca_cert_chain = [root_cert, self.ca_cert]
+        self.logger.debug("Initialized CA data.")
 
-        cert_req_msg = self._get_cert_req_msg()
+    def _process_cert_request(self, cert_req_msg):
+        """
+        Processes the certificate request message to extract subject, SAN, and public key information.
 
+        :param cert_req_msg: The certificate request message.
+        :return: Tuple containing the subject name, SAN list, and public key.
+        """
         subject_update = self._update_subject(cert_req_msg)
         extensions_update = self._update_san(cert_req_msg)
 
@@ -86,12 +113,33 @@ class CertMessageHandler:
         san_list = self._prepare_san(extensions_update)
         public_key = self._prepare_public_key(cert_req_msg)
 
+        return subject_name, san_list, public_key
+
+    def _generate_and_store_certificate(self, subject_name, san_list, public_key):
+        """
+        Generates and stores the signed certificate.
+
+        :param subject_name: The subject name information.
+        :param san_list: The Subject Alternative Names (SAN) for the certificate.
+        :param public_key: The public key for the certificate.
+        :return: The generated certificate.
+        """
         self.logger.debug("Generating signed certificate.")
         cert = self._generate_signed_certificate(subject_name, san_list, public_key, self.ca_cert, self.ca_key)
 
-        self.logger.debug("Save the certificate in the database.")
+        self.logger.debug("Saving the certificate in the database.")
         CertificateModel.save_certificate(certificate=cert)
 
+        return cert
+
+    def _generate_pki_response(self, cert_req_msg, cert):
+        """
+        Generates the PKI response message including the header, body, and protection.
+
+        :param cert_req_msg: The certificate request message.
+        :param cert: The signed certificate.
+        :return: The PKI message as bytes.
+        """
         cert_pem = self._serialize_client_cert(cert)
 
         self.logger.debug("Creating PKI body.")
@@ -109,10 +157,15 @@ class CertMessageHandler:
         self.logger.debug("Creating PKI message.")
         pki_message = self._create_pki_message(pki_body, pki_header, response_protection, extra_certs)
 
-        self.logger.info("Certificate request handled successfully.")
         return pki_message
 
     def _update_subject(self, cert_req_msg):
+        """
+        Updates the subject information based on the provided template.
+
+        :param cert_req_msg: The certificate request message.
+        :return: The final subject.
+        """
         client_cert_template = cert_req_msg.getComponentByName('certTemplate')
         client_subject = client_cert_template.getComponentByName('subject')
 
@@ -166,6 +219,12 @@ class CertMessageHandler:
         return subject_final
 
     def _update_san(self, cert_req_msg):
+        """
+        Updates the Subject Alternative Name (SAN) extension based on the provided template.
+
+        :param cert_req_msg: The certificate request message.
+        :return: The final extensions.
+        """
         client_cert_template = cert_req_msg.getComponentByName('certTemplate')
         client_extensions = client_cert_template.getComponentByName('extensions')
 
@@ -236,89 +295,14 @@ class CertMessageHandler:
 
         return extensions_final
 
-    def _update_san_2(self, cert_req_msg):
-        client_cert_template = cert_req_msg.getComponentByName('certTemplate')
-        client_extensions = client_cert_template.getComponentByName('extensions')
-
-        print(f"client_extensions: {client_extensions}")
-
-        if self.cert_request_template:
-            print("UPDATE SAN")
-            extensions_final = rfc2459.Extensions()
-            template_info_value = self.cert_request_template.getComponentByName('infoValue')
-            template_cert_template = template_info_value.getComponentByName('certTemplate')
-            template_extensions = template_cert_template.getComponentByName('extensions')
-
-            for template_extension in template_extensions:
-                extn_id = template_extension.getComponentByName('extnID')
-                extn_value = template_extension.getComponentByName('extnValue')
-                extn_critical = template_extension.getComponentByName('critical')
-
-                print(f"template_extension: {template_extension}")
-                print(f"client_extensions: {client_extensions}")
-
-                client_extn_value = None
-                for client_extension in client_extensions:
-                    client_extn_id = client_extension.getComponentByName('extnID')
-
-                    if client_extn_id == extn_id:
-                        client_extn_value = client_extension.getComponentByName('extnValue')
-                        break
-
-                if client_extn_value is not None:
-                    if isinstance(client_extn_value, univ.OctetString):
-                        # Decode the client's GeneralNames from the OctetString
-                        octet_bytes = bytes(client_extn_value)
-                        client_general_names, _ = decoder.decode(octet_bytes, asn1Spec=rfc5280.GeneralNames())
-                        print("Client GeneralNames:", client_general_names.prettyPrint())
-                    else:
-                        raise TypeError("Expected an OctetString for the SAN extension")
-
-                octet_bytes = bytes(extn_value)
-                template_general_names, _ = decoder.decode(octet_bytes, asn1Spec=rfc5280.GeneralNames())
-                final_general_names = rfc2459.GeneralNames()
-                for general_name in template_general_names:
-                    general_name_type = general_name.getComponent()
-                    general_name_name = general_name.getName()
-
-                    if general_name_type.prettyPrint() == '':
-                        if client_extn_value is not None:
-                            match_found = False
-                            for client_general_name in client_general_names:
-                                print("FFFF")
-                                print(client_general_name.getName())
-                                if client_general_name.getName() == general_name_name:
-                                    updated_general_name = rfc5280.GeneralName()
-                                    updated_general_name.setComponentByName(
-                                        general_name_name,
-                                        client_general_name.getComponentByName(general_name_name)
-                                    )
-                                    final_general_names.append(updated_general_name)
-                                    match_found = True
-                                    break
-
-                            if not match_found:
-                                raise ValueError(
-                                    f"Required GeneralName {general_name_name} not found in client GeneralNames")
-
-                    else:
-                        final_general_names.append(general_name)
-
-                final_extn_value = univ.OctetString(encoder.encode(final_general_names))
-
-                final_extension = rfc2459.Extension()
-                final_extension.setComponentByName('extnID', extn_id)
-                final_extension.setComponentByName('critical', extn_critical)
-                final_extension.setComponentByName('extnValue', final_extn_value)
-
-                extensions_final.setComponentByPosition(len(extensions_final), final_extension)
-
-        else:
-            extensions_final = client_extensions
-
-        return extensions_final
 
     def _prepare_subject(self, subject):
+        """
+        Prepares the Subject Alternative Names (SAN) for the certificate.
+
+        :param extensions: The extensions information.
+        :return: A list of x509.SubjectAlternativeName objects.
+        """
         subject_name = []
 
         for rdn in subject[0]:
@@ -367,6 +351,12 @@ class CertMessageHandler:
         return san_list
 
     def _prepare_public_key(self, cert_req_msg):
+        """
+        Prepares the public key for the certificate.
+
+        :param cert_req_msg: The certificate request message.
+        :return: The public key object.
+        """
         cert_template = cert_req_msg.getComponentByName('certTemplate')
 
         public_key_info = cert_template.getComponentByName('publicKey')
@@ -376,62 +366,17 @@ class CertMessageHandler:
 
         return public_key
 
-    def _prepare_subject_san(self, cert_req_msg):
-        subject_name = []
-        san_list = []
-
-        cert_template = cert_req_msg.getComponentByName('certTemplate')
-
-        subject = cert_template.getComponentByName('subject')
-
-        public_key_info = cert_template.getComponentByName('publicKey')
-
-        public_key_der = public_key_info.getComponentByName('subjectPublicKey').asOctets()
-        public_key = load_der_public_key(public_key_der, backend=default_backend())
-
-        extensions = cert_template.getComponentByName('extensions')
-
-        for extension in extensions:
-            extn_id = extension.getComponentByName('extnID')
-            if extn_id == rfc2459.id_ce_subjectAltName:
-                extn_value = extension.getComponentByName('extnValue')
-                san, _ = decoder.decode(extn_value, asn1Spec=rfc2459.SubjectAltName())
-                for general_name in san:
-                    name_type = general_name.getName()
-                    if name_type == 'dNSName':
-                        san_list.append(x509.DNSName(str(general_name.getComponent())))
-                    elif name_type == 'iPAddress':
-                        binary_ip = general_name.getComponent().asOctets()
-                        ip_address = ipaddress.ip_address(binary_ip)
-                        san_list.append(x509.IPAddress(ip_address))
-                    elif name_type == 'uniformResourceIdentifier':
-                        san_list.append(x509.UniformResourceIdentifier(str(general_name.getComponent())))
-
-        for rdn in subject[0]:
-            for atv in rdn:
-
-                oid = atv.getComponentByName('type')
-                value = atv.getComponentByName('value')
-
-                value, _ = decoder.decode(bytes(value))
-
-                # print(f"OID: {oid} ({len(oid)}), Value: >{str(value)}< ({len(str(value))})")
-                if oid == rfc2459.id_at_commonName:
-                    subject_name.append(x509.NameAttribute(NameOID.COMMON_NAME, str(value)))
-                elif oid == rfc2459.id_at_countryName:
-                    subject_name.append(x509.NameAttribute(NameOID.COUNTRY_NAME, str(value)))
-                elif oid == rfc2459.id_at_stateOrProvinceName:
-                    subject_name.append(x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, str(value)))
-                elif oid == rfc2459.id_at_localityName:
-                    subject_name.append(x509.NameAttribute(NameOID.LOCALITY_NAME, str(value)))
-                elif oid == rfc2459.id_at_organizationName:
-                    subject_name.append(x509.NameAttribute(NameOID.ORGANIZATION_NAME, str(value)))
-                elif oid == rfc2459.id_at_organizationalUnitName:
-                    subject_name.append(x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, str(value)))
-
-        return subject_name, san_list, public_key
-
     def _generate_signed_certificate(self, subject_name, san_list, public_key, ca_cert, ca_key):
+        """
+        Generates a signed certificate.
+
+        :param subject_name: The subject's name information.
+        :param san_list: The Subject Alternative Names (SAN) for the certificate.
+        :param public_key: The public key for the certificate.
+        :param ca_cert: The CA certificate.
+        :param ca_key: The CA's private key.
+        :return: The signed certificate.
+        """
         subject = x509.Name(subject_name)
 
         cert_builder = (
@@ -462,9 +407,10 @@ class CertMessageHandler:
 
     def _serialize_client_cert(self, client_cert: Certificate) -> bytes:
         """
-        Returns the serialized client certificate in PEM format.
+        Returns the serialized client certificate in DER format.
 
-        :return: bytes, the PEM-encoded CA certificate.
+        :param client_cert: The client certificate.
+        :return: bytes, the DER-encoded client certificate.
         """
         return client_cert.public_bytes(encoding=Encoding.DER)
 

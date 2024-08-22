@@ -6,7 +6,8 @@ from pyasn1_modules import rfc4210
 
 from pki.pki.cmp.validator.general_message_validator import GeneralMessageValidator
 from pki.pki.cmp.validator.header_validator import GenericHeaderValidator
-from pki.pki.cmp.validator.initialization_req_validator import InitializationReqValidator, CertificateReqValidator
+from pki.pki.cmp.validator.initialization_req_validator import InitializationReqValidator, CertificateReqValidator, \
+    KeyUpdateReqValidator
 from pki.pki.cmp.validator.revocation_req_validator import RevocationReqValidator
 from pki.pki.request.message import PkiResponseMessage, HttpStatusCode, MimeType
 
@@ -127,6 +128,17 @@ class CmpRequestMessageValidator:
             self._is_valid = False
             return False
 
+    def validate_keyupdate_body(self, decoded_pki_message: rfc4210.PKIMessage):
+        try:
+            body = decoded_pki_message.getComponentByName('body')
+            validator = KeyUpdateReqValidator(body)
+            validator.validate()
+            return True
+        except Exception:
+            self._build_malformed_cmp_body()
+            self._is_valid = False
+            return False
+
     def validate_revocation_req_body(self, decoded_pki_message: rfc4210.PKIMessage):
         try:
             body = decoded_pki_message.getComponentByName('body')
@@ -202,8 +214,16 @@ class CmpRequestMessageValidator:
         return loaded_request, domain_model
 
     def validate_keyupdate_request(self, mimetype, domain_unique_name, DomainModel, raw_request, asn1_spec):
-        return self.validate_initialization_request(mimetype, domain_unique_name, DomainModel, raw_request, asn1_spec)
+        result = self._validate_generic_part(mimetype, domain_unique_name, DomainModel, raw_request, asn1_spec)
+        if not result:
+            return False
 
+        loaded_request, domain_model = result
+
+        if not self.validate_keyupdate_body(loaded_request):
+            return False
+
+        return loaded_request, domain_model
     def validate_revocation_request(self, mimetype, domain_unique_name, DomainModel, raw_request, asn1_spec):
 
         result = self._validate_generic_part(mimetype, domain_unique_name, DomainModel, raw_request, asn1_spec)

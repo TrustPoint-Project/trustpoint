@@ -167,6 +167,7 @@ class CMPMessageHandler:
         """
         Configures the protection mechanism for the incoming PKI message.
         """
+        # TODO: Protection of the kur MUST be performed using the certificate to be updated.
         self.logger.debug("Configuring protection.")
 
         self.protection = RFC4210Protection(self.pki_message, self.ca_cert)

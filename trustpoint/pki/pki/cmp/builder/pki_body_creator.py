@@ -8,7 +8,8 @@ from pki.pki.cmp.errorhandling.pki_failures import (
 )
 from pki.pki.cmp.validator.error_validator import ErrorValidator
 from pki.pki.cmp.validator.general_response_validator import GenpValidator
-from pki.pki.cmp.validator.initialization_resp_validator import InitializationRespValidator, CertificationRespValidator
+from pki.pki.cmp.validator.initialization_resp_validator import InitializationRespValidator, CertificationRespValidator, \
+    KeyUpdateRespValidator
 from pki.pki.cmp.validator.revocation_resp_validator import RevocationRespValidator
 
 
@@ -180,6 +181,7 @@ class PkiBodyCreator:
         validators = {
             "ip": InitializationRespValidator,
             "cp": CertificationRespValidator,
+            "kup": KeyUpdateRespValidator,
             "rp": RevocationRespValidator,
             "gen": GenpValidator,
             "error": ErrorValidator
