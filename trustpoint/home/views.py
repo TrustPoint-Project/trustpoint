@@ -108,6 +108,30 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
             }
         }
         return config
+
+    def get_bar_chart_device_config(self):
+        config = {
+            "type": "bar",
+            "data": {
+                "labels": ["oMethod 1", "oMethod 2", "oMethod 3", "oMethod 4"],
+                "datasets": [{
+                    "label": "Number of Devices",
+                    "data": self.get_bar_chart_data(),
+                    "borderColor": "#0d6efd",
+                    "backgroundColor": "#0d6efd",
+                    "tension": 0.4,
+                    "fill": True
+                }]
+            },
+            "options": {
+                "scales": {
+                    "y": {
+                        "beginAtZero": True
+                    }
+                }
+            }
+        }
+        return config
     
     def get_endoint_donut_chart_config(self):
         number_of_endpoints = self.get_number_of_endpoints()
@@ -129,19 +153,22 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         }
         return config
 
-    def get_donut_chart_config(self):
+    def get_donut_chart_device_config(self):
         number_of_devices = self.get_number_of_devices()
-        active_devices = 8
+        domain1 = 8
+        domain2 = 3
+        domain3 = number_of_devices - domain1 - domain2
         config = {
           "type": "doughnut",
           "data": {
-            "labels": ["active", "inactive"],
+            "labels": ["doamin 1", "domain 2", "domain 3"],
             "datasets": [{
-              "data": [active_devices, number_of_devices-active_devices],
+              "data": [domain1, domain2, domain3],
               "borderWidth": 1,
               "backgroundColor": [
                 '#0d6efd',
-                '#FFC107',
+                '#ffc107',
+                '#d10c15'
               ],
               "hoverOffset": 4
             }]
@@ -279,9 +306,12 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         line_chart_config = self.get_line_chart_config()
         context['line_chart_config'] = json.dumps(line_chart_config)
         context['bar_chart_config'] = json.dumps(self.get_bar_chart_config())
+        # device chart data
         context['line_chart_device_config'] = json.dumps(self.get_line_chart_device_config())
+        context['donut_chart_device_config'] = json.dumps(self.get_donut_chart_device_config())
+        context['bar_chart_device_config'] = json.dumps(self.get_bar_chart_device_config())
+
         context['stack_area_chart_config'] = json.dumps(self.get_stack_area_chart_config())
-        context['donut_chart_config'] = json.dumps(self.get_donut_chart_config())
         context['endpoint_donut_chart_config'] = json.dumps(self.get_endoint_donut_chart_config())
         context['number_of_devices'] = self.get_number_of_devices()
         context['number_of_issuing_cas'] = self.get_number_of_issuingcas()

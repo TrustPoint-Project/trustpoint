@@ -4,7 +4,6 @@
 {% include 'home/tables-tab.html' %}
 {% include 'home/charts-tab.html' %}
 
-
 <script>
   document.addEventListener("DOMContentLoaded", function () {
     var alerts = JSON.parse("{{alerts|escapejs }}");
@@ -152,8 +151,12 @@
         var lineChartDevice = new Chart(ctx, stackChartConfig);
 
         var ctx = document.getElementById("donutChartDevice").getContext("2d");
-        var donutChartDeviceConfig = JSON.parse("{{ donut_chart_config|escapejs }}");
+        var donutChartDeviceConfig = JSON.parse("{{ donut_chart_device_config|escapejs }}");
         var donutChartDevice = new Chart(ctx, donutChartDeviceConfig);
+
+        var ctx = document.getElementById("barChartDevice").getContext("2d");
+        var barChartDeviceConfig = JSON.parse("{{ bar_chart_device_config|escapejs }}");
+        var barChartDeviceChart = new Chart(ctx, barChartDeviceConfig);
       } else if (chartTabId == "certChartTab") {
         var ctx = document.getElementById("donutChartCert").getContext("2d");
         var donutChartCertConfig = JSON.parse("{{ endpoint_donut_chart_config|escapejs }}");
@@ -166,6 +169,7 @@
         var ctx = document.getElementById(" barChartCA").getContext("2d");
         var barChartCAConfig = JSON.parse("{{ bar_chart_config|escapejs }}");
         var barChartCA = new Chart(ctx, barChartCAConfig);
+
         var ctx = document.getElementById("lineChart").getContext("2d");
         var lineChartConfig = JSON.parse("{{ line_chart_config|escapejs }}");
         var lineChart = new Chart(ctx, lineChartConfig);
