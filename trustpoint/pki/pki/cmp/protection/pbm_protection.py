@@ -3,7 +3,8 @@ import hashlib
 from pyasn1.type import univ, tag
 from pyasn1_modules import rfc4210
 from pyasn1.codec.der import decoder, encoder
-from pki.pki.cmp.parsing.parse_helper import ParseHelper
+
+from pki.pki.cmp import ParseHelper
 
 
 class PBMProtection:

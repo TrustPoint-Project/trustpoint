@@ -6,8 +6,7 @@ from cryptography import x509
 from cryptography.x509 import NameOID
 import logging
 
-from pki.pki.cmp.asn1_modules import CertProfileOids
-from pki.pki.cmp.validator.header_validator import GenericHeaderValidator
+from pki.pki.cmp import CertProfileOids, GenericHeaderValidator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -186,10 +185,10 @@ class PKIHeaderCreator:
         Sets the recipient key identifier in the PKIHeader.
         """
         sender_kid = self.incoming_header.getComponentByName('senderKID')
+        print("SENDER KID")
         if sender_kid.hasValue():
-            recip_kid = sender_kid.subtype(
-                explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3)
-            )
+            recip_kid = rfc2459.KeyIdentifier(sender_kid._value).subtype(
+            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
             self.pki_header.setComponentByName('recipKID', recip_kid)
 
     def set_transaction_id(self):

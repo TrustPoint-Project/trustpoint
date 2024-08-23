@@ -1,15 +1,12 @@
 from cryptography.x509 import Certificate
 from pyasn1_modules import rfc4210
 from pyasn1.type.univ import ObjectIdentifier
-from pki.pki.cmp.protection.pbm_protection import PBMProtection
-from pki.pki.cmp.protection.signature_protection import SignatureProtection
-from pki.pki.cmp.parsing.parse_helper import ParseHelper
 from pyasn1.type import univ
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
 
-from pki.pki.cmp.errorhandling.pki_failures import (
-    BadRequest, UnacceptedPolicy, NotAuthorized
+from pki.pki.cmp import (
+    PBMProtection, SignatureProtection, ParseHelper, BadRequest, UnacceptedPolicy, NotAuthorized
 )
 
 class RFC4210Protection:

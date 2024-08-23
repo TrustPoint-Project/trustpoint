@@ -57,8 +57,6 @@ class ExtraCerts:
         """
         return self.extra_certs
 
-
-
 class caPubs:
     """
     A class to manage CA public certificates in a CMP message.

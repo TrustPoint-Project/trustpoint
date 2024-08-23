@@ -2,15 +2,8 @@ from pyasn1_modules import rfc2459, rfc4210
 from pyasn1.type import univ, tag, char
 from pyasn1.codec.der import decoder
 
-from pki.pki.cmp.builder.extra_certs import caPubs
-from pki.pki.cmp.errorhandling.pki_failures import (
-    UnacceptedPolicy
-)
-from pki.pki.cmp.validator.error_validator import ErrorValidator
-from pki.pki.cmp.validator.general_response_validator import GenpValidator
-from pki.pki.cmp.validator.cert_resp_validator import InitializationRespValidator, CertificationRespValidator, \
-    KeyUpdateRespValidator
-from pki.pki.cmp.validator.revocation_resp_validator import RevocationRespValidator
+from pki.pki.cmp import ErrorValidator, GenpValidator, InitializationRespValidator, CertificationRespValidator, \
+    KeyUpdateRespValidator, RevocationRespValidator, UnacceptedPolicy, caPubs
 
 
 class PkiBodyCreator:

@@ -3,7 +3,11 @@ from pyasn1_modules import rfc4210, rfc2511
 import logging
 import traceback
 
-from pki.pki.cmp.errorhandling.pki_failures import (
+from pki.models import CertificateModel
+
+from pki.pki.cmp import (
+    PKIBodyTypes, GenericHeaderValidator, ExtraCertsValidator, PoPVerifier, ErrorHandler, RFC4210Protection,
+    CertMessageHandler, RevocationMessageHandler, GeneralMessageHandler, cert_templates,
     PKIFailure, BadAlg, BadMessageCheck, BadRequest, BadTime, BadCertId,
     BadDataFormat, WrongAuthority, IncorrectData, MissingTimeStamp, BadPOP,
     CertRevoked, CertConfirmed, WrongIntegrity, BadRecipientNonce, TimeNotAvailable,
@@ -11,19 +15,8 @@ from pki.pki.cmp.errorhandling.pki_failures import (
     BadCertTemplate, SignerNotTrusted, TransactionIdInUse, UnsupportedVersion,
     NotAuthorized, SystemUnavail, SystemFailure, DuplicateCertReq
 )
-from pki.pki.cmp.parsing.pki_body_types import PKIBodyTypes
-from pki.pki.cmp.validator.header_validator import GenericHeaderValidator
-from pki.pki.cmp.validator.extracerts_validator import ExtraCertsValidator
-from pki.pki.cmp.validator.pop_verifier import PoPVerifier
-from pki.pki.cmp.errorhandling.error_handler import ErrorHandler
-from pki.pki.cmp.protection.protection import RFC4210Protection
-from pki.pki.cmp.messagehandler.cert_message_handler import CertMessageHandler
-from pki.pki.cmp.messagehandler.revocation_message_handler import RevocationMessageHandler
-from pki.pki.cmp.messagehandler.general_message_handler import GeneralMessageHandler
+
 from pki.pki.request.message import HttpStatusCode
-from pki.pki.cmp.cert_template import cert_templates
-
-
 
 class CMPMessageHandler:
     def __init__(self, pki_message: rfc4210.PKIMessage, operation: str, alias: str = None):
@@ -86,7 +79,6 @@ class CMPMessageHandler:
         self.logger.debug("Configureing alias.")
 
         if self.alias:
-            print("TRUE")
             if self.alias in cert_templates:
                 self.cert_req_template = cert_templates.get(self.alias)
             else:
@@ -138,9 +130,9 @@ class CMPMessageHandler:
             self._is_valid_authorized_clients()
             self._configure_alias()
             #self._decode_request()
+            self._determine_body_type()
             self._configure_protection()
             #self._validate_header()
-            self._determine_body_type()
             self._validate_extra_certs()
             self._verify_pop()
 
@@ -163,6 +155,43 @@ class CMPMessageHandler:
 
         return response, http_status_code
 
+    def _update_authorized_clients(self):
+        """
+        Updates the list of authorized clients by validating the certificate associated with a Key Update Request (KUR)
+        or Certificate Request (CR) message.
+
+        For KUR and CR messages, the protection of the message must be signed using the private key corresponding to the
+        original certificate being updated or renewed.
+        """
+        # TODO: Validate the certificate
+        self.logger.debug(
+            "CR or KUR message:protection must be signed using the respective private key of the oldcert.")
+        extra_certs = self.pki_message.getComponentByName('extraCerts')[0]
+        tbs_certificate = extra_certs.getComponentByName('tbsCertificate')
+
+        self.logger.info(tbs_certificate)
+
+        serial_number = tbs_certificate.getComponentByName('serialNumber')
+        issuer = tbs_certificate.getComponentByName('issuer')
+
+        issuer_ca = self.issuing_ca_object.get_issuing_ca_certificate_serializer().as_crypto()
+        issuer_public_bytes_hex = issuer_ca.subject.public_bytes().hex().upper()
+
+        serial_number_hex = hex(serial_number)[2:].upper()
+
+        certificate_query = CertificateModel.objects.filter(serial_number=serial_number_hex)
+
+        if len(certificate_query) == 0:
+            raise BadRequest("Certificate not found. You cannot update a certificate which was never issued")
+
+        if len(certificate_query) > 1:
+            raise BadRequest("Several certificates for serial number found")
+
+        if not issuer_public_bytes_hex == certificate_query[0].issuer_public_bytes:
+            raise BadRequest("Certificate serial number found but was not issued by associated Issuing CA")
+
+        self.authorized_clients = [certificate_query[0].get_certificate_serializer().as_crypto()]
+
     def _configure_protection(self):
         """
         Configures the protection mechanism for the incoming PKI message.
@@ -178,6 +207,9 @@ class CMPMessageHandler:
 
         if self.protection_mode_signature:
             self.logger.debug("Applying signature protection mode.")
+            if self.pki_body_type.request_short_name in ["cr", "kur"]:
+                self._update_authorized_clients()
+
             self.protection.signature_protection(ca_private_key=self.ca_key, authorized_clients=self.authorized_clients)
 
         self.protection.validate_protection()

@@ -45,6 +45,7 @@ class LocalCmpInitializationRequestHandler(CaCmpRequestHandler):
         cert=domain.issuing_ca.issuing_ca_certificate.issued_certificate_references.first().get_certificate_serializer().as_crypto()
         authorized_clients = [cert]
         shared_secret = b"foo123"
+
         try:
             cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp, operation="ir", alias=self._request_message.alias)
             cmp_message.set_issuing_ca(issuing_ca_object=self._issuing_ca)

@@ -1,8 +1,4 @@
-from pki.pki.cmp.builder.pki_body_creator import PkiBodyCreator
-from pki.pki.cmp.builder.pki_message_creator import PKIMessageCreator
-from pki.pki.cmp.builder.revocation_handler import RevocationHandler
-from pki.pki.cmp.validator.revocation_req_validator import RevocationReqValidator
-from pki.pki.cmp.builder.pki_header_creator import PKIHeaderCreator
+from pki.pki.cmp import PkiBodyCreator, PKIMessageCreator, RevocationHandler, RevocationReqValidator, PKIHeaderCreator
 import logging
 
 class RevocationMessageHandler:

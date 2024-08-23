@@ -1,24 +1,16 @@
 from pyasn1_modules import rfc4210
 from pyasn1.codec.der import encoder, decoder
 import logging
-from pki.pki.cmp.errorhandling.pki_failures import (
+from pki.pki.cmp import (
     SystemFailure
 )
-from pyasn1.type import univ, namedtype, tag
+from pyasn1.type import univ
 
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-
-# pyasn1_modules has a wrong object definition for genp (Defined as gen)
-class PKIBody(univ.Choice):
-    componentType = namedtype.NamedTypes(
-        namedtype.NamedType('genp', rfc4210.GenRepContent().subtype(
-                explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 22)
-            ))
-    )
 
 class PKIMessageCreator:
     """

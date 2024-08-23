@@ -52,7 +52,6 @@ class CmpCertificationRequestView(View):
             return pki_request.invalid_response.to_django_http_response()
 
         request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
-        print(request_handler)
         return request_handler.process_request().to_django_http_response()
 
 @method_decorator(csrf_exempt, name='dispatch')

@@ -31,7 +31,6 @@ class CaRequestHandlerFactory:
                 return cmp.LocalCmpInitializationRequestHandler(request)
 
             if isinstance(request, PkiCmpCertificationRequestMessage):
-                print("TRIGGER")
                 return cmp.LocalCmpCertificationRequestHandler(request)
 
             if isinstance(request, PkiCmpKeyUpdateRequestMessage):

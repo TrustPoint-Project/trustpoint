@@ -1,7 +1,7 @@
 from pyasn1_modules import rfc4210, rfc2511, rfc2314
 from pyasn1.type import univ
 
-from pki.pki.cmp.errorhandling.pki_failures import (
+from pki.pki.cmp import (
     UnacceptedPolicy
 )
 

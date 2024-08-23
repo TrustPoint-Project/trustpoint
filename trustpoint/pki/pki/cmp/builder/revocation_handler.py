@@ -4,8 +4,7 @@ from pyasn1.type import univ
 import json
 
 from pki.models import CertificateModel
-from pki.pki.cmp.parsing.parse_helper import ParseHelper
-from pki.pki.cmp.errorhandling.pki_failures import BadRequest
+from pki.pki.cmp import ParseHelper, BadRequest
 class RevocationHandler:
     """
     A class to handle the parsing and processing of revocation requests in PKI messages.
