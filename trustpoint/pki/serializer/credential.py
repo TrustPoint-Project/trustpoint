@@ -138,7 +138,15 @@ class CredentialSerializer(Serializer):
             err_msg = 'Failed to load credential. May be an incorrect password or malformed data.'
             raise ValueError(err_msg) from exception
 
-    def as_pkcs12(self, password: None | bytes, friendly_name: bytes = b'') -> bytes:
+    def serialize(self, password: None | bytes = None, friendly_name: bytes = b'') -> bytes:
+        """Default serialization method that returns the credential as PKCS#12 bytes.
+
+        Returns:
+            bytes: Bytes that contains the credential in PKCS#12 format.
+        """
+        return self.as_pkcs12(password, friendly_name)
+
+    def as_pkcs12(self, password: None | bytes = None, friendly_name: bytes = b'') -> bytes:
         """Gets the credential as bytes in PKCS#12 format.
 
         Args:
