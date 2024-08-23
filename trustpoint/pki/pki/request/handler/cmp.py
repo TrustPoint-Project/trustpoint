@@ -8,7 +8,6 @@ import logging
 from pki.pki.request.message import PkiResponseMessage, MimeType
 from pki.pki.cmp.messagehandler.cmp_message_handler import CMPMessageHandler
 from pki.pki.request.handler import CaRequestHandler
-from pki.pki.cmp.cert_template import cert_templates
 
 from typing import TYPE_CHECKING
 
@@ -76,10 +75,12 @@ class LocalCmpCertificationRequestHandler(CaCmpRequestHandler):
     # TODO: Validation if Certificate is allowed to be issued
     # TODO: check if certificate was already issued etc.
     def process_request(self) -> PkiResponseMessage:
+        self.logger.info("TESTE")
         domain = self._request_message.domain_model
         cert=domain.issuing_ca.issuing_ca_certificate.issued_certificate_references.first().get_certificate_serializer().as_crypto()
         authorized_clients = [cert]
         shared_secret = b"foo123"
+        self.logger.info(self._request_message.cmp)
         try:
             cmp_message = CMPMessageHandler(pki_message=self._request_message.cmp, operation="cr")
             cmp_message.set_issuing_ca(issuing_ca_object=self._issuing_ca)

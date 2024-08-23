@@ -22,6 +22,13 @@ class CaRequestHandlerFactory:
     @classmethod
     def get_request_handler(cls, request: PkiRequestMessage) -> CaRequestHandler:
 
+        print(type(request))
+        try:
+            print(type(request.domain_model.issuing_ca.get_issuing_ca()))
+            print(request.domain_model.issuing_ca.get_issuing_ca())
+        except Exception as e:
+            print(str(e))
+
         if isinstance(request.domain_model.issuing_ca.get_issuing_ca(), UnprotectedLocalIssuingCa):
             if isinstance(request, PkiEstSimpleEnrollRequestMessage):
                 return est.LocalEstCaSimpleEnrollRequestHandler(request)
@@ -30,6 +37,7 @@ class CaRequestHandlerFactory:
                 return cmp.LocalCmpInitializationRequestHandler(request)
 
             if isinstance(request, PkiCmpCertificationRequestMessage):
+                print("TRIGGER")
                 return cmp.LocalCmpCertificationRequestHandler(request)
 
             if isinstance(request, PkiCmpKeyUpdateRequestMessage):

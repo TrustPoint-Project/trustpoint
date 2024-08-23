@@ -93,6 +93,8 @@ class PkiCmpCertificationRequestMessage(PkiRequestMessage):
         result = self.validator.validate_certification_request(mimetype, domain_unique_name, DomainModel, raw_request,
                                                                 rfc4210.PKIMessage())
 
+        self.logger.info("TEST")
+
         if not result:
             self._invalid_response = self.validator.invalid_response
             self._is_valid = False
