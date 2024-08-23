@@ -50,10 +50,10 @@ API Documentation
 """
 
 
-from .base import Serializer, PublicKey, PrivateKey
-from .key import PublicKeySerializer, PrivateKeySerializer
-from .certificate import CertificateSerializer, CertificateCollectionSerializer
+from .base import PrivateKey, PublicKey, Serializer
+from .certificate import CertificateCollectionSerializer, CertificateSerializer
 from .credential import CredentialSerializer
+from .key import PrivateKeySerializer, PublicKeySerializer
 
 __all__ = [
     'PublicKey',
@@ -63,5 +63,5 @@ __all__ = [
     'CertificateCollectionSerializer',
     'PublicKeySerializer',
     'PrivateKeySerializer',
-    'CredentialSerializer'
+    'CredentialSerializer',
 ]
