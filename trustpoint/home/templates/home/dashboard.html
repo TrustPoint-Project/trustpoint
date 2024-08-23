@@ -6,48 +6,62 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
+    // counts context data
     var alerts = JSON.parse("{{alerts|escapejs }}");
     var certs = JSON.parse("{{certs|escapejs }}");
     var devices = JSON.parse("{{devices|escapejs }}");
 
+    //device charts data from context
+    var stackChartConfig = JSON.parse("{{ line_chart_device_config|escapejs }}");
+    var donutChartDeviceConfig = JSON.parse("{{ donut_chart_device_config|escapejs }}");
+    var barChartDeviceConfig = JSON.parse("{{ bar_chart_device_config|escapejs }}");
+
+    //cert charts data from context
+    var lineChartCertConfig = JSON.parse("{{ line_chart_cert_config|escapejs }}");
+    var donutChartCertConfig = JSON.parse("{{ donut_chart_cert_config|escapejs }}");
+    var barChartCertConfig = JSON.parse("{{ bar_chart_cert_config|escapejs }}");
+    
+    //CA charts data from context
+    var barChartCAConfig = JSON.parse("{{ bar_chart_ca_config|escapejs }}");
+    var lineChartConfig = JSON.parse("{{ line_chart_config|escapejs }}");
+    var donutChartCAConfig = JSON.parse("{{ donut_chart_ca_config|escapejs }}");
 
     var tableTabEl = document.getElementById("tableTabs");
-    //console.log("tableTabEl", tabEl);
     var tableTab = new bootstrap.Tab(tableTabEl);
-    // Initial update for the active tab
-    var activeTabId = document
+    // Initial update for the active table tab
+    var activeTableTabId = document
       .querySelector("#tableTabs .nav-link.active")
       .getAttribute("href")
       .substring(1);
-    updateTableContent(activeTabId);
+    updateTableContent(activeTableTabId);
 
-    // Add event listener for the 'shown.bs.tab' event
+    // Add event listener to tables tab for the 'shown.bs.tab' event
     tableTabEl.addEventListener("shown.bs.tab", function (event) {
       var targetId = event.target.getAttribute("href").substring(1);
       updateTableContent(targetId);
     });
 
     var chartTabEl = document.getElementById("chartTabs");
-    console.log("chartTabEl", chartTabEl);
     var chartTab = new bootstrap.Tab(chartTabEl);
-    // Initial update for the active tab
+    // Initial update for the active chart tab
     var activeChartTabId = document
       .querySelector("#chartTabs .nav-link.active")
       .getAttribute("href")
       .substring(1);
     updateChartContent(activeChartTabId);
 
-    // Add event listener for the 'shown.bs.tab' event
+    // Add event listener to the charts tab for the 'shown.bs.tab' event
     chartTabEl.addEventListener("shown.bs.tab", function (event) {
       var targetId = event.target.getAttribute("href").substring(1);
       updateChartContent(targetId);
     });
 
+    // function to update tables content based on table tab id
     function updateTableContent(tabId) {
       // Find the content element in the active tab
       var tableBody = document.getElementById(`${tabId}-table-body`);
       tableBody.innerHTML = ""; // Clear existing content
-      console.log(tableBody, tabId, alerts);
+      //console.log(tableBody, tabId, alerts);
       // Update the content
       if (tabId == "alert" || tabId == "notification") {
         if (alerts) {
@@ -141,40 +155,48 @@
       }
     }
 
+    var lineChartDevice, donutChartDevice, barChartDevice; 
+    var lineChartCert, donutChartCert, barChartCert;
+    var lineChart, barChartCA, donutChartCA;
+    // function to update charts content based on chart tab id
     function updateChartContent(chartTabId) {
-      console.log("chartTabId", chartTabId);
+      //console.log("chartTabId", chartTabId);
       if (chartTabId == "deviceChartTab") {
-        var ctx = document.getElementById("lineChartDevice").getContext("2d");
-        var stackChartConfig = JSON.parse("{{ line_chart_device_config|escapejs }}");
-        var lineChartDevice = new Chart(ctx, stackChartConfig);
+        var lineChartDeviceEle = document.getElementById("lineChartDevice").getContext("2d");
+        if(!lineChartDevice) 
+          lineChartDevice = new Chart(lineChartDeviceEle, stackChartConfig);
 
-        var ctx = document.getElementById("donutChartDevice").getContext("2d");
-        var donutChartDeviceConfig = JSON.parse("{{ donut_chart_device_config|escapejs }}");
-        var donutChartDevice = new Chart(ctx, donutChartDeviceConfig);
+        var donutChartDeviceEle = document.getElementById("donutChartDevice").getContext("2d");
+        if(!donutChartDevice)
+          donutChartDevice  = new Chart(donutChartDeviceEle, donutChartDeviceConfig);
 
-        var ctx = document.getElementById("barChartDevice").getContext("2d");
-        var barChartDeviceConfig = JSON.parse("{{ bar_chart_device_config|escapejs }}");
-        var barChartDevice = new Chart(ctx, barChartDeviceConfig);
+        var barChartDeviceEle = document.getElementById("barChartDevice").getContext("2d");
+        if(!barChartDevice)
+          barChartDevice  = new Chart(barChartDeviceEle, barChartDeviceConfig);
       } else if (chartTabId == "certChartTab") {
-        var ctx = document.getElementById("lineChartCert").getContext("2d");
-        var lineChartCertConfig = JSON.parse("{{ line_chart_cert_config|escapejs }}");
-        var lineChartCert = new Chart(ctx, lineChartCertConfig);
+        var lineChartCertEle = document.getElementById("lineChartCert").getContext("2d");
+        if(!lineChartCert)
+          lineChartCert = new Chart(lineChartCertEle, lineChartCertConfig);
 
-        var ctx = document.getElementById("donutChartCert").getContext("2d");
-        var donutChartCertConfig = JSON.parse("{{ donut_chart_cert_config|escapejs }}");
-        var donutChartCert = new Chart(ctx, donutChartCertConfig);
+        var donutChartCertEle = document.getElementById("donutChartCert").getContext("2d");
+        if(!donutChartCert)
+          donutChartCert = new Chart(donutChartCertEle, donutChartCertConfig);
 
-        var ctx = document.getElementById("barChartCert").getContext("2d");
-        var barChartCertConfig = JSON.parse("{{ bar_chart_cert_config|escapejs }}");
-        var barChartCert = new Chart(ctx, barChartCertConfig);
+        var barChartCertEle = document.getElementById("barChartCert").getContext("2d");
+        if(!barChartCert)
+          barChartCert = new Chart(barChartCertEle, barChartCertConfig);
       } else if (chartTabId == "caChartTab") {
-        var ctx = document.getElementById(" barChartCA").getContext("2d");
-        var barChartCAConfig = JSON.parse("{{ bar_chart_config|escapejs }}");
-        var barChartCA = new Chart(ctx, barChartCAConfig);
+        var lineChartEle = document.getElementById("lineChart").getContext("2d");
+        if(!lineChart)
+          lineChart = new Chart(lineChartEle, lineChartConfig);
 
-        var ctx = document.getElementById("lineChart").getContext("2d");
-        var lineChartConfig = JSON.parse("{{ line_chart_config|escapejs }}");
-        var lineChart = new Chart(ctx, lineChartConfig);
+        var barChartCAEle = document.getElementById("barChartCA").getContext("2d");
+        if(!barChartCA)
+          barChartCA = new Chart(barChartCAEle, barChartCAConfig);
+
+        var donutChartCAEle = document.getElementById("donutChartCA").getContext("2d");
+        if(!donutChartCA)
+          donutChartCA = new Chart(donutChartCAEle, donutChartCAConfig);
       }
     }
   });

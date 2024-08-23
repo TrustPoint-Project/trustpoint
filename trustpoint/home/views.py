@@ -17,6 +17,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
 
     total_number_of_devices = 15
     total_number_of_endpoints = 18
+    total_number_of_issuing_ca = 17
     last_week_dates = None
 
     def __init__(self, *args, **kwargs):
@@ -56,12 +57,15 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         return self.total_number_of_devices
 
 
-    def get_number_of_rootcas(self):
+    def get_number_of_root_cas(self):
         return 2
-    def get_number_of_issuingcas(self):
-        return 3
+    
+    def get_number_of_issuing_cas(self):
+        return self.total_number_of_issuing_ca
+    
     def get_number_of_endpoints(self):
         return self.total_number_of_endpoints
+    
     def get_line_chart_config(self):
         config = {
             "type": "line",
@@ -73,7 +77,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
                     "borderColor": "#0d6efd",
                     "backgroundColor": "rgba(13.0, 110.0, 253.0, 0.3)",
                     "tension": 0.4,
-                    "fill": True
+                    "fill": False
                 }]
             },
             "options": {
@@ -85,19 +89,37 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
             }
         }
         return config
-    def get_bar_chart_config(self):
+    
+    def get_bar_chart_ca_config(self):
         config = {
             "type": "bar",
             "data": {
                 "labels": self.last_week_dates,
                 "datasets": [{
-                    "label": "Number of Issuing CAs",
+                    "label": "Issuing CA1",
                     "data": self.get_bar_chart_data(),
-                    "borderColor": "#0d6efd",
-                    "backgroundColor": "#0d6efd",
+                    "borderColor": "#ffc107",
+                    "backgroundColor": "#ffc107",
                     "tension": 0.4,
-                    "fill": True
-                }]
+                    "fill": False,
+                    "stack": "stack"
+                },
+                {
+                   "label": "Issuing CA2",
+                   "data": self.get_bar_chart_data(),
+                   "borderColor": "#0d6efd",
+                   "backgroundColor": "#0d6efd",
+                   "fill": False,
+                   "stack": "stack"
+                },
+                {
+                   "label": "Issuing CA3",
+                   "data": self.get_bar_chart_data(),
+                   "borderColor": "#d10c15",
+                   "backgroundColor": "#d10c15",
+                   "fill": False,
+                   "stack": "stack"
+                 }]
             },
             "options": {
                 "scales": {
@@ -168,6 +190,29 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
             "labels": ["domain 1", "domain 2", "domain 3"],
             "datasets": [{
               "data": [domain1, domain2, domain3],
+              "borderWidth": 1,
+              "backgroundColor": [
+                '#0d6efd',
+                '#FFC107',
+                '#d10c15'
+              ],
+              "hoverOffset": 4
+            }]
+          }
+        }
+        return config
+
+    def get_donut_chart_ca_config(self):
+        number_of_issuing_ca = self.get_number_of_issuing_cas()
+        remote = 2
+        local = 3
+        self_gen = number_of_issuing_ca - remote - local
+        config = {
+          "type": "pie",
+          "data": {
+            "labels": ["Remote", "Local", "Self-gen"],
+            "datasets": [{
+              "data": [remote, local, self_gen],
               "borderWidth": 1,
               "backgroundColor": [
                 '#0d6efd',
@@ -328,9 +373,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        line_chart_config = self.get_line_chart_config()
-        context['line_chart_config'] = json.dumps(line_chart_config)
-        context['bar_chart_config'] = json.dumps(self.get_bar_chart_config())
+
         # device chart data
         context['line_chart_device_config'] = json.dumps(self.get_line_chart_device_config())
         context['donut_chart_device_config'] = json.dumps(self.get_donut_chart_device_config())
@@ -341,10 +384,14 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         context['donut_chart_cert_config'] = json.dumps(self.get_donut_chart_cert_config())
         context['bar_chart_cert_config'] = json.dumps(self.get_bar_chart_cert_config())
 
+        # ca chart data
+        context['donut_chart_ca_config'] = json.dumps(self.get_donut_chart_ca_config())
+        context['bar_chart_ca_config'] = json.dumps(self.get_bar_chart_ca_config())
+        context['line_chart_config'] = json.dumps(self.get_line_chart_config())
 
         context['number_of_devices'] = self.get_number_of_devices()
-        context['number_of_issuing_cas'] = self.get_number_of_issuingcas()
-        context['number_of_root_cas'] = self.get_number_of_rootcas()
+        context['number_of_issuing_cas'] = self.get_number_of_issuing_cas()
+        context['number_of_root_cas'] = self.get_number_of_root_cas()
         context['number_of_endpoints'] = self.get_number_of_endpoints()
         context['alerts'] = json.dumps(self.get_alerts())
         context['certs'] = json.dumps(self.get_certs())
