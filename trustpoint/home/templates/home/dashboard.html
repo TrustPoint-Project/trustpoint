@@ -1,7 +1,7 @@
 {% extends 'trustpoint/base.html' %} {% block content %}
 
-{% include 'home/counts-panel.html' %}
-{% include 'home/tables-tab.html' %}
+{% include 'home/counts-panel.html' %} 
+{% include 'home/tables-tab.html' %} 
 {% include 'home/charts-tab.html' %}
 
 <script>
@@ -9,10 +9,8 @@
     var alerts = JSON.parse("{{alerts|escapejs }}");
     var certs = JSON.parse("{{certs|escapejs }}");
     var devices = JSON.parse("{{devices|escapejs }}");
-    // const alertTableBody = document.getElementById("alerts-table-body");
-    // const certTableBody = document.getElementById("certs-table-body");
-    // const deviceTableBody = document.getElementById("devices-table-body");
-    //console.log("helo");
+
+
     var tableTabEl = document.getElementById("tableTabs");
     //console.log("tableTabEl", tabEl);
     var tableTab = new bootstrap.Tab(tableTabEl);
@@ -156,15 +154,19 @@
 
         var ctx = document.getElementById("barChartDevice").getContext("2d");
         var barChartDeviceConfig = JSON.parse("{{ bar_chart_device_config|escapejs }}");
-        var barChartDeviceChart = new Chart(ctx, barChartDeviceConfig);
+        var barChartDevice = new Chart(ctx, barChartDeviceConfig);
       } else if (chartTabId == "certChartTab") {
+        var ctx = document.getElementById("lineChartCert").getContext("2d");
+        var lineChartCertConfig = JSON.parse("{{ line_chart_cert_config|escapejs }}");
+        var lineChartCert = new Chart(ctx, lineChartCertConfig);
+
         var ctx = document.getElementById("donutChartCert").getContext("2d");
-        var donutChartCertConfig = JSON.parse("{{ endpoint_donut_chart_config|escapejs }}");
+        var donutChartCertConfig = JSON.parse("{{ donut_chart_cert_config|escapejs }}");
         var donutChartCert = new Chart(ctx, donutChartCertConfig);
 
-        var ctx = document.getElementById("stackedAreaChartCert").getContext("2d");
-        var stackedAreaCertChartConfig = JSON.parse("{{ stack_area_chart_config|escapejs }}");
-        var stackedAreaCertChart = new Chart(ctx, stackedAreaCertChartConfig);
+        var ctx = document.getElementById("barChartCert").getContext("2d");
+        var barChartCertConfig = JSON.parse("{{ bar_chart_cert_config|escapejs }}");
+        var barChartCert = new Chart(ctx, barChartCertConfig);
       } else if (chartTabId == "caChartTab") {
         var ctx = document.getElementById(" barChartCA").getContext("2d");
         var barChartCAConfig = JSON.parse("{{ bar_chart_config|escapejs }}");

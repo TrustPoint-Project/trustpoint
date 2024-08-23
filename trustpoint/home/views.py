@@ -16,7 +16,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
     template_name = 'home/dashboard.html'
 
     total_number_of_devices = 15
-    total_number_of_endpoints = 4
+    total_number_of_endpoints = 18
     last_week_dates = None
 
     def __init__(self, *args, **kwargs):
@@ -133,19 +133,46 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         }
         return config
     
-    def get_endoint_donut_chart_config(self):
-        number_of_endpoints = self.get_number_of_endpoints()
-        active_endpoints = 3
+    def get_bar_chart_cert_config(self):
+        config = {
+            "type": "bar",
+            "data": {
+                "labels": ["TLS Server", "TLS Client", "OPC UA Server", "OPC UA Client"],
+                "datasets": [{
+                    "label": "certificate template",
+                    "data": self.get_bar_chart_data(),
+                    "borderColor": "#0d6efd",
+                    "backgroundColor": "#0d6efd",
+                    "tension": 0.4,
+                    "fill": True
+                }]
+            },
+            "options": {
+                "scales": {
+                    "y": {
+                        "beginAtZero": True
+                    }
+                }
+            }
+        }
+        return config
+    
+    def get_donut_chart_cert_config(self):
+        number_of_active_certs = self.get_number_of_endpoints()
+        domain1 = 2
+        domain2 = 3
+        domain3 = number_of_active_certs - domain1 - domain2
         config = {
           "type": "doughnut",
           "data": {
-            "labels": ["active", "inactive"],
+            "labels": ["domain 1", "domain 2", "domain 3"],
             "datasets": [{
-              "data": [active_endpoints, number_of_endpoints-active_endpoints],
+              "data": [domain1, domain2, domain3],
               "borderWidth": 1,
               "backgroundColor": [
                 '#0d6efd',
                 '#FFC107',
+                '#d10c15'
               ],
               "hoverOffset": 4
             }]
@@ -161,7 +188,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         config = {
           "type": "doughnut",
           "data": {
-            "labels": ["doamin 1", "domain 2", "domain 3"],
+            "labels": ["domain 1", "domain 2", "domain 3"],
             "datasets": [{
               "data": [domain1, domain2, domain3],
               "borderWidth": 1,
@@ -176,28 +203,26 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         }
         return config
 
-    def get_stack_area_chart_config(self):
+    def line_chart_cert_config(self):
         endpoint_history = self.get_all_endpoints()
         config = {
-            "type": "bar",
+            "type": "line",
             "data": {
                 "labels": self.last_week_dates,
                 "datasets": [ {
-                    "label": 'Inactive',
+                    "label": 'Revoked',
                     "data": endpoint_history[0],
-                    "backgroundColor": [
-                      '#FFC107',
-                    ],
+                    "borderColor": "#ffc107",
+                    "backgroundColor": "#ffc107",
                     "stack": "stack",
-                    "fill": True,
+                    "fill": False,
                     },
                     {
                     "label": "Active",
                     "data": endpoint_history[1],
                     "borderColor": "#0d6efd",
                     "backgroundColor": "#0d6efd",
-                    "tension": 0.4,
-                    "fill": True,
+                    "fill": False,
                     "stack": "stack"
                   }
                  ]
@@ -311,8 +336,12 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         context['donut_chart_device_config'] = json.dumps(self.get_donut_chart_device_config())
         context['bar_chart_device_config'] = json.dumps(self.get_bar_chart_device_config())
 
-        context['stack_area_chart_config'] = json.dumps(self.get_stack_area_chart_config())
-        context['endpoint_donut_chart_config'] = json.dumps(self.get_endoint_donut_chart_config())
+        # cert chart data
+        context['line_chart_cert_config'] = json.dumps(self.line_chart_cert_config())
+        context['donut_chart_cert_config'] = json.dumps(self.get_donut_chart_cert_config())
+        context['bar_chart_cert_config'] = json.dumps(self.get_bar_chart_cert_config())
+
+
         context['number_of_devices'] = self.get_number_of_devices()
         context['number_of_issuing_cas'] = self.get_number_of_issuingcas()
         context['number_of_root_cas'] = self.get_number_of_rootcas()
