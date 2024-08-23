@@ -213,7 +213,6 @@ class UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(FileImportLocalIs
         self._private_key_serializer = credential_serializer.credential_private_key
         self._certificate_collection_serializer = credential_serializer.all_certificates
 
-
 class UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer(FileImportLocalIssuingCaInitializer):
     """Responsible for initializing an Issuing CA from separate files."""
 

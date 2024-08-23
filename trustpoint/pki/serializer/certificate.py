@@ -159,11 +159,11 @@ class CertificateCollectionSerializer(Serializer):
             self._certificate_collection = self._from_string(certificate_collection)
         elif isinstance(certificate_collection, list):
             certificate_serializers = []
-            for certificate in certificate_collection:
+            for certificate in certificate_collection.copy():
                     certificate_serializers.append(CertificateSerializer(certificate))
             self._certificate_collection = certificate_serializers
         elif isinstance(certificate_collection, CertificateCollectionSerializer):
-            self._certificate_collection = certificate_collection.as_certificate_serializer_list()
+            self._certificate_collection = certificate_collection.as_certificate_serializer_list().copy()
         else:
             raise TypeError(
                 'Expected one of the types: '
