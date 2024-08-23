@@ -11,6 +11,7 @@ from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage, PkiC
 from pki.pki.request.message.rest import PkiRestCsrRequestMessage, PkiRestPkcs12RequestMessage
 
 from typing import TYPE_CHECKING
+import traceback
 
 if TYPE_CHECKING:
     from pki.pki.request.handler import CaRequestHandler
@@ -21,13 +22,6 @@ class CaRequestHandlerFactory:
 
     @classmethod
     def get_request_handler(cls, request: PkiRequestMessage) -> CaRequestHandler:
-
-        print(type(request))
-        try:
-            print(type(request.domain_model.issuing_ca.get_issuing_ca()))
-            print(request.domain_model.issuing_ca.get_issuing_ca())
-        except Exception as e:
-            print(str(e))
 
         if isinstance(request.domain_model.issuing_ca.get_issuing_ca(), UnprotectedLocalIssuingCa):
             if isinstance(request, PkiEstSimpleEnrollRequestMessage):
