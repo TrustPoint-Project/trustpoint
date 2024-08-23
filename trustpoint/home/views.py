@@ -23,7 +23,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         super().__init__(*args, **kwargs)
         self.last_week_dates = self.generate_last_week_dates()
 
-    def get_line_chart_data(self):
+    def generate_integer_array(self):
         data = [(i+1)*2 for i in range(7)]
         for i in range(1, len(data)):
           data[i] += 1
@@ -40,7 +40,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         return dates_as_strings 
     
     def get_all_devices(self):
-        total_number_devices = self.get_line_chart_data()
+        total_number_devices = self.generate_integer_array()
         devices_history = [[total_number_devices[i]-i%3 if j%2 else i%3 for i in range(7)] for j in range(2)]
         return devices_history
 
@@ -69,7 +69,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
                 "labels": self.last_week_dates,
                 "datasets": [{
                     "label": "Number of Root CAs",
-                    "data": self.get_line_chart_data(),
+                    "data": self.generate_integer_array(),
                     "borderColor": "#0d6efd",
                     "backgroundColor": "rgba(13.0, 110.0, 253.0, 0.3)",
                     "tension": 0.4,
@@ -185,30 +185,36 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         }
         return config
     
-    def get_stack_chart_config(self):
+    def get_line_chart_device_config(self):
         device_history = self.get_all_devices()
         config = {
-            "type": "bar",
+            "type": "line",
             "data": {
                 "labels": self.last_week_dates,
-                "datasets": [ {
-                    "label": 'Inactive',
+                "datasets": [{
+                    "label": 'Offboarded',
                     "data": device_history[0],
-                    "backgroundColor": [
-                      '#FFC107',
-                    ],
-                    "stack": "stack"
-                    },
-                    {
-                    "label": "Active",
+                    "backgroundColor": '#ffc107',
+                    "borderColor": "#ffc107",
+                    # "stack": "stack"
+                  },
+                  {
+                    "label": 'Waiting for onboarding',
+                    "data": [x + 1 for x in device_history[0]],
+                    "backgroundColor": "#d10c15",
+                    "borderColor": "#d10c15",
+                    # "stack": "stack"
+                  },
+                  {
+                    "label": "Onboarded",
                     "data": device_history[1],
                     "borderColor": "#0d6efd",
                     "backgroundColor": "#0d6efd",
                     "tension": 0.4,
-                    "fill": True,
-                    "stack": "stack"
+                    "fill": False,
+                    # "stack": "stack"
                   }
-                 ]
+                ]
             },
             "options": {
                 "scales": {
@@ -273,7 +279,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         line_chart_config = self.get_line_chart_config()
         context['line_chart_config'] = json.dumps(line_chart_config)
         context['bar_chart_config'] = json.dumps(self.get_bar_chart_config())
-        context['stack_chart_config'] = json.dumps(self.get_stack_chart_config())
+        context['line_chart_device_config'] = json.dumps(self.get_line_chart_device_config())
         context['stack_area_chart_config'] = json.dumps(self.get_stack_area_chart_config())
         context['donut_chart_config'] = json.dumps(self.get_donut_chart_config())
         context['endpoint_donut_chart_config'] = json.dumps(self.get_endoint_donut_chart_config())

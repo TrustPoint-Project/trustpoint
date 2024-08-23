@@ -147,9 +147,9 @@
     function updateChartContent(chartTabId) {
       console.log("chartTabId", chartTabId);
       if (chartTabId == "deviceChartTab") {
-        var ctx = document.getElementById("stackChartDevice").getContext("2d");
-        var stackChartConfig = JSON.parse("{{ stack_chart_config|escapejs }}");
-        var stackChartDevice = new Chart(ctx, stackChartConfig);
+        var ctx = document.getElementById("lineChartDevice").getContext("2d");
+        var stackChartConfig = JSON.parse("{{ line_chart_device_config|escapejs }}");
+        var lineChartDevice = new Chart(ctx, stackChartConfig);
 
         var ctx = document.getElementById("donutChartDevice").getContext("2d");
         var donutChartDeviceConfig = JSON.parse("{{ donut_chart_config|escapejs }}");
