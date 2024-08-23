@@ -1,13 +1,12 @@
 import os
 import json
-from pyasn1.type import univ, namedtype, char, constraint, tag
+from pyasn1.type import univ, char, tag
 from pyasn1_modules import rfc2459, rfc4210, rfc5280
 from pyasn1.codec.der import encoder
 import ipaddress
 
 
-from .. import CertTemplate, AttributeTypeAndValue, RelativeDistinguishedName, RDNSequence, \
-    Name, Extension, Extensions, AlgIdCtrl, RsaKeyLenCtrl, Controls, CertReqTemplateContent, CertProfileValue, PKIHeader, CertProfileOids
+from . import AttributeTypeAndValue, AlgIdCtrl, RsaKeyLenCtrl, Controls, CertReqTemplateContent, CertProfileOids
 
 
 class CertTemplateLoader:

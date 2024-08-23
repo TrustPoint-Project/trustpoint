@@ -6,8 +6,8 @@ import traceback
 import logging
 
 from pki.pki.request.message import PkiResponseMessage, MimeType
-from pki.pki.cmp import CMPMessageHandler
 from pki.pki.request.handler import CaRequestHandler
+from pki.pki.request.handler.messagehandler import CMPMessageHandler
 
 from typing import TYPE_CHECKING
 

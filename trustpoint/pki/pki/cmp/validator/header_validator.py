@@ -1,9 +1,6 @@
 from pyasn1.type.useful import GeneralizedTime
 import datetime
-from .. import (
-    BadMessageCheck, BadDataFormat, BadRecipientNonce, BadSenderNonce,
-    UnsupportedVersion
-)
+from . import BadMessageCheck, BadDataFormat, BadRecipientNonce, BadSenderNonce, UnsupportedVersion
 
 class GenericHeaderValidator:
     def __init__(self, header):

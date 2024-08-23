@@ -2,10 +2,16 @@ from pyasn1_modules import rfc2459, rfc4210
 from pyasn1.type import univ, tag, char
 from pyasn1.codec.der import decoder
 
-from .. import GenpValidator, InitializationRespValidator, CertificationRespValidator, \
-    KeyUpdateRespValidator, RevocationRespValidator, UnacceptedPolicy, caPubs, ErrorValidator
+from . import caPubs
+from . import (
+    GenpValidator,
+    InitializationRespValidator,
+    CertificationRespValidator,
+    KeyUpdateRespValidator,
+    RevocationRespValidator,
+    ErrorValidator
+)
 
-from ..validator import GenpValidator
 
 class PkiBodyCreator:
     """

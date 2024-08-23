@@ -1,6 +1,4 @@
-from .. import (
-    BadMessageCheck
-)
+from . import BadMessageCheck
 
 
 class RevocationRespValidator:

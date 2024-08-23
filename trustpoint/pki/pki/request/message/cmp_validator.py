@@ -4,8 +4,14 @@ import traceback
 from pyasn1.codec.der import decoder
 from pyasn1_modules import rfc4210
 
-from pki.pki.cmp import GeneralMessageValidator, GenericHeaderValidator, InitializationReqValidator, CertificateReqValidator, \
-    KeyUpdateReqValidator, RevocationReqValidator
+from pki.pki.cmp.validator import (
+    GeneralMessageValidator,
+    GenericHeaderValidator,
+    InitializationReqValidator,
+    CertificateReqValidator,
+    KeyUpdateReqValidator,
+    RevocationReqValidator
+)
 from pki.pki.request.message import PkiResponseMessage, HttpStatusCode, MimeType
 
 

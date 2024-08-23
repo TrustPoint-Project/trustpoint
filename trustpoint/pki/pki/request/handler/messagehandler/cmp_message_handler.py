@@ -4,19 +4,17 @@ import logging
 import traceback
 
 from pki.models import CertificateModel
-
-from .. import (
-    PKIBodyTypes, GenericHeaderValidator, ExtraCertsValidator, PoPVerifier, ErrorHandler, RFC4210Protection,
-    CertMessageHandler, RevocationMessageHandler, GeneralMessageHandler, cert_templates,
-    PKIFailure, BadAlg, BadMessageCheck, BadRequest, BadTime, BadCertId,
-    BadDataFormat, WrongAuthority, IncorrectData, MissingTimeStamp, BadPOP,
-    CertRevoked, CertConfirmed, WrongIntegrity, BadRecipientNonce, TimeNotAvailable,
-    UnacceptedPolicy, UnacceptedExtension, AddInfoNotAvailable, BadSenderNonce,
-    BadCertTemplate, SignerNotTrusted, TransactionIdInUse, UnsupportedVersion,
-    NotAuthorized, SystemUnavail, SystemFailure, DuplicateCertReq
-)
-
 from pki.pki.request.message import HttpStatusCode
+
+from pki.pki.cmp.pki_failures import PKIFailure, BadRequest, SystemFailure
+from pki.pki.cmp.cert_template import cert_templates
+from pki.pki.cmp.parsing import PKIBodyTypes
+from pki.pki.cmp.protection import RFC4210Protection
+from pki.pki.cmp.validator import GenericHeaderValidator, ExtraCertsValidator, PoPVerifier
+from pki.pki.cmp.builder import ErrorHandler
+
+from . import GeneralMessageHandler, RevocationMessageHandler, CertMessageHandler
+
 
 class CMPMessageHandler:
     def __init__(self, pki_message: rfc4210.PKIMessage, operation: str, alias: str = None):
@@ -139,12 +137,7 @@ class CMPMessageHandler:
             response = self._handle_request()
             self.logger.info("Request processed successfully.")
 
-        except (PKIFailure, BadAlg, BadMessageCheck, BadRequest, BadTime, BadCertId,
-                BadDataFormat, WrongAuthority, IncorrectData, MissingTimeStamp, BadPOP,
-                CertRevoked, CertConfirmed, WrongIntegrity, BadRecipientNonce, TimeNotAvailable,
-                UnacceptedPolicy, UnacceptedExtension, AddInfoNotAvailable, BadSenderNonce,
-                BadCertTemplate, SignerNotTrusted, TransactionIdInUse, UnsupportedVersion,
-                NotAuthorized, SystemUnavail, SystemFailure, DuplicateCertReq) as e:
+        except (PKIFailure) as e:
             self.logger.error(traceback.format_exc())
             response = self._handle_error(e, e.code)
             #http_status_code = HttpStatusCode.BAD_REQUEST

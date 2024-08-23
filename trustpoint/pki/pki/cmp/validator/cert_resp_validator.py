@@ -1,7 +1,5 @@
 
-from .. import (
-    BadMessageCheck
-)
+from . import BadMessageCheck
 
 class InitializationRespValidator:
     def __init__(self, cmp_body):

@@ -2,9 +2,7 @@ from cryptography import x509
 
 from pyasn1.type import univ
 from pyasn1.codec.der import encoder
-from .. import (
-    BadMessageCheck
-)
+from . import BadMessageCheck
 
 class GetCACertsValidator:
     def __init__(self, genp_response: univ.Sequence):

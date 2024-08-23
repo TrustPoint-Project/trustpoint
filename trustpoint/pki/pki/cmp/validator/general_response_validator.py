@@ -1,5 +1,5 @@
 from pyasn1.type import univ
-from .. import BadMessageCheck, GetCACertsValidator
+from . import BadMessageCheck, GetCACertsValidator
 
 
 class GenpValidator:

@@ -1,5 +1,6 @@
 from pyasn1.type import univ
-from .. import BadMessageCheck
+from . import BadMessageCheck
+
 class GeneralMessageValidator:
     def __init__(self, body: univ.Sequence):
         """

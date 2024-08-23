@@ -6,15 +6,14 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.x509 import Certificate
 from pyasn1.codec.der import decoder, encoder
-from pyasn1.type import char, univ
+from pyasn1.type import univ
 from pyasn1_modules import rfc2459, rfc5280
 import datetime
 import logging
 
 from pki.models import CertificateModel
-from .. import (
-    PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts, ExtraCertsValidator, InitializationReqValidator
-)
+from pki.pki.cmp.builder import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts
+from pki.pki.cmp.validator import ExtraCertsValidator, InitializationReqValidator
 
 
 class CertMessageHandler:

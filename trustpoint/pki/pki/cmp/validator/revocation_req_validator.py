@@ -1,6 +1,5 @@
-from .. import (
-    BadMessageCheck, ParseHelper
-)
+from . import BadMessageCheck, ParseHelper
+
 from pyasn1.codec.der.decoder import decode
 from pyasn1_modules import rfc5280
 from pyasn1.type import univ

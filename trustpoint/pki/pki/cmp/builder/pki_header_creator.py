@@ -6,7 +6,7 @@ from cryptography import x509
 from cryptography.x509 import NameOID
 import logging
 
-from .. import CertProfileOids, GenericHeaderValidator
+from . import CertProfileOids, GenericHeaderValidator
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

@@ -8,9 +8,7 @@ from cryptography.exceptions import InvalidSignature
 from pyasn1_modules import rfc2511, rfc2459, rfc4210
 from pyasn1.codec.der.encoder import encode
 from cryptography.x509.oid import NameOID
-from .. import (
-    BadMessageCheck, SystemFailure, BadPOP
-)
+from . import BadMessageCheck, SystemFailure, BadPOP
 
 
 class PoPVerifier:

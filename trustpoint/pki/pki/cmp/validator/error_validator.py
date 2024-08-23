@@ -1,6 +1,7 @@
 from pyasn1.type import univ
-from .. import BadMessageCheck
 from pyasn1_modules import rfc4210
+
+from . import BadMessageCheck
 
 class ErrorValidator:
     def __init__(self, body: univ.Sequence):

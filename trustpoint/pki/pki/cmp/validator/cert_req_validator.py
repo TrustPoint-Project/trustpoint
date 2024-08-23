@@ -1,9 +1,8 @@
 
 from pyasn1_modules import rfc5280
 
-from .. import (
-    BadMessageCheck
-)
+from . import BadMessageCheck
+
 
 
 class CertificateReqValidator:
