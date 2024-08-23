@@ -4,10 +4,9 @@ from cryptography.exceptions import InvalidSignature
 
 from pyasn1.codec.der import encoder
 from pyasn1.type import univ
-from pki.pki.cmp.errorhandling.pki_failures import (
+from .. import (
     BadAlg, BadMessageCheck, SignerNotTrusted
 )
-
 
 class ExtraCertsValidator:
     def __init__(self, pki_message: univ.Sequence, protection_mode: str, message_type: str):

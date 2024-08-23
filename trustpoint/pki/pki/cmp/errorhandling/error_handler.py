@@ -1,7 +1,5 @@
 from pyasn1.type import univ
-from pki.pki.cmp import PKIMessageCreator, PkiBodyCreator, PKIBodyTypes, RFC4210Protection, SystemFailure, PKIHeaderCreator
-
-
+from . import PKIMessageCreator, PkiBodyCreator, PKIBodyTypes, RFC4210Protection, SystemFailure, PKIHeaderCreator
 
 class ErrorHandler:
     """

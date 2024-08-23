@@ -1,6 +1,5 @@
 from pyasn1.type import univ
-from pki.pki.cmp.errorhandling.pki_failures import BadMessageCheck
-from pki.pki.cmp.validator.get_ca_certs_validator import GetCACertsValidator
+from .. import BadMessageCheck, GetCACertsValidator
 
 
 class GenpValidator:

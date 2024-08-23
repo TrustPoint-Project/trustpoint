@@ -5,7 +5,7 @@ from pyasn1.type import univ
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography import x509
 
-from pki.pki.cmp import (
+from .. import (
     PBMProtection, SignatureProtection, ParseHelper, BadRequest, UnacceptedPolicy, NotAuthorized
 )
 

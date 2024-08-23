@@ -1,4 +1,4 @@
-from pki.pki.cmp.errorhandling.pki_failures import (
+from .. import (
     BadMessageCheck
 )
 

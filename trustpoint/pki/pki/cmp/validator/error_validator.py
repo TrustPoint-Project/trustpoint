@@ -1,5 +1,5 @@
 from pyasn1.type import univ
-from pki.pki.cmp.errorhandling.pki_failures import BadMessageCheck
+from .. import BadMessageCheck
 from pyasn1_modules import rfc4210
 
 class ErrorValidator:
@@ -49,8 +49,6 @@ class ErrorValidator:
             raise BadMessageCheck("The 'status' field is missing from pKIStatusInfo.")
 
         status = self.pki_status_info['status']
-
-
 
         # The status MUST have the value "rejection"
         if status != rfc4210.PKIStatus("rejection"):

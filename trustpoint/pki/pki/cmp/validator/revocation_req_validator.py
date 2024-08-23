@@ -1,10 +1,9 @@
-from pki.pki.cmp.errorhandling.pki_failures import (
-    BadMessageCheck
+from .. import (
+    BadMessageCheck, ParseHelper
 )
 from pyasn1.codec.der.decoder import decode
 from pyasn1_modules import rfc5280
 from pyasn1.type import univ
-from pki.pki.cmp.parsing.parse_helper import ParseHelper
 
 
 class RevocationReqValidator:

@@ -5,7 +5,7 @@ import traceback
 
 from pki.models import CertificateModel
 
-from pki.pki.cmp import (
+from .. import (
     PKIBodyTypes, GenericHeaderValidator, ExtraCertsValidator, PoPVerifier, ErrorHandler, RFC4210Protection,
     CertMessageHandler, RevocationMessageHandler, GeneralMessageHandler, cert_templates,
     PKIFailure, BadAlg, BadMessageCheck, BadRequest, BadTime, BadCertId,

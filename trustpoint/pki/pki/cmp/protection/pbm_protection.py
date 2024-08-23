@@ -4,7 +4,7 @@ from pyasn1.type import univ, tag
 from pyasn1_modules import rfc4210
 from pyasn1.codec.der import decoder, encoder
 
-from pki.pki.cmp import ParseHelper
+from .. import ParseHelper
 
 
 class PBMProtection:

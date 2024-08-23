@@ -6,7 +6,7 @@ from pyasn1.codec.der import encoder
 import ipaddress
 
 
-from pki.pki.cmp.asn1_modules import CertTemplate, AttributeTypeAndValue, RelativeDistinguishedName, RDNSequence, \
+from .. import CertTemplate, AttributeTypeAndValue, RelativeDistinguishedName, RDNSequence, \
     Name, Extension, Extensions, AlgIdCtrl, RsaKeyLenCtrl, Controls, CertReqTemplateContent, CertProfileValue, PKIHeader, CertProfileOids
 
 

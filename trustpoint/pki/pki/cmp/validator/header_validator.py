@@ -1,6 +1,6 @@
 from pyasn1.type.useful import GeneralizedTime
 import datetime
-from pki.pki.cmp.errorhandling.pki_failures import (
+from .. import (
     BadMessageCheck, BadDataFormat, BadRecipientNonce, BadSenderNonce,
     UnsupportedVersion
 )

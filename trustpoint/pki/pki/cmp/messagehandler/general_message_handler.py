@@ -5,7 +5,7 @@ from cryptography import x509
 from pyasn1.codec.der import decoder
 
 import os
-from pki.pki.cmp import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, BadRequest, GeneralMessageValidator
+from .. import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, BadRequest, GeneralMessageValidator
 
 from pyasn1_modules import rfc4210, rfc5280
 

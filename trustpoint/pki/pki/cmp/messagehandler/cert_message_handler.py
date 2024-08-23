@@ -12,7 +12,7 @@ import datetime
 import logging
 
 from pki.models import CertificateModel
-from pki.pki.cmp import (
+from .. import (
     PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts, ExtraCertsValidator, InitializationReqValidator
 )
 

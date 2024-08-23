@@ -1,5 +1,5 @@
 from pyasn1.type import univ
-from pki.pki.cmp.errorhandling.pki_failures import BadMessageCheck
+from .. import BadMessageCheck
 class GeneralMessageValidator:
     def __init__(self, body: univ.Sequence):
         """

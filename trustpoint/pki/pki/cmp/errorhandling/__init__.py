@@ -30,6 +30,8 @@ from .pki_failures import (
     DuplicateCertReq
 )
 
+from .. import PKIMessageCreator, PkiBodyCreator, PKIBodyTypes, RFC4210Protection, SystemFailure, PKIHeaderCreator
+
 __all__ = [
     'ErrorHandler',
     'PKIFailure',
@@ -60,4 +62,10 @@ __all__ = [
     'SystemUnavail',
     'SystemFailure',
     'DuplicateCertReq',
+    'PKIMessageCreator',
+    'PkiBodyCreator',
+    'PKIBodyTypes',
+    'RFC4210Protection',
+    'SystemFailure',
+    'PKIHeaderCreator'
 ]
