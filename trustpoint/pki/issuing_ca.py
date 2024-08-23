@@ -11,7 +11,7 @@ from cryptography import x509
 from django.conf import settings
 from django.db import transaction
 
-from .serialization.serializer import PrivateKeySerializer, CertificateCollectionSerializer
+from .serializer import PrivateKeySerializer, CertificateCollectionSerializer
 
 if TYPE_CHECKING:
     from typing import Union
@@ -19,7 +19,7 @@ if TYPE_CHECKING:
     from .models import CertificateModel, IssuingCaModel, RevokedCertificate, CRLStorage
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
-    from serialization.serializer import CertificateSerializer, PublicKeySerializer
+    from serializer import CertificateSerializer, PublicKeySerializer
 
 
 log = logging.getLogger('tp.pki')
@@ -83,7 +83,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
     @property
     def private_key(self) -> PrivateKey:
         if self._private_key is None:
-            self._private_key = PrivateKeySerializer.from_string(self._issuing_ca_model.private_key_pem).as_crypto()
+            self._private_key = PrivateKeySerializer(self._issuing_ca_model.private_key_pem).as_crypto()
         return self._private_key
 
     def _parse_existing_crl(self) -> list | x509.CertificateRevocationList:
@@ -110,7 +110,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         Returns:
             PrivateKeySerializer: A serializer instance for the CA's private key.
         """
-        return PrivateKeySerializer.from_string(self._issuing_ca_model.private_key_pem)
+        return PrivateKeySerializer(self._issuing_ca_model.private_key_pem)
 
     @staticmethod
     def _build_revoked_cert(revocation_datetime: datetime, cert: CertificateModel) -> RevokedCertificate:

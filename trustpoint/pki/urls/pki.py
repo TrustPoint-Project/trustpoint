@@ -57,7 +57,7 @@ urlpatterns = [
     ),
     path('issuing-cas/detail/<int:pk>/', issuing_cas.IssuingCaDetailView.as_view(), name='issuing_cas-detail'),
     re_path(
-        r'^issuing-cas/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
+        r'^issuing-cas/delete/(?P<pks>([0-9]+/)+[0-9]*)/?$',
         issuing_cas.IssuingCaBulkDeleteConfirmView.as_view(),
         name='issuing_cas-delete_confirm',
     ),
@@ -66,12 +66,6 @@ urlpatterns = [
          name='crl'),
     path('generate-ca-crl/<int:ca_id>/',
          crls.CRLDownloadView.generate_ca_crl,
-         name='crl'),
-    path('domain-crl/<int:id>/',
-         crls.CRLDownloadView.download_domain_crl,
-         name='crl'),
-    path('generate-domain-crl/<int:id>/',
-         crls.CRLDownloadView.generate_domain_crl,
          name='crl'),
     path('domains/', domains.DomainTableView.as_view(), name='domains'),
     path(

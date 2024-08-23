@@ -114,7 +114,6 @@ class CertificateMultipleDownloadView(
 
     def get(self, *args, **kwargs):
         self.extra_context = {'pks_url_path': self.get_pks_path()}
-
         file_format = self.kwargs.get('file_format')
         file_content = self.kwargs.get('file_content')
         archive_format = self.kwargs.get('archive_format')

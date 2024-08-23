@@ -10,10 +10,10 @@ from django.http import Http404, HttpResponse
 from docutils.nodes import field
 
 from pki.models import CertificateModel
-from pki.serialization.serializer import CertificateCollectionSerializer, CertificateSerializer
+from pki.serializer import CertificateCollectionSerializer, CertificateSerializer
 
 if TYPE_CHECKING:
-    from pki.serialization.serializer import CertificateCollectionSerializer, CertificateSerializer
+    from pki.serializer import CertificateCollectionSerializer, CertificateSerializer
 
 
 class CertificateFileFormat(enum.Enum):

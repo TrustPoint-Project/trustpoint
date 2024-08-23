@@ -250,3 +250,5 @@ class Command(BaseCommand):
         self.store_issuing_ca(issuing_1, [root_1], issuing_1_key, 'A.p12')
         self.store_issuing_ca(issuing_2, [root_1], issuing_2_key, 'B.p12')
         self.store_issuing_ca(issuing_3, [root_1], issuing_3_key, 'C.p12')
+
+        self.store_issuing_ca(root_1, [], root_1_key, 'D.p12')

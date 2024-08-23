@@ -68,7 +68,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
             "data": {
                 "labels": self.last_week_dates,
                 "datasets": [{
-                    "label": "Number of devices",
+                    "label": "Number of Root CAs",
                     "data": self.get_line_chart_data(),
                     "borderColor": "#0d6efd",
                     "backgroundColor": "rgba(13.0, 110.0, 253.0, 0.3)",
@@ -121,7 +121,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
               "borderWidth": 1,
               "backgroundColor": [
                 '#0d6efd',
-                '#D10C15',
+                '#FFC107',
               ],
               "hoverOffset": 4
             }]
@@ -141,7 +141,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
               "borderWidth": 1,
               "backgroundColor": [
                 '#0d6efd',
-                '#D10C15',
+                '#FFC107',
               ],
               "hoverOffset": 4
             }]
@@ -159,7 +159,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
                     "label": 'Inactive',
                     "data": endpoint_history[0],
                     "backgroundColor": [
-                      '#D10C15',
+                      '#FFC107',
                     ],
                     "stack": "stack",
                     "fill": True,
@@ -195,7 +195,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
                     "label": 'Inactive',
                     "data": device_history[0],
                     "backgroundColor": [
-                      '#D10C15',
+                      '#FFC107',
                     ],
                     "stack": "stack"
                     },
@@ -220,6 +220,54 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         }
         return config
 
+    def get_alerts(self):
+      messages = ["Test1", "Test2", "Test3"]
+      entry_type = "info"
+      now = datetime.now()
+      formatted_date = now.strftime("%Y-%m-%d")  # Format date as YYYY-MM-DD
+
+      # Create a list of dictionaries with type, message, and date
+      alerts = [{
+          'type': entry_type,
+          'message': message,
+          'time': formatted_date
+      } for message in messages]
+
+      return alerts
+
+    def get_certs(self):
+      names = ["Cert1", "Cert2", "Cert3"]
+      now = datetime.now()
+      formatted_date = now.strftime("%Y-%m-%d")  # Format date as YYYY-MM-DD
+
+      # Create a list of dictionaries with type, message, and date
+      certs = [{
+          'cname': name,
+          'ica': name,
+          'message': 'info',
+          'time': formatted_date
+      } for name in names]
+
+      return certs
+
+    def get_devices(self):
+      names = ["Device1", "Device2", "Device3", "Device4"]
+      now = datetime.now()
+      formatted_date = now.strftime("%Y-%m-%d")  # Format date as YYYY-MM-DD
+
+      # Create a list of dictionaries with type, message, and date
+      devices = [{
+          'device': name,
+          'domain': name+"085",
+          'domain': "domain-123",
+          'message': "onboarded",
+          'time': formatted_date
+      } for name in names]
+
+      return devices
+
+    
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         line_chart_config = self.get_line_chart_config()
@@ -233,6 +281,9 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         context['number_of_issuing_cas'] = self.get_number_of_issuingcas()
         context['number_of_root_cas'] = self.get_number_of_rootcas()
         context['number_of_endpoints'] = self.get_number_of_endpoints()
+        context['alerts'] = json.dumps(self.get_alerts())
+        context['certs'] = json.dumps(self.get_certs())
+        context['devices'] = json.dumps(self.get_devices())
         context['page_category'] = 'home'
         context['page_name'] = 'dashboard'
         return context

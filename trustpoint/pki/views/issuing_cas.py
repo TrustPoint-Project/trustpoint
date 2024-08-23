@@ -7,14 +7,12 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormView
 from django_tables2 import SingleTableView
 
-from trustpoint.views.base import BulkDeleteView, ContextDataMixin, TpLoginRequiredMixin
+from trustpoint.views.base import BulkDeleteView, ContextDataMixin, TpLoginRequiredMixin, PrimaryKeyFromUrlToQuerysetMixin
 
 from ..forms import (
     IssuingCaAddFileImportSeparateFilesForm,
     IssuingCaAddFileImportPkcs12Form,
-    IssuingCaAddMethodSelectForm,
-    IssuingCaFileTypeSelectForm,
-)
+    IssuingCaAddMethodSelectForm)
 
 from ..models import IssuingCaModel
 

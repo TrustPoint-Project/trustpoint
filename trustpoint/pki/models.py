@@ -13,13 +13,12 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 from cryptography.x509.extensions import ExtensionNotFound
-from django.core.validators import MinLengthValidator
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
-from .serialization.serializer import CertificateCollectionSerializer, CertificateSerializer, PublicKeySerializer
+from .serializer import CertificateCollectionSerializer, CertificateSerializer, PublicKeySerializer
 from .validator.field import UniqueNameValidator
 
 if TYPE_CHECKING:
@@ -897,15 +896,11 @@ class CertificateModel(models.Model):
 
     # --------------------------------------------- Data Retrieval Methods ---------------------------------------------
 
-    def get_certificate_serializer(
-            self,
-            certificate_serializer_class: type(CertificateSerializer) = CertificateSerializer) -> CertificateSerializer:
-        return certificate_serializer_class.from_string(self.cert_pem)
+    def get_certificate_serializer(self) -> CertificateSerializer:
+        return CertificateSerializer(self.cert_pem)
 
-    def get_public_key_serializer(
-            self,
-            public_key_serializer_class: type(PublicKeySerializer) = PublicKeySerializer) -> PublicKeySerializer:
-        return public_key_serializer_class.from_string(self.public_key_pem)
+    def get_public_key_serializer(self) -> PublicKeySerializer:
+        return PublicKeySerializer(self.public_key_pem)
 
     # TODO: check order of chains
     def get_certificate_chains(self, include_self: bool = True) -> list[list[CertificateModel]]:
@@ -926,14 +921,10 @@ class CertificateModel(models.Model):
         return cert_chains
 
     # TODO: check order of chains
-    def get_certificate_chain_serializers(
-            self,
-            include_self: bool = True,
-            certificate_chain_serializer_class: type(CertificateCollectionSerializer) = CertificateCollectionSerializer
-    ) -> list[CertificateCollectionSerializer]:
+    def get_certificate_chain_serializers(self, include_self: bool = True) -> list[CertificateCollectionSerializer]:
         certificate_chain_serializers = []
         for cert_chain in self.get_certificate_chains(include_self=include_self):
-            certificate_chain_serializers.append(certificate_chain_serializer_class(
+            certificate_chain_serializers.append(CertificateCollectionSerializer(
                 [cert.get_certificate_serializer().as_crypto() for cert in cert_chain]))
         return certificate_chain_serializers
 
@@ -1265,10 +1256,13 @@ class CertificateModel(models.Model):
             rc = RevokedCertificate(cert=self)
             rc.issuing_ca = issuing_ca
             rc.save()
-            if issuing_ca.auto_crl:
-                issuing_ca.get_issuing_ca().generate_crl()
         self._save()
+        if issuing_ca.auto_crl:
+            issuing_ca.get_issuing_ca().generate_crl()
 
+    def remove_private_key(self):
+        self.private_key = None
+        self._save()
 
 # ------------------------------------------------- Issuing CA Models --------------------------------------------------
 
@@ -1285,7 +1279,7 @@ class IssuingCaModel(models.Model):
     root_ca_certificate = models.ForeignKey(
         to=CertificateModel,
         verbose_name=_('Root CA Certificate'),
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
         related_name='root_ca_certificate',
         editable=False
     )
@@ -1298,7 +1292,7 @@ class IssuingCaModel(models.Model):
     issuing_ca_certificate = models.OneToOneField(
         to=CertificateModel,
         verbose_name=_('Issuing CA Certificate'),
-        on_delete=models.CASCADE,
+        on_delete=models.DO_NOTHING,
         related_name='issuing_ca_model',
         editable=False)
 
@@ -1338,11 +1332,8 @@ class IssuingCaModel(models.Model):
         cert_chain.append(self.issuing_ca_certificate)
         return cert_chain
 
-    def get_issuing_ca_certificate_chain_serializer(
-            self,
-            certificate_chain_serializer: type(CertificateCollectionSerializer) = CertificateCollectionSerializer
-    ) -> CertificateCollectionSerializer:
-        return certificate_chain_serializer(
+    def get_issuing_ca_certificate_chain_serializer(self) -> CertificateCollectionSerializer:
+        return CertificateCollectionSerializer(
             [cert.get_certificate_serializer().as_crypto() for cert in self.get_issuing_ca_certificate_chain()])
 
     def get_issuing_ca(self) -> UnprotectedLocalIssuingCa:
@@ -1413,31 +1404,6 @@ class DomainModel(models.Model):
         if self.issuing_ca:
             return self.issuing_ca.auto_crl
         return False  # Fallback if no CA is associated
-
-    @auto_crl.setter
-    def auto_crl(self, value: bool) -> None:
-        """Set the auto_crl value in the related IssuingCaModel.
-
-        Args:
-            value (bool): The new value for auto_crl to be set.
-        """
-        if self.issuing_ca:
-            self.issuing_ca.auto_crl = value
-            self.issuing_ca.save()
-
-    def generate_crl(self) -> bool:
-        """Generate CRL."""
-        if self.issuing_ca.get_issuing_ca().generate_crl():
-            return True
-        return False
-
-    def get_crl(self) -> str | None:
-        """Retrieve the latest CRL from the database.
-
-        Returns:
-            str or None: The latest CRL if exists, None otherwise.
-        """
-        return self.issuing_ca.get_issuing_ca().get_crl()
 
 
 class RevokedCertificate(models.Model):
