@@ -121,7 +121,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
               "borderWidth": 1,
               "backgroundColor": [
                 '#0d6efd',
-                '#D10C15',
+                '#FFC107',
               ],
               "hoverOffset": 4
             }]
@@ -141,7 +141,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
               "borderWidth": 1,
               "backgroundColor": [
                 '#0d6efd',
-                '#D10C15',
+                '#FFC107',
               ],
               "hoverOffset": 4
             }]
@@ -159,7 +159,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
                     "label": 'Inactive',
                     "data": endpoint_history[0],
                     "backgroundColor": [
-                      '#D10C15',
+                      '#FFC107',
                     ],
                     "stack": "stack",
                     "fill": True,
@@ -195,7 +195,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
                     "label": 'Inactive',
                     "data": device_history[0],
                     "backgroundColor": [
-                      '#D10C15',
+                      '#FFC107',
                     ],
                     "stack": "stack"
                     },
@@ -242,22 +242,26 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
 
       # Create a list of dictionaries with type, message, and date
       certs = [{
-          'name': name,
           'cname': name,
-          'valid': formatted_date
+          'ica': name,
+          'message': 'info',
+          'time': formatted_date
       } for name in names]
 
       return certs
 
     def get_devices(self):
-      names = ["Device1", "Device2", "Device3"]
+      names = ["Device1", "Device2", "Device3", "Device4"]
+      now = datetime.now()
+      formatted_date = now.strftime("%Y-%m-%d")  # Format date as YYYY-MM-DD
 
       # Create a list of dictionaries with type, message, and date
       devices = [{
-          'name': name,
-          'serial': name+"085",
+          'device': name,
+          'domain': name+"085",
           'domain': "domain-123",
-          'status': "onboarded"
+          'message': "onboarded",
+          'time': formatted_date
       } for name in names]
 
       return devices

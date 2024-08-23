@@ -3,52 +3,18 @@
 </div>
 <!-- Number panels row -->
 <div class="row py-3 shadow">
-  <!-- number of root CAs -->
-  <div class="col-3">
-    <div class="row p-2">
-      <div class="card count bg-gray shadow">
-        <!-- <h2 class="text-center pb-4"><i class="bi bi-cpu"></i></h2> -->
-        <h2 class="text-center pb-4 pt-2">Number of Root CAs</h2>
-        <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_root_cas}}</p>
-        <div class="row">
-          <div class="col-5 small">Active: 2</div>
-          <div class="col-5 offset-2 small p-0">Inactive: 0</div>
-        </div>
-        <div class="row pt-0 pb-1">
-          <div class="progress col-5 p-0">
-            <div
-              class="progress-bar bg-progress progress-bar-striped w-100"
-              role="progressbar "
-              aria-valuenow="100"
-              aria-valuemin="0"
-              aria-valuemax="100"
-            ></div>
-          </div>
-          <div class="progress col-5 p-0 offset-2">
-            <div
-              class="progress-bar bg-warning progress-bar-striped w-0"
-              role="progressbar"
-              aria-valuenow="0"
-              aria-valuemin="0"
-              aria-valuemax="100"
-            ></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- number of issuing CAs -->
+  <!-- number of Certificates-->
   <div class="col-3">
     <div class="row p-2">
       <div class="card count bg-gray shadow">
         <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
-        <h2 class="text-center pb-4 pt-2">Number of Issuing CAs</h2>
+        <h2 class="text-center pb-4 pt-2">Certificates</h2>
         <p style="font-size: 40px" class="text-center font-weight-bold">
           {{number_of_issuing_cas}}
         </p>
         <div class="row p-0">
           <div class="col-5 small">Active: 2</div>
-          <div class="col-5 offset-2 small p-0">Inactive: 1</div>
+          <div class="col-5 offset-2 small p-0">Expired: 1</div>
         </div>
         <div class="row pt-0 pb-1">
           <div
@@ -73,16 +39,16 @@
       </div>
     </div>
   </div>
-  <!-- number of endpoints -->
+  <!-- number of Expiring Certificates -->
   <div class="col-3">
     <div class="row p-2">
       <div class="card count bg-gray shadow">
         <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
-        <h2 class="text-center pb-4 pt-2">Number of Endpoints</h2>
+        <h2 class="text-center pb-4 pt-2">Expiring Certificates</h2>
         <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_endpoints}}</p>
         <div class="row p-0">
-          <div class="col-5 small">Active: 3</div>
-          <div class="col-5 offset-2 small p-0">Inactive: 1</div>
+          <div class="col-5 small">Next 24 hours: 3</div>
+          <div class="col-5 offset-2 small p-0">Next 7 days: 5</div>
         </div>
         <div class="row pt-0 pb-1">
           <div
@@ -107,16 +73,16 @@
       </div>
     </div>
   </div>
-  <!-- number of devices -->
+  <!-- number of Issuing Cas -->
   <div class="col-3">
     <div class="row p-2">
       <div class="card count bg-gray shadow">
         <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
-        <h2 class="text-center pb-4 pt-2">Number of Devices</h2>
+        <h2 class="text-center pb-4 pt-2">Onboarded devices</h2>
         <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_devices}}</p>
         <div class="row p-0">
-          <div class="col-5 small">Onboard: 12</div>
-          <div class="col-5 offset-2 small p-0">Notonboard: 3</div>
+          <div class="col-5 small">Onboarded: 12</div>
+          <div class="col-5 offset-2 small p-0">Waiting: 3</div>
         </div>
         <div class="row pt-0 pb-1">
           <div
@@ -136,6 +102,40 @@
             aria-valuemax="100"
           >
             <div class="progress-bar progress-bar-striped bg-warning" style="width: 20%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+   <!-- number of root CAs -->
+   <div class="col-3">
+    <div class="row p-2">
+      <div class="card count bg-gray shadow">
+        <!-- <h2 class="text-center pb-4"><i class="bi bi-cpu"></i></h2> -->
+        <h2 class="text-center pb-4 pt-2">Issuing Cas</h2>
+        <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_root_cas}}</p>
+        <div class="row">
+          <div class="col-5 small">Active: 2</div>
+          <div class="col-5 offset-2 small p-0">Expiring: 0</div>
+        </div>
+        <div class="row pt-0 pb-1">
+          <div class="progress col-5 p-0">
+            <div
+              class="progress-bar bg-progress progress-bar-striped w-100"
+              role="progressbar "
+              aria-valuenow="100"
+              aria-valuemin="0"
+              aria-valuemax="100"
+            ></div>
+          </div>
+          <div class="progress col-5 p-0 offset-2">
+            <div
+              class="progress-bar bg-warning progress-bar-striped w-0"
+              role="progressbar"
+              aria-valuenow="0"
+              aria-valuemin="0"
+              aria-valuemax="100"
+            ></div>
           </div>
         </div>
       </div>

@@ -52,7 +52,7 @@
       tableBody.innerHTML = ""; // Clear existing content
       console.log(tableBody, tabId, alerts);
       // Update the content
-      if (tabId == "alert") {
+      if (tabId == "alert" || tabId == "notification") {
         if (alerts) {
           alerts.forEach((alert) => {
             const row = document.createElement("tr");
@@ -61,7 +61,7 @@
                     <td>${alert.message}</td>
                     <td>${alert.time}</td>
                     <td>extend</td>
-                    <td><button class="btn btn-blue">Save</button></td>
+                    <td><button class="btn btn-blue">Details</button></td>
                 `;
 
             tableBody.appendChild(row);
@@ -87,10 +87,11 @@
           certs.forEach((cert) => {
             const row = document.createElement("tr");
             row.innerHTML = `
-                    <td>${cert.name}</td>
                     <td>${cert.cname}</td>
-                    <td>${cert.valid}</td>
-                    <td><button class="btn btn-blue">Save</button></td>
+                    <td>${cert.ica}</td>
+                    <td>${cert.message}</td>
+                    <td>${cert.time}</td>
+                    <td><button class="btn btn-blue">Details</button></td>
                 `;
 
             tableBody.appendChild(row);
@@ -115,11 +116,11 @@
           devices.forEach((device) => {
             const row = document.createElement("tr");
             row.innerHTML = `
-                    <td>${device.name}</td>
-                    <td>${device.serial}</td>
+                    <td>${device.device}</td>
                     <td>${device.domain}</td>
-                    <td>${device.status}</td>
-                    <td><button class="btn btn-blue">Save</button></td>
+                    <td>${device.message}</td>
+                    <td>${device.time}</td>
+                    <td><button class="btn btn-blue">Details</button></td>
                 `;
 
             tableBody.appendChild(row);
