@@ -1,19 +1,55 @@
 """Django Views"""
 from __future__ import annotations
 
+import threading
+from functools import wraps
 from typing import TYPE_CHECKING
 
-from django.core.exceptions import ObjectDoesNotExist
-from django.shortcuts import render
-from django.views.generic.base import RedirectView
 from django.contrib import messages
+from django.core.exceptions import ObjectDoesNotExist
+from django.shortcuts import redirect, render
 from django.utils.translation import gettext as _
+from django.views.generic.base import RedirectView
+
+from .security.decorators import security_level
+from .security.manager import SecurityFeatures, SecurityManager
 
 if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
 
 from .forms import LoggingConfigForm, NetworkConfigForm, NTPConfigForm, SecurityConfigForm
 from .models import LoggingConfig, NetworkConfig, NTPConfig, SecurityConfig
+
+
+class SecurityLevelMixin:
+    _thread_locals = threading.local()
+
+    def __init__(self, security_feature=None, no_permisson_url=None, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.sec = SecurityManager()
+        self.security_feature = security_feature
+        self.no_permisson_url = no_permisson_url
+
+    @classmethod
+    def _get_security_level_instance(cls):
+        if not hasattr(cls._thread_locals, 'security_level_instance'):
+            cls._thread_locals.security_level_instance = SecurityConfig.objects.first()
+        return cls._thread_locals.security_level_instance
+
+    @classmethod
+    def get_security_level(cls):
+        return cls._get_security_level_instance().security_mode
+
+    @classmethod
+    def refresh_security_level_instance(cls):
+        cls._thread_locals.security_level_instance = SecurityConfig.objects.first()
+
+    def dispatch(self, request, *args, **kwargs):
+        if not self.sec.is_feature_allowed(self.security_feature, self.get_security_level()):
+            msg = f'Your security setting does not allow the feature: "{self.security_feature}"'
+            messages.error(request, _(msg))
+            return redirect(self.no_permisson_url)
+        return super().dispatch(request, *args, **kwargs)
 
 
 class IndexView(RedirectView):
