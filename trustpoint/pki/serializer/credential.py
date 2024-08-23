@@ -2,17 +2,20 @@
 
 from __future__ import annotations
 
+import enum
 import io
-import zipfile
 import tarfile
+import zipfile
+from typing import TYPE_CHECKING
 
-from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
 
+from . import CertificateCollectionSerializer, CertificateSerializer, PrivateKey, PrivateKeySerializer, Serializer
 
-from . import Serializer, PrivateKeySerializer, CertificateSerializer, CertificateCollectionSerializer
-from . import PrivateKey
+if TYPE_CHECKING:
+    from cryptography import x509
+    from cryptography.hazmat.primitives.serialization import KeySerializationEncryption
 
 
 class CredentialSerializer(Serializer):
@@ -30,15 +33,29 @@ class CredentialSerializer(Serializer):
     _credential_certificate: CertificateSerializer
     _additional_certificates: None | CertificateCollectionSerializer = None
 
+    _TUPLE_LEN_WITHOUT_ADDITIONAL_CERTIFICATES = 2
+    _TUPLE_LEN_WITH_ADDITIONAL_CERTIFICATES = 3
+
+    class PrivateKeyFormat(enum.Enum):
+        """Supported formats for private keys."""
+
+        PKCS1 = 'pkcs1'
+        PKCS8 = 'pkcs8'
+
     def __init__(
             self,
-            credential: None | bytes | pkcs12.PKCS12KeyAndCertificates | CredentialSerializer,
+            credential: bytes | pkcs12.PKCS12KeyAndCertificates | CredentialSerializer |
+                        tuple[
+                            bytes | str | PrivateKey | PrivateKeySerializer,
+                            bytes | str | x509.Certificate | CertificateSerializer
+                        ] |
+                        tuple[
+                            bytes | str | PrivateKey | PrivateKeySerializer,
+                            bytes | str | x509.Certificate | CertificateSerializer,
+                            None | bytes | str | list[bytes | str | x509.Certificate | CertificateSerializer]
+                            | CertificateCollectionSerializer
+                        ],
             password: None | bytes = None,
-            credential_private_key: None | bytes | str | PrivateKey | PrivateKeySerializer = None,
-            credential_certificate: None | bytes | str | x509.Certificate | CertificateSerializer = None,
-            additional_certificates: None | bytes | str | \
-                                     list[bytes | str | x509.Certificate | CertificateSerializer] | \
-                                     CertificateCollectionSerializer = None
     ) -> None:
         """Inits the CredentialSerializer class.
 
@@ -46,53 +63,59 @@ class CredentialSerializer(Serializer):
 
         Args:
             credential:
-                A PKCS#12 credential as bytes or pkcs12.PKCS12KeyAndCertificates, or a CredentialSerializer instance.
+                A PKCS#12 credential as bytes, pkcs12.PKCS12KeyAndCertificates, a CredentialSerializer instance or a
+                tuple of the credential_private_key, credential_certificate and optionally additional_certificates.
             password: The password for either the credential or the credential_private_key, if any.
-            credential_private_key: The credential private key.
-            credential_certificate: The credential certificate matching the private key.
-            additional_certificates: Additional certificates, typically the certificate chain.
 
         Raises:
             TypeError: If an invalid argument type was provided for any of the parameters.
             ValueError: If the credential failed to deserialize.
         """
-
         if password == b'':
             password = None
 
-        if credential is not None:
-            if isinstance(credential, bytes):
-                cred_priv_key, cred_cert, add_certs = self._from_bytes_pkcs12(credential, password)
-                self._credential_private_key = cred_priv_key
-                self._credential_certificate = cred_cert
-                self._additional_certificates = add_certs
-            elif isinstance(credential, pkcs12.PKCS12KeyAndCertificates):
-                cred_priv_key, cred_cert, add_certs = self._from_crypto_pkcs12(credential)
-                self._credential_private_key = cred_priv_key
-                self._credential_certificate = cred_cert
-                self._additional_certificates = add_certs
-            elif isinstance(credential, CredentialSerializer):
-                self._credential_private_key = credential.credential_private_key
-                self._credential_certificate = credential.credential_certificate
-                self._additional_certificates = credential.additional_certificates
+        if isinstance(credential, bytes):
+            cred_priv_key, cred_cert, add_certs = self._from_bytes_pkcs12(credential, password)
+            self._credential_private_key = cred_priv_key
+            self._credential_certificate = cred_cert
+            self._additional_certificates = add_certs
+        elif isinstance(credential, pkcs12.PKCS12KeyAndCertificates):
+            cred_priv_key, cred_cert, add_certs = self._from_crypto_pkcs12(credential)
+            self._credential_private_key = cred_priv_key
+            self._credential_certificate = cred_cert
+            self._additional_certificates = add_certs
+        elif isinstance(credential, CredentialSerializer):
+            self._credential_private_key = credential.credential_private_key
+            self._credential_certificate = credential.credential_certificate
+            self._additional_certificates = credential.additional_certificates
+        elif isinstance(credential, tuple):
+            if len(credential) == self._TUPLE_LEN_WITHOUT_ADDITIONAL_CERTIFICATES:
+                credential_private_key, credential_certificate = credential
+                additional_certificates = None
+            elif len(credential) == self._TUPLE_LEN_WITH_ADDITIONAL_CERTIFICATES:
+                credential_private_key, credential_certificate, additional_certificates = credential
             else:
-                raise TypeError(
-                    'credential must be of type bytes, pkcs12.PKCS12KeyAndCertificates or CredentialSerializer, '
-                    f'but got {type(credential)}.')
-            return
+                err_msg = (f'Got a tuple of length {len(credential)}, but expected a tuple containing the '
+                           f'credential private key, credential certificate and optionally additional certificates. '
+                           f'Thus expected a tuple of length 2 or 3.')
+                raise TypeError(err_msg)
 
-        if credential_private_key is not None and credential_certificate is not None:
-            self._credential_private_key = PrivateKeySerializer(credential_private_key)
-            self._credential_certificate = CertificateSerializer(credential_certificate)
-
-            if additional_certificates is not None:
-                additional_certificates = CertificateCollectionSerializer(additional_certificates)
-            self._additional_certificates = additional_certificates
+            if credential_private_key is not None and credential_certificate is not None:
+                self._credential_private_key = PrivateKeySerializer(credential_private_key)
+                self._credential_certificate = CertificateSerializer(credential_certificate)
+                if additional_certificates is not None:
+                    self._additional_certificates = CertificateCollectionSerializer(additional_certificates)
+            else:
+                err_msg = (
+                    'To instantiate a CredentialSerializer from separate objects, at least the credential private key'
+                    'and the credential certificate must be provided.')
+                raise TypeError(err_msg)
         else:
-            raise TypeError(
-                'To instantiate a CredentialSerializer, either credential or '
-                'credential_private_key and credential_certificate must be provided.')
-
+            err_msg = (
+                'Credential must be of type bytes, pkcs12.PKCS12KeyAndCertificates, CredentialSerializer or a tuple'
+                'of the credential private key, credential certificate and optional additional certificates, '
+                f'but got {type(credential)}.')
+            raise TypeError(err_msg)
 
     @staticmethod
     def _from_crypto_pkcs12(p12: pkcs12.PKCS12KeyAndCertificates
@@ -104,12 +127,16 @@ class CredentialSerializer(Serializer):
             CertificateSerializer(p12.cert.certificate),
             CertificateCollectionSerializer(additional_certificates))
 
-    def _from_bytes_pkcs12(self, credential_data: bytes, password: None | bytes = None
-                          ) -> tuple[PrivateKeySerializer, CertificateSerializer, CertificateCollectionSerializer]:
+    @classmethod
+    def _from_bytes_pkcs12(
+            cls,
+            credential_data: bytes, password: None | bytes = None
+    ) -> tuple[PrivateKeySerializer, CertificateSerializer, CertificateCollectionSerializer]:
         try:
-            return self._from_crypto_pkcs12(pkcs12.load_pkcs12(credential_data, password))
-        except ValueError:
-            raise ValueError('Failed to load credential. May be an incorrect password or malformed data.')
+            return cls._from_crypto_pkcs12(pkcs12.load_pkcs12(credential_data, password))
+        except ValueError as exception:
+            err_msg = 'Failed to load credential. May be an incorrect password or malformed data.'
+            raise ValueError(err_msg) from exception
 
     def as_pkcs12(self, password: None | bytes, friendly_name: bytes = b'') -> bytes:
         """Gets the credential as bytes in PKCS#12 format.
@@ -133,58 +160,71 @@ class CredentialSerializer(Serializer):
         """Returns the number of certificates contained in this credential."""
         if self._additional_certificates is None:
             return 0
-        else:
-            return len(self._additional_certificates) + 1
 
-    def get_as_separate_pem_files(self, password: None | bytes = None, pkcs1: bool = False
-                                  ) -> tuple[bytes, bytes, bytes]:
-        """Gets the credential as separate bytes in PEM format.
+        return len(self._additional_certificates) + 1
 
-        A tuple of the following three values (bytes) is returned:
+    def get_as_separate_pem_files(
+            self,
+            private_key_format: PrivateKeyFormat = PrivateKeyFormat.PKCS8,
+            password: None | bytes = None) -> tuple[bytes, bytes, bytes]:
+        """Gets the credential as separate bytes in PEM format with the private key in the specified format.
 
-        - private key
-        - credential certificate
-        - additional certificates
+        Note:
+            If a password is provided, the best available encryption is used, specified by the python cryptography
+            package.
+
+            A tuple of the following three values (bytes) is returned:
+
+            - private key
+            - credential certificate
+            - additional certificates
 
         Args:
             password: A password used to encrypt the private key.
-            pkcs1: If False, the private key is stored in PKCS#8 format, PKCS#1 otherwise.
+            private_key_format: Enum CredentialSerializer.PrivateKeyFormat to specify the format of the private key.
 
         Returns:
             (bytes, bytes, bytes):
-                (private key as PKCS#1 or PKCS#8 PEM bytes,
+                private key as PKCS#1 PEM bytes,
                 credential certificate as PEM bytes,
-                additional certificates as PEM bytes)
-
+                additional certificates as PEM bytes.
         """
-        if password == b'':
-            password = None
-
-        if pkcs1:
-            key_pem = self.credential_private_key.as_pkcs1_pem(password)
+        if private_key_format == self.PrivateKeyFormat.PKCS1:
+            private_key_pem = self._credential_private_key.as_pkcs1_der(password)
+        elif private_key_format == self.PrivateKeyFormat.PKCS8:
+            private_key_pem = self._credential_private_key.as_pkcs8_pem(password)
         else:
-            key_pem = self.credential_private_key.as_pkcs8_pem(password)
+            err_msg = f'Provided private_key_format {private_key_format} is not supported.'
+            raise ValueError(err_msg)
+        return (
+            private_key_pem,
+            self.credential_certificate.as_pem(),
+            self.additional_certificates.as_pem())
 
-        return key_pem, self.credential_certificate.as_pem(), self.additional_certificates.as_pem()
 
-    def as_pem_zip(self, password: None | bytes = None, pkcs1: bool = False) -> bytes:
+    def as_pem_zip(
+            self,
+            private_key_format: PrivateKeyFormat = PrivateKeyFormat.PKCS8,
+            password: None | bytes = None
+    ) -> bytes:
         """Gets the credential as bytes in zip format containing all credential files in PEM format.
 
         Contains the certificate chain and the credential certificate in separate PEM files. The private key file is
-        stored as PKCS#8 encrypted file if a password is given.
+        stored in the format that is specified.
 
         Note:
-            Only the private key is encrypted and protected utilizing the password.
-            The zip file is NOT encrypted or protected by the password.
+            Only the private key is encrypted and protected utilizing the password. The best available encryption
+            is used, if a password is provided.
+            The zip itself is NOT encrypted or protected by the password.
 
         Args:
             password: A password used to encrypt the private key.
-            pkcs1: If False, the private key is stored in PKCS#8 format, PKCS#1 otherwise.
+            private_key_format: Enum CredentialSerializer.PrivateKeyFormat to specify the format of the private key.
 
         Returns:
             bytes: The zip file containing all credential files in PEM format.
         """
-        key_pem, cert_pem, additional_certs_pem = self.get_as_separate_pem_files(password, pkcs1)
+        key_pem, cert_pem, additional_certs_pem = self.get_as_separate_pem_files(private_key_format, password)
 
         bytes_io = io.BytesIO()
         zip_file = zipfile.ZipFile(bytes_io, 'w')
@@ -198,24 +238,29 @@ class CredentialSerializer(Serializer):
 
         return bytes_io.getvalue()
 
-    def as_pem_tar_gz(self, password: None | bytes = None, pkcs1: bool = False) -> bytes:
+    def as_pem_tar_gz(
+            self,
+            private_key_format: PrivateKeyFormat = PrivateKeyFormat.PKCS8,
+            password: None | bytes = None
+    ) -> bytes:
         """Gets the credential as bytes in tar.gz format containing all credential files in PEM format.
 
         Contains the certificate chain and the credential certificate in separate PEM files. The private key file is
-        stored as PKCS#8 encrypted file if a password is given.
+        stored in the format that is specified.
 
         Note:
-            Only the private key is encrypted and protected utilizing the password.
-            The tar.gz file is NOT encrypted or protected by the password.
+            Only the private key is encrypted and protected utilizing the password. The best available encryption
+            is used, if a password is provided.
+            The zip itself is NOT encrypted or protected by the password.
 
         Args:
             password: A password used to encrypt the private key.
-            pkcs1: If False, the private key is stored in PKCS#8 format, PKCS#1 otherwise.
+            private_key_format: Enum CredentialSerializer.PrivateKeyFormat to specify the format of the private key.
 
         Returns:
             bytes: The tar.gz file containing all credential files in PEM format.
         """
-        key_pem, cert_pem, additional_certs_pem = self.get_as_separate_pem_files(password, pkcs1)
+        key_pem, cert_pem, additional_certs_pem = self.get_as_separate_pem_files(private_key_format, password)
 
         bytes_io = io.BytesIO()
         with tarfile.open(fileobj=bytes_io, mode='w:gz') as tar:
@@ -275,13 +320,13 @@ class CredentialSerializer(Serializer):
         """Returns both the credential and additional certificates as CertificateCollectionSerializer instance."""
         if self._additional_certificates is None:
             return CertificateCollectionSerializer([self._credential_certificate])
-        else:
-            new_collection = CertificateCollectionSerializer(self._additional_certificates)
-            new_collection.append(self._credential_certificate)
-            return new_collection
+
+        new_collection = CertificateCollectionSerializer(self._additional_certificates)
+        new_collection.append(self._credential_certificate)
+        return new_collection
 
     @staticmethod
-    def _get_encryption_algorithm(password: None | bytes):
+    def _get_encryption_algorithm(password: None | bytes) -> KeySerializationEncryption:
         if password:
             return serialization.BestAvailableEncryption(password)
         return serialization.NoEncryption()
@@ -292,5 +337,5 @@ class CredentialSerializer(Serializer):
     ) -> (PrivateKey, x509.Certificate, list[x509.Certificate]):
         try:
             return pkcs12.load_key_and_certificates(p12_data, password)
-        except Exception:   # noqa: BLE001
-            raise ValueError
+        except Exception as exception:   # noqa: BLE001
+            raise ValueError from exception
