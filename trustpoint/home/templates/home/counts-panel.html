@@ -10,11 +10,11 @@
         <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
         <h2 class="text-center pb-4 pt-2">Certificates</h2>
         <p style="font-size: 40px" class="text-center font-weight-bold">
-          {{number_of_issuing_cas}}
+          {{number_of_certificates}}
         </p>
         <div class="row p-0">
-          <div class="col-5 small">Active: 2</div>
-          <div class="col-5 offset-2 small p-0">Expired: 1</div>
+          <div class="col-5 small">Active: 16</div>
+          <div class="col-5 offset-2 small p-0">Expired: 2</div>
         </div>
         <div class="row pt-0 pb-1">
           <div
@@ -45,10 +45,10 @@
       <div class="card count bg-gray shadow">
         <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
         <h2 class="text-center pb-4 pt-2">Expiring Certificates</h2>
-        <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_endpoints}}</p>
+        <p style="font-size: 40px" class="text-center font-weight-bold">6</p>
         <div class="row p-0">
-          <div class="col-5 small">Next 24 hours: 3</div>
-          <div class="col-5 offset-2 small p-0">Next 7 days: 5</div>
+          <div class="col-5 small">Next 24 hours: 2</div>
+          <div class="col-5 offset-2 small p-0">Next 7 days: 4</div>
         </div>
         <div class="row pt-0 pb-1">
           <div
@@ -73,12 +73,12 @@
       </div>
     </div>
   </div>
-  <!-- number of Issuing Cas -->
+  <!-- Onboarded Devices -->
   <div class="col-3">
     <div class="row p-2">
       <div class="card count bg-gray shadow">
         <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
-        <h2 class="text-center pb-4 pt-2">Onboarded devices</h2>
+        <h2 class="text-center pb-4 pt-2">Devices</h2>
         <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_devices}}</p>
         <div class="row p-0">
           <div class="col-5 small">Onboarded: 12</div>
@@ -107,15 +107,15 @@
       </div>
     </div>
   </div>
-   <!-- number of root CAs -->
+   <!-- number of issuing CAs -->
    <div class="col-3">
     <div class="row p-2">
       <div class="card count bg-gray shadow">
         <!-- <h2 class="text-center pb-4"><i class="bi bi-cpu"></i></h2> -->
         <h2 class="text-center pb-4 pt-2">Issuing Cas</h2>
-        <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_root_cas}}</p>
+        <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_issuing_cas}}</p>
         <div class="row">
-          <div class="col-5 small">Active: 2</div>
+          <div class="col-5 small">Active: 3</div>
           <div class="col-5 offset-2 small p-0">Expiring: 0</div>
         </div>
         <div class="row pt-0 pb-1">

@@ -6,10 +6,6 @@
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    // counts context data
-    var alerts = JSON.parse("{{alerts|escapejs }}");
-    var certs = JSON.parse("{{certs|escapejs }}");
-    var devices = JSON.parse("{{devices|escapejs }}");
 
     //device charts data from context
     var stackChartConfig = JSON.parse("{{ line_chart_device_config|escapejs }}");
@@ -26,21 +22,6 @@
     var lineChartConfig = JSON.parse("{{ line_chart_config|escapejs }}");
     var donutChartCAConfig = JSON.parse("{{ donut_chart_ca_config|escapejs }}");
 
-    var tableTabEl = document.getElementById("tableTabs");
-    var tableTab = new bootstrap.Tab(tableTabEl);
-    // Initial update for the active table tab
-    var activeTableTabId = document
-      .querySelector("#tableTabs .nav-link.active")
-      .getAttribute("href")
-      .substring(1);
-    updateTableContent(activeTableTabId);
-
-    // Add event listener to tables tab for the 'shown.bs.tab' event
-    tableTabEl.addEventListener("shown.bs.tab", function (event) {
-      var targetId = event.target.getAttribute("href").substring(1);
-      updateTableContent(targetId);
-    });
-
     var chartTabEl = document.getElementById("chartTabs");
     var chartTab = new bootstrap.Tab(chartTabEl);
     // Initial update for the active chart tab
@@ -55,105 +36,6 @@
       var targetId = event.target.getAttribute("href").substring(1);
       updateChartContent(targetId);
     });
-
-    // function to update tables content based on table tab id
-    function updateTableContent(tabId) {
-      // Find the content element in the active tab
-      var tableBody = document.getElementById(`${tabId}-table-body`);
-      tableBody.innerHTML = ""; // Clear existing content
-      //console.log(tableBody, tabId, alerts);
-      // Update the content
-      if (tabId == "alert" || tabId == "notification") {
-        if (alerts) {
-          alerts.forEach((alert) => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                    <td>${alert.type}</td>
-                    <td>${alert.message}</td>
-                    <td>${alert.time}</td>
-                    <td>extend</td>
-                    <td><button class="btn btn-blue">Details</button></td>
-                `;
-
-            tableBody.appendChild(row);
-          });
-        } else {
-          // placeholder for artifact table body
-          for (let i = 0; i < 5; i++) {
-            const row = document.createElement("tr");
-            row.classList.add("placeholder-glow");
-            row.innerHTML = `
-                    <td><span class="placeholder col-2"></span></td>
-                    <td><span class="placeholder col-2"></span></td>
-                    <td><span class="placeholder col-2"></span></td>
-                    <td><span class="placeholder col-2"></span></td>
-                    <td><span class="placeholder col-2"></span></td>
-                `;
-
-            tableBody.appendChild(row);
-          }
-        }
-      } else if (tabId == "certificate") {
-        if (certs) {
-          certs.forEach((cert) => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                    <td>${cert.cname}</td>
-                    <td>${cert.ica}</td>
-                    <td>${cert.message}</td>
-                    <td>${cert.time}</td>
-                    <td><button class="btn btn-blue">Details</button></td>
-                `;
-
-            tableBody.appendChild(row);
-          });
-        } else {
-          // placeholder for artifact table body
-          for (let i = 0; i < 5; i++) {
-            const row = document.createElement("tr");
-            row.classList.add("placeholder-glow");
-            row.innerHTML = `
-                    <td><span class="placeholder col-2"></span></td>
-                    <td><span class="placeholder col-2"></span></td>
-                    <td><span class="placeholder col-2"></span></td>
-                    <td><span class="placeholder col-2"></span></td>
-                `;
-
-            tableBody.appendChild(row);
-          }
-        }
-      } else if (tabId == "device") {
-        if (devices) {
-          devices.forEach((device) => {
-            const row = document.createElement("tr");
-            row.innerHTML = `
-                    <td>${device.device}</td>
-                    <td>${device.domain}</td>
-                    <td>${device.message}</td>
-                    <td>${device.time}</td>
-                    <td><button class="btn btn-blue">Details</button></td>
-                `;
-
-            tableBody.appendChild(row);
-          });
-        } else {
-          // placeholder for artifact table body
-          for (let i = 0; i < 5; i++) {
-            const row = document.createElement("tr");
-            row.classList.add("placeholder-glow");
-            row.innerHTML = `
-                    <td><span class="placeholder col-2"></span></td>
-                    <td><span class="placeholder col-2"></span></td>
-                    <td><span class="placeholder col-2"></span></td>
-                    <td><span class="placeholder col-2"></span></td>
-                    <td><span class="placeholder col-2"></span></td>
-                `;
-
-            tableBody.appendChild(row);
-          }
-        }
-      }
-    }
 
     var lineChartDevice, donutChartDevice, barChartDevice; 
     var lineChartCert, donutChartCert, barChartCert;
@@ -186,9 +68,9 @@
         if(!barChartCert)
           barChartCert = new Chart(barChartCertEle, barChartCertConfig);
       } else if (chartTabId == "caChartTab") {
-        var lineChartEle = document.getElementById("lineChart").getContext("2d");
-        if(!lineChart)
-          lineChart = new Chart(lineChartEle, lineChartConfig);
+        // var lineChartEle = document.getElementById("lineChart").getContext("2d");
+        // if(!lineChart)
+        //   lineChart = new Chart(lineChartEle, lineChartConfig);
 
         var barChartCAEle = document.getElementById("barChartCA").getContext("2d");
         if(!barChartCA)

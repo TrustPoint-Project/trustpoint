@@ -16,8 +16,8 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
     template_name = 'home/dashboard.html'
 
     total_number_of_devices = 15
-    total_number_of_endpoints = 18
-    total_number_of_issuing_ca = 17
+    total_number_of_certificates = 18
+    total_number_of_issuing_ca = 3
     last_week_dates = None
 
     def __init__(self, *args, **kwargs):
@@ -46,7 +46,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         return devices_history
 
     def get_all_endpoints(self):
-        devices_history = [[self.total_number_of_endpoints-i%2 if j%2 else i%2 for i in range(7)] for j in range(2)]
+        devices_history = [[self.total_number_of_certificates-i%2 if j%2 else i%2 for i in range(7)] for j in range(2)]
         return devices_history
 
     def get_number_of_devices(self):
@@ -58,13 +58,13 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
 
 
     def get_number_of_root_cas(self):
-        return 2
+        return 3
     
     def get_number_of_issuing_cas(self):
         return self.total_number_of_issuing_ca
     
-    def get_number_of_endpoints(self):
-        return self.total_number_of_endpoints
+    def get_number_of_certificates(self):
+        return self.total_number_of_certificates
     
     def get_line_chart_config(self):
         config = {
@@ -180,7 +180,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         return config
     
     def get_donut_chart_cert_config(self):
-        number_of_active_certs = self.get_number_of_endpoints()
+        number_of_active_certs = self.get_number_of_certificates()
         domain1 = 2
         domain2 = 3
         domain3 = number_of_active_certs - domain1 - domain2
@@ -354,7 +354,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
       return certs
 
     def get_devices(self):
-      names = ["Device1", "Device2", "Device3", "Device4"]
+      names = ["Device1", "Device2", "Device3"]
       now = datetime.now()
       formatted_date = now.strftime("%Y-%m-%d")  # Format date as YYYY-MM-DD
 
@@ -392,10 +392,10 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         context['number_of_devices'] = self.get_number_of_devices()
         context['number_of_issuing_cas'] = self.get_number_of_issuing_cas()
         context['number_of_root_cas'] = self.get_number_of_root_cas()
-        context['number_of_endpoints'] = self.get_number_of_endpoints()
-        context['alerts'] = json.dumps(self.get_alerts())
-        context['certs'] = json.dumps(self.get_certs())
-        context['devices'] = json.dumps(self.get_devices())
+        context['number_of_certificates'] = self.get_number_of_certificates()
+        context['alerts'] = self.get_alerts()
+        context['certs'] = self.get_certs()
+        context['devices'] = self.get_devices()
         context['page_category'] = 'home'
         context['page_name'] = 'dashboard'
         return context
