@@ -298,7 +298,7 @@ class CMPMessageHandler:
         :return: str, the response PKI message.
         """
         general_msg_handler = GeneralMessageHandler(self.body, self.header, self.pki_body_type, self.protection)
-        return general_msg_handler.handle()
+        return general_msg_handler.handle(self.issuing_ca_object)
 
     def _handle_error(self, exception: Exception, error_code: int) -> bytes:
         """

@@ -47,6 +47,7 @@ class GenpValidator:
 
         if 'infoType' in self.body.getComponentByName('gen')[0]:
             self.oid = self.body.getComponentByName('gen')[0]['infoType']
+            print(f"OID PARAM: {self.oid}")
         else:
             raise BadMessageCheck("OID (infoType) is missing from the genp body.")
 
@@ -64,21 +65,21 @@ class GenpValidator:
         ca_certs_validator.validate()
         return True
 
-    def _validate_cert_req_template(self, oid):
+    def _validate_cert_req_template(self):
         """
         Validator for certReqTemplate.
         """
         # TODO: Implement logic - Validator for the certReqTemplate
         pass
 
-    def _validate_root_ca_certs(self, oid):
+    def _validate_root_ca_certs(self):
         """
         Validator for rootCaCert.
         """
         # TODO: Implement logic - Validator for the rootCaCert
         pass
 
-    def _validate_crls(self, oid):
+    def _validate_crls(self):
         """
         Validator for crls.
         """

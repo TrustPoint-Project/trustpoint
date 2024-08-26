@@ -26,6 +26,7 @@ class GeneralMessageHandler:
         self.header = header
         self.pki_body_type = pki_body_type
         self.protection = protection
+        self.issuing_ca_object = None
 
         #self._validate()
 
@@ -33,12 +34,14 @@ class GeneralMessageHandler:
         validate_ir = GeneralMessageValidator(self.body)
         validate_ir.validate()
 
-    def handle(self):
+    def handle(self, issuing_ca_object):
         """
         Handles the general message (genm) and generates a corresponding general response (genp).
 
+        :param issuing_ca_object: The IssuingCa object.
         :return: str, the response PKI message.
         """
+        self.issuing_ca_object = issuing_ca_object
         oid = self._get_oid()
         handler_method = self._get_handler_method(oid)
 
@@ -106,7 +109,7 @@ class GeneralMessageHandler:
 
         :return: PKIHeader, the created PKI header.
         """
-        header_creator = PKIHeaderCreator(self.header, self.protection.ca_cert)
+        header_creator = PKIHeaderCreator(self.header, self.issuing_ca_object)
         return header_creator.create_header()
 
     def info_type_value_builder(self, oid, response_objects):
@@ -128,18 +131,16 @@ class GeneralMessageHandler:
 
         return info_type_and_value
 
-    def _load_and_decode_certificate(self, file_path, asn1_spec):
+    def _decode_certificate(self, certificate: x509.Certificate, asn1_spec):
         """
-        Helper method to load and decode a certificate from a file.
+        Helper method to decode a certificate from a file.
 
-        :param file_path: str, the path to the certificate file.
+        :param certificate: x509.Certificate, a certificate object.
         :param asn1_spec: ASN.1 spec, the ASN.1 specification for decoding.
         :return: list, a list of decoded certificates.
         """
-        with open(file_path, "rb") as cert_file:
-            cert = x509.load_pem_x509_certificate(cert_file.read(), backend=default_backend())
 
-        der_cert = cert.public_bytes(serialization.Encoding.DER)
+        der_cert = certificate.public_bytes(serialization.Encoding.DER)
         cmp_certificate, _ = decoder.decode(der_cert, asn1_spec)
 
         return [cmp_certificate]
@@ -170,9 +171,9 @@ class GeneralMessageHandler:
         :param oid: univ.ObjectIdentifier, the OID of the request.
         :return: univ.SequenceOf, the sequence of CA certificates.
         """
-        certs_path = self._get_cert_path("ca_cert.pem")
+        ca_cert = self.issuing_ca_object.get_issuing_ca_certificate_serializer().as_crypto()
         return self.info_type_value_builder(oid,
-                                            self._load_and_decode_certificate(certs_path, rfc4210.CMPCertificate()))
+                                            self._decode_certificate(ca_cert, rfc4210.CMPCertificate()))
 
     def get_root_ca_certificate_update(self, oid):
         """
@@ -181,9 +182,10 @@ class GeneralMessageHandler:
         :param oid: univ.ObjectIdentifier, the OID of the request.
         :return: univ.SequenceOf, the sequence of updated root CA certificates.
         """
-        certs_path = self._get_cert_path("ca_cert.pem")
+        root_ca_cert = self.issuing_ca_object.issuing_ca_model.root_ca_certificate.get_certificate_serializer().as_crypto()
+
         return self.info_type_value_builder(oid,
-                                            self._load_and_decode_certificate(certs_path, rfc4210.CMPCertificate()))
+                                            self._decode_certificate(root_ca_cert, rfc4210.CMPCertificate()))
 
     def get_certificate_request_template(self, oid):
         """

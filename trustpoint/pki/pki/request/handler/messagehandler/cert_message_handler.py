@@ -90,6 +90,7 @@ class CertMessageHandler:
         self.ca_cert = issuing_ca_object.get_issuing_ca_certificate_serializer().as_crypto()
         self.ca_key = issuing_ca_object.private_key
         root_cert = issuing_ca_object.issuing_ca_model.root_ca_certificate.get_certificate_serializer().as_crypto()
+        # TODO: Implement logic to create certificate chain
         self.ca_cert_chain = [root_cert, self.ca_cert]
         self.logger.debug("Initialized CA data.")
 
