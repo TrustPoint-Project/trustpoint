@@ -175,17 +175,15 @@ class CertTemplateLoader:
 
             extensions.append(extension)
 
-            print(extensions)
-
             cert_template.setComponentByName('extensions', extensions)
 
-        if False:
-            # signingAlgorithm is deprecated
-            signing_algorithm = data["signingAlgorithm"]['algorithm']
-
-            algorithm_identifier = rfc2459.AlgorithmIdentifier()
-            algorithm_identifier.setComponentByName('algorithm', signing_algorithm)
-            cert_template.setComponentByName('signingAlg', algorithm_identifier)
+        # if False:
+        #     # signingAlgorithm is deprecated
+        #     signing_algorithm = data["signingAlgorithm"]['algorithm']
+        #
+        #     algorithm_identifier = rfc2459.AlgorithmIdentifier()
+        #     algorithm_identifier.setComponentByName('algorithm', signing_algorithm)
+        #     cert_template.setComponentByName('signingAlg', algorithm_identifier)
 
 
         return cert_template
