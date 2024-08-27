@@ -3,27 +3,64 @@
 
 from __future__ import annotations
 
-import enum
-import subprocess
-
-from django.core.management import BaseCommand
-from pathlib import Path
+import datetime
+import ipaddress
 import shutil
+import subprocess
+from pathlib import Path
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import rsa, ec
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
+from cryptography.hazmat.primitives.serialization import BestAvailableEncryption, pkcs12
 from cryptography.x509.oid import NameOID
-from cryptography.hazmat.primitives.serialization import pkcs12, BestAvailableEncryption
-import datetime
-import ipaddress
+
 from . import Algorithm
+from .base_commands import Command
 
 
-class Command(BaseCommand):
+class Command(Command):
     """Django management command for adding issuing CA test data."""
 
     help = 'Removes all migrations, deletes db and runs makemigrations and migrate afterwards.'
+
+    def _create_cert_chain(self, algorithm: Algorithm, path: Path) -> None:
+
+        pem_root_cert, root_cert, root_private_key = self._create_certificate(
+            common_name=f'{algorithm.value}-root-ca',
+            algorithm=algorithm,
+            path=path)
+
+        pem_issuing_cert, issuing_cert, issuing_private = self._create_certificate(
+            common_name=f'{algorithm.value}-issuing-ca',
+            algorithm=algorithm,
+            path=path,
+            issuer=root_cert,
+            issuer_priv_key=root_private_key
+        )
+
+        pem_ee_cert, ee_cert, ee_key = self._create_certificate(
+            common_name=f'{algorithm.value}-ee',
+            algorithm=algorithm,
+            path=path,
+            issuer=issuing_cert,
+            issuer_priv_key=issuing_private
+        )
+
+        p12 = pkcs12.serialize_key_and_certificates(
+            name=b'',
+            key=ee_key,
+            cert=ee_cert,
+            cas=[root_cert, issuing_cert],
+            encryption_algorithm=BestAvailableEncryption(b"password")
+        )
+
+        with open(path / f'{algorithm.value}.p12', 'wb') as f:
+            f.write(p12)
+
+        with open(path / f'{algorithm.value}-chain.pem', 'wb') as f:
+            cert_chain = pem_root_cert + pem_issuing_cert + pem_ee_cert
+            f.write(cert_chain.encode())
 
     @classmethod
     def _create_certificate(
@@ -38,7 +75,7 @@ class Command(BaseCommand):
         if algorithm == Algorithm.RSA2048:
             private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
         elif algorithm == Algorithm.RSA4096:
-            private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+            private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096)
         elif algorithm == Algorithm.SECP256:
             private_key = ec.generate_private_key(ec.SECP256R1())
         elif algorithm == Algorithm.SECP521:
@@ -172,44 +209,6 @@ class Command(BaseCommand):
             f.write(pem_cert)
 
         return pem_cert.decode(), certificate, private_key
-
-    def _create_cert_chain(self, algorithm: Algorithm, path: Path) -> None:
-
-        pem_root_cert, root_cert, root_private_key = self._create_certificate(
-            common_name=f'{algorithm.value}-root-ca',
-            algorithm=algorithm,
-            path=path)
-
-        pem_issuing_cert, issuing_cert, issuing_private = self._create_certificate(
-            common_name=f'{algorithm.value}-issuing-ca',
-            algorithm=algorithm,
-            path=path,
-            issuer=root_cert,
-            issuer_priv_key=root_private_key
-        )
-
-        pem_ee_cert, ee_cert, ee_key = self._create_certificate(
-            common_name=f'{algorithm.value}-ee',
-            algorithm=algorithm,
-            path=path,
-            issuer=issuing_cert,
-            issuer_priv_key=issuing_private
-        )
-
-        p12 = pkcs12.serialize_key_and_certificates(
-            name=b'',
-            key=ee_key,
-            cert=ee_cert,
-            cas=[root_cert, issuing_cert],
-            encryption_algorithm=BestAvailableEncryption(b"password")
-        )
-
-        with open(path / f'{algorithm.value}.p12', 'wb') as f:
-            f.write(p12)
-
-        with open(path / f'{algorithm.value}-chain.pem', 'wb') as f:
-            cert_chain = pem_root_cert + pem_issuing_cert + pem_ee_cert
-            f.write(cert_chain.encode())
 
     @staticmethod
     def _create_trust_store(path: Path):
