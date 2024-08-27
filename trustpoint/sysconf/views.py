@@ -6,12 +6,12 @@ from functools import wraps
 from typing import TYPE_CHECKING
 
 from django.contrib import messages
+from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect, render
 from django.utils.translation import gettext as _
 from django.views.generic.base import RedirectView
 
-from .security.decorators import security_level
 from .security.manager import SecurityFeatures, SecurityManager
 
 if TYPE_CHECKING:
@@ -24,9 +24,7 @@ from .models import LoggingConfig, NetworkConfig, NTPConfig, SecurityConfig
 class SecurityLevelMixin:
     """A mixin that provides security featrues checks for Django views."""
 
-    _thread_locals = threading.local()
-
-    def __init__(self, security_feature: SecurityFeatures=None, no_permisson_url=None, *args, **kwargs) -> None:
+    def __init__(self, security_feature: SecurityFeatures=None, *args, **kwargs) -> None:
         """Initializes the SecurityLevelMixin with the specified security feature and redirect URL.
 
         Parameters:
@@ -41,23 +39,8 @@ class SecurityLevelMixin:
         super().__init__(*args, **kwargs)
         self.sec = SecurityManager()
         self.security_feature = security_feature
-        self.no_permisson_url = no_permisson_url
 
-    @classmethod
-    def _get_security_level_instance(cls):
-        """Retrieves the current security level instance from the database, caching it in thread-local storage.
-
-        Returns:
-        --------
-        SecurityConfig
-            The current security level instance.
-        """
-        if not hasattr(cls._thread_locals, 'security_level_instance'):
-            cls._thread_locals.security_level_instance = SecurityConfig.objects.first()
-        return cls._thread_locals.security_level_instance
-
-    @classmethod
-    def get_security_level(cls):
+    def get_security_level(self):
         """Returns the security mode of the current security level instance.
 
         Returns:
@@ -65,15 +48,29 @@ class SecurityLevelMixin:
         str
             The security mode of the current security level instance.
         """
-        return cls._get_security_level_instance().security_mode
+        return self.sec.get_security_level()
 
-    @classmethod
-    def refresh_security_level_instance(cls):
-        """Refreshes the cached security level instance by reloading it from the database."""
-        cls._thread_locals.security_level_instance = SecurityConfig.objects.first()
+
+class SecurityLevelMixinRedirect(SecurityLevelMixin):
+    """A mixin that provides security featrues checks for Django views with redirect feature."""
+
+    def __init__(self, disabled_by_security_level_url=None, *args, **kwargs) -> None:
+        """Initializes the SecurityLevelMixin with the specified security feature and redirect URL.
+
+        Parameters:
+        -----------
+        security_feature : SecurityFeatures, optional
+            The feature to check against the current security level (default is None).
+        no_permisson_url : str, optional
+            The URL to which the user is redirected if the feature is not allowed (default is None).
+        *args, **kwargs:
+            Additional arguments passed to the superclass initializer.
+        """
+        super().__init__(*args, **kwargs)
+        self.disabled_by_security_level_url = disabled_by_security_level_url
 
     def dispatch(self, request, *args, **kwargs):
-        """If the feature is not allowed, the user is redirected to the no_permisson_url with an error message.
+        """If the feature is not allowed, the user is redirected to the disabled_by_security_level_url with an error message.
 
         Parameters:
         -----------
@@ -87,10 +84,10 @@ class SecurityLevelMixin:
         HttpResponse or HttpResponseRedirect
             The HTTP response object, either continuing to the requested view or redirecting.
         """
-        if not self.sec.is_feature_allowed(self.security_feature, self.get_security_level()):
-            msg = f'Your security setting does not allow the feature: "{self.security_feature}"'
-            messages.error(request, _(msg))
-            return redirect(self.no_permisson_url)
+        if not self.sec.is_feature_allowed(self.security_feature):
+            msg = _('Your security setting %s does not allow the feature: %s' % (self.get_security_level(), self.security_feature.value))
+            messages.error(request, msg)
+            return redirect(self.disabled_by_security_level_url)
         return super().dispatch(request, *args, **kwargs)
 
 
