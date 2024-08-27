@@ -2,8 +2,8 @@
 
 import abc
 from typing import Union
-from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 
+from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 
 PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
 PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
@@ -16,4 +16,7 @@ class Serializer(abc.ABC):
         Serializer classes do not include any type of validation.
         They are merely converting between formats.
     """
-    pass
+
+    @abc.abstractmethod
+    def serialize(self) -> bytes:
+        """The default serialization method."""
