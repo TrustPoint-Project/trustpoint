@@ -6,7 +6,6 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormView
 from django_tables2 import SingleTableView
 from sysconf.security import SecurityFeatures
-from sysconf.views import SecurityLevelMixin
 
 from pki.forms import (
     IssuingCaAddFileImportPkcs12Form,
@@ -29,18 +28,16 @@ class IssuingCaContextMixin(TpLoginRequiredMixin, ContextDataMixin):
     context_page_category = 'pki'
     context_page_name = 'issuing_cas'
 
-# @TODO: Remove Security Level Restriction from IssuingCaTableView. Only for demo purpose
-class IssuingCaTableView(SecurityLevelMixin, IssuingCaContextMixin, TpLoginRequiredMixin, SingleTableView):
+
+class IssuingCaTableView(IssuingCaContextMixin, TpLoginRequiredMixin, SingleTableView):
     """Issuing CA Table View."""
 
     model = IssuingCaModel
     table_class = IssuingCaTable
     template_name = 'pki/issuing_cas/issuing_cas.html'
-    security_feature = SecurityFeatures.ISSUING_CA_TABLE_VIEW
-    no_permisson_url = '/home/dashboard/'
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(security_feature=self.security_feature, no_permisson_url=self.no_permisson_url, *args, **kwargs)
+    security_feature = SecurityFeatures.ISSUING_CA_TABLE_VIEW
+    disabled_by_security_level_url = '/home/dashboard/'
 
 
 class IssuingCaAddMethodSelectView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
