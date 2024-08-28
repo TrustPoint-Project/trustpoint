@@ -8,7 +8,7 @@ from . import SecurityFeatures
 class SecurityManager:
 
     highest_features = (SecurityFeatures.LOG_ACCESS, )
-    high_features = (*highest_features, SecurityFeatures.ISSUING_CA_TABLE_VIEW, )
+    high_features = (*highest_features, )
     medium_features = (*high_features, )
     low_features = (*medium_features, SecurityFeatures.LOCAL_ROOT_CA, )
 

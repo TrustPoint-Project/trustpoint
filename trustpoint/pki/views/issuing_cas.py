@@ -36,9 +36,6 @@ class IssuingCaTableView(IssuingCaContextMixin, TpLoginRequiredMixin, SingleTabl
     table_class = IssuingCaTable
     template_name = 'pki/issuing_cas/issuing_cas.html'
 
-    security_feature = SecurityFeatures.ISSUING_CA_TABLE_VIEW
-    disabled_by_security_level_url = '/home/dashboard/'
-
 
 class IssuingCaAddMethodSelectView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
     template_name = 'pki/issuing_cas/add/method_select.html'
