@@ -144,10 +144,11 @@ class CredentialExtractor:
             self._get_certificate_chain()
 
             self._certificate_credential = CredentialSerializer(
-                credential=None,
-                credential_private_key=self._private_key_serializer.as_crypto(),
-                credential_certificate=self._issuing_ca_certificate.as_crypto(),
-                additional_certificates=self._certificate_chain.as_crypto()
+                credential=(
+                    self._private_key_serializer.as_crypto(),
+                    self._issuing_ca_certificate.as_crypto(),
+                    self._certificate_chain.as_crypto()
+                )
             )
         except Exception as exception:
             if isinstance(exception, CredentialExtractorError):
