@@ -209,11 +209,13 @@ class P12DownloadView(OnboardingUtilMixin, View):
         device = self.device
         download_token = request.GET.get('token')
         onboarding_process = OnboardingProcess.get_by_device(device)
-        if not onboarding_process or not onboarding_process.pkcs12 or not download_token:
+        if not onboarding_process or not onboarding_process.cred_serializer or not download_token:
             return HttpResponse('Not found.', status=404)
 
         if download_token == onboarding_process.download_token:
-            return HttpResponse(onboarding_process.get_pkcs12(), content_type='application/x-pkcs12')
+            response = HttpResponse(onboarding_process.get_pkcs12(),content_type='application/x-pkcs12')
+            response['Content-Disposition'] = f'attachment; filename="{device.device_name}.p12"'
+            return response
         return HttpResponse('Not found.', status=404)
 
 
@@ -231,17 +233,16 @@ class PemDownloadView(OnboardingUtilMixin, View):
         device = self.device
         download_token = request.GET.get('token')
         onboarding_process = OnboardingProcess.get_by_device(device)
-        if not onboarding_process or not onboarding_process.pkcs12:
+        if not onboarding_process or not onboarding_process.cred_serializer or not download_token:
             return HttpResponse('Not found.', status=404)
 
         if download_token == onboarding_process.download_token:
-            zip_data = onboarding_process.get_pem_zip()
-            response = HttpResponse(zip_data, content_type='application/zip')
+            response = HttpResponse(onboarding_process.get_pem_zip(), content_type='application/zip')
             response['Content-Disposition'] = f'attachment; filename="{device.device_name}.zip"'
             return response
         return HttpResponse('Not found.', status=404)
 
-
+# JAVA KEY STORE NOT IMPLEMENTED YET
 class JavaKeyStoreDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
     """View for downloading the Java KeyStore file of a device."""
 

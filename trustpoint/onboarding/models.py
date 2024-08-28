@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING
 from devices.models import Device
 from django.db import models
 from pki.models import ReasonCode
+from pki.serializer import CredentialSerializer
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
 from onboarding.crypto_backend import OnboardingError
@@ -174,21 +175,21 @@ class OnboardingProcess:
         log.debug(f'PKCS12 requested for onboarding process {self.id}.')
         self.gen_thread.join()
         self._success()
-        return self.pkcs12
+        return self.cred_serializer.as_pkcs12()
 
     def get_pem_zip(self) -> bytes | None:
         """Returns the certificate, chain and key as PEM-formatted bytes in a zip file."""
         log.debug(f'PKCS12 requested for onboarding process {self.id}.')
         self.gen_thread.join()
         self._success()
-        return Crypt.convert_pkcs12_to_pem_zip(self.pkcs12)
+        return self.cred_serializer.as_pem_zip()
 
     def _gen_keypair_and_ldevid(self) -> None:
         """Generates a keypair and LDevID certificate for the device."""
         try:
             if not self.device.device_serial_number:
                 self.device.device_serial_number = 'tpdl_' + secrets.token_urlsafe(12)
-            self.pkcs12 = Crypt.gen_keypair_and_ldevid(self.device)
+            self.cred_serializer = CredentialSerializer(Crypt.gen_keypair_and_ldevid(self.device))
             self.state = OnboardingProcessState.LDEVID_SENT
             log.info(f'LDevID issued for device {self.device.device_name} in onboarding process {self.id}.')
         except Exception as e:  # noqa: BLE001
@@ -315,7 +316,7 @@ class DownloadOnboardingProcess(OnboardingProcess):
         self._device = device
         self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
         self.gen_thread.start()
-        self.pkcs12 = None
+        self.cred_serializer = None
 
 class BrowserOnboardingProcess(OnboardingProcess):
     """Onboarding process for a device using the download onboarding method."""
@@ -331,7 +332,7 @@ class BrowserOnboardingProcess(OnboardingProcess):
         self.__otp = None
         self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
         self.gen_thread.start()
-        self.pkcs12 = None
+        self.cred_serializer = None
 
     def set_otp(self, otp: str) -> None:
         self.__otp = otp
