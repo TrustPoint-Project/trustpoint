@@ -6,8 +6,7 @@ from __future__ import annotations
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import Encoding, PrivateFormat, pkcs12
 
-from . import Serializer
-from . import PublicKey, PrivateKey
+from . import PrivateKey, PublicKey, Serializer
 
 
 class PublicKeySerializer(Serializer):
@@ -38,9 +37,10 @@ class PublicKeySerializer(Serializer):
         elif isinstance(public_key, PublicKeySerializer):
             self._public_key = public_key.as_crypto()
         else:
-            raise TypeError(
+            err_msg = (
                 'public_key must be of type bytes, str, PublicKey or PublicKeySerializer, '
                 f'but got {type(public_key)}.')
+            raise TypeError(err_msg)
 
     def _from_bytes(self, public_key_data: bytes) -> PublicKey:
         try:
@@ -53,10 +53,19 @@ class PublicKeySerializer(Serializer):
         except ValueError:
             pass
 
-        raise ValueError('Failed to load public key. May be malformed or not in a DER or PEM format.')
+        err_msg = 'Failed to load public key. May be malformed or not in a DER or PEM format.'
+        raise ValueError(err_msg)
 
     def _from_string(self, public_key_data: str) -> PublicKey:
         return self._from_bytes(public_key_data.encode())
+
+    def serialize(self) -> bytes:
+        """Default serialization method that gets the associated public key as bytes in PEM format.
+
+        Returns:
+            bytes: Bytes that contains the public key in PEM format.
+        """
+        return self.as_pem()
 
     def as_pem(self) -> bytes:
         """Gets the associated public key as bytes in PEM format.
@@ -90,15 +99,15 @@ class PublicKeySerializer(Serializer):
     def _load_pem_public_key(public_key_data: bytes) -> PublicKey:
         try:
             return serialization.load_pem_public_key(public_key_data)
-        except Exception:   # noqa: BLE001
-            raise ValueError
+        except Exception as exception:   # noqa: BLE001
+            raise ValueError from exception
 
     @staticmethod
     def _load_der_public_key(public_key_data: bytes) -> PublicKey:
         try:
             return serialization.load_der_public_key(public_key_data)
-        except Exception:   # noqa: BLE001
-            raise ValueError
+        except Exception as exception:   # noqa: BLE001
+            raise ValueError from exception
 
 
 class PrivateKeySerializer(Serializer):
@@ -124,7 +133,6 @@ class PrivateKeySerializer(Serializer):
             TypeError: If the private key is not of type bytes, str, PrivateKey or PrivateKeySerializer.
             ValueError: If the private key failed to deserialize.
         """
-
         if password == b'':
             password = None
 
@@ -137,9 +145,10 @@ class PrivateKeySerializer(Serializer):
         elif isinstance(private_key, PrivateKeySerializer):
             self._private_key = private_key.as_crypto()
         else:
-            raise TypeError(
+            err_msg = (
                 'private_key must be of type bytes, str, PrivateKey or PrivateKeySerializer, '
                 f'but got {type(private_key)}.')
+            raise TypeError(err_msg)
 
     def _from_bytes(self, private_key: bytes, password: None | bytes = None) -> PrivateKey:
         try:
@@ -157,18 +166,32 @@ class PrivateKeySerializer(Serializer):
         except ValueError:
             pass
 
-        raise ValueError(
-            'Failed to load private key. May be an incorrect password, malformed data or an unsupported format.'
-        )
+        err_msg = 'Failed to load private key. May be an incorrect password, malformed data or an unsupported format.'
+        raise ValueError(err_msg)
 
     def _from_string(self, private_key: str, password: None | bytes = None) -> PrivateKey:
         return self._from_bytes(private_key.encode(), password)
+
+    def serialize(self, password: None | bytes = None) -> bytes:
+        """Default serialization method that gets the associated private key as bytes in PKCS#8 DER format.
+
+        Args:
+            password:
+                Password if the private key shall be encrypted, None otherwise.
+                Empty bytes will be interpreted as None.
+
+        Returns:
+            bytes: Bytes that contains the private key in PKCS#8 DER format.
+        """
+        return self.as_pkcs8_pem(password=password)
 
     def as_pkcs1_der(self, password: None | bytes = None) -> bytes:
         """Gets the associated private key as bytes in PKCS#1 DER format.
 
         Args:
-            password: Password if the private key shall be encrypted, None otherwise.
+            password:
+                Password if the private key shall be encrypted, None otherwise.
+                Empty bytes will be interpreted as None.
 
         Returns:
             bytes: Bytes that contains the private key in PKCS#1 DER format.
@@ -183,7 +206,9 @@ class PrivateKeySerializer(Serializer):
         """Gets the associated private key as bytes in PKCS#1 PEM format.
 
         Args:
-            password: Password if the private key shall be encrypted, None otherwise.
+            password:
+                Password if the private key shall be encrypted, None otherwise.
+                Empty bytes will be interpreted as None.
 
         Returns:
             bytes: Bytes that contains the private key in PKCS#1 PEM format.
@@ -198,7 +223,9 @@ class PrivateKeySerializer(Serializer):
         """Gets the associated private key as bytes in PKCS#8 DER format.
 
         Args:
-            password: Password if the private key shall be encrypted, None otherwise.
+            password:
+                Password if the private key shall be encrypted, None otherwise.
+                Empty bytes will be interpreted as None.
 
         Returns:
             bytes: Bytes that contains the private key in PKCS#8 DER format.
@@ -213,7 +240,9 @@ class PrivateKeySerializer(Serializer):
         """Gets the associated private key as bytes in PKCS#8 DER format.
 
         Args:
-            password: Password if the private key shall be encrypted, None otherwise.
+            password:
+                Password if the private key shall be encrypted, None otherwise.
+                Empty bytes will be interpreted as None.
 
         Returns:
             bytes: Bytes that contains the private key in PKCS#8 DER format.
@@ -228,7 +257,9 @@ class PrivateKeySerializer(Serializer):
         """Gets the associated private key as bytes in PKCS#12 format.
 
         Args:
-            password: Password if the private key shall be encrypted, None otherwise.
+            password:
+                Password if the private key shall be encrypted, None otherwise.
+                Empty bytes will be interpreted as None.
             friendly_name: The friendly_name to set in the PKCS#12 structure.
 
         Returns:
@@ -269,19 +300,19 @@ class PrivateKeySerializer(Serializer):
     def _load_pem_private_key(private_key: bytes, password: None | bytes = None) -> PrivateKey:
         try:
             return serialization.load_pem_private_key(private_key, password)
-        except Exception:   # noqa: BLE001
-            raise ValueError
+        except Exception as exception:   # noqa: BLE001
+            raise ValueError from exception
 
     @staticmethod
     def _load_der_private_key(private_key: bytes, password: None | bytes = None) -> PrivateKey:
         try:
             return serialization.load_der_private_key(private_key, password)
-        except Exception:   # noqa: BLE001
-            raise ValueError
+        except Exception as exception:   # noqa: BLE001
+            raise ValueError from exception
 
     @staticmethod
     def _load_pkcs12_private_key(p12_data: bytes, password: None | bytes = None) -> PrivateKey:
         try:
             return pkcs12.load_pkcs12(p12_data, password).key
-        except Exception:   # noqa: BLE001
-            raise ValueError
+        except Exception as exception:   # noqa: BLE001
+            raise ValueError from exception
