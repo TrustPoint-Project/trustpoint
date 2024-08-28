@@ -51,9 +51,9 @@ API Documentation
 
 
 from .base import PrivateKey, PublicKey, Serializer
+from .key import PrivateKeySerializer, PublicKeySerializer
 from .certificate import CertificateCollectionSerializer, CertificateSerializer
 from .credential import CredentialSerializer
-from .key import PrivateKeySerializer, PublicKeySerializer
 
 __all__ = [
     'PublicKey',
