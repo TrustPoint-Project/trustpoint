@@ -94,29 +94,29 @@ urlpatterns = [
         name='truststores-add'
     ),
     re_path(
-        r'^truststores/download/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
+        r'^truststores/download/(?P<pk>[0-9]+)/?$',
         trust_stores.TrustStoresDownloadView.as_view(),
         name='truststores-download',
     ),
     re_path(
-        r'^truststores/download/(?P<file_format>[a-zA-Z0-9_]+)/(?P<file_content>[a-zA-Z0-9_]+)/(?P<pk>[0-9]+)/?$',
+        r'^truststores/download/(?P<file_format>[a-zA-Z0-9_]+)/(?P<file_content>[a-zA-Z0-9_]+)/(?P<pk>[0-9]+)/?',
         trust_stores.TrustStoresDownloadView.as_view(short=False),
         name='truststores-file-download',
     ),
-    re_path(
-        r'^truststores/download/multiple/(?P<pks>([0-9]+/)+[0-9]+)/?$',
-        trust_stores.TrustStoresMultipleDownloadView.as_view(),
-        name='truststores-download'
-    ),
-    re_path(
-        r'^truststores/download/multiple/'
-        r'(?P<file_format>[a-zA-Z0-9_]+)/'
-        r'(?P<file_content>[a-zA-Z0-9_]+)/'
-        r'(?P<archive_format>[a-zA-Z0-9_]+)/'
-        r'(?P<pks>([0-9]+/)+[0-9]+)/?$',
-        trust_stores.TrustStoresMultipleDownloadView.as_view(),
-        name='truststores-file-download'
-    ),
+    # re_path(
+    #     r'^truststores/download/multiple/(?P<pks>([0-9]+/)+[0-9]+)/?$',
+    #     trust_stores.TrustStoresMultipleDownloadView.as_view(),
+    #     name='truststores-download'
+    # ),
+    # re_path(
+    #     r'^truststores/download/multiple/'
+    #     r'(?P<file_format>[a-zA-Z0-9_]+)/'
+    #     r'(?P<file_content>[a-zA-Z0-9_]+)/'
+    #     r'(?P<archive_format>[a-zA-Z0-9_]+)/'
+    #     r'(?P<pks>([0-9]+/)+[0-9]+)/?$',
+    #     trust_stores.TrustStoresMultipleDownloadView.as_view(),
+    #     name='truststores-file-download'
+    # ),
     path('truststores/detail/<pk>/', trust_stores.TrustStoresDetailView.as_view(), name='truststore_details'),
 
 ]

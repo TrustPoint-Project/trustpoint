@@ -281,18 +281,14 @@ class TrustStoreAddForm(forms.Form):
             initializer = TrustStoreInitializer(
                 unique_name=cleaned_data['unique_name'],
                 trust_store=trust_store_file)
-            pass
         except Exception as e:
             raise ValidationError(
                 'Failed to load file. Seems to be malformed.',
                 code='trust-store-file-loading-failed')
-
         try:
             initializer.save()
-            pass
         except Exception:
             raise ValidationError('Unexpected Error. Failed to save validated Trust Store in DB.')
-
 
 
 class TruststoresDownloadForm(forms.Form):

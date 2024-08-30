@@ -22,23 +22,21 @@
                     </div>
                     <hr>
 
-                    {% for truststore in truststores %}
-                        <div class="tp-card-split">
-                            <div>Truststore {{ forloop.counter }}</div>
-                            <div><a class="btn btn-primary min-width-15" href="{% url 'pki:truststore-detail' pk=truststore.id %}">Details</a></div>
-                        </div>
-                        <br>
-                        <div class="tp-card-split">
-                            <div>Common Name</div>
-                            <div>{{ truststore.common_name }}</div>
-                        </div>
-                        <div class="tp-card-split">
-                            <div>Serial Number</div>
-                            <div>{{ truststore.serial_number }}</div>
-                        </div>
-                        <hr>
+                    <div class="tp-card-split">
+                        <div>Truststore {{ forloop.counter }}</div>
+                        <div><a class="btn btn-primary min-width-15" href="{% url 'pki:truststore_details' pk=truststore.id %}">Details</a></div>
+                    </div>
+                    <br>
+                    <div class="tp-card-split">
+                        <div>Common Name</div>
+                        <div>{{ truststore.common_name }}</div>
+                    </div>
+                    <div class="tp-card-split">
+                        <div>Serial Number</div>
+                        <div>{{ truststore.serial_number }}</div>
+                    </div>
+                    <hr>
 
-                    {% endfor %}
                         {{ form|crispy }}
                     </div>
                 </div>

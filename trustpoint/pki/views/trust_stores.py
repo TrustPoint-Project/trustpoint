@@ -53,11 +53,11 @@ class TrustStoresDetailView(TrustStoresContextMixin, TpLoginRequiredMixin, Detai
 
 class TrustStoresDownloadView(TrustStoresContextMixin, TpLoginRequiredMixin, DetailView):
 
-    model = CertificateModel
+    model = TrustStoreModel
     success_url = reverse_lazy('pki:truststores')
     ignore_url = reverse_lazy('pki:truststores')
     template_name = 'pki/truststores/download.html'
-    context_object_name = 'truststores'
+    context_object_name = 'truststore'
     short: bool = None
 
     def get(self, *args, **kwargs):
