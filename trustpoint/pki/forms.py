@@ -7,7 +7,8 @@ from django.core.exceptions import ValidationError
 
 from pki.initializer import (
     UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer,
-    UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer)
+    UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer,
+    TrustStoreInitializer)
 from pki.models import IssuingCaModel, DomainModel
 from pki.validator.field import UniqueNameValidator
 
@@ -277,9 +278,9 @@ class TrustStoreAddForm(forms.Form):
                 code='unexpected-error')
 
         try:
-            # initializer = TrustStoreInitializer(
-            #     unique_name=cleaned_data['unique_name'],
-            #     trust_store=trust_store_file)
+            initializer = TrustStoreInitializer(
+                unique_name=cleaned_data['unique_name'],
+                trust_store=trust_store_file)
             pass
         except Exception as e:
             raise ValidationError(
@@ -287,7 +288,7 @@ class TrustStoreAddForm(forms.Form):
                 code='trust-store-file-loading-failed')
 
         try:
-            # initializer.save()
+            initializer.save()
             pass
         except Exception:
             raise ValidationError('Unexpected Error. Failed to save validated Trust Store in DB.')

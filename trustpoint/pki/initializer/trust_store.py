@@ -18,6 +18,11 @@ if TYPE_CHECKING:
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
+__all__ = [
+    'TrustStoreInitializer'
+]
+
+
 class TrustStoreInitializer:
     _unique_name: str
     _trust_store: list[x509.Certificate]
