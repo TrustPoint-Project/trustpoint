@@ -11,7 +11,7 @@ from django.http import Http404
 from django_tables2 import SingleTableView
 
 from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, PrimaryKeyFromUrlToQuerysetMixin
-from pki.download.certificate import CertificateDownloadResponseBuilder, MultiCertificateDownloadResponseBuilder
+from pki.download.trust_store import TrustStoreDownloadResponseBuilder, MultiTrustStoreDownloadResponseBuilder
 
 
 from pki.forms import TrustStoreAddForm, TruststoresDownloadForm
@@ -23,7 +23,7 @@ class TrustStoresContextMixin(TpLoginRequiredMixin, ContextDataMixin):
     """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
 
     context_page_category = 'pki'
-    context_page_name = 'truststores'
+    context_page_name = 'truststore'
 
 class TrustStoresTableView(TrustStoresContextMixin, TpLoginRequiredMixin, SingleTableView):
     """Certificates Table View."""
@@ -62,16 +62,15 @@ class TrustStoresDownloadView(TrustStoresContextMixin, TpLoginRequiredMixin, Det
 
     def get(self, *args, **kwargs):
         file_format = self.kwargs.get('file_format')
-        file_content = self.kwargs.get('file_content')
-        if file_format is None and file_content is None:
+        if file_format is None :
             return super().get(*args, **kwargs)
 
-        if file_format is None or file_content is None:
+        if file_format is None:
             raise Http404
 
         pk = self.kwargs.get('pk')
 
-        return CertificateDownloadResponseBuilder(pk, file_format, file_content).as_django_http_response()
+        return TrustStoreDownloadResponseBuilder(pk, file_format).as_django_http_response()
 
 
 class TrustStoresMultipleDownloadView(
@@ -84,25 +83,23 @@ class TrustStoresMultipleDownloadView(
     success_url = reverse_lazy('pki:truststores')
     ignore_url = reverse_lazy('pki:truststores')
     template_name = 'pki/truststores/download_multiple.html'
-    context_object_name = 'truststores'
+    context_object_name = 'truststore'
 
     def get(self, *args, **kwargs):
         self.extra_context = {'pks_url_path': self.get_pks_path()}
 
         file_format = self.kwargs.get('file_format')
-        file_content = self.kwargs.get('file_content')
         archive_format = self.kwargs.get('archive_format')
-        if file_format is None and file_content is None  and archive_format is None:
+        if file_format is None and archive_format is None:
             return super().get(*args, **kwargs)
 
-        if file_format is None or file_content is None or archive_format is None:
+        if file_format is None or archive_format is None:
             raise Http404
 
         pks = self.get_pks()
 
-        return MultiCertificateDownloadResponseBuilder(
+        return MultiTrustStoreDownloadResponseBuilder(
             pks=pks,
             file_format=file_format,
-            file_content=file_content,
             archive_format=archive_format).as_django_http_response()
 
