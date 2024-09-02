@@ -175,7 +175,7 @@ class FileImportLocalIssuingCaInitializer(IssuingCaInitializer, abc.ABC):
             issuing_ca_model = self._issuing_ca_model_class(
                 unique_name=self._unique_name,
                 auto_crl=self._auto_crl,
-                private_key_pem=self._credential_serializer.credential_private_key.as_pkcs1_pem(None)
+                private_key_pem=self._credential_serializer.credential_private_key.as_pkcs1_pem(None).decode("utf-8")
             )
 
             issuing_ca_model.issuing_ca_certificate = saved_certs[0]
