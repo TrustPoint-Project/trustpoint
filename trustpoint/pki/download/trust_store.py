@@ -8,7 +8,7 @@ import zipfile
 from django.http import HttpResponse, Http404
 from docutils.nodes import field
 
-from pki.models import CertificateModel
+from pki.models import CertificateModel, TrustStoreModel
 from pki.serializer import CertificateSerializer, CertificateCollectionSerializer
 
 from typing import TYPE_CHECKING
@@ -64,44 +64,25 @@ class TrustStoreDownloadResponseBuilder(DownloadResponseBuilder):
         except ValueError:
             raise Http404
 
-        # try:
-        #     file_content = CertificateFileContent(file_content)
-        # except ValueError:
-        #     raise Http404
-
         try:
-            certificate_model = CertificateModel.objects.get(pk=pk)
+            truststore_model = TrustStoreModel.objects.get(pk=pk)
         except CertificateModel.DoesNotExist:
             raise Http404
 
-        # if file_content == CertificateFileContent.CERT_ONLY:
-        #     certificate_serializer = certificate_model.get_certificate_serializer()
-        # elif file_content == CertificateFileContent.CERT_AND_CHAIN:
-        #     # TODO: If a cross signed cert is contained with multiple chains, only the first one is currently included
-        #     certificate_serializer = certificate_model.get_certificate_chain_serializers()[0]
-        # elif file_content == CertificateFileContent.CHAIN_ONLY:
-        #     # TODO: If a cross signed cert is contained with multiple chains, only the first one is currently included
-        #     certificate_serializer = certificate_model.get_certificate_chain_serializers(include_self=False)[0]
-        # else:
-        #     raise Http404
-
-        # certificate_serializer=certificate_model.get_certificate_chain_serializers(include_self=False)[0]
-        certificate_serializer = certificate_model.get_certificate_serializer()
+        trust_store_serializer = truststore_model.get_serializer()
         if file_format == CertificateFileFormat.PEM:
-            data = certificate_serializer.as_pem()
-        elif file_format == CertificateFileFormat.DER:
-            data = certificate_serializer.as_der()
+            data = trust_store_serializer.as_pem()
         elif file_format == CertificateFileFormat.PKCS7_PEM:
-            data = certificate_serializer.as_pkcs7_pem()
+            data = trust_store_serializer.as_pkcs7_pem()
         elif file_format == CertificateFileFormat.PKCS7_DER:
-            data = certificate_serializer.as_pkcs7_der()
+            data = trust_store_serializer.as_pkcs7_der()
         else:
             raise Http404
 
         self._set_django_http_response(
             data,
             content_type=file_format.mime_type,
-            filename='certificate' + file_format.file_extension)
+            filename='trust_store' + file_format.file_extension)
 
 
 

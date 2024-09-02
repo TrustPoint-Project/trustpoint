@@ -23,7 +23,7 @@ class TrustStoresContextMixin(TpLoginRequiredMixin, ContextDataMixin):
     """Mixin which adds context_data for the PKI -> Issuing CAs pages."""
 
     context_page_category = 'pki'
-    context_page_name = 'truststore'
+    context_page_name = 'truststores'
 
 class TrustStoresTableView(TrustStoresContextMixin, TpLoginRequiredMixin, SingleTableView):
     """Certificates Table View."""

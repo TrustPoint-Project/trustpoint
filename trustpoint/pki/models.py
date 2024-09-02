@@ -1487,7 +1487,9 @@ class TrustStoreModel(models.Model):
         return f'TrustStoreModel({self.unique_name})'
 
     def get_serializer(self) -> CertificateCollectionSerializer:
-        pass
+        return CertificateCollectionSerializer(
+            [cert_model.get_certificate_serializer() for cert_model in self.certificates.all()]
+        )
 
 
 class TrustStoreOrderModel(models.Model):

@@ -96,12 +96,12 @@ urlpatterns = [
     re_path(
         r'^truststores/download/(?P<pk>[0-9]+)/?$',
         trust_stores.TrustStoresDownloadView.as_view(),
-        name='truststores-download',
+        name='truststore-download',
     ),
     re_path(
         r'^truststores/download/(?P<file_format>[a-zA-Z0-9_]+)/(?P<pk>[0-9]+)/?',
         trust_stores.TrustStoresDownloadView.as_view(short=False),
-        name='truststores-file-download',
+        name='truststore-file-download',
     ),
     re_path(
         r'^truststores/download/multiple/(?P<pks>([0-9]+/)+[0-9]+)/?$',
