@@ -7,8 +7,6 @@
     <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:exit' device_id %}"</script>
     <script src="{% url 'javascript-catalog' %}"></script>
     <script src="{% static 'js/onboarding.js' %}"></script>
-    <!-- Laden der separaten JavaScript-Datei -->
-    <script src="{% static 'js/browser.js' %}"></script>
 {% endblock head %}
 {% block content %}
     <div class="card card-main text-center">
@@ -16,19 +14,17 @@
             <h1>{% blocktranslate %}Save details for {{ device_name }}{% endblocktranslate %}</h1>
         </div>
         <div class="card-body tp-main-centered pt-3 pb-4">
-            <div id="onboarding-state-dl" class="alert alert-info d-flex align-items-center mt-3 breathing-anim dl" role="alert">  
+            <div id="onboarding-state-bo" class="alert alert-info d-flex align-items-center mt-3 breathing-anim dl" role="alert">  
                 <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
                 <div>{% trans "Fetching state from server..." %}</div>                
             </div>
-            <h2>Device id</h2>
+            <h2>Device ID</h2>
             {{ device_id }}
             <hr>
             <h2>OTP</h2>
             <div class="d-flex justify-content-center align-items-center">
-                <span id="otp-value">{{ otp }}</span>
-                <button id="copy-button" class="btn btn-secondary btn-sm ml-2">
-                    {% trans "Copy" %}
-                </button>
+                <span id="otp-value">{{ otp }}</span>&nbsp;
+                <button class="btn btn-primary" onclick="copyToClipboard(this,'#otp-value', true)">{% trans "Copy" %}</button>
             </div>
             <h2>Download URL</h2>
             <div>

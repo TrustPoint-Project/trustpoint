@@ -121,7 +121,7 @@ class BrowserInitializationView(TpLoginRequiredMixin, OnboardingUtilMixin, Templ
         context = {
             'page_category': 'onboarding',
             'page_name': 'browser',
-            'url': request.path,
+            'url': onboarding_process.url,
             'sn': device.device_serial_number,
             'device_name': device.device_name,
             'device_id': device.id,
