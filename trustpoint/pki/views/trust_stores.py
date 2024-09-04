@@ -83,7 +83,7 @@ class TrustStoresMultipleDownloadView(
     success_url = reverse_lazy('pki:truststores')
     ignore_url = reverse_lazy('pki:truststores')
     template_name = 'pki/truststores/download_multiple.html'
-    context_object_name = 'truststore'
+    context_object_name = 'truststores'
 
     def get(self, *args, **kwargs):
         self.extra_context = {'pks_url_path': self.get_pks_path()}

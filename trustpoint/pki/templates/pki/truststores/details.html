@@ -36,6 +36,8 @@
                         <br><br><h2>Certificate Hierarchy</h2>
                         <hr>
 
+                        <div>{{ cert.not_valid_before }}</div>
+
                         <div class="tp-card-split">
                             <div>Issuer</div>
                             <div>
@@ -47,7 +49,9 @@
 
                         <div class="tp-card-split">
                             <div>Cross signed certificate</div>
-                            <div>{{ cert.is_cross_signed }}</div>
+                            <!-- <div>{{ cert.is_cross_signed }}</div> -->
+                            
+                           
                         </div>
 
                         {% for cert in truststore.certificates.all %}
@@ -55,28 +59,23 @@
                         <div class="tp-card-split">
                             <div>Certificate Chain {{ forloop.counter }}</div>
                             <div>
-                                {% for certificate in certificate_chain %}
+                                {% for cert in certificate_chain %}
                                     <a href="{% url 'pki:certificate-detail' pk=certificate.id %}">
-                                        {% if certificate.common_name %}
-                                            commonName={{ certificate.common_name }}
+                                        {% if cert.common_name %}
+                                            commonName={{ cert.common_name }}
                                         {% else %}
-                                            serialNumber={{ certificate.serial_number }}
+                                            serialNumber={{ cert.serial_number }}
                                         {% endif %}
                                     </a><br>
                                 {% endfor %}
                                 {# TODO: Links for  #}
-                                <a href="#" class="btn btn-primary my-1">Download Certificate Chain (PEM)</a>
-                                <a href="#" class="btn btn-primary my-1">Download Certificate Chain (PKCS#7 - DER)</a>
-                                <a href="#" class="btn btn-primary my-1">Download Certificate Chain (PKCS#7 - PEM)</a>
+                                <a href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='pem' %}" class="btn btn-primary my-1">Download Certificate Chain (PEM)</a>
+                                <a href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='pkcs7_der' %}" class="btn btn-primary my-1">Download Certificate Chain (PKCS#7 - DER)</a>
+                                <a href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='pkcs7_pem' %}" class="btn btn-primary my-1">Download Certificate Chain (PKCS#7 - PEM)</a>
                             <br>
                             </div>
                         </div>
                     {% endfor %}
-                
-
-                    
-                    
-
 
                     </div>
                 </div>

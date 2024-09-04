@@ -105,21 +105,7 @@ class MultiTrustStoreDownloadResponseBuilder(DownloadResponseBuilder):
             raise Http404
 
         serializers = []
-        # if file_content == CertificateFileContent.CERT_ONLY:
-        #     for certificate_model in certificate_models:
-        #         serializers.append(certificate_model.get_certificate_serializer())
-        # elif file_content == CertificateFileContent.CERT_AND_CHAIN:
-        #     # TODO: If a cross signed cert is contained with multiple chains, only the first one is currently included
-        #     for certificate_model in certificate_models:
-        #         serializers.append(certificate_model.get_certificate_chain_serializers()[0])
-        # elif file_content == CertificateFileContent.CHAIN_ONLY:
-        #     # TODO: If a cross signed cert is contained with multiple chains, only the first one is currently included
-        #     for certificate_model in certificate_models:
-        #         serializers.append(certificate_model.get_certificate_chain_serializers(include_self=False)[0])
-
-        # else:
-        #     raise Http404
-
+        
         certificate_bytes_collection = []
         if file_format == CertificateFileFormat.PEM:
             for serializer in serializers:
