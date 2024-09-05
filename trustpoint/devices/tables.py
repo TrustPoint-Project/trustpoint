@@ -183,7 +183,8 @@ class DeviceTable(tables.Table):
         if is_brski or is_fido:
             return self._render_zero_touch_onboarding_action(record)
 
-        raise UnknownOnboardingProtocolError(record.onboarding_protocol)
+        #raise UnknownOnboardingProtocolError(record.onboarding_protocol)
+        return format_html('<span class="text-danger">' + _('Unknown onboarding protocol!') + '</span>')
 
     @staticmethod
     def render_details(record: Device) -> SafeString:

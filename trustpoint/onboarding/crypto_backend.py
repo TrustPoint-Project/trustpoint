@@ -242,7 +242,7 @@ class CryptoBackend:
         log.debug('Generating PKCS12 for device %s', device.device_name)
 
         if not device.device_serial_number:
-            exc_msg = 'No serial number provided in CSR for device %s', device.device_name
+            exc_msg = f'No serial number provided in CSR for device {device.device_name}'
             raise OnboardingError(exc_msg)
         serial_no = device.device_serial_number
 
