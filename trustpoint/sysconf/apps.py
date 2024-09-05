@@ -8,4 +8,4 @@ class SysconfConfig(AppConfig):
     name = 'sysconf'
 
     def ready(self):
-        import sysconf.signals  # Stelle sicher, dass die Signale importiert werden
+        import sysconf.signals  # Ensure security level update signals are imported

@@ -1,7 +1,6 @@
 """Django Views"""
 from __future__ import annotations
 
-import threading
 from functools import wraps
 from typing import TYPE_CHECKING
 
@@ -22,7 +21,7 @@ from .models import LoggingConfig, NetworkConfig, NTPConfig, SecurityConfig
 
 
 class SecurityLevelMixin:
-    """A mixin that provides security featrues checks for Django views."""
+    """A mixin that provides security feature checks for Django views."""
 
     def __init__(self, security_feature: SecurityFeatures=None, *args, **kwargs) -> None:
         """Initializes the SecurityLevelMixin with the specified security feature and redirect URL.
@@ -52,7 +51,7 @@ class SecurityLevelMixin:
 
 
 class SecurityLevelMixinRedirect(SecurityLevelMixin):
-    """A mixin that provides security featrues checks for Django views with redirect feature."""
+    """A mixin that provides security feature checks for Django views with redirect feature."""
 
     def __init__(self, disabled_by_security_level_url=None, *args, **kwargs) -> None:
         """Initializes the SecurityLevelMixin with the specified security feature and redirect URL.
