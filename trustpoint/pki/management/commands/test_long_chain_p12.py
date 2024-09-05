@@ -8,10 +8,11 @@ from pathlib import Path
 from cryptography.hazmat.primitives.serialization import BestAvailableEncryption, pkcs12
 from pki.models import CertificateModel
 
-from .base_commands import Command
+from .base_commands import CertificateCreationCommandMixin
+from django.core.management.base import BaseCommand
 
 
-class Command(Command):
+class Command(CertificateCreationCommandMixin, BaseCommand):
     """Django management command for adding issuing CA test data."""
 
     help = 'Removes all migrations, deletes db and runs makemigrations and migrate afterwards.'
