@@ -15,15 +15,15 @@
 
         </div>
 
-        <div class="card-footer tp-table-footer-btn-group">
-            <!-- <div>
-                <button type="button" id="tp-table-select-btn" class="btn btn-primary" data-tp-url="delete">{% trans "Delete selected" %}</button>
+        <div class="card-footer d-flex justify-content-between">
+            <div class="d-flex">
+                <div>
+                    <button type="button" class="btn btn-primary me-1 tp-table-select-btn" data-tp-url="download/multiple">{% trans "Download selected" %}</button>
+                </div>
+                <div>
+                     <button type="button" class="btn btn-secondary tp-table-select-btn" data-tp-url="delete">{% trans "Delete selected" %}</button>
+                </div>
             </div>
-             -->
-            <div>
-                <button type="button" id="tp-table-select-btn" class="btn btn-primary" data-tp-url="download/multiple">{% trans "Download selected" %}</button>
-            </div>
-
             <div>
                 <a class="btn btn-primary" href="{% url 'pki:truststores-add' %}">{% trans "Add New Trust Store" %}</a>
             </div>
