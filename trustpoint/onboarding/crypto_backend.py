@@ -109,51 +109,6 @@ class CryptoBackend:
         return signing_ca.issuing_ca_certificate
 
     @staticmethod
-    def _sign_ldevid(pub_key: CertificatePublicKeyTypes, device: Device) -> X509Certificate:
-        if not device.device_serial_number:
-            exc_msg = 'No serial number provided.'
-            raise OnboardingError(exc_msg)
-
-        subject = x509.Name([
-            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'ldevid.trustpoint.local'),
-            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.device_serial_number)
-        ])
-
-        ca_certificate = CryptoBackend._get_ca(device)
-        private_ca_key = ca_certificate.get_private_key_as_crypto()
-        ca_cert = ca_certificate.get_cert_as_crypto()
-
-        log.debug('Issuing LDevID for device %s', device.device_name)
-
-        cert = (
-            x509.CertificateBuilder()
-            .subject_name(subject)
-            .issuer_name(ca_cert.subject)
-            .public_key(pub_key)
-            .serial_number(x509.random_serial_number())  # This is NOT the device serial number
-            .not_valid_before(
-                datetime.now(timezone.utc) - timedelta(hours=1)  # backdate a bit in case of client clock skew
-            )
-            .not_valid_after(
-                # TODO(Air): configurable validity period
-                datetime.now(timezone.utc) + timedelta(days=365)
-                # Sign our certificate with our private key
-            )
-            .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
-            .sign(private_ca_key, hashes.SHA256())
-        )
-
-        device_cert = CertificateModel()
-        device.ldevid = device_cert.save_certificate(cert)
-
-        # need to keep track of the device once we send out a cert, even if onboarding fails afterwards
-        # TODO(Air): but do it here?
-        device.save()
-        log.info('Issued and stored LDevID for device %s', device.device_name)
-
-        return cert
-
-    @staticmethod
     def sign_ldevid_from_csr(csr_pem: bytes, device: Device) -> bytes:
         """Signs a certificate signing request (CSR) with the onboarding CA.
 
