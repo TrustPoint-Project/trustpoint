@@ -100,32 +100,29 @@ class MultiTrustStoreDownloadResponseBuilder(DownloadResponseBuilder):
             raise Http404
 
         try:
-            certificate_models = CertificateModel.objects.filter(pk__in=pks)
-        except CertificateModel.DoesNotExist:
+            truststore_models = TrustStoreModel.objects.filter(pk__in=pks)
+        except TrustStoreModel.DoesNotExist:
             raise Http404
 
-        serializers = []
+        serializers = [truststore_model.get_serializer() for truststore_model in truststore_models]
 
-        certificate_bytes_collection = []
+        truststore_bytes_collection = []
         if file_format == CertificateFileFormat.PEM:
             for serializer in serializers:
-                certificate_bytes_collection.append(serializer.as_pem())
-        elif file_format == CertificateFileFormat.DER:
-            for serializer in serializers:
-                certificate_bytes_collection.append(serializer.as_der())
+                truststore_bytes_collection.append(serializer.as_pem())
         elif file_format == CertificateFileFormat.PKCS7_PEM:
             for serializers in serializers:
-                certificate_bytes_collection.append(serializers.as_pkcs7_pem())
+                truststore_bytes_collection.append(serializers.as_pkcs7_pem())
         elif file_format == CertificateFileFormat.PKCS7_DER:
             for serializers in serializers:
-                certificate_bytes_collection.append(serializers.as_pkcs7_der())
+                truststore_bytes_collection.append(serializers.as_pkcs7_der())
         else:
             raise Http404
 
         if archive_format == CertificateArchiveFormat.ZIP:
-            self._archive_zip(certificate_bytes_collection, file_format)
+            self._archive_zip(truststore_bytes_collection, file_format)
         elif archive_format == CertificateArchiveFormat.TAR_GZ:
-            self._archive_tar_gz(certificate_bytes_collection, file_format)
+            self._archive_tar_gz(truststore_bytes_collection, file_format)
         else:
             raise Http404
 
