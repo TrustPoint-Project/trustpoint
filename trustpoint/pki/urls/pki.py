@@ -56,6 +56,7 @@ urlpatterns = [
         name='issuing_cas-add-file_import-separate_files'
     ),
     path('issuing-cas/detail/<int:pk>/', issuing_cas.IssuingCaDetailView.as_view(), name='issuing_cas-detail'),
+    path('issuing-cas/config/<int:pk>/', issuing_cas.IssuingCaConfigView.as_view(), name='issuing_cas-config'),
     re_path(
         r'^issuing-cas/delete/(?P<pks>([0-9]+/)+[0-9]*)/?$',
         issuing_cas.IssuingCaBulkDeleteConfirmView.as_view(),
@@ -63,10 +64,10 @@ urlpatterns = [
     ),
     path('ca-crl/<int:ca_id>/',
          crls.CRLDownloadView.download_ca_crl,
-         name='crl'),
+         name='download-ca-crl'),
     path('generate-ca-crl/<int:ca_id>/',
          crls.CRLDownloadView.generate_ca_crl,
-         name='crl'),
+         name='generate-ca-crl'),
     path('domains/', domains.DomainTableView.as_view(), name='domains'),
     path(
         'domains/add/',
@@ -81,7 +82,7 @@ urlpatterns = [
     path(
         'domains/detail/<int:pk>/',
         domains.DomainDetailView.as_view(),
-        name='domains-delete_confirm'),
+        name='domains-detail'),
     re_path(
         r'^domains/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
         domains.DomainBulkDeleteConfirmView.as_view(),

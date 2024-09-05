@@ -3,15 +3,13 @@ from __future__ import annotations
 import datetime
 import logging
 from abc import ABC
-
 from typing import TYPE_CHECKING
 
-from cryptography.hazmat.primitives import hashes, serialization
 from cryptography import x509
-from django.conf import settings
+from cryptography.hazmat.primitives import hashes, serialization
 from django.db import transaction
 
-from .serializer import PrivateKeySerializer, CertificateCollectionSerializer
+from .serializer import CertificateCollectionSerializer, PrivateKeySerializer
 
 if TYPE_CHECKING:
     from typing import Union
@@ -67,7 +65,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         self.crl_builder = x509.CertificateRevocationListBuilder(
             issuer_name=ca_serializer.issuer,
             last_update=datetime.datetime.today(),
-            next_update=datetime.datetime.today() + datetime.timedelta(hours=settings.CRL_INTERVAL)
+            next_update=issuing_ca_model.next_crl_generation_time
         )
         log.debug('UnprotectedLocalIssuingCa initialized.')
 
@@ -102,7 +100,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             log.debug('CRL found in database and started parsing.')
             return x509.load_pem_x509_crl(crl.encode())
         log.debug('No CRL found in database.')
-        return []
+        return x509.CertificateRevocationList
 
     def _get_private_key_serializer(self) -> PrivateKeySerializer:
         """Retrieves the private key serializer for the issuing CA.
@@ -158,6 +156,11 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             log.info('CRL generation finished.')
         return True
 
+    def get_creation_date_from_crl(self, crl) -> datetime:
+        crl = x509.load_pem_x509_crl(crl.encode())
+        return crl.last_update_utc
+
+
     def save_crl_to_database(self, crl: x509.CertificateRevocationList) -> None:
         """Saves the generated CRL to the database.
 
@@ -165,13 +168,14 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             crl (str): The CRL in PEM format to be stored in the database.
         """
         from .models import CRLStorage
-        CRLStorage.objects.update_or_create(
+        CRLStorage.objects.create(
             crl=crl,
+            created_at = self.get_creation_date_from_crl(crl),
             ca=self._issuing_ca_model
         )
         log.info('CRL stored in Database.')
 
-    def get_crl(self) -> str:
+    def get_crl_as_str(self) -> str:
         """Retrieves the current CRL for the issuing CA.
 
         If no CRL is present, generates a new one and returns it.
@@ -185,6 +189,16 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             self.generate_crl()
             crl = CRLStorage.get_crl(ca=self._issuing_ca_model)
         return crl
+
+    def get_crl_as_x509(self) -> x509.CertificateRevocationList:
+        """Retrieves the current CRL for the issuing CA.
+
+        If no CRL is present, generates a new one and returns it.
+
+        Returns:
+            CertificateRevocationList: The CRL as x509 object.
+        """
+        return self._parse_existing_crl()
 
     def get_crl_entry(self) -> CRLStorage:
         """Retrieves the current CRL for the issuing CA.

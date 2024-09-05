@@ -4,14 +4,14 @@
 
 {% block content %}
 
-<div class="card card-main text-center" style="height: 92vh; display: flex; flex-direction: column;">
+<div class="card card-main" style="max-height: 100%; display: flex; flex-direction: column;">
     <div class="card-header tp-card-header">
         <h1>{% trans "Issuing CAs" %}</h1>
     </div>
     <div class="card-body text-start" style="overflow-y: auto; flex: 1;">
         {% render_table table %}
     </div>
-    <div class="card-footer d-flex justify-content-between align-items-center" style="background-color: #fff; z-index: 1000;">
+    <div class="card-footer d-flex justify-content-between align-items-center" style="position: sticky; bottom: 0; background-color: #fff; min-height: 55px;">
         <button type="button" id="tp-table-select-btn" class="btn btn-primary" data-tp-url="delete">
             {% trans "Delete selected" %}
         </button>

@@ -111,16 +111,14 @@ class IssuingCaTable(tables.Table):
             'not_valid_after',
             'signature_algorithm',
             'details',
+            'config',
             'delete',
-            'generate_crl',
-            'download_crl'
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
+    config = tables.Column(empty_values=(), orderable=False, verbose_name=_('Config'))
     delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
-    generate_crl = tables.Column(empty_values=(), orderable=False, verbose_name=_('Generate CRL'))
-    download_crl = tables.Column(empty_values=(), orderable=False, verbose_name=_('Download CRL'))
 
     @staticmethod
     def render_details(record: CertificateModel) -> SafeString:
@@ -149,32 +147,17 @@ class IssuingCaTable(tables.Table):
                            record.pk, _('Delete'))
 
     @staticmethod
-    def render_generate_crl(record: IssuingCaModel) -> SafeString:
-        """Creates the html hyperlink for the details-view.
+    def render_config(record: CertificateModel) -> SafeString:
+        """Creates the html hyperlink for the delete-view.
 
         Args:
-            record (IssuingCa): The current record of the IssuingCa model.
+            record (Truststore): The current record of the RootCa model.
 
         Returns:
-            SafeString: The html hyperlink for the details-view.
+            SafeString: The html hyperlink for the delete-view.
         """
-        return format_html(
-            '<a href="/pki/generate-ca-crl/{}/" class="btn btn-primary tp-table-btn">Generate CRL</a>',
-            record.pk)
-
-    @staticmethod
-    def render_download_crl(record: IssuingCaModel) -> SafeString:
-        """Creates the html hyperlink for the details-view.
-
-        Args:
-            record (IssuingCa): The current record of the IssuingCa model.
-
-        Returns:
-            SafeString: The html hyperlink for the details-view.
-        """
-        return format_html(
-            '<a href="/pki/ca-crl/{}/" class="btn btn-primary tp-table-btn mb-2">Download CRL</a>',
-            record.pk)
+        return format_html('<a href="config/{}/" class="btn btn-primary tp-table-btn">{}</a>',
+                           record.pk, _('Config'))
 
 
 class DomainTable(tables.Table):

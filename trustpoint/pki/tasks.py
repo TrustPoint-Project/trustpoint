@@ -9,31 +9,20 @@ from django.utils import timezone
 
 from .models import IssuingCaModel
 
-# Min-Heap für Timestamps und CA-Instanzen
 crl_schedule = []
 
 log = logging.getLogger('tp.pki')
 
 
-def _initialize_crl_schedule(issuing_instances) -> None:
-    """Initialize the CRL schedule for the given issuing instances.
-
-    Args:
-        issuing_instances (QuerySet): QuerySet of IssuingCa or DomainProfile instances.
-    """
-    for entry in issuing_instances:
-        if isinstance(entry, IssuingCaModel):
-            current_crl = entry.get_issuing_ca().get_crl_entry()
-            if current_crl:
-                next_crl_time = current_crl.issued_at + timedelta(hours=settings.CRL_INTERVAL)
-                heappush(crl_schedule, (next_crl_time, entry))
-            else:
-                generate_crl(entry)
-
-
 def initialize_crl_schedule() -> None:
-    """Initialize the CRL schedule for all IssuingCa and DomainProfile instances."""
-    _initialize_crl_schedule(IssuingCaModel.objects.all())
+    """Initialize the CRL schedule for all IssuingCas."""
+    for entry in IssuingCaModel.objects.all():
+        crl = entry.get_issuing_ca().get_crl_as_x509()
+        if crl:
+            next_crl_time = crl.next_update_utc
+            heappush(crl_schedule, (next_crl_time, entry))
+        else:
+            generate_crl(entry)
     log.debug('All CRLs initialized: %s', crl_schedule)
 
 
@@ -59,14 +48,14 @@ def remove_crl_from_schedule(instance) -> bool:
     raise TypeError
 
 
-def schedule_next_crl(entry) -> None:
+def schedule_next_crl(issuing_ca: IssuingCaModel) -> None:
     """Schedule the next CRL generation for the given issuing instance.
 
     Args:
         entry (IssuingCa or DomainProfile): The issuing instance for which to schedule the next CRL generation.
     """
-    next_crl_time = timezone.now() + timedelta(hours=settings.CRL_INTERVAL)
-    heappush(crl_schedule, (next_crl_time, entry))
+    next_crl_time = issuing_ca.get_issuing_ca().get_crl_as_x509().next_update_utc
+    heappush(crl_schedule, (next_crl_time, issuing_ca))
 
 
 def generate_crl(issuing_instance) -> None:

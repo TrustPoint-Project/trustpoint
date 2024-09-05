@@ -1273,7 +1273,8 @@ class IssuingCaModel(models.Model):
         verbose_name=f'Unique Name',
         max_length=100,
         validators=[UniqueNameValidator()],
-        unique=True
+        unique=True,
+        editable=False
     )
 
     root_ca_certificate = models.ForeignKey(
@@ -1304,13 +1305,24 @@ class IssuingCaModel(models.Model):
         blank=True,
         unique=True)
 
+    # domains = models.ForeignKey(
+    #     to=DomainModel,
+    #     verbose_name='Domain',
+    #     on_delete=models.DO_NOTHING,
+    #     related_name='domains',
+    #     null=True,
+    #     blank=True
+    # )
+
     added_at = models.DateTimeField(verbose_name=_('Added at'), auto_now_add=True)
 
     # TODO: pkcs11_private_key_access -> Foreignkey
 
     # TODO: remote_ca_config -> ForeignKey
 
-    auto_crl = models.BooleanField(default=True, verbose_name='Generate CRL upon certificate revocation')
+    auto_crl = models.BooleanField(default=True, verbose_name='Generate CRL upon certificate revocation.')
+
+    next_crl_generation_time = models.IntegerField(default=(24*60))
 
     def __str__(self) -> str:
         return f'IssuingCa({self.unique_name})'
@@ -1427,7 +1439,7 @@ class CRLStorage(models.Model):
     """Storage of CRLs."""
     # crl = models.CharField(max_length=4294967296)
     crl = models.TextField()
-    issued_at = models.DateTimeField(auto_now_add=True, editable=False)
+    created_at = models.DateTimeField(editable=False)
     ca = models.ForeignKey(IssuingCaModel, on_delete=models.CASCADE)
 
     def __str__(self) -> str:
@@ -1460,7 +1472,7 @@ class CRLStorage(models.Model):
     @staticmethod
     def get_crl_entry(ca: IssuingCaModel) -> None | CRLStorage:
         try:
-            return CRLStorage.objects.filter(ca=ca).latest('issued_at')
+            return CRLStorage.objects.filter(ca=ca).latest('created_at')
         except CRLStorage.DoesNotExist:
             return None
 
