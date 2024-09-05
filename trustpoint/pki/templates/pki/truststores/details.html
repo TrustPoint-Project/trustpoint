@@ -11,6 +11,7 @@
                         <h2>{% trans "Truststore Details" %}</h2>
                     </div>
                 </div>
+
                 <div class="card-body">
                     <div class="tp-card-centered-content py-3">
 
@@ -83,6 +84,7 @@
                     <div class="tp-card-btn-footer">
                         <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
                         <a href="{% url 'pki:truststores' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
+                        <a href="{% url 'pki:truststore-download' pk=truststore.id %}" class="btn btn-primary">{% trans 'Download' %}</a>
                     </div>
                 </div>
         </div>

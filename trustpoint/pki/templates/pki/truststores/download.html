@@ -9,15 +9,15 @@
 
         <div class="card tp-card-centered">
 
-                <div class="card-header">
+            <div class="card-header">
                 <div>
-                    <h1>{% trans "Download Certificates" %}</h1>
+                    <h1>{% trans "Download Truststores" %}</h1>
                 </div>
             </div>
 
             <div class="card-body">
                 <div class="tp-card-centered-content">
-                    <h2>1 Trust-Store Selected</h2>
+                    <h2>1 Truststore Selected</h2>
                     <hr>
                     <br>
 
@@ -28,7 +28,32 @@
                         <a class="btn btn-primary min-width-15" href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='pkcs7_pem' %}">Download as PKCS#7 (PEM)</a>
                     </div>
 
+                    <br>
+                    <h2>Truststore Details</h2>
+                    <hr>
+                    <br>
 
+                    <div class="tp-card-split mb-2">
+                        <h2>Truststore {{ forloop.counter }}</h2>
+                        <div></div>
+                    </div>
+
+                     <div class="tp-card-split">
+                        <div>Unique Name</div>
+                        <div>
+                            <a href="{% url 'pki:truststore_details' pk=truststore.id %}"> {{ truststore.unique_name }} </a>
+                        </div>
+                    </div>
+
+                    <div class="tp-card-split">
+                        <div>Number of certificates</div>
+                            {{ truststore.certificates.count }}
+                    </div>
+
+                    <div class="tp-card-split">
+                        <div>Distributed by Domains</div>
+                            N/A {# TODO #}
+                    </div>
                 </div>
             </div>
 

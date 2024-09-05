@@ -12,7 +12,7 @@ from django_tables2 import SingleTableView
 
 from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, PrimaryKeyFromUrlToQuerysetMixin
 from pki.download.trust_store import TrustStoreDownloadResponseBuilder, MultiTrustStoreDownloadResponseBuilder
-
+from trustpoint.views.base import BulkDeleteView
 
 from pki.forms import TrustStoreAddForm, TruststoresDownloadForm
 from pki.models import TrustStoreModel, CertificateModel
@@ -79,7 +79,7 @@ class TrustStoresMultipleDownloadView(
     PrimaryKeyFromUrlToQuerysetMixin,
     ListView):
 
-    model = CertificateModel
+    model = TrustStoreModel
     success_url = reverse_lazy('pki:truststores')
     ignore_url = reverse_lazy('pki:truststores')
     template_name = 'pki/truststores/download_multiple.html'
@@ -103,3 +103,11 @@ class TrustStoresMultipleDownloadView(
             file_format=file_format,
             archive_format=archive_format).as_django_http_response()
 
+
+class TrustStoresBulkDeleteConfirmView(TrustStoresContextMixin, TpLoginRequiredMixin, BulkDeleteView):
+
+    model = TrustStoreModel
+    success_url = reverse_lazy('pki:truststores')
+    ignore_url = reverse_lazy('pki:truststores')
+    template_name = 'pki/truststores/confirm_delete.html'
+    context_object_name = 'truststores'

@@ -39,22 +39,27 @@
                     <br>
 
                     {% for truststore in truststores %}
+
                         <div class="tp-card-split mb-2">
-                            <h2>Truststore {{ truststore.common_name }}</h2>
-                            <h2>Truststore {{ truststore.id }}</h2>  
-                                <div>
-                                    <a class="btn btn-primary min-width-15" href="{% url 'pki:truststore_details' pk=truststore.id %}">Details</a>
-                                </div>
+                            <h2>Truststore {{ forloop.counter }}</h2>
+                            <div></div>
+                        </div>
+
+                         <div class="tp-card-split">
+                            <div>Unique Name</div>
+                            <div>
+                                <a href="{% url 'pki:truststore_details' pk=truststore.id %}"> {{ truststore.unique_name }} </a>
+                            </div>
                         </div>
 
                         <div class="tp-card-split">
-                            <div>Common Name</div>
-                            <div>{{ truststore.common_name }}</div>
+                            <div>Number of certificates</div>
+                                {{ truststore.certificates.count }}
                         </div>
 
                         <div class="tp-card-split">
-                            <div>Serial Number</div>
-                            <div>{{ truststore.serial_number }}</div>
+                            <div>Distributed by Domains</div>
+                                N/A {# TODO #}
                         </div>
 
                         {% if not forloop.last %}

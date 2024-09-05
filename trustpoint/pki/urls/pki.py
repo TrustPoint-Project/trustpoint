@@ -116,6 +116,11 @@ urlpatterns = [
         trust_stores.TrustStoresDownloadView.as_view(),
         name='truststore-file-download',
     ),
+    re_path(
+        r'^truststores/delete/(?P<pks>([0-9]+/)+[0-9]*)/?$',
+        trust_stores.TrustStoresBulkDeleteConfirmView.as_view(),
+        name='truststores-delete_confirm',
+    ),
     path('truststores/detail/<pk>/', trust_stores.TrustStoresDetailView.as_view(), name='truststore_details'),
 
 ]

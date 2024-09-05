@@ -1,0 +1,52 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+    <form method="POST" autocomplete="off">
+        {% csrf_token %}
+
+        <div class="card tp-card-centered">
+            <div class="card-header">
+                <div>
+                    <h1>{% trans 'Confirm Truststore Deletion' %}</h1>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="tp-card-centered-content">
+                    {% for truststore in truststores %}
+                        <h2>({{ forloop.counter }}) {% trans 'Truststore' %}: {{ truststore.unique_name }}</h2>
+                        <hr>
+                        <div class="tp-card-split">
+                            <div>Unique Name</div>
+                            <div>{{ truststore.unique_name }}</div>
+                        </div>
+
+                        <div class="tp-card-split">
+                            <div>Number of certificates</div>
+                                {{ truststore.certificates.count }}
+                        </div>
+
+                        <div class="tp-card-split">
+                            <div>Distributed by Domains</div>
+                                N/A {# TODO #}
+                        </div>
+                            {% if not forloop.last %}
+                                <br><br>
+                            {% endif %}
+
+                    {% endfor %}
+
+
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="tp-card-btn-footer">
+                    <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                    <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                    <button type="submit" class="btn btn-primary">{% trans "Delete selected Issuing CAs" %}</button>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock content %}
