@@ -120,7 +120,7 @@ def cert_chain(request: HttpRequest, url_ext: str):
 
 # --- ONBOARDING MANAGEMENT API ENDPOINTS ---
 
-@router.get('/state/{url_ext}', response={200: int, 404: int})
+@router.get('/state/{url_ext}', response={200: int, 404: int}, auth=None)
 def state(request: HttpRequest, url_ext: str):
     """Returns the state of the onboarding process as an int."""
     onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
