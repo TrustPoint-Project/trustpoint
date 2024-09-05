@@ -25,13 +25,27 @@
                             <div>Unique Name</div>
                             <div>{{ truststore.unique_name }}</div>
                         </div>
-                        
+
                         <div class="tp-card-split">
                             <div>Certificate Serial Numbers</div>
                             {% for cert in truststore.certificates.all %}
                                 {{cert.serial_number}}
                             {% endfor %}
                         </div>
+
+
+                        <div class="tp-card-split">
+                            <div>Common Name</div>
+                            <div>{{ truststore.common_name }}</div>
+                        </div>
+
+                        <div class="tp-card-split">
+                            <div>Serial Number</div>
+                            <div>{{ truststore.serial_number }}</div>
+                        </div>
+
+
+                       
 
                         <br><br><h2>Certificate Hierarchy</h2>
                         <hr>

@@ -105,7 +105,7 @@ class MultiTrustStoreDownloadResponseBuilder(DownloadResponseBuilder):
             raise Http404
 
         serializers = []
-        
+
         certificate_bytes_collection = []
         if file_format == CertificateFileFormat.PEM:
             for serializer in serializers:
