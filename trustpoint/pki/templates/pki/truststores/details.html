@@ -82,10 +82,7 @@
                                         {% endif %}
                                     </a><br>
                                 {% endfor %}
-                                {# TODO: Links for  #}
-                                <a href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='pem' %}" class="btn btn-primary my-1">Download Certificate Chain (PEM)</a>
-                                <a href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='pkcs7_der' %}" class="btn btn-primary my-1">Download Certificate Chain (PKCS#7 - DER)</a>
-                                <a href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='pkcs7_pem' %}" class="btn btn-primary my-1">Download Certificate Chain (PKCS#7 - PEM)</a>
+                                <a href="{% url 'pki:certificate-detail' pk=cert.id  %}" class="btn btn-primary my-1"> Certificate Details</a>
                             <br>
                             </div>
                         </div>
