@@ -210,12 +210,19 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
         initializer.save()
 
 
-class CRLGenerationConfigForm(forms.ModelForm):
+class CRLGenerationTimeDeltaForm(forms.ModelForm):
 
     class Meta:
         model = IssuingCaModel
-        fields = ['next_crl_generation_time']
+        fields = ['next_crl_generation_time',]
         labels = {'next_crl_generation_time': '',}
+
+
+class CRLAutoGenerationForm(forms.ModelForm):
+
+    class Meta:
+        model = IssuingCaModel
+        fields = ['auto_crl']
 
 
 class DomainBaseForm(forms.ModelForm):

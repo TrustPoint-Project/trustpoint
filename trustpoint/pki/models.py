@@ -1464,13 +1464,13 @@ class CRLStorage(models.Model):
 
     @staticmethod
     def get_crl(ca: IssuingCaModel) -> None | str:
-        result = CRLStorage.get_crl_entry(ca)
+        result = CRLStorage.get_crl_object(ca)
         if result:
             return result.crl
         return None
 
     @staticmethod
-    def get_crl_entry(ca: IssuingCaModel) -> None | CRLStorage:
+    def get_crl_object(ca: IssuingCaModel) -> None | CRLStorage:
         try:
             return CRLStorage.objects.filter(ca=ca).latest('created_at')
         except CRLStorage.DoesNotExist:

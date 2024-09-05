@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import datetime
 import logging
 from abc import ABC
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
 from cryptography import x509
@@ -64,8 +64,8 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         ca_serializer = self._issuing_ca_model.get_issuing_ca_certificate_serializer().as_crypto()
         self.crl_builder = x509.CertificateRevocationListBuilder(
             issuer_name=ca_serializer.issuer,
-            last_update=datetime.datetime.today(),
-            next_update=issuing_ca_model.next_crl_generation_time
+            last_update=datetime.now(),
+            next_update=datetime.now() + timedelta(minutes=issuing_ca_model.next_crl_generation_time)
         )
         log.debug('UnprotectedLocalIssuingCa initialized.')
 
@@ -84,7 +84,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             self._private_key = PrivateKeySerializer(self._issuing_ca_model.private_key_pem).as_crypto()
         return self._private_key
 
-    def _parse_existing_crl(self) -> list | x509.CertificateRevocationList:
+    def _parse_existing_crl(self) -> None | x509.CertificateRevocationList:
         """Parses the existing CRL for the associated CA.
 
         Retrieves the stored CRL from the database and loads it using the x509
@@ -100,7 +100,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             log.debug('CRL found in database and started parsing.')
             return x509.load_pem_x509_crl(crl.encode())
         log.debug('No CRL found in database.')
-        return x509.CertificateRevocationList
+        return None
 
     def _get_private_key_serializer(self) -> PrivateKeySerializer:
         """Retrieves the private key serializer for the issuing CA.
@@ -140,8 +140,9 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             log.debug('Started CRL generation.')
 
             revoked_certificates = self._parse_existing_crl()
-            for cert in revoked_certificates:
-                self.crl_builder = self.crl_builder.add_revoked_certificate(cert)
+            if revoked_certificates:
+                for cert in revoked_certificates:
+                    self.crl_builder = self.crl_builder.add_revoked_certificate(cert)
 
             revoked_certificates = RevokedCertificate.objects.filter(issuing_ca=self._issuing_ca_model)
 
@@ -209,7 +210,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
             str: The CRL in PEM format.
         """
         from .models import CRLStorage
-        return CRLStorage.get_crl_entry(ca=self._issuing_ca_model)
+        return CRLStorage.get_crl_object(ca=self._issuing_ca_model)
 
     def get_ca_name(self) -> str:
         """Retrieves the unique name of the issuing CA.

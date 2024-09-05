@@ -91,13 +91,19 @@
                         <div class="tp-card-split">
                             <div>{% trans 'Last CRL generated' %}</div>
                             <div>
-                                {{ crl }}
+                                {{ crl.created_at }}
                             </div>
                         </div>
                         <div class="tp-card-split">
                             <div>{% trans 'Next CRL Generation Time (minutes)' %}</div>
                             <div>
                                 {{ form|crispy }}
+                            </div>
+                        </div>
+                        <div class="tp-card-split">
+                            <div>{% trans 'Auto CRL' %}</div>
+                            <div>
+                                {{ form_auto_crl|crispy }}
                             </div>
                         </div>
                     </div>
