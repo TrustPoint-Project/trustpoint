@@ -46,21 +46,12 @@ class TrustStoreInitializer:
 
         saved_certs = []
 
-
         for certificate in self._trust_store:
             sha256_fingerprint = certificate.fingerprint(algorithm=hashes.SHA256()).hex().upper()
-            print(f'fingerprint {sha256_fingerprint}')
             try:
-                print('trying')
                 saved_certs.append(CertificateModel.objects.get(sha256_fingerprint=sha256_fingerprint))
-                print('yes')
             except CertificateModel.DoesNotExist:
-                print('nope')
                 saved_certs.append(self._cert_model_class.save_certificate(certificate))
-            except Exception as e:
-                print(e)
-                print(type(e))
-                print(exc_info())
 
         trust_store_model = self._trust_store_model_class(unique_name=self._unique_name)
         trust_store_model.save()
