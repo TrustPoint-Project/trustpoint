@@ -1305,15 +1305,6 @@ class IssuingCaModel(models.Model):
         blank=True,
         unique=True)
 
-    # domains = models.ForeignKey(
-    #     to=DomainModel,
-    #     verbose_name='Domain',
-    #     on_delete=models.DO_NOTHING,
-    #     related_name='domains',
-    #     null=True,
-    #     blank=True
-    # )
-
     added_at = models.DateTimeField(verbose_name=_('Added at'), auto_now_add=True)
 
     # TODO: pkcs11_private_key_access -> Foreignkey
