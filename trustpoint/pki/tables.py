@@ -219,7 +219,7 @@ class DomainTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html('<a href="delete/{}/" class="btn btn-secondary btn-sm fs-6 .min-width-5">{}</a>',
+        return format_html('<a href="delete/{}/" class="btn btn-secondary btn-sm fs-6 min-width-5">{}</a>',
                            record.pk, _('Delete'))
 
 
@@ -300,7 +300,7 @@ class TrustStoreTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="detail/{}/" class="btn btn-primary btn-sm fs-6 .min-width-5">{}</a>',
+        return format_html('<a href="detail/{}/" class="btn btn-primary btn-sm fs-6 min-width-5">{}</a>',
                            record.pk, _('Details'))
 
     @staticmethod
@@ -313,7 +313,7 @@ class TrustStoreTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html('<a href="download/{}/" class="btn btn-primary btn-sm fs-6 .min-width-5">{}</a>',
+        return format_html('<a href="download/{}/" class="btn btn-primary btn-sm fs-6 min-width-5">{}</a>',
                            record.pk, _('Download'))
 
     @staticmethod
@@ -326,5 +326,5 @@ class TrustStoreTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html('<a href="delete/{}/" class="btn btn-secondary btn-sm fs-6 .min-width-5">{}</a>',
+        return format_html('<a href="delete/{}/" class="btn btn-secondary btn-sm fs-6 min-width-5">{}</a>',
                            record.pk, _('Delete'))
