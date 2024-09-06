@@ -1,15 +1,20 @@
 import json
 from django.views.generic.base import RedirectView, TemplateView
+from django.shortcuts import render
+from django_tables2 import SingleTableView, RequestConfig
 from datetime import datetime, timedelta
 
-from trustpoint.views.base import TpLoginRequiredMixin
+from trustpoint.views.base import TpLoginRequiredMixin, ContextDataMixin
+
+from .models import NotificationModel, NotificationStatus
+from .tables import NotificationTable
+
 
 
 class IndexView(TpLoginRequiredMixin, RedirectView):
 
     permanent = False
     pattern_name = 'home:dashboard'
-
 
 class DashboardView(TpLoginRequiredMixin, TemplateView):
 
@@ -23,6 +28,11 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.last_week_dates = self.generate_last_week_dates()
+
+    def get_notifications(self):
+        """Fetch notification data for the table."""
+        notifications = NotificationModel.objects.all()
+        return notifications
 
     def generate_integer_array(self):
         data = [(i+1)*2 for i in range(7)]
@@ -396,7 +406,134 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         context['alerts'] = self.get_alerts()
         context['certs'] = self.get_certs()
         context['devices'] = self.get_devices()
+
+        # Fetch and pass the notification table to the context
+        notifications = self.get_notifications()
+        notification_table = NotificationTable(notifications)
+        context['notification_table'] = notification_table
+
+        all_notifications_table = NotificationTable(NotificationModel.objects.all())
+        RequestConfig(self.request, paginate={"per_page": 5}).configure(all_notifications_table)
+
+        system_notifications_table = NotificationTable(
+            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.SYSTEM))
+        RequestConfig(self.request, paginate={"per_page": 5}).configure(system_notifications_table)
+
+        certificate_notifications_table = NotificationTable(
+            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.CERTIFICATE))
+        RequestConfig(self.request, paginate={"per_page": 5}).configure(certificate_notifications_table)
+
+        domain_notifications_table = NotificationTable(
+            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.DOMAIN))
+        RequestConfig(self.request, paginate={"per_page": 5}).configure(domain_notifications_table)
+
+        issuing_ca_notifications_table = NotificationTable(
+            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.ISSUING_CA))
+        RequestConfig(self.request, paginate={"per_page": 5}).configure(issuing_ca_notifications_table)
+
+        device_notifications_table = NotificationTable(
+            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.DEVICE))
+        RequestConfig(self.request, paginate={"per_page": 5}).configure(device_notifications_table)
+
+        context['all_notifications_table'] = all_notifications_table
+        context['system_notifications_table'] = system_notifications_table
+        context['certificate_notifications_table'] = certificate_notifications_table
+        context['domain_notifications_table'] = domain_notifications_table
+        context['issuing_ca_notifications_table'] = issuing_ca_notifications_table
+        context['device_notifications_table'] = device_notifications_table
+
+        new_status, created = NotificationStatus.objects.get_or_create(status='NEW')
+
+        context['all_notifications_count'] = NotificationModel.objects.filter(statuses=new_status).count()
+        context['system_notifications_count'] = NotificationModel.objects.filter(
+            notification_source=NotificationModel.NotificationSource.SYSTEM,
+            statuses=new_status
+        ).count()
+
         context['page_category'] = 'home'
         context['page_name'] = 'dashboard'
         return context
 
+
+class AllNotificationsView(SingleTableView):
+    """View to display all notifications."""
+
+    model = NotificationModel
+    table_class = NotificationTable
+    template_name = 'home/all_notifications.html'
+    #queryset = NotificationModel.objects.all()  # Fetch all notifications
+
+    def get_queryset(self):
+        return NotificationModel.objects.all()
+
+class SystemNotificationsView(SingleTableView):
+    """View to display notifications filtered by system source."""
+
+    model = NotificationModel
+    table_class = NotificationTable
+    template_name = 'home/system_notifications.html'
+
+    def get_queryset(self):
+        return NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.SYSTEM)
+
+
+class CertificateNotificationsView(SingleTableView):
+    """View to display notifications filtered by certificate source."""
+
+    model = NotificationModel
+    table_class = NotificationTable
+    template_name = 'home/certificate_notifications.html'
+
+    def get_queryset(self):
+        return NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.CERTIFICATE)
+
+
+class DomainNotificationsView(SingleTableView):
+    """View to display notifications filtered by domain source."""
+
+    model = NotificationModel
+    table_class = NotificationTable
+    template_name = 'home/domain_notifications.html'
+
+    def get_queryset(self):
+        return NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.DOMAIN)
+
+class IssuingCaNotificationsView(SingleTableView):
+    """View to display notifications filtered by Issuing Ca source."""
+
+    model = NotificationModel
+    table_class = NotificationTable
+    template_name = 'home/issuing_ca_notifications.html'
+
+    def get_queryset(self):
+        return NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.ISSUING_CA)
+
+class DeviceNotificationsView(SingleTableView):
+    """View to display notifications filtered by device source."""
+
+    model = NotificationModel
+    table_class = NotificationTable
+    template_name = 'home/device_notifications.html'
+
+    def get_queryset(self):
+        return NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.DEVICE)
+
+
+def notifications_with_tabs(request):
+    """View to display notifications with tabs for each source."""
+
+    context = {
+        'all_notifications_table': NotificationTable(NotificationModel.objects.all()),
+        'system_notifications_table': NotificationTable(
+            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.SYSTEM)),
+        'certificate_notifications_table': NotificationTable(
+            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.CERTIFICATE)),
+        'issuing_ca_notifications_table': NotificationTable(
+            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.ISSUING_CA)),
+        'domain_notifications_table': NotificationTable(
+            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.DOMAIN)),
+        'device_notifications_table': NotificationTable(
+            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.DEVICE)),
+    }
+
+    return render(request, 'home/notifications-tab.html', context)
