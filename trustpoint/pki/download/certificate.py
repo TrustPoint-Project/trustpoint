@@ -4,17 +4,16 @@ import enum
 import io
 import tarfile
 import zipfile
+from typing import TYPE_CHECKING
 
-from django.http import HttpResponse, Http404
+from django.http import Http404, HttpResponse
 from docutils.nodes import field
 
 from pki.models import CertificateModel
-from pki.serializer import CertificateSerializer, CertificateCollectionSerializer
-
-from typing import TYPE_CHECKING
+from pki.serializer import CertificateCollectionSerializer, CertificateSerializer
 
 if TYPE_CHECKING:
-    from pki.serializer import CertificateSerializer, CertificateCollectionSerializer
+    from pki.serializer import CertificateCollectionSerializer, CertificateSerializer
 
 
 class CertificateFileFormat(enum.Enum):

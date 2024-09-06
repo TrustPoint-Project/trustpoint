@@ -1,15 +1,16 @@
 from __future__ import annotations
 
 from django import forms
-from django.utils.translation import gettext_lazy as _
-
 from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
 
 from pki.initializer import (
     UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer,
     UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer,
+
     TrustStoreInitializer)
 from pki.models import IssuingCaModel, DomainModel
+
 from pki.validator.field import UniqueNameValidator
 
 
@@ -209,6 +210,21 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
 
         initializer.initialize()
         initializer.save()
+
+
+class CRLGenerationTimeDeltaForm(forms.ModelForm):
+
+    class Meta:
+        model = IssuingCaModel
+        fields = ['next_crl_generation_time',]
+        labels = {'next_crl_generation_time': '',}
+
+
+class CRLAutoGenerationForm(forms.ModelForm):
+
+    class Meta:
+        model = IssuingCaModel
+        fields = ['auto_crl']
 
 
 class DomainBaseForm(forms.ModelForm):

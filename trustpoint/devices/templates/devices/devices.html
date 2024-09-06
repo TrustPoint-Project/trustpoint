@@ -1,25 +1,29 @@
 {% extends 'trustpoint/base.html' %}
-{% load render_table from django_tables2 %}
 {% load i18n %}
+{% load render_table from django_tables2 %}
+
 {% block content %}
 
-    <div class="card card-main text-center">
-        <div class="card-header tp-card-header">
-            <h1>{% trans "Devices" %}</h1>
-            <div></div>
-            <a id="tp-table-add-device" type="button" class="btn btn-primary" href="{% url 'devices:devices-add' %}">
-                {% trans "Add new device" %}
+<div class="card card-main" style="max-height: 100%; display: flex; flex-direction: column;">
+    <div class="card-header tp-card-header" style="min-height: 40px;">
+        <h1>{% trans 'Devices' %}</h1>
+    </div>
+
+    <div class="card-body text-start" style="overflow-y: auto; flex-grow: 1; max-height: 90%;">
+        {% render_table table %}
+    </div>
+
+    <div class="card-footer d-flex justify-content-between tp-sticky-footer">
+        <div>
+            <button type="button" class="btn btn-primary tp-table-select-btn" data-tp-url="delete">{% trans "Delete selected" %}</button>
+        </div>
+        <div>
+            <a class="btn btn-primary" href="{% url 'devices:devices-add' %}">
+                {% trans "Add new Device" %}
             </a>
         </div>
-        <div class="card-body text-start">
-
-            {% render_table table %}
-
-        </div>
-        <div class="card-footer tp-table-footer-btn-group">
-            <button type="button" class="btn btn-secondary tp-table-select-btn" data-tp-url="delete">{% trans "Delete selected" %}</button>
-        </div>
-
-
     </div>
+
+</div>
+
 {% endblock content %}

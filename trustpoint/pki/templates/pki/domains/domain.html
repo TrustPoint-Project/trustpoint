@@ -4,26 +4,26 @@
 
 {% block content %}
 
-    <div class="card card-main">
-        <div class="card-header tp-card-header">
-            <h1>{% trans 'Domains' %}</h1>
-
-        </div>
-
-        <div class="card-body text-start">
-            {% render_table table %}
-        </div>
-
-        <div class="card-footer d-flex justify-content-between">
-            <div>
-            <button type="button" class="btn btn-secondary tp-table-select-btn" data-tp-url="delete">{% trans "Delete selected" %}</button>
-            </div>
-            <div>
-                <a class="btn btn-primary" href="{% url 'pki:domains-add' %}">
-                    {% trans "Add new Domain" %}
-                </a>
-            </div>
-        </div>
-
+<div class="card card-main" style="max-height: 100%; display: flex; flex-direction: column;">
+    <div class="card-header tp-card-header" style="min-height: 40px;">
+        <h1>{% trans 'Domains' %}</h1>
     </div>
+
+    <div class="card-body text-start" style="overflow-y: auto; flex-grow: 1; max-height: 90%;">
+        {% render_table table %}
+    </div>
+
+    <div class="card-footer d-flex justify-content-between tp-sticky-footer">
+        <div>
+            <button type="button" class="btn btn-primary tp-table-select-btn" data-tp-url="delete">{% trans "Delete selected" %}</button>
+        </div>
+        <div>
+            <a class="btn btn-primary" href="{% url 'pki:domains-add' %}">
+                {% trans "Add new Domain" %}
+            </a>
+        </div>
+    </div>
+
+</div>
+
 {% endblock content %}

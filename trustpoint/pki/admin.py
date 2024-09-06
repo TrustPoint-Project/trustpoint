@@ -7,6 +7,7 @@ from .models import (
     CertificateChainOrderModel,
     CertificateModel,
     CRLStorage,
+    DomainModel,
     IssuerAlternativeNameExtension,
     IssuingCaModel,
     KeyUsageExtension,
@@ -130,8 +131,14 @@ class CertificateAdmin(admin.ModelAdmin):
 class CRLStorageAdmin(admin.ModelAdmin):
     readonly_fields = (
         'crl',
-        'issued_at',
+        'created_at',
         'ca'
+    )
+
+class DomainModelAdmin(admin.ModelAdmin):
+    readonly_fields = (
+        'unique_name',
+        'issuing_ca'
     )
 
 
@@ -145,3 +152,4 @@ admin.site.register(KeyUsageExtension, KeyUsageExtensionAdmin)
 admin.site.register(CertificateModel, CertificateAdmin)
 admin.site.register(CertificateChainOrderModel, CertificateChainOrderModelAdmin)
 admin.site.register(CRLStorage, CRLStorageAdmin)
+admin.site.register(DomainModel, DomainModelAdmin)

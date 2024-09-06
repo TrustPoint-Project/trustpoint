@@ -45,10 +45,17 @@ function setOnboardingStateUI(state, iconUrl) {
   let extraClasses = '';
   let navBack = false;
   let isDL = document.querySelector('#onboarding-state-dl');
+  let isBrowerDetail = document.querySelector('#onboarding-state-bo');
   switch (state) {
     case STARTED:
       type = 'info';
-      message = gettext('Generating secrets...');
+      if (isBrowerDetail) {
+        message = gettext('Waiting for browser client to connect...');
+        icon = 'clock';
+        extraClasses = 'breathing-anim';
+      } else {
+        message = gettext('Generating secrets...');
+      }
       icon = 'clock';
       extraClasses = 'breathing-anim';
       break;
@@ -78,7 +85,12 @@ function setOnboardingStateUI(state, iconUrl) {
       extraClasses = 'breathing-anim';
       break;
     case LDEVID_SENT:
-      if (isDL) {
+      if (isBrowerDetail) {
+        type = 'success';
+        message = gettext('Browser client connected, pending download.');
+        icon = 'clock';
+        extraClasses = 'breathing-anim';
+      } else if (isDL) {
         type = 'success';
         message = gettext('PKCS12 ready for download.');
         icon = 'success';
@@ -135,17 +147,18 @@ function setOnboardingStateUI(state, iconUrl) {
 
   var el = document.querySelector('#onboarding-state');
   if (!el) el = document.querySelector('#onboarding-state-dl');
+  if (!el) el = document.querySelector('#onboarding-state-bo');
   setOnboardingStateUIElement(el, iconUrl, type, message, icon, extraClasses);
 }
 
-function resetButton(caller) {
+function resetButton(caller, short=false) {
   caller.classList.remove('btn-success');
   caller.classList.remove('btn-danger');
   caller.classList.add('btn-primary');
-  caller.textContent = gettext('Copy to clipboard');
+  caller.textContent = gettext(short ? 'Copy': 'Copy to clipboard');
 }
 
-async function copyToClipboard(caller, el) {
+async function copyToClipboard(caller, el, short=false) {
   caller.classList.remove('btn-primary');
   try {
     await navigator.clipboard.writeText(document.querySelector(el).textContent);
@@ -155,7 +168,7 @@ async function copyToClipboard(caller, el) {
     caller.classList.add('btn-danger');
     caller.textContent = gettext("Couldn't copy");
   }
-  setTimeout(resetButton, 1200, caller);
+  setTimeout(resetButton, 1200, caller, short);
 }
 
 if (url) startPollingOnboardingState(url, icons);

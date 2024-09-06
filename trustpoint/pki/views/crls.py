@@ -1,14 +1,12 @@
 from __future__ import annotations
 
 from django.contrib import messages
-
 from django.http import HttpResponse
 from django.shortcuts import redirect
 from django.utils.translation import gettext as _
-
 from django.views import View
 
-from ..models import DomainModel, IssuingCaModel
+from pki.models import IssuingCaModel
 
 
 class CRLDownloadView(View):
@@ -22,7 +20,7 @@ class CRLDownloadView(View):
             messages.error(self, _('Issuing CA not found.'))
             return redirect('pki:issuing_cas')
 
-        crl_data = issuing_ca.get_crl()
+        crl_data = issuing_ca.get_crl_as_str()
         if not crl_data:
             messages.warning(self, _('No CRL available for issuing CA %s.') % issuing_ca.get_ca_name())
             return redirect('pki:issuing_cas')

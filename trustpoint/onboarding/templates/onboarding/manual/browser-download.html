@@ -1,17 +1,19 @@
-{% extends 'trustpoint/base.html' %}
+{% extends 'users/base.html' %}
 {% load crispy_forms_filters %}
 {% load static %}
 {% load i18n %}
+
 {% block head %}
     <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
     <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:exit' device_id %}"</script>
     <script src="{% url 'javascript-catalog' %}"></script>
     <script src="{% static 'js/onboarding.js' %}"></script>
 {% endblock head %}
+
 {% block content %}
     <div class="card card-main text-center">
         <div class="card-header d-flex">
-            <h1>{% blocktranslate %}Download certificate for device {{ device_name }}{% endblocktranslate %}</h1>
+            <h1>{% blocktranslate %}Download certificate for device {{ device.device_name }}{% endblocktranslate %}</h1>
         </div>
         <div class="card-body tp-main-centered pt-3 pb-4">
             <div id="onboarding-state-dl" class="alert alert-info d-flex align-items-center mt-3 breathing-anim dl" role="alert">  
@@ -20,13 +22,18 @@
             </div>
             <h2>{% trans "Download PKCS12 key and certificate" %}</h2>
             <div class="text-center">
-              <a href="{% url 'onboarding:api-p12-download' device_id %}?token={{ download_token }}" download="{{ device_name }}.p12" class="btn btn-primary mt-2 w-50">{% trans "Download PKCS12" %}</a>
+                <a href="{% url 'onboarding:api-p12-download' device_id %}?token={{ download_token }}" download="{{ device.device_name }}.p12" class="btn btn-primary mt-2 w-50">{% trans "Download PKCS12" %}</a>
             </div>
             <hr>
             <h2>{% trans "Keypair in PEM format" %}</h2>
+            <div class="text-center">
+                <a href="{% url 'onboarding:pem-download' device_id %}?token={{ download_token }}" download="{{ device.device_name }}.pem" class="btn btn-secondary mt-2 w-50">{% trans "Download PEM" %}</a>
+            </div>
             <hr>
-            <h2>{% trans "LDevID certificate" %}</h2>
-            
+            <h2>{% trans "Java KeyStore" %}</h2>
+            <div class="text-center">
+                <a href="{% url 'onboarding:keystore-download' device_id %}" download="{{ device.device_name }}.jks" class="btn btn-secondary mt-2 w-50">{% trans "Download Java KeyStore" %}</a>
+            </div>
         </div>
         <div class="card-footer text-body-secondary">
             <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans "Back" %}</a>
