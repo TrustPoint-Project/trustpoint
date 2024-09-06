@@ -288,6 +288,12 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     margin-right: 0;
 }
 
+.tp-sticky-footer {
+    position: sticky;
+    bottom: 0;
+    min-height: 55px;
+}
+
 .tp-main-users {
     width: max-content;
     position: absolute;

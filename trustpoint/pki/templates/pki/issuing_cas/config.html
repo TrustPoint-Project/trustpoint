@@ -76,12 +76,12 @@
                             <div>{% trans 'CRL' %}</div>
                             <div>
                                 <a href="{% url 'pki:download-ca-crl' ca_id=issuing_ca.pk %}" class="btn btn-sm btn-primary">
-                                    {% trans "download CRL" %}
+                                    {% trans "Download CRL" %}
                                 </a>
                             </div>
                         </div>
                         <div class="tp-card-split">
-                            <div>{% trans 'generate CRL' %}</div>
+                            <div>{% trans 'Generate CRL' %}</div>
                             <div>
                                 <a href="{% url 'pki:generate-ca-crl' ca_id=issuing_ca.pk %}" class="btn btn-sm btn-primary">
                                     {% trans "generate CRL" %}
