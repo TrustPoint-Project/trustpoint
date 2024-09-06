@@ -19,12 +19,16 @@
                             <div>{% trans 'Unique Name' %}</div>
                             <div>{{ domain.unique_name }}</div>
                         </div>
+
+                        <h2 class="mt-5">Issuing CA</h2>
+                        <hr>
+                    {% if domain.issuing_ca %}
                         <div class="tp-card-split">
                             <div>{% trans 'Issuing CA - Unique Name' %}</div>
                             <div>
-                            <a href="{% url 'pki:issuing_cas-detail' pk=domain.issuing_ca.id %}">
-                                    {{ domain.unique_name }}
-                                </a>
+                                    <a href="{% url 'pki:issuing_cas-detail' pk=domain.issuing_ca.id %}">
+                                        {{ domain.unique_name }}
+                                    </a>
                             </div>
                         </div>
                         <div class="tp-card-split">
@@ -39,7 +43,9 @@
                                 </a>
                             </div>
                         </div>
-
+                    {% else %}
+                        <h2 class="mb-3">No Issuing CA Configured</h2>
+                    {% endif %}
                     </div>
                 </div>
                 <div class="card-footer">

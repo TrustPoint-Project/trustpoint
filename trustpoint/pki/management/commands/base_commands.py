@@ -18,14 +18,13 @@ from cryptography.hazmat.primitives.serialization import (
     pkcs12,
 )
 from cryptography.x509.oid import NameOID
-from django.core.management import BaseCommand
 from pki.models import CertificateModel, IssuingCaModel
 
 PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
 PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
-class Command(BaseCommand):
+class CertificateCreationCommandMixin:
 
     @staticmethod
     def create_root_ca(cn: str) -> tuple[x509.Certificate, rsa.RSAPrivateKey]:

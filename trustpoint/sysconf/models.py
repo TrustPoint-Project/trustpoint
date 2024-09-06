@@ -56,17 +56,18 @@ class SecurityConfig(models.Model):
 
     class SecurityModeChoices(models.TextChoices):
         """Types of security modes"""
+        DEV = '0', _('Testing env')
         LOW = '1', _('Basic')
         MEDIUM = '2', _('Medium')
         HIGH = '3', _('High')
+        HIGHEST = '4', _('Highest')
 
     security_mode = models.CharField(max_length=6, choices=SecurityModeChoices.choices, default=SecurityModeChoices.LOW)
-    enable_local_root_ca = models.BooleanField(default=False)
 
 
     def __str__(self) -> str:
         """Output as string"""
-        return f'{self.security_mode}:{self.onboarding_methods}'
+        return f'{self.security_mode}'
 
 
 # -------------

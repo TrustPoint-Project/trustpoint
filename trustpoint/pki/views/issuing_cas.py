@@ -7,6 +7,7 @@ from django.utils.translation import gettext as _
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormView
 from django_tables2 import SingleTableView
+from sysconf.security import SecurityFeatures
 
 from pki.forms import (
     CRLAutoGenerationForm,
