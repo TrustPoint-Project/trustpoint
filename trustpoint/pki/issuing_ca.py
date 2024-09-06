@@ -73,7 +73,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
     def issuer_name(self) -> x509.Name:
         # TODO: store issuer and subject bytes in DB
         return self._issuing_ca_model.get_issuing_ca_certificate_serializer().as_crypto().issuer
-    
+
     @property
     def subject_name(self) -> x509.Name:
         return self._issuing_ca_model.get_issuing_ca_certificate_serializer().as_crypto().subject
@@ -83,24 +83,6 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         if self._private_key is None:
             self._private_key = PrivateKeySerializer(self._issuing_ca_model.private_key_pem).as_crypto()
         return self._private_key
-
-    def _parse_existing_crl(self) -> None | x509.CertificateRevocationList:
-        """Parses the existing CRL for the associated CA.
-
-        Retrieves the stored CRL from the database and loads it using the x509
-        library. If no CRL exists, returns an empty list.
-
-        Returns:
-            (CertificateRevocation)list: A list of revoked certificates if a CRL is found, otherwise
-            an empty list.
-        """
-        from .models import CRLStorage
-        crl = CRLStorage.get_crl(ca=self._issuing_ca_model)
-        if crl:
-            log.debug('CRL found in database and started parsing.')
-            return x509.load_pem_x509_crl(crl.encode())
-        log.debug('No CRL found in database.')
-        return None
 
     def _get_private_key_serializer(self) -> PrivateKeySerializer:
         """Retrieves the private key serializer for the issuing CA.
@@ -139,7 +121,7 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         with transaction.atomic():
             log.debug('Started CRL generation.')
 
-            revoked_certificates = self._parse_existing_crl()
+            revoked_certificates = self.get_crl_as_x509()
             if revoked_certificates:
                 for cert in revoked_certificates:
                     self.crl_builder = self.crl_builder.add_revoked_certificate(cert)
@@ -199,7 +181,8 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         Returns:
             CertificateRevocationList: The CRL as x509 object.
         """
-        return self._parse_existing_crl()
+        crl = self.get_crl_as_str(ca=self._issuing_ca_model)
+        return x509.load_pem_x509_crl(crl.encode())
 
     def get_crl_entry(self) -> CRLStorage:
         """Retrieves the current CRL for the issuing CA.
