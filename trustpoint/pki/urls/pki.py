@@ -56,6 +56,7 @@ urlpatterns = [
         name='issuing_cas-add-file_import-separate_files'
     ),
     path('issuing-cas/detail/<int:pk>/', issuing_cas.IssuingCaDetailView.as_view(), name='issuing_cas-detail'),
+    path('issuing-cas/config/<int:pk>/', issuing_cas.IssuingCaConfigView.as_view(), name='issuing_cas-config'),
     re_path(
         r'^issuing-cas/delete/(?P<pks>([0-9]+/)+[0-9]*)/?$',
         issuing_cas.IssuingCaBulkDeleteConfirmView.as_view(),
@@ -63,10 +64,10 @@ urlpatterns = [
     ),
     path('ca-crl/<int:ca_id>/',
          crls.CRLDownloadView.download_ca_crl,
-         name='crl'),
+         name='download-ca-crl'),
     path('generate-ca-crl/<int:ca_id>/',
          crls.CRLDownloadView.generate_ca_crl,
-         name='crl'),
+         name='generate-ca-crl'),
     path('domains/', domains.DomainTableView.as_view(), name='domains'),
     path(
         'domains/add/',
@@ -74,14 +75,14 @@ urlpatterns = [
         name='domains-add'
     ),
     path(
-        'domains/edit/<int:pk>/',
-        domains.DomainUpdateView.as_view(),
-        name='domains-edit'
+        'domains/config/<int:pk>/',
+        domains.DomainConfigView.as_view(),
+        name='domains-config'
     ),
     path(
         'domains/detail/<int:pk>/',
         domains.DomainDetailView.as_view(),
-        name='domains-delete_confirm'),
+        name='domains-detail'),
     re_path(
         r'^domains/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
         domains.DomainBulkDeleteConfirmView.as_view(),
@@ -98,6 +99,7 @@ urlpatterns = [
         trust_stores.TrustStoresDownloadView.as_view(),
         name='truststores-download',
     ),
+    path('truststores/detail/<int:pk>/', trust_stores.TrustStoresDetailView.as_view(), name='trust_store-details'),
     # re_path(
     #     r'^truststores/download/(?P<file_format>[a-zA-Z0-9_]+)/(?P<file_content>[a-zA-Z0-9_]+)/(?P<pk>[0-9]+)/?$',
     #     trust_stores.CertificateDownloadView.as_view(short=False),
@@ -117,6 +119,5 @@ urlpatterns = [
     #     trust_stores.CertificateMultipleDownloadView.as_view(),
     #     name='truststores-file-download'
     # ),
-    path('truststores/detail/<pk>/', trust_stores.TrustStoresDetailView.as_view(), name='truststore_details'),
 
 ]

@@ -1273,7 +1273,8 @@ class IssuingCaModel(models.Model):
         verbose_name=f'Unique Name',
         max_length=100,
         validators=[UniqueNameValidator()],
-        unique=True
+        unique=True,
+        editable=False
     )
 
     root_ca_certificate = models.ForeignKey(
@@ -1310,7 +1311,9 @@ class IssuingCaModel(models.Model):
 
     # TODO: remote_ca_config -> ForeignKey
 
-    auto_crl = models.BooleanField(default=True, verbose_name='Generate CRL upon certificate revocation')
+    auto_crl = models.BooleanField(default=True, verbose_name='Generate CRL upon certificate revocation.')
+
+    next_crl_generation_time = models.IntegerField(default=(24*60))
 
     def __str__(self) -> str:
         return f'IssuingCa({self.unique_name})'
@@ -1394,17 +1397,6 @@ class DomainModel(models.Model):
             return f'Domain({self.unique_name}, {self.issuing_ca.unique_name})'
         return f'Domain({self.unique_name}, None)'
 
-    @property
-    def auto_crl(self) -> bool:
-        """Retrieve the auto_crl value from the related IssuingCaModel.
-
-        Returns:
-            bool: The auto_crl value from the IssuingCaModel, or False if no IssuingCaModel is associated.
-        """
-        if self.issuing_ca:
-            return self.issuing_ca.auto_crl
-        return False  # Fallback if no CA is associated
-
 
 class RevokedCertificate(models.Model):
     """Certificate Revocation model."""
@@ -1427,7 +1419,7 @@ class CRLStorage(models.Model):
     """Storage of CRLs."""
     # crl = models.CharField(max_length=4294967296)
     crl = models.TextField()
-    issued_at = models.DateTimeField(auto_now_add=True, editable=False)
+    created_at = models.DateTimeField(editable=False)
     ca = models.ForeignKey(IssuingCaModel, on_delete=models.CASCADE)
 
     def __str__(self) -> str:
@@ -1452,15 +1444,15 @@ class CRLStorage(models.Model):
 
     @staticmethod
     def get_crl(ca: IssuingCaModel) -> None | str:
-        result = CRLStorage.get_crl_entry(ca)
+        result = CRLStorage.get_crl_object(ca)
         if result:
             return result.crl
         return None
 
     @staticmethod
-    def get_crl_entry(ca: IssuingCaModel) -> None | CRLStorage:
+    def get_crl_object(ca: IssuingCaModel) -> None | CRLStorage:
         try:
-            return CRLStorage.objects.filter(ca=ca).latest('issued_at')
+            return CRLStorage.objects.filter(ca=ca).latest('created_at')
         except CRLStorage.DoesNotExist:
             return None
 
