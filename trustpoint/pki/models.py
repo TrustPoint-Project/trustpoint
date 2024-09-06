@@ -1406,17 +1406,6 @@ class DomainModel(models.Model):
             return f'Domain({self.unique_name}, {self.issuing_ca.unique_name})'
         return f'Domain({self.unique_name}, None)'
 
-    @property
-    def auto_crl(self) -> bool:
-        """Retrieve the auto_crl value from the related IssuingCaModel.
-
-        Returns:
-            bool: The auto_crl value from the IssuingCaModel, or False if no IssuingCaModel is associated.
-        """
-        if self.issuing_ca:
-            return self.issuing_ca.auto_crl
-        return False  # Fallback if no CA is associated
-
 
 class RevokedCertificate(models.Model):
     """Certificate Revocation model."""

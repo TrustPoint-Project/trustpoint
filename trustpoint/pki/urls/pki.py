@@ -75,9 +75,9 @@ urlpatterns = [
         name='domains-add'
     ),
     path(
-        'domains/edit/<int:pk>/',
-        domains.DomainUpdateView.as_view(),
-        name='domains-edit'
+        'domains/config/<int:pk>/',
+        domains.DomainConfigView.as_view(),
+        name='domains-config'
     ),
     path(
         'domains/detail/<int:pk>/',
@@ -99,6 +99,7 @@ urlpatterns = [
         trust_stores.TrustStoresDownloadView.as_view(),
         name='truststores-download',
     ),
+    path('truststores/detail/<int:pk>/', trust_stores.TrustStoresDetailView.as_view(), name='trust_store-details'),
     # re_path(
     #     r'^truststores/download/(?P<file_format>[a-zA-Z0-9_]+)/(?P<file_content>[a-zA-Z0-9_]+)/(?P<pk>[0-9]+)/?$',
     #     trust_stores.CertificateDownloadView.as_view(short=False),
@@ -118,6 +119,5 @@ urlpatterns = [
     #     trust_stores.CertificateMultipleDownloadView.as_view(),
     #     name='truststores-file-download'
     # ),
-    path('truststores/detail/<pk>/', trust_stores.TrustStoresDetailView.as_view(), name='truststore_details'),
 
 ]

@@ -182,13 +182,13 @@ class DomainTable(tables.Table):
             'unique_name',
             'issuing_ca',
             'details',
-            'edit',
+            'config',
             'delete',
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
-    edit = tables.Column(empty_values=(), orderable=False, verbose_name=_('Edit'))
+    config = tables.Column(empty_values=(), orderable=False, verbose_name=_('Config'))
     delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
 
     @staticmethod
@@ -205,9 +205,9 @@ class DomainTable(tables.Table):
                            record.pk, _('Details'))
 
     @staticmethod
-    def render_edit(record: CertificateModel) -> SafeString:
-        return format_html('<a href="edit/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
-                           record.pk, _('Edit'))
+    def render_config(record: CertificateModel) -> SafeString:
+        return format_html('<a href="config/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+                           record.pk, _('Config'))
 
     @staticmethod
     def render_delete(record: CertificateModel) -> SafeString:
@@ -221,6 +221,44 @@ class DomainTable(tables.Table):
         """
         return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
                            record.pk, _('Delete'))
+
+
+class ProtocolConfigTable(tables.Table):
+    protocol = tables.Column(verbose_name='Protocol')
+    status = tables.Column(verbose_name='Status')
+    operation = tables.Column(verbose_name='Operation')
+    action = tables.Column(verbose_name='Action')
+    url_path = tables.Column(verbose_name='URL Path')
+    details = tables.Column(verbose_name='Details', accessor='get_details_link', orderable=False)
+    configure = tables.Column(verbose_name='Configure', accessor='get_configure_link', orderable=False)
+
+    def render_status(self, value):
+        """Color status based on its value"""
+        if value == "Enabled":
+            return format_html('<span class="text-success">{}</span>', value)
+        elif value == "Disabled":
+            return format_html('<span class="text-muted">{}</span>', value)
+        elif value == "Limited":
+            return format_html('<span class="text-warning">{}</span>', value)
+
+    def render_action(self, value):
+        """Render action buttons"""
+        return format_html('<button class="btn btn-secondary">{}</button>', value)
+
+    class Meta:
+        template_name = 'django_tables2/bootstrap4.html'
+
+
+class TrustStoreConfigFromDomainTable(tables.Table):
+    # @TODO When Trust stores get implemented. Update url
+    details = tables.TemplateColumn('<a href="{% url \'home:dashboard\' %}" class="btn btn-secondary">Details</a>', orderable=False)
+    remove = tables.TemplateColumn('<a href="{% url \'home:dashboard\' %}" class="btn btn-danger">Remove</a>', orderable=False)
+
+    class Meta:
+        model = TrustStoreModel
+        template_name = "django_tables2/bootstrap5.html"
+        fields = ("unique_name", "url_path", )
+        attrs = {"class": "table"}
 
 
 class TrustStoreTable(tables.Table):
