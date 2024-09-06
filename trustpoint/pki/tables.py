@@ -148,13 +148,13 @@ class IssuingCaTable(tables.Table):
 
     @staticmethod
     def render_config(record: CertificateModel) -> SafeString:
-        """Creates the html hyperlink for the delete-view.
+        """Creates the html hyperlink for the config-view.
 
         Args:
             record (Truststore): The current record of the RootCa model.
 
         Returns:
-            SafeString: The html hyperlink for the delete-view.
+            SafeString: The html hyperlink for the config-view.
         """
         return format_html('<a href="config/{}/" class="btn btn-primary tp-table-btn">{}</a>',
                            record.pk, _('Config'))
@@ -224,6 +224,7 @@ class DomainTable(tables.Table):
 
 
 class ProtocolConfigTable(tables.Table):
+    """Table representation of the different protocols."""
     protocol = tables.Column(verbose_name='Protocol')
     status = tables.Column(verbose_name='Status')
     operation = tables.Column(verbose_name='Operation')
@@ -250,6 +251,7 @@ class ProtocolConfigTable(tables.Table):
 
 
 class TrustStoreConfigFromDomainTable(tables.Table):
+    """Table representation of the Trust Store config for the Domain config."""
     # @TODO When Trust stores get implemented. Update url
     details = tables.TemplateColumn('<a href="{% url \'home:dashboard\' %}" class="btn btn-secondary">Details</a>', orderable=False)
     remove = tables.TemplateColumn('<a href="{% url \'home:dashboard\' %}" class="btn btn-danger">Remove</a>', orderable=False)
