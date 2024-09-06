@@ -388,7 +388,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 }
 
 .tp-table-btn {
-    padding: 0.2rem 0.4rem;
+    /*line-height: 1.5rem;*/
     min-width: 5rem;
 }
 

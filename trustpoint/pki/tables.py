@@ -60,7 +60,7 @@ class CertificateTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+        return format_html('<a href="detail/{}/" class="btn btn-primary btn-sm tp-table-btn">{}</a>',
                            record.pk, _('Details'))
 
     @staticmethod
@@ -73,7 +73,7 @@ class CertificateTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html('<a href="download/{}/" class="btn btn-primary tp-table-btn">{}</a>',
+        return format_html('<a href="download/{}/" class="btn btn-primary btn-sm tp-table-btn">{}</a>',
                            record.pk, _('Download'))
 
 
@@ -130,7 +130,7 @@ class IssuingCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+        return format_html('<a href="detail/{}/" class="btn btn-primary btn-sm tp-table-btn">{}</a>',
                            record.pk, _('Details'))
 
     @staticmethod
@@ -143,7 +143,7 @@ class IssuingCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
+        return format_html('<a href="delete/{}/" class="btn btn-secondary btn-sm tp-table-btn">{}</a>',
                            record.pk, _('Delete'))
 
     @staticmethod
@@ -156,7 +156,7 @@ class IssuingCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the config-view.
         """
-        return format_html('<a href="config/{}/" class="btn btn-primary tp-table-btn">{}</a>',
+        return format_html('<a href="config/{}/" class="btn btn-primary btn-sm tp-table-btn">{}</a>',
                            record.pk, _('Config'))
 
 
@@ -201,12 +201,12 @@ class DomainTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+        return format_html('<a href="detail/{}/" class="btn btn-primary btn-sm tp-table-btn">{}</a>',
                            record.pk, _('Details'))
 
     @staticmethod
     def render_config(record: CertificateModel) -> SafeString:
-        return format_html('<a href="config/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+        return format_html('<a href="config/{}/" class="btn btn-primary btn-sm tp-table-btn">{}</a>',
                            record.pk, _('Config'))
 
     @staticmethod
@@ -219,7 +219,7 @@ class DomainTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
+        return format_html('<a href="delete/{}/" class="btn btn-secondary btn-sm tp-table-btn">{}</a>',
                            record.pk, _('Delete'))
 
 
@@ -300,7 +300,7 @@ class TrustStoreTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+        return format_html('<a href="detail/{}/" class="btn btn-primary btn-sm tp-table-btn">{}</a>',
                            record.pk, _('Details'))
 
     @staticmethod
@@ -313,7 +313,7 @@ class TrustStoreTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html('<a href="download/{}/" class="btn btn-primary tp-table-btn">{}</a>',
+        return format_html('<a href="download/{}/" class="btn btn-primary btn-sm tp-table-btn">{}</a>',
                            record.pk, _('Download'))
 
     @staticmethod
@@ -326,5 +326,5 @@ class TrustStoreTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
+        return format_html('<a href="delete/{}/" class="btn btn-secondary btn-sm tp-table-btn">{}</a>',
                            record.pk, _('Delete'))
