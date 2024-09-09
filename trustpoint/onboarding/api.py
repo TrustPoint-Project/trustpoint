@@ -6,6 +6,7 @@
 from __future__ import annotations
 
 import base64
+import logging
 
 from devices.models import Device
 from django.http import HttpRequest, HttpResponse
@@ -19,6 +20,9 @@ from onboarding.models import (
     OnboardingProcessState,
 )
 from trustpoint.schema import ErrorSchema, SuccessSchema
+from onboarding.schema import TokiInitMessageSchema, TokiInitResponseSchema, TokiFinalizationMessageSchema, TokiFinalizationResponseSchema
+
+log = logging.getLogger('tp.onboarding')
 
 router = Router()
 
@@ -117,6 +121,40 @@ def cert_chain(request: HttpRequest, url_ext: str):
     response = HttpResponse(cert_chain, status=200, content_type='application/x-pem-file')
     response['Content-Disposition'] = 'attachment; filename="tp-cert-chain.pem"'
     return response
+
+# --- TOKI ZERO TOUCH ONBOARDING API ENDPOINTS ---
+
+@router.post('/toki/init', response={200: TokiInitResponseSchema, 404: ErrorSchema}, auth=None, exclude_none=True)
+def toki_init(request: HttpRequest, data: TokiInitMessageSchema):
+    """Initializes the TOKI Zero Touch onboarding process."""
+    # get request data
+    idevid = data.idevid
+    client_nonce = data.client_nonce
+    # verify IDevID chain of trust
+    # TODO (Air): extra trust store in Trustpoint for IDevID verification?
+    log.warning('TokiInit: IDevID verification not implemented.')
+
+    # TODO (Air): look up ownership certificate that includes the serial number of the IDevID
+    ownership_cert = None
+    
+
+    #onboarding_process = OnboardingProcess.make_onboarding_process(None, ManualOnboardingProcess)
+    #if not onboarding_process:
+        #return 404, {'error': 'Onboarding process not found.'}
+    response = {
+        'ownership_cert': ownership_cert,
+        'server_nonce': Crypt.get_nonce(),
+        'client_nonce': client_nonce,
+        'server_tls_cert': Crypt.get_server_tls_cert(),	
+    }
+    response['toki-server-signature'] = ownership_cert.sign(response)
+    return 200, response
+
+@router.post('/toki/finalize', response={200: TokiFinalizationResponseSchema, 404: ErrorSchema}, auth=None, exclude_none=True)
+def toki_finalize(request: HttpRequest, data: TokiFinalizationMessageSchema):
+    """Finalizes the TOKI Zero Touch onboarding process."""
+    
+    
 
 # --- ONBOARDING MANAGEMENT API ENDPOINTS ---
 

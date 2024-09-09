@@ -59,6 +59,21 @@ class CryptoBackend:
         pkey = hashlib.pbkdf2_hmac('sha256', hexpass.encode(), hexsalt.encode(), iterations, dklen)
         h = hmac.new(pkey, message, hashlib.sha256)
         return h.hexdigest()
+    
+    @staticmethod
+    def get_server_tls_cert() -> str:
+        """Returns the TLS certificate used by the Trustpoint server.
+
+        TODO: Make location and included certificates configurable and verify that they are valid
+
+        Returns:
+            PEM string of the TLS  server certificate.
+
+        Raises:
+            FileNotFoundError: If the TLS certificate file is not found.
+        """
+        with Path('../tests/data/x509/https_server.crt').open() as certfile:
+            return certfile.read()
 
     @staticmethod
     def get_trust_store() -> str:
@@ -72,8 +87,7 @@ class CryptoBackend:
         Raises:
             FileNotFoundError: If the trust store file is not found.
         """
-        with Path('../tests/data/x509/https_server.crt').open() as certfile:
-            return certfile.read()
+        return CryptoBackend.get_server_tls_cert()
 
     @staticmethod
     def _get_ca(device: Device) -> CertificateModel:
@@ -224,3 +238,8 @@ class CryptoBackend:
         device.save()
         log.info('Issued and stored LDevID for device %s', device.device_name)
         return pki_response.raw_response
+    
+    @staticmethod
+    def get_nonce(nbytes: int = 16) -> str:
+        """Generates a new nonce for use in the onboarding process."""
+        return secrets.token_urlsafe(nbytes)
