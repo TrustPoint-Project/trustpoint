@@ -1,3 +1,4 @@
+"""Django tables2 for the home application."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -11,7 +12,8 @@ if TYPE_CHECKING:
     from django.utils.safestring import SafeString
 
 
-CHECKBOX_ATTRS: dict[str, dict[str, str]] = {'th': {'id': 'checkbox-column'}, 'td': {'class': 'row_checkbox'}}
+# CHECKBOX_ATTRS: dict[str, dict[str, str]] =
+# {'th': {'id': 'checkbox-column'}, 'td': {'class': 'row_checkbox'}}    # noqa: ERA001
 
 from home.models import NotificationModel
 
@@ -29,7 +31,7 @@ class NotificationTable(tables.Table):
         _msg = _('There are no Notifications available.')
         empty_text = format_html('<div class="text-center">{}</div>', _msg)
         fields = (
-            'row_checkbox',
+            # 'row_checkbox',   # noqa: ERA001
             'notification_type',
             'notification_source',
             'message',
@@ -53,7 +55,7 @@ class NotificationTable(tables.Table):
     )
 
 
-    row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
+    # row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)    # noqa: ERA001
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
     solve = tables.Column(empty_values=(), orderable=False, verbose_name=_('Solve'))
     delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))

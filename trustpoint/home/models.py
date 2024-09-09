@@ -4,46 +4,47 @@ from __future__ import annotations
 
 import logging
 
-from django.db import models
-from django.utils import timezone
-from django.utils.translation import gettext_lazy as _
-
-from pki.models import DomainModel, CertificateModel, IssuingCaModel
 from devices.models import Device
+from django.db import models
+from django.utils.translation import gettext_lazy as _
+from pki.models import CertificateModel, DomainModel, IssuingCaModel
 
 log = logging.getLogger('tp.home')
 
 
 class NotificationStatus(models.Model):
     """Model representing a status a notification can have."""
-    STATUS_CHOICES = [
-        ('NEW', _('New')),
-        ('CONFIRMED', _('Confirmed')),
-        ('IN_PROGRESS', _('In Progress')),
-        ('SOLVED', _('Solved')),
-        ('ESCALATED', _('Escalated')),
-        ('SUSPENDED', _('Suspended')),
-        ('REJECTED', _('Rejected')),
-        ('DELETED', _('Deleted')),
-        ('CLOSED', _('Closed')),
-        ('ACKNOWLEDGED', _('Acknowledged')),
-        ('FAILED', _('Failed')),
-        ('EXPIRED', _('Expired')),
-        ('PENDING', _('Pending')),
-    ]
 
-    status = models.CharField(max_length=20, choices=STATUS_CHOICES, unique=True)
+    class StatusChoices(models.TextChoices):
+        """Status Types"""
+        NEW = 'NEW', _('New')
+        CONFIRMED = 'CONF', _('Confirmed')
+        IN_PROGRESS = 'PROG', _('In Progress')
+        SOLVED = 'SOLV', _('Solved')
+        ESCALATED = 'ESC', _('Escalated')
+        SUSPENDED = 'SUS', _('Suspended')
+        REJECTED = 'REJ', _('Rejected')
+        DELETED = 'DEL', _('Deleted')
+        CLOSED = 'CLO', _('Closed')
+        ACKNOWLEDGED = 'ACK', _('Acknowledged')
+        FAILED = 'FAIL', _('Failed')
+        EXPIRED = 'EXP', _('Expired')
+        PENDING = 'PEND', _('Pending')
 
-    def __str__(self):
+    status = models.CharField(max_length=20, choices=StatusChoices, unique=True)
+
+    def __str__(self) -> str:
+        """Returns a human-readable string."""
         return self.get_status_display()
 
 
 class NotificationMessage(models.Model):
     """Message Model for Notifications with Short and Optional Long Descriptions."""
     short_description = models.CharField(max_length=255)
-    long_description = models.TextField(blank=True, null=True)
+    long_description = models.CharField(max_length=65536, blank=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Returns a human-readable string."""
         return self.short_description[:50]
 
 
@@ -61,11 +62,11 @@ class NotificationModel(models.Model):
 
     class NotificationSource(models.TextChoices):
         """Origin of the Notification."""
-        SYSTEM = 'SYSTEM', _('System')
-        DOMAIN = 'DOMAIN', _('Domain')
-        DEVICE = 'DEVICE', _('Device')
-        ISSUING_CA = 'CA', _('Issuing CA')
-        CERTIFICATE = 'CERT', _('Certificate')
+        SYSTEM = 'S', _('System')
+        DOMAIN = 'D', _('Domain')
+        DEVICE = 'E', _('Device')
+        ISSUING_CA = 'I', _('Issuing CA')
+        CERTIFICATE = 'C', _('Certificate')
 
     notification_type = models.CharField(
         max_length=3,
@@ -74,41 +75,49 @@ class NotificationModel(models.Model):
     )
 
     notification_source = models.CharField(
-        max_length=10,
+        max_length=1,
         choices=NotificationSource.choices,
         default=NotificationSource.SYSTEM
     )
 
-    domain = models.ForeignKey(DomainModel,
-                               on_delete=models.SET_NULL,
-                               blank=True, null=True,
-                               related_name='notifications')
+    domain = models.ForeignKey(
+        DomainModel,
+        on_delete=models.SET_NULL,
+        blank=True, null=True,
+        related_name='notifications')
 
-    certificate = models.ForeignKey(CertificateModel,
-                                    on_delete=models.SET_NULL,
-                                    blank=True,
-                                    null=True,
-                                    related_name='notifications')
-    device = models.ForeignKey(Device,
-                               on_delete=models.SET_NULL,
-                               blank=True,
-                               null=True,
-                               related_name='notifications')
+    certificate = models.ForeignKey(
+        CertificateModel,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='notifications')
 
-    issuing_ca = models.ForeignKey(IssuingCaModel,
-                                   on_delete=models.SET_NULL,
-                                   blank=True,
-                                   null=True,
-                                   related_name='notifications')
+    device = models.ForeignKey(
+        Device,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='notifications')
 
-    message = models.ForeignKey(NotificationMessage,
-                                on_delete=models.CASCADE,
-                                related_name='notifications')
+    issuing_ca = models.ForeignKey(
+        IssuingCaModel,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='notifications')
 
-    statuses = models.ManyToManyField(NotificationStatus,
-                                      related_name='notifications')
+    message = models.ForeignKey(
+        NotificationMessage,
+        on_delete=models.CASCADE,
+        related_name='notifications')
+
+    statuses = models.ManyToManyField(
+        NotificationStatus,
+        related_name='notifications')
 
     created_at = models.DateTimeField(auto_now_add=True)
 
-    def __str__(self):
-        return f"{self.get_notification_type_display()} - {self.message.short_description[:20]}"
+    def __str__(self) -> str:
+        """Returns a human-readable string."""
+        return f'{self.get_notification_type_display()} - {self.message.short_description[:20]}'
