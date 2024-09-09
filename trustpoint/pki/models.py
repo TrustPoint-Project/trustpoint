@@ -1251,14 +1251,15 @@ class CertificateModel(models.Model):
         self.certificate_status = self.CertificateStatus.REVOKED
         self.revocation_reason = revocation_reason
         qs = self.issuer_references.all()
-        for entry in qs:
-            issuing_ca = entry.issuing_ca_model
-            rc = RevokedCertificate(cert=self)
-            rc.issuing_ca = issuing_ca
-            rc.save()
-        self._save()
-        if issuing_ca.auto_crl:
-            issuing_ca.get_issuing_ca().generate_crl()
+        if qs:
+            for entry in qs:
+                issuing_ca = entry.issuing_ca_model
+                rc = RevokedCertificate(cert=self)
+                rc.issuing_ca = issuing_ca
+                rc.save()
+            self._save()
+            if issuing_ca.auto_crl:
+                issuing_ca.get_issuing_ca().generate_crl()
 
     def remove_private_key(self):
         self.private_key = None
@@ -1418,7 +1419,7 @@ class RevokedCertificate(models.Model):
 class CRLStorage(models.Model):
     """Storage of CRLs."""
     # crl = models.CharField(max_length=4294967296)
-    crl = models.TextField()
+    crl = models.TextField(editable=False)
     created_at = models.DateTimeField(editable=False)
     ca = models.ForeignKey(IssuingCaModel, on_delete=models.CASCADE)
 
@@ -1479,7 +1480,9 @@ class TrustStoreModel(models.Model):
         return f'TrustStoreModel({self.unique_name})'
 
     def get_serializer(self) -> CertificateCollectionSerializer:
-        pass
+        return CertificateCollectionSerializer(
+            [cert_model.get_certificate_serializer() for cert_model in self.certificates.all()]
+        )
 
 
 class TrustStoreOrderModel(models.Model):

@@ -1,6 +1,5 @@
 from django.contrib import admin
-from django.urls import reverse
-from django.utils.html import format_html
+
 
 from .models import (
     AttributeTypeAndValue,
@@ -13,6 +12,7 @@ from .models import (
     IssuingCaModel,
     KeyUsageExtension,
     SubjectAlternativeNameExtension,
+    TrustStoreModel
 )
 
 
@@ -37,8 +37,7 @@ class CertificateChainOrderModelAdmin(admin.ModelAdmin):
 
 class TrustStoreAdmin(admin.ModelAdmin):
     readonly_fields = [
-        'unique_name',
-        'leaf_certs'
+        'unique_name'
     ]
 
 
@@ -143,6 +142,7 @@ class DomainModelAdmin(admin.ModelAdmin):
     )
 
 
+admin.site.register(TrustStoreModel, TrustStoreAdmin)
 admin.site.register(IssuingCaModel, IssuingCaAdmin)
 admin.site.register(SubjectAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(IssuerAlternativeNameExtension, AlternativeNameExtensionAdmin)

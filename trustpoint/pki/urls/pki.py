@@ -95,29 +95,32 @@ urlpatterns = [
         name='truststores-add'
     ),
     re_path(
-        r'^truststores/download/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
-        trust_stores.TrustStoresDownloadView.as_view(),
-        name='truststores-download',
+        r'^truststores/download/multiple/(?P<pks>([0-9]+/)+[0-9]+)/?$',
+        trust_stores.TrustStoresMultipleDownloadView.as_view(),
+        name='truststores-download'
     ),
-    path('truststores/detail/<int:pk>/', trust_stores.TrustStoresDetailView.as_view(), name='trust_store-details'),
-    # re_path(
-    #     r'^truststores/download/(?P<file_format>[a-zA-Z0-9_]+)/(?P<file_content>[a-zA-Z0-9_]+)/(?P<pk>[0-9]+)/?$',
-    #     trust_stores.CertificateDownloadView.as_view(short=False),
-    #     name='truststores-file-download',
-    # ),
-    # re_path(
-    #     r'^truststores/download/multiple/(?P<pks>([0-9]+/)+[0-9]+)/?$',
-    #     trust_stores.CertificateMultipleDownloadView.as_view(),
-    #     name='truststores-download'
-    # ),
-    # re_path(
-    #     r'^truststores/download/multiple/'
-    #     r'(?P<file_format>[a-zA-Z0-9_]+)/'
-    #     r'(?P<file_content>[a-zA-Z0-9_]+)/'
-    #     r'(?P<archive_format>[a-zA-Z0-9_]+)/'
-    #     r'(?P<pks>([0-9]+/)+[0-9]+)/?$',
-    #     trust_stores.CertificateMultipleDownloadView.as_view(),
-    #     name='truststores-file-download'
-    # ),
-
+    re_path(
+        r'^truststores/download/multiple/'
+        r'(?P<file_format>[a-zA-Z0-9_]+)/'
+        r'(?P<archive_format>[a-zA-Z0-9_]+)/'
+        r'(?P<pks>([0-9]+/)+[0-9]+)/?$',
+        trust_stores.TrustStoresMultipleDownloadView.as_view(),
+        name='truststores-file-download'
+    ),
+    re_path(
+        r'^truststores/download/(?P<pk>[0-9]+)/?$',
+        trust_stores.TrustStoresDownloadView.as_view(),
+        name='truststore-download',
+    ),
+    re_path(
+        r'^truststores/download/(?P<file_format>[a-zA-Z0-9_]+)/(?P<pk>[0-9]+)/?',
+        trust_stores.TrustStoresDownloadView.as_view(),
+        name='truststore-file-download',
+    ),
+    re_path(
+        r'^truststores/delete/(?P<pks>([0-9]+/)+[0-9]*)/?$',
+        trust_stores.TrustStoresBulkDeleteConfirmView.as_view(),
+        name='truststores-delete_confirm',
+    ),
+    path('truststores/detail/<pk>/', trust_stores.TrustStoresDetailView.as_view(), name='truststore_details'),
 ]

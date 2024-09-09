@@ -60,7 +60,7 @@ class CertificateTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn">{}</a>',
                            record.pk, _('Details'))
 
     @staticmethod
@@ -130,7 +130,7 @@ class IssuingCaTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn">{}</a>',
                            record.pk, _('Details'))
 
     @staticmethod
@@ -201,12 +201,12 @@ class DomainTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn">{}</a>',
                            record.pk, _('Details'))
 
     @staticmethod
     def render_config(record: CertificateModel) -> SafeString:
-        return format_html('<a href="config/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+        return format_html('<a href="config/{}/" class="btn btn-primary tp-table-btn">{}</a>',
                            record.pk, _('Config'))
 
     @staticmethod
@@ -300,7 +300,7 @@ class TrustStoreTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn">{}</a>',
                            record.pk, _('Details'))
 
     @staticmethod

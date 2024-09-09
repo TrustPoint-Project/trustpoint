@@ -161,33 +161,25 @@ class UnprotectedLocalIssuingCa(IssuingCa):
     def get_crl_as_str(self) -> str:
         """Retrieves the current CRL for the issuing CA.
 
-        If no CRL is present, generates a new one and returns it.
-
         Returns:
             str: The CRL in PEM format.
         """
         from .models import CRLStorage
-        crl = CRLStorage.get_crl(ca=self._issuing_ca_model)
-        if crl is None:
-            self.generate_crl()
-            crl = CRLStorage.get_crl(ca=self._issuing_ca_model)
-        return crl
+        return CRLStorage.get_crl(ca=self._issuing_ca_model)
 
-    def get_crl_as_x509(self) -> x509.CertificateRevocationList:
+    def get_crl_as_x509(self) -> None | x509.CertificateRevocationList:
         """Retrieves the current CRL for the issuing CA.
-
-        If no CRL is present, generates a new one and returns it.
 
         Returns:
             CertificateRevocationList: The CRL as x509 object.
         """
-        crl = self.get_crl_as_str(ca=self._issuing_ca_model)
-        return x509.load_pem_x509_crl(crl.encode())
+        crl = self.get_crl_as_str()
+        if crl:
+            return x509.load_pem_x509_crl(crl.encode())
+        return None
 
     def get_crl_entry(self) -> CRLStorage:
         """Retrieves the current CRL for the issuing CA.
-
-        If no CRL is present, generates a new one and returns it.
 
         Returns:
             str: The CRL in PEM format.

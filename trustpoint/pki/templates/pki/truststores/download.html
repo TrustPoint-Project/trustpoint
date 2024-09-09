@@ -9,46 +9,61 @@
 
         <div class="card tp-card-centered">
 
-                <div class="card-header">
-                    <div class="">
-                        <h1>{% trans "Download Truststores" %}</h1>
-                    </div>
+            <div class="card-header">
+                <div>
+                    <h1>{% trans "Download Truststores" %}</h1>
                 </div>
-                <div class="card-body">
-                    <div class="tp-card-centered-content">
-                    <div class="tp-card-split">
-                        <div>Number of selected Truststore</div>
-                        <div id="cert-count">{{ cert_count }}</div>
-                    </div>
+            </div>
+
+            <div class="card-body">
+                <div class="tp-card-centered-content">
+                    <h2>1 Truststore Selected</h2>
                     <hr>
+                    <br>
 
-                    {% for cert in truststores %}
-                        <div class="tp-card-split">
-                            <div>Truststore {{ forloop.counter }}</div>
-                            <div><a class="btn btn-primary min-width-15" href="{% url 'pki:certificate-detail' pk=cert.id %}">Details</a></div>
-                        </div>
-                        <br>
-                        <div class="tp-card-split">
-                            <div>Common Name</div>
-                            <div>{{ cert.common_name }}</div>
-                        </div>
-                        <div class="tp-card-split">
-                            <div>Serial Number</div>
-                            <div>{{ cert.serial_number }}</div>
-                        </div>
-                        <hr>
+                    <h2>Download Trust-Store</h2>
+                    <div class="pt-2 pb-4">
+                        <a class="btn btn-primary min-width-15" href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='pem' %}">Download as PEM</a>
+                        <a class="btn btn-primary min-width-15" href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='pkcs7_der' %}">Download as PKCS#7 (DER)</a>
+                        <a class="btn btn-primary min-width-15" href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='pkcs7_pem' %}">Download as PKCS#7 (PEM)</a>
+                    </div>
 
-                    {% endfor %}
-                        {{ form|crispy }}
+                    <br>
+                    <h2>Truststore Details</h2>
+                    <hr>
+                    <br>
+
+                    <div class="tp-card-split mb-2">
+                        <h2>Truststore {{ forloop.counter }}</h2>
+                        <div></div>
+                    </div>
+
+                     <div class="tp-card-split">
+                        <div>Unique Name</div>
+                        <div>
+                            <a href="{% url 'pki:truststore_details' pk=truststore.id %}"> {{ truststore.unique_name }} </a>
+                        </div>
+                    </div>
+
+                    <div class="tp-card-split">
+                        <div>Number of certificates</div>
+                            {{ truststore.certificates.count }}
+                    </div>
+
+                    <div class="tp-card-split">
+                        <div>Distributed by Domains</div>
+                            N/A {# TODO #}
                     </div>
                 </div>
-                <div class="card-footer">
-                    <div class="tp-card-btn-footer">
-                        <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
-                        <a href="{% url 'pki:truststores' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
-                        <button type="submit" class="btn btn-primary">{% trans "Download" %}</button>
-                    </div>
+            </div>
+
+            <div class="card-footer">
+                <div class="tp-card-btn-footer">
+                    <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                    <a href="{% url 'pki:truststores' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
                 </div>
+            </div>
+
         </div>
     </form>
 {% endblock content %}

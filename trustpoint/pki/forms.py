@@ -7,8 +7,10 @@ from django.utils.translation import gettext_lazy as _
 from pki.initializer import (
     UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer,
     UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer,
-)
-from pki.models import DomainModel, IssuingCaModel
+
+    TrustStoreInitializer)
+from pki.models import IssuingCaModel, DomainModel
+
 from pki.validator.field import UniqueNameValidator
 
 
@@ -292,21 +294,17 @@ class TrustStoreAddForm(forms.Form):
                 code='unexpected-error')
 
         try:
-            # initializer = TrustStoreInitializer(
-            #     unique_name=cleaned_data['unique_name'],
-            #     trust_store=trust_store_file)
-            pass
+            initializer = TrustStoreInitializer(
+                unique_name=cleaned_data['unique_name'],
+                trust_store=trust_store_file)
         except Exception as e:
             raise ValidationError(
                 'Failed to load file. Seems to be malformed.',
                 code='trust-store-file-loading-failed')
-
         try:
-            # initializer.save()
-            pass
+            initializer.save()
         except Exception:
             raise ValidationError('Unexpected Error. Failed to save validated Trust Store in DB.')
-
 
 
 class TruststoresDownloadForm(forms.Form):
