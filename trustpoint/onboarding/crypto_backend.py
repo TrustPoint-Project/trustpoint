@@ -31,7 +31,6 @@ PBKDF2_DKLEN = 32
 log = logging.getLogger('tp.onboarding')
 
 HTTPS_SERVER_CERT_PATH = Path(__file__).parent.parent.parent / 'tests/data/x509/https_server.crt'
-# HTTPS_SERVER_KEY_PATH = Path(__file__).parent.parent.parent / 'tests/data/x509/https_server.crt'
 
 class OnboardingError(Exception):
     """Exception raised for errors in the onboarding process."""
