@@ -232,6 +232,8 @@ class ManualOnboardingProcess(OnboardingProcess):
         """Initializes a new manual onboarding process for a device."""
         super().__init__(dev)
         self.otp = secrets.token_hex(8)
+        self.tssalt = 'abc'
+        self.tsotp = 'abc'
         self.salt = dev.device_name
         self.gen_thread = threading.Thread(target=self._calc_hmac, daemon=True)
         self.gen_thread.start()
