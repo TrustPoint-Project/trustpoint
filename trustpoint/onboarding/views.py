@@ -304,7 +304,7 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             'url': onboarding_process.url,
             'sn': device.device_serial_number,
             'device_name': device.device_name,
-            'device': device.device_name,
+            'device': device.device_name.split(' ')[0],
             'device_id': device.id,
         }
 
