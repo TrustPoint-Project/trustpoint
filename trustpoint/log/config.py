@@ -2,6 +2,8 @@
 
 import logging
 import os
+from pathlib import Path
+
 from log.utils import UTCFormatter
 
 logging_config = {
@@ -12,7 +14,7 @@ logging_config = {
             'class': 'logging.handlers.TimedRotatingFileHandler',
             'level': 'DEBUG',
             'formatter': 'detailed',
-            'filename': 'tp.log',
+            'filename': 'media/log/tp.log',
             'when': 'midnight',
             'interval': 1,
             'backupCount': 365,  # Keep at least a year of logs
