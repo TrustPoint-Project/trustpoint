@@ -181,7 +181,8 @@ class DeviceTable(tables.Table):
 
         is_brski = record.onboarding_protocol == Device.OnboardingProtocol.BRSKI
         is_fido = record.onboarding_protocol == Device.OnboardingProtocol.FIDO
-        if is_brski or is_fido:
+        is_aoki = record.onboarding_protocol == Device.OnboardingProtocol.AOKI
+        if is_brski or is_fido or is_aoki:
             return self._render_zero_touch_onboarding_action(record)
 
         #raise UnknownOnboardingProtocolError(record.onboarding_protocol)

@@ -24,7 +24,7 @@ from onboarding.models import (
     OnboardingProcessState,
 )
 from trustpoint.schema import ErrorSchema, SuccessSchema
-from onboarding.schema import TokiInitMessageSchema, TokiInitResponseSchema, TokiFinalizationMessageSchema, TokiFinalizationResponseSchema
+from onboarding.schema import AokiInitMessageSchema, AokiInitResponseSchema, AokiFinalizationMessageSchema, AokiFinalizationResponseSchema
 from pki.models import CertificateModel, TrustStoreModel
 
 log = logging.getLogger('tp.onboarding')
@@ -127,11 +127,11 @@ def cert_chain(request: HttpRequest, url_ext: str):
     response['Content-Disposition'] = 'attachment; filename="tp-cert-chain.pem"'
     return response
 
-# --- TOKI ZERO TOUCH ONBOARDING API ENDPOINTS ---
+# --- AOKI ZERO TOUCH ONBOARDING API ENDPOINTS ---
 
-@router.post('/toki/init', response={200: TokiInitResponseSchema, codes_4xx: ErrorSchema}, auth=None, exclude_none=True)
-def toki_init(request: HttpRequest, data: TokiInitMessageSchema):
-    """Initializes the TOKI Zero Touch onboarding process."""
+@router.post('/aoki/init', response={200: AokiInitResponseSchema, codes_4xx: ErrorSchema}, auth=None, exclude_none=True)
+def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
+    """Initializes the AOKI Zero Touch onboarding process."""
     # get request data
     idevid = data.idevid
     client_nonce = data.client_nonce
@@ -142,9 +142,9 @@ def toki_init(request: HttpRequest, data: TokiInitMessageSchema):
         return 400, {'error': 'IDevID certificate not parsable.'}
     # verify IDevID against chains of trust stored in Trust stores
     # TODO (Air): extra trust store in Trustpoint for IDevID verification?
-    log.warning('TokiInit: IDevID verification not fully implemented.')
+    log.warning('AokiInit: IDevID verification not fully implemented.')
     idevid_cert_serial = format(idevid_cert.serial_number, 'X')
-    log.debug(f'TokiInit: IDevID: {idevid_cert.subject} SN: {idevid_cert_serial}')
+    log.debug(f'AokiInit: IDevID: {idevid_cert.subject} SN: {idevid_cert_serial}')
     # TODO (Air): Chain validation so that actual cert is not required in TS, only the root
     idevid_cert_db = None
     # TODO (Air): This loop is horribly inefficient
@@ -205,14 +205,14 @@ def toki_init(request: HttpRequest, data: TokiInitMessageSchema):
     server_signature = base64.b64encode(server_signature).decode()
     print(f'Server signature: {server_signature}')
     print(f'Signer public key: {ownership_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()}')
-    return Response(response, status=200, headers={'toki-server-signature': server_signature})
+    return Response(response, status=200, headers={'aoki-server-signature': server_signature})
 
-@router.post('/toki/finalize', response={200: TokiFinalizationResponseSchema, 404: ErrorSchema}, auth=None, exclude_none=True)
-def toki_finalize(request: HttpRequest, data: TokiFinalizationMessageSchema):
-    """Finalizes the TOKI Zero Touch onboarding process."""
+@router.post('/aoki/finalize', response={200: AokiFinalizationResponseSchema, 404: ErrorSchema}, auth=None, exclude_none=True)
+def aoki_finalize(request: HttpRequest, data: AokiFinalizationMessageSchema):
+    """Finalizes the AOKI Zero Touch onboarding process."""
 
     try:
-        client_signature = base64.b64decode(request.headers['toki-client-signature'])
+        client_signature = base64.b64decode(request.headers['aoki-client-signature'])
     except KeyError:
         return 400, {'error': 'No.'}
     

@@ -2,27 +2,27 @@
 
 from ninja import Schema
 
-class TokiInitMessageSchema(Schema):
+class AokiInitMessageSchema(Schema):
     """Schema for the initial message sent by the client."""
     idevid: str  # PEM (?)
     client_nonce: str  # hex token
 
 
-class TokiInitResponseSchema(Schema):
+class AokiInitResponseSchema(Schema):
     """Schema for the server response to the initial message sent by the client."""
     ownership_cert: str # PEM
     server_nonce: str  # hex token
     client_nonce: str
     server_tls_cert: str  # PEM
-    # + 'toki-server-signature' in response HTTP header
+    # + 'aoki-server-signature' in response HTTP header
 
-class TokiFinalizationMessageSchema(Schema):
+class AokiFinalizationMessageSchema(Schema):
     """Schema for the finalization message sent by the client."""
     # (empty)
-    # + 'toki-client-signature' in response HTTP header
+    # + 'aoki-client-signature' in response HTTP header
 
 
-class TokiFinalizationResponseSchema(Schema):
+class AokiFinalizationResponseSchema(Schema):
     """Schema for the server response to the finalization message sent by the client."""
     otp: str
     salt: str

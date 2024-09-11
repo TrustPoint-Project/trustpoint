@@ -348,4 +348,21 @@ class BrowserOnboardingProcess(OnboardingProcess):
         return (False, self.MAXPWTRIES - self.password_tries)
 
 
+class ZeroTouchOnboardingProcess(OnboardingProcess):
+    """Parent of all zero-touch onboarding process types."""
+
+
+class AokiOnboardingProcess(ZeroTouchOnboardingProcess):
+    """Onboarding process for a device using the AOKI protocol."""
+
+    _idevid_cert: bytes
+    _server_nonce : str
+
+    def __init__(self, device: Device) -> None:
+        """Initializes a new AOKI onboarding process for a device."""
+        super().__init__(device)
+        self._idevid_cert = None
+        self._server_nonce = None
+        dev = Device()
+
 onboarding_processes = []

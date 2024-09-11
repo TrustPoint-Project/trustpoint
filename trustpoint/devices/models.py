@@ -52,6 +52,7 @@ class Device(models.Model):
         TP_CLIENT = 'TP', _('Trustpoint Client')
         BRSKI = 'BR', _('BRSKI')
         FIDO = 'FI', _('FIDO FDO')
+        AOKI = 'AO', _('AOKI')
 
     device_name = models.CharField(max_length=100, unique=True, default='test')
     device_serial_number = models.CharField(max_length=100, blank=True)
