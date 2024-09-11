@@ -61,28 +61,18 @@ class SecurityConfigForm(forms.ModelForm):
             ),
             Fieldset(
                 _('Advanced security settings'),
-                'enable_local_root_ca',	
-                #'local_root_ca_alg_type'
             )
         )
 
 
     security_mode = forms.ChoiceField(choices=SecurityConfig.SecurityModeChoices.choices,
-                                      widget=forms.RadioSelect(),
+                                      widget=forms.Select(),
                                       label='')
-    
-    enable_local_root_ca = forms.BooleanField(required=False, label=_('Enable Local Root CA'),
-                                widget=forms.CheckboxInput(
-                                    attrs={'data-sl-defaults': '[true,false,false]',
-                                           'data-more-secure': 'false'}))
 
     class Meta:
         """Meta class"""
         model = SecurityConfig
-        fields = ['security_mode','enable_local_root_ca']
+        fields = ['security_mode']
         labels = {
             'security_mode': _('Security Level'),
-            'enable_local_root_ca': _('Enable Local Root CA'),
         }
-
-

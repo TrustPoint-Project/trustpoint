@@ -49,15 +49,18 @@
                     <br>
 
                     <div class="tp-card-split mb-2">
-                        <h2>Certificate {{ cert.common_name }}</h2>
-                        <div>
-                            <a class="btn btn-primary min-width-15" href="{% url 'pki:certificate-detail' pk=cert.id %}">Details</a>
-                        </div>
+                        <h2>Certificate 1</h2>
+                        <div></div>
                     </div>
 
                     <div class="tp-card-split">
-                        <div>Common Name</div>
-                        <div>{{ cert.common_name }}</div>
+                        <div>Subject</div>
+                        <div>
+                            {% for entry in cert.subject.all %}
+                                <a href="{% url 'pki:certificate-detail' pk=cert.id %}">{{ entry }}</a>
+                                <br>
+                            {% endfor %}
+                        </div>
                     </div>
 
                     <div class="tp-card-split">

@@ -11,8 +11,8 @@ from django.http import Http404
 from django_tables2 import SingleTableView
 
 from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, PrimaryKeyFromUrlToQuerysetMixin
-from pki.download.certificate import CertificateDownloadResponseBuilder, MultiCertificateDownloadResponseBuilder
-
+from pki.download.trust_store import TrustStoreDownloadResponseBuilder, MultiTrustStoreDownloadResponseBuilder
+from trustpoint.views.base import BulkDeleteView
 
 from pki.forms import TrustStoreAddForm, TruststoresDownloadForm
 from pki.models import TrustStoreModel, CertificateModel
@@ -53,25 +53,24 @@ class TrustStoresDetailView(TrustStoresContextMixin, TpLoginRequiredMixin, Detai
 
 class TrustStoresDownloadView(TrustStoresContextMixin, TpLoginRequiredMixin, DetailView):
 
-    model = CertificateModel
+    model = TrustStoreModel
     success_url = reverse_lazy('pki:truststores')
     ignore_url = reverse_lazy('pki:truststores')
     template_name = 'pki/truststores/download.html'
-    context_object_name = 'truststores'
+    context_object_name = 'truststore'
     short: bool = None
 
     def get(self, *args, **kwargs):
         file_format = self.kwargs.get('file_format')
-        file_content = self.kwargs.get('file_content')
-        if file_format is None and file_content is None:
+        if file_format is None :
             return super().get(*args, **kwargs)
 
-        if file_format is None or file_content is None:
+        if file_format is None:
             raise Http404
 
         pk = self.kwargs.get('pk')
 
-        return CertificateDownloadResponseBuilder(pk, file_format, file_content).as_django_http_response()
+        return TrustStoreDownloadResponseBuilder(pk, file_format).as_django_http_response()
 
 
 class TrustStoresMultipleDownloadView(
@@ -80,7 +79,7 @@ class TrustStoresMultipleDownloadView(
     PrimaryKeyFromUrlToQuerysetMixin,
     ListView):
 
-    model = CertificateModel
+    model = TrustStoreModel
     success_url = reverse_lazy('pki:truststores')
     ignore_url = reverse_lazy('pki:truststores')
     template_name = 'pki/truststores/download_multiple.html'
@@ -90,19 +89,25 @@ class TrustStoresMultipleDownloadView(
         self.extra_context = {'pks_url_path': self.get_pks_path()}
 
         file_format = self.kwargs.get('file_format')
-        file_content = self.kwargs.get('file_content')
         archive_format = self.kwargs.get('archive_format')
-        if file_format is None and file_content is None  and archive_format is None:
+        if file_format is None and archive_format is None:
             return super().get(*args, **kwargs)
 
-        if file_format is None or file_content is None or archive_format is None:
+        if file_format is None or archive_format is None:
             raise Http404
 
         pks = self.get_pks()
 
-        return MultiCertificateDownloadResponseBuilder(
+        return MultiTrustStoreDownloadResponseBuilder(
             pks=pks,
             file_format=file_format,
-            file_content=file_content,
             archive_format=archive_format).as_django_http_response()
 
+
+class TrustStoresBulkDeleteConfirmView(TrustStoresContextMixin, TpLoginRequiredMixin, BulkDeleteView):
+
+    model = TrustStoreModel
+    success_url = reverse_lazy('pki:truststores')
+    ignore_url = reverse_lazy('pki:truststores')
+    template_name = 'pki/truststores/confirm_delete.html'
+    context_object_name = 'truststores'

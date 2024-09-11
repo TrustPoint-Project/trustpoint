@@ -3,18 +3,18 @@
 
 from __future__ import annotations
 
+from itertools import product
 from pathlib import Path
+
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
-from itertools import product
-
-from django.core.management import BaseCommand
 from pki.models import CertificateModel
 
+from .base_commands import CertificateCreationCommandMixin
+from django.core.management.base import BaseCommand
 from . import Algorithm
 
-
-class Command(BaseCommand):
+class Command(CertificateCreationCommandMixin, BaseCommand):
     """Django management command for adding issuing CA test data."""
 
     help = 'Just some stuff for manual testing.'

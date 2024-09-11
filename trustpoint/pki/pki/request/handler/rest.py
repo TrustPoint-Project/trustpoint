@@ -12,8 +12,10 @@ from cryptography.x509.oid import NameOID
 from pki.pki.request.message import PkiResponseMessage, HttpStatusCode, MimeType
 from pki.pki.request.handler import CaRequestHandler
 from pki.models import CertificateModel
+from pki.serializer.certificate import CertificateSerializer
+from pki.serializer.credential import CredentialSerializer
 
-# from util_deprecated.x509.enrollment import Enrollment
+from util.x509.enrollment import Enrollment
 
 from typing import TYPE_CHECKING
 
@@ -41,9 +43,11 @@ class LocalCaRestCsrRequestHandler(CaRequestHandler):
 
         cert_model = CertificateModel.save_certificate(certificate=cert)
 
+        serializer = CertificateSerializer(cert)
+
         # TODO: PKIResponseMessage assumes HTTP response, here we need to return the CertificateModel instance
         return PkiResponseMessage(
-            raw_response=cert.public_bytes(Encoding.PEM),
+            raw_response=serializer.as_pem(),
             http_status=HttpStatusCode.OK,
             mimetype=MimeType.APPLICATION_PKCS7_CERTS_ONLY,
             cert_model=cert_model)
@@ -93,16 +97,10 @@ class LocalCaRestPkcs12RequestHandler(CaRequestHandler):
 
         cert_model = CertificateModel.save_certificate(certificate=cert)
 
-        pkcs12_bundle = pkcs12.serialize_key_and_certificates(
-            name=self._request_message._subject.get_attributes_for_oid(NameOID.SERIAL_NUMBER)[0].value.encode(),
-            key=private_key,
-            cert=cert,
-            cas=[self._issuing_ca.get_issuing_ca_certificate_serializer().as_crypto()],
-            encryption_algorithm=NoEncryption()
-        )
+        serializer = CredentialSerializer((private_key, cert, cert_model.get_certificate_chain_serializers(False)[0]))
 
         return PkiResponseMessage(
-            raw_response=pkcs12_bundle,
+            raw_response=serializer.as_pkcs12(),
             http_status=HttpStatusCode.OK,
             mimetype=MimeType.APPLICATION_PKCS12,
             cert_model=cert_model)

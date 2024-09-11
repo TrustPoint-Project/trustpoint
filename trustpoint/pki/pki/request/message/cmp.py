@@ -356,4 +356,3 @@ class PkiCmpGetCaCertsRequestMessage(PkiRequestMessage):
     @property
     def cmp(self) -> Asn1Type:
         return self._cmp
-

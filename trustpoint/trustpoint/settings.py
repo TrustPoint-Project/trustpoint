@@ -29,7 +29,7 @@ with (Path(__file__).resolve().parent / Path('dev_secret_key.txt')).open('r') as
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = ['10.10.0.4', 'localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -166,9 +166,6 @@ DJANGO_TABLES2_TABLE_ATTRS = {'class': 'table', 'td': {'class': 'v-middle'}}
 
 LOGIN_REDIRECT_URL = 'home:dashboard'
 LOGIN_URL = 'users:login'
-
-# CRL interval in hours
-CRL_INTERVAL = 24
 
 DJANGO_LOG_LEVEL = 'INFO'
 
