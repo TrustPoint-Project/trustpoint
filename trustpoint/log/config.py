@@ -17,6 +17,7 @@ logging_config = {
             'interval': 1,
             'backupCount': 365,  # Keep at least a year of logs
             'utc': True,
+            'delay': True # This fixes PermissionError on log rotation in windows
         },
         'console': {
             'class': 'logging.StreamHandler',
