@@ -33,6 +33,7 @@ class Command(BaseCommand):
                 notification_source=NotificationModel.NotificationSource.DOMAIN,
                 message=message,
                 created_at=timezone.now(),
+                domain=domain
             )
 
             notification.statuses.add(new_status)
@@ -49,7 +50,8 @@ class Command(BaseCommand):
                 notification_type=NotificationModel.NotificationTypes.INFO,
                 notification_source=NotificationModel.NotificationSource.CERTIFICATE,
                 message=message,
-                created_at=timezone.now()
+                created_at=timezone.now(),
+                certificate=cert
             )
             self.stdout.write(self.style.SUCCESS(f'Created notification for Certificate: {cert.serial_number}'))
 
@@ -61,10 +63,11 @@ class Command(BaseCommand):
             )
 
             NotificationModel.objects.create(
-                notification_type=NotificationModel.NotificationTypes.INFO,  # Use TextChoices for notification type
+                notification_type=NotificationModel.NotificationTypes.CRITICAL,
                 notification_source=NotificationModel.NotificationSource.ISSUING_CA,
                 message=message,
-                created_at=timezone.now()
+                created_at=timezone.now(),
+                issuing_ca=ca
             )
             self.stdout.write(self.style.SUCCESS(f'Created notification for Issuing CA: {ca.unique_name}'))
 
@@ -79,6 +82,7 @@ class Command(BaseCommand):
                 notification_type=NotificationModel.NotificationTypes.INFO,
                 notification_source=NotificationModel.NotificationSource.DEVICE,
                 message=message,
-                created_at=timezone.now()
+                created_at=timezone.now(),
+                device=device
             )
             self.stdout.write(self.style.SUCCESS(f'Created notification for Device: {device.device_serial_number}'))

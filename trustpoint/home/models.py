@@ -41,7 +41,7 @@ class NotificationStatus(models.Model):
 class NotificationMessage(models.Model):
     """Message Model for Notifications with Short and Optional Long Descriptions."""
     short_description = models.CharField(max_length=255)
-    long_description = models.CharField(max_length=65536, blank=True)
+    long_description = models.CharField(max_length=65536, default='No description provided')
 
     def __str__(self) -> str:
         """Returns a human-readable string."""
@@ -55,7 +55,7 @@ class NotificationModel(models.Model):
         """Supported Notification Types."""
 
         SETUP = 'SET', _('SETUP')
-        DEBUG = 'DEB', _('DEBUG')
+        #DEBUG = 'DEB', _('DEBUG')
         INFO = 'INF', _('INFO')
         WARNING = 'WAR', _('WARNING')
         CRITICAL = 'CRI', _('CRITICAL')
@@ -106,6 +106,10 @@ class NotificationModel(models.Model):
         blank=True,
         null=True,
         related_name='notifications')
+
+    event = models.CharField(max_length=255,
+                             blank=True,
+                             null=True)
 
     message = models.ForeignKey(
         NotificationMessage,

@@ -13,5 +13,5 @@ urlpatterns = [
     path('notifications/issuing_ca/', views.IssuingCaNotificationsView.as_view(), name='issuing_ca_notifications'),
     path('notifications/device/', views.DeviceNotificationsView.as_view(), name='device_notifications'),
     path('notifications/tabs/', views.notifications_with_tabs, name='notifications-tabs'),
-
+    path('notification/<int:pk>/', views.notification_details_view, name='notification_details'),
 ]
