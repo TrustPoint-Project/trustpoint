@@ -232,9 +232,7 @@ class ManualOnboardingProcess(OnboardingProcess):
         """Initializes a new manual onboarding process for a device."""
         super().__init__(dev)
         self.otp = secrets.token_hex(8)
-        self.tsotp = secrets.token_hex(8)
-        self.salt = secrets.token_hex(8)
-        self.tssalt = secrets.token_hex(8)
+        self.salt = dev.device_name
         self.gen_thread = threading.Thread(target=self._calc_hmac, daemon=True)
         self.gen_thread.start()
         self.hmac = None
@@ -245,7 +243,7 @@ class ManualOnboardingProcess(OnboardingProcess):
         Runs in separate gen_thread thread started by __init__ as it typically takes about a second.
         """
         try:
-            self.hmac = Crypt.pbkdf2_hmac_sha256(self.tsotp, self.tssalt, Crypt.get_trust_store().encode())
+            self.hmac = Crypt.pbkdf2_hmac_sha256(self.otp, self.salt, Crypt.get_trust_store().encode())
         except Exception as e:  # noqa: BLE001
             msg = 'Error generating trust store HMAC.'
             self._fail(msg)
