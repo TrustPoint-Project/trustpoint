@@ -26,7 +26,7 @@ class RawFileSchema(Schema):
 # --- PUBLIC ONBOARDING API ENDPOINTS ---
 
 @router.get('/trust-store/{url_ext}', response={200: RawFileSchema, 404: ErrorSchema}, auth=None, exclude_none=True)
-def trust_store(_: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpResponse:
+def trust_store(request: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpResponse:
     """Returns the trust store for the onboarding process."""
     onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
     if not onboarding_process:
@@ -96,7 +96,7 @@ def ldevid(request: HttpRequest, url_ext: str):
 @router.get('/ldevid/cert-chain/{url_ext}',
             response={200: RawFileSchema, 404: ErrorSchema},
             auth=None, exclude_none=True)
-def cert_chain(_: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpResponse:
+def cert_chain(request: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpResponse:
     """Returns the certificate chain of the LDevID certificate."""
     onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
     if not onboarding_process:
@@ -173,7 +173,7 @@ def start(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpRespon
 
 
 @router.delete('/{device_id}', response={200: SuccessSchema, 404: ErrorSchema, 422: ErrorSchema}, exclude_none=True)
-def stop(_: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
+def stop(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
     """Stops and removes the onboarding process for a device.
 
     Cancels the process if it is running.
@@ -199,7 +199,7 @@ def stop(_: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
 @router.post('/revoke/{device_id}',
              response={200: SuccessSchema, 404: ErrorSchema, 422: ErrorSchema},
              exclude_none=True)
-def revoke(_: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
+def revoke(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
     """Revokes the LDevID certificate for a device."""
     device = Device.get_by_id(device_id)
     if not device:
