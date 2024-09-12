@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import secrets
 from typing import TYPE_CHECKING
+import re
 
 from devices.models import Device
 from django.contrib import messages
@@ -304,7 +305,7 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             'url': onboarding_process.url,
             'sn': device.device_serial_number,
             'device_name': device.device_name,
-            'device': device.device_name.split(' ')[0],
+            'device': re.sub('[^a-zA-Z0-9_-]+', '-', device.device_name.lower()),
             'device_id': device.id,
         }
 
