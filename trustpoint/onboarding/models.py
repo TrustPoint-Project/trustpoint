@@ -232,7 +232,6 @@ class LDevIDOnboardingProcessMixin():
     def __init__(self):
         """Initializes the mixin"""
         super().__init__()
-        print('init mixin')
         self.otp = secrets.token_hex(8)
         self.salt = secrets.token_hex(8)
 
@@ -264,6 +263,7 @@ class LDevIDOnboardingProcessMixin():
             self.state = OnboardingProcessState.LDEVID_SENT
             if isinstance(self, AokiOnboardingProcess):
                 self._success()
+                self.cancel()
             log.info(f'LDevID issued for device {self.device.device_name} in onboarding process {self.id}.')
         else:
             self._fail('No LDevID was generated.')
