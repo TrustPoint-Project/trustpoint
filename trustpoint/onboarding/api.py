@@ -56,7 +56,7 @@ def ldevid(request: HttpRequest, url_ext: str):
     """Handles the LDevID certificate signing request.
 
     Inputs:
-        Onbarding process URL extension (in request path)
+        Onboarding process URL extension (in request path)
 
     Returns: LDevID certificate chain (in response body)
     """
