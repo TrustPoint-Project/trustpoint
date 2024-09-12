@@ -1,0 +1,134 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+    <div class="card tp-card-centered">
+        <div class="card-header">
+            <h2>{% trans "Notification Details" %}</h2>
+        </div>
+
+        <div class="card-body">
+            <div class="tp-card-centered-content">
+
+                <div class="mb-3">
+                    <strong>{% trans "Notification Type:" %}</strong>
+                    <div>
+                        {% for key, label in notification.NotificationTypes.choices %}
+                            <span class="badge
+                                {% if key == notification.notification_type %}
+                                    {% if key == 'SET' %} bg-primary
+                                    {% elif key == 'INF' %} bg-info
+                                    {% elif key == 'WAR' %} bg-warning
+                                    {% elif key == 'CRI' %} bg-danger
+                                    {% endif %}
+                                {% else %}
+                                    bg-secondary
+                                {% endif %}">
+                                {{ label }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+
+                <div class="mb-3">
+                    <strong>{% trans "Notification Source:" %}</strong>
+                    <div>
+                        {% for key, label in notification.NotificationSource.choices %}
+                            <span class="badge {% if key == notification.notification_source %}bg-primary{% else %}bg-secondary{% endif %}">
+                                {{ label }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                {% if notification.domain %}
+                    <div class="mb-3">
+                        <strong>{% trans "Domain:" %}</strong>
+                        <span>{{ notification.domain }}</span>
+                        <a href="/pki/domains/detail/{{ notification.domain.id }}/" class="btn btn-link">
+                            <i class="bi bi-arrow-up-right-square-fill"></i>
+                        </a>
+                    </div>
+                {% endif %}
+
+                {% if notification.certificate %}
+                    <div class="mb-3">
+                        <strong>{% trans "Certificate:" %}</strong>
+                        <span>{{ notification.certificate }}</span>
+                        <a href="/pki/certificates/detail/{{ notification.certificate.id }}/" class="btn btn-link">
+                            <i class="bi bi-arrow-up-right-square-fill"></i>
+                        </a>
+                    </div>
+                {% endif %}
+
+
+                {% if notification.device %}
+                    <div class="mb-3">
+                        <strong>{% trans "Device:" %}</strong>
+                        <span>{{ notification.device }}</span>
+                        <a href="/devices/details/{{ notification.device.id }}/" class="btn btn-link">
+                            <i class="bi bi-arrow-up-right-square-fill"></i>
+                        </a>
+                    </div>
+                {% endif %}
+
+                {% if notification.issuing_ca %}
+                    <div class="mb-3">
+                        <strong>{% trans "Issuing CA:" %}</strong>
+                        <span>{{ notification.issuing_ca }}</span>
+                        <a href="/pki/issuing-cas/detail/{{ notification.issuing_ca.id }}/" class="btn btn-link">
+                            <i class="bi bi-arrow-up-right-square-fill"></i>
+                        </a>
+                    </div>
+                {% endif %}
+
+
+                <div class="mb-3">
+                    <strong>{% trans "Message:" %}</strong>
+                    <span>{{ notification.message.short_description }}</span>
+                    {% if notification.message.long_description %}
+                        <p>{{ notification.message.long_description|safe }}</p>
+                    {% endif %}
+                </div>
+
+                <div class="mb-3">
+                    <strong>{% trans "Statuses:" %}</strong>
+                    <ul>
+                        {% for key, label in NotificationStatus.STATUS_CHOICES %}
+                            <li>
+                <span
+                        {% if key in notification_statuses %}class="fw-bold text-primary"{% endif %}>
+                    {{ label }}
+                </span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+
+                <div class="mb-3">
+                    <strong>{% trans "Created At:" %}</strong>
+                    <span>{{ notification.created_at|date:"SHORT_DATETIME_FORMAT" }}</span>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="card-footer">
+            <div class="tp-card-btn-footer">
+                <button type="button" class="btn btn-secondary" onClick="history.back()">
+                    {% trans 'Back' %}
+                </button>
+                {% if notification.notification_type == 'WAR' or notification.notification_type == 'CRI' %}
+                    {% if not is_solved %}
+                        <!-- Mark as Solved Button -->
+                        <a href="{% url 'home:mark_as_solved' notification.pk %}" class="btn btn-success">
+                            {% trans 'Mark as Solved' %}
+                        </a>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+{% endblock content %}
