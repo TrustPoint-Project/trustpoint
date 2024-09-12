@@ -1,10 +1,5 @@
 """API endpoints for the onboarding app."""
 
-# TODO: Remove this and please add proper annotations!
-# ruff: noqa: ANN201 # no need to annotate return type which is always "-> tuple[int, dict] | HttpResponse"
-
-# TODO: you can use noqa in the lines where it is required.
-# ruff: noqa: ARG001 # "request" argument is not used in many endpoints, but required for compatibility
 
 from __future__ import annotations
 
@@ -31,7 +26,7 @@ class RawFileSchema(Schema):
 # --- PUBLIC ONBOARDING API ENDPOINTS ---
 
 @router.get('/trust-store/{url_ext}', response={200: RawFileSchema, 404: ErrorSchema}, auth=None, exclude_none=True)
-def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:
+def trust_store(_: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpResponse:
     """Returns the trust store for the onboarding process."""
     onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
     if not onboarding_process:
@@ -101,7 +96,7 @@ def ldevid(request: HttpRequest, url_ext: str):
 @router.get('/ldevid/cert-chain/{url_ext}',
             response={200: RawFileSchema, 404: ErrorSchema},
             auth=None, exclude_none=True)
-def cert_chain(request: HttpRequest, url_ext: str):
+def cert_chain(_: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpResponse:
     """Returns the certificate chain of the LDevID certificate."""
     onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
     if not onboarding_process:
@@ -133,7 +128,7 @@ def state(request: HttpRequest, url_ext: str):
     return 200, onboarding_process.state
 
 @router.post('/{device_id}')
-def start(request: HttpRequest, device_id: int):
+def start(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
     """Starts the onboarding process for a device.
 
     Restarts if already onboarded. Does nothing if process already running.
@@ -178,7 +173,7 @@ def start(request: HttpRequest, device_id: int):
 
 
 @router.delete('/{device_id}', response={200: SuccessSchema, 404: ErrorSchema, 422: ErrorSchema}, exclude_none=True)
-def stop(request: HttpRequest, device_id: int):
+def stop(_: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
     """Stops and removes the onboarding process for a device.
 
     Cancels the process if it is running.
@@ -204,7 +199,7 @@ def stop(request: HttpRequest, device_id: int):
 @router.post('/revoke/{device_id}',
              response={200: SuccessSchema, 404: ErrorSchema, 422: ErrorSchema},
              exclude_none=True)
-def revoke(request: HttpRequest, device_id: int):
+def revoke(_: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
     """Revokes the LDevID certificate for a device."""
     device = Device.get_by_id(device_id)
     if not device:
