@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from django.db import models
 from django.utils import timezone
@@ -125,3 +126,6 @@ class Device(models.Model):
             log.warning('Re-onboarding device %s which is already onboarded.', device.device_name)
 
         return True, None
+
+    def get_device_name_as_url_extension(self) -> str:
+        return re.sub('[^a-zA-Z0-9_-]+', '-', self.device_name.lower())

@@ -298,14 +298,11 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             'page_category': 'onboarding',
             'page_name': 'manual',
             'otp': onboarding_process.otp,
-            'salt': onboarding_process.salt,
-            'tsotp': onboarding_process.tsotp,
-            'tssalt': onboarding_process.tssalt,
             'host': request.get_host(),
             'url': onboarding_process.url,
             'sn': device.device_serial_number,
             'device_name': device.device_name,
-            'device': re.sub('[^a-zA-Z0-9_-]+', '-', device.device_name.lower()),
+            'device': device.get_device_name_as_url_extension(),
             'device_id': device.id,
         }
 
