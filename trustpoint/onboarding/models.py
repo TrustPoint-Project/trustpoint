@@ -69,7 +69,7 @@ class OnboardingProcess:
         self.id = OnboardingProcess.id_counter
         self.state = OnboardingProcessState.STARTED
         self.error_reason = ''
-        self.url = secrets.token_urlsafe(4)
+        self.url = dev.get_device_name_as_url_extension()
         self.timer = threading.Timer(onboarding_timeout, self._timeout)
         # TODO (Air): instead of daemon, consider using events to exit gracefully on shutdown
         self.timer.daemon = True
