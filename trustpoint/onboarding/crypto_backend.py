@@ -173,7 +173,7 @@ class CryptoBackend:
         """
         ca_certificate = CryptoBackend._get_ca(device)
 
-        return ca_certificate.get_certificate_serializer().as_pem()
+        return ca_certificate.get_certificate_chain_serializers()[0].as_pem()
 
     @staticmethod
     def _gen_private_key() -> PrivateKeyTypes:
