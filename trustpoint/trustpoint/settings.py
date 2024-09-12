@@ -57,8 +57,7 @@ INSTALLED_APPS = [
     # use "python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server.crt
     # --key-file ../tests/data/x509/https_server.pem" to run with HTTPS
     # note: replaces default exception debug page with worse one
-    'django_celery_beat',
-    'django_celery_results',
+    'django_q'
 ]
 
 MIDDLEWARE = [
@@ -176,11 +175,13 @@ DJANGO_LOG_LEVEL = 'INFO'
 
 LOGGING = logging_config
 
-# Celery settings
-CELERY_BROKER_URL = 'memory://'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_BACKEND = 'django-db'
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers.DatabaseScheduler'
-CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
-CELERY_TIMEZONE = 'UTC'
+
+Q_CLUSTER = {
+    'name': 'Django-Q',
+    'workers': 4,  # Number of worker processes
+    'recycle': 500,
+    'timeout': 60,
+    'queue_limit': 50,
+    'bulk': 10,
+    'orm': 'default',  # Use Django's ORM as the broker
+}

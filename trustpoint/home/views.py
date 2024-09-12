@@ -1,6 +1,6 @@
 import json
 from django.views.generic.base import RedirectView, TemplateView
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django_tables2 import SingleTableView, RequestConfig
 from datetime import datetime, timedelta
 from django.db.models import Count, Q
@@ -8,7 +8,6 @@ from trustpoint.views.base import TpLoginRequiredMixin, ContextDataMixin
 
 from .models import NotificationModel, NotificationStatus
 from .tables import NotificationTable
-
 
 class IndexView(TpLoginRequiredMixin, RedirectView):
     permanent = False
@@ -411,6 +410,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
 
     def handle_notifications(self, context):
         new_status, created = NotificationStatus.objects.get_or_create(status='NEW')
+        solved_status, created = NotificationStatus.objects.get_or_create(status='SOLVED')
 
         all_notifications = NotificationModel.objects.all()
 
@@ -457,17 +457,33 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         context['device_notifications_count'] = all_notifications.filter(
             notification_source=NotificationModel.NotificationSource.DEVICE, statuses=new_status).count()
 
-        context['all_notifications_critical'] = all_notifications.filter(notification_type='CRI').count()
-        context['system_notifications_critical'] = all_notifications.filter(
+        unsolved_notifications = all_notifications.exclude(statuses=solved_status)
+
+        # Critical notifications
+        context['all_notifications_critical'] = unsolved_notifications.filter(notification_type='CRI').count()
+        context['system_notifications_critical'] = unsolved_notifications.filter(
             notification_source=NotificationModel.NotificationSource.SYSTEM, notification_type='CRI').count()
-        context['certificate_notifications_critical'] = all_notifications.filter(
+        context['certificate_notifications_critical'] = unsolved_notifications.filter(
             notification_source=NotificationModel.NotificationSource.CERTIFICATE, notification_type='CRI').count()
-        context['domain_notifications_critical'] = all_notifications.filter(
+        context['domain_notifications_critical'] = unsolved_notifications.filter(
             notification_source=NotificationModel.NotificationSource.DOMAIN, notification_type='CRI').count()
-        context['issuing_ca_notifications_critical'] = all_notifications.filter(
+        context['issuing_ca_notifications_critical'] = unsolved_notifications.filter(
             notification_source=NotificationModel.NotificationSource.ISSUING_CA, notification_type='CRI').count()
-        context['device_notifications_critical'] = all_notifications.filter(
+        context['device_notifications_critical'] = unsolved_notifications.filter(
             notification_source=NotificationModel.NotificationSource.DEVICE, notification_type='CRI').count()
+
+        # Warning notifications
+        context['all_notifications_warn'] = unsolved_notifications.filter(notification_type='WAR').count()
+        context['system_notifications_warn'] = unsolved_notifications.filter(
+            notification_source=NotificationModel.NotificationSource.SYSTEM, notification_type='WAR').count()
+        context['certificate_notifications_warn'] = unsolved_notifications.filter(
+            notification_source=NotificationModel.NotificationSource.CERTIFICATE, notification_type='WAR').count()
+        context['domain_notifications_warn'] = unsolved_notifications.filter(
+            notification_source=NotificationModel.NotificationSource.DOMAIN, notification_type='WAR').count()
+        context['issuing_ca_notifications_warn'] = unsolved_notifications.filter(
+            notification_source=NotificationModel.NotificationSource.ISSUING_CA, notification_type='WAR').count()
+        context['device_notifications_warn'] = unsolved_notifications.filter(
+            notification_source=NotificationModel.NotificationSource.DEVICE, notification_type='WAR').count()
 
         return context
 
@@ -565,10 +581,41 @@ def notification_details_view(request, pk):
 
     notification_statuses = notification.statuses.values_list('status', flat=True)
 
+    new_status, created = NotificationStatus.objects.get_or_create(status='NEW')
+    solved_status, created = NotificationStatus.objects.get_or_create(status='SOLVED')
+    is_solved = solved_status in notification.statuses.all()
+
+    if new_status and new_status in notification.statuses.all():
+        notification.statuses.remove(new_status)
+
     context = {
         'notification': notification,
         'NotificationStatus': NotificationStatus,
         'notification_statuses': notification_statuses,
+        'is_solved': is_solved
+    }
+
+    return render(request, 'home/notification_details.html', context)
+
+
+def mark_as_solved(request, pk):
+    """View to mark the notification as Solved."""
+    notification = get_object_or_404(NotificationModel, pk=pk)
+
+    solved_status, created = NotificationStatus.objects.get_or_create(status='SOLVED')
+    is_solved = solved_status in notification.statuses.all()
+
+    if solved_status:
+        notification.statuses.add(solved_status)
+
+    notification_statuses = notification.statuses.values_list('status', flat=True)
+
+
+    context = {
+        'notification': notification,
+        'NotificationStatus': NotificationStatus,
+        'notification_statuses': notification_statuses,
+        'is_solved': is_solved
     }
 
     return render(request, 'home/notification_details.html', context)

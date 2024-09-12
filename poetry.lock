@@ -12,20 +12,6 @@ files = [
 ]
 
 [[package]]
-name = "amqp"
-version = "5.2.0"
-description = "Low-level AMQP client for Python (fork of amqplib)."
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "amqp-5.2.0-py3-none-any.whl", hash = "sha256:827cb12fb0baa892aad844fd95258143bce4027fdac4fccddbc43330fd281637"},
-    {file = "amqp-5.2.0.tar.gz", hash = "sha256:a1ecff425ad063ad42a486c902807d1482311481c8ad95a72694b2975e75f7fd"},
-]
-
-[package.dependencies]
-vine = ">=5.0.0,<6.0.0"
-
-[[package]]
 name = "annotated-types"
 version = "0.7.0"
 description = "Reusable constraint types to use with typing.Annotated"
@@ -105,73 +91,6 @@ chardet = ["chardet"]
 charset-normalizer = ["charset-normalizer"]
 html5lib = ["html5lib"]
 lxml = ["lxml"]
-
-[[package]]
-name = "billiard"
-version = "4.2.0"
-description = "Python multiprocessing fork with improvements and bugfixes"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "billiard-4.2.0-py3-none-any.whl", hash = "sha256:07aa978b308f334ff8282bd4a746e681b3513db5c9a514cbdd810cbbdc19714d"},
-    {file = "billiard-4.2.0.tar.gz", hash = "sha256:9a3c3184cb275aa17a732f93f65b20c525d3d9f253722d26a82194803ade5a2c"},
-]
-
-[[package]]
-name = "celery"
-version = "5.4.0"
-description = "Distributed Task Queue."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "celery-5.4.0-py3-none-any.whl", hash = "sha256:369631eb580cf8c51a82721ec538684994f8277637edde2dfc0dacd73ed97f64"},
-    {file = "celery-5.4.0.tar.gz", hash = "sha256:504a19140e8d3029d5acad88330c541d4c3f64c789d85f94756762d8bca7e706"},
-]
-
-[package.dependencies]
-billiard = ">=4.2.0,<5.0"
-click = ">=8.1.2,<9.0"
-click-didyoumean = ">=0.3.0"
-click-plugins = ">=1.1.1"
-click-repl = ">=0.2.0"
-kombu = ">=5.3.4,<6.0"
-python-dateutil = ">=2.8.2"
-tzdata = ">=2022.7"
-vine = ">=5.1.0,<6.0"
-
-[package.extras]
-arangodb = ["pyArango (>=2.0.2)"]
-auth = ["cryptography (==42.0.5)"]
-azureblockblob = ["azure-storage-blob (>=12.15.0)"]
-brotli = ["brotli (>=1.0.0)", "brotlipy (>=0.7.0)"]
-cassandra = ["cassandra-driver (>=3.25.0,<4)"]
-consul = ["python-consul2 (==0.1.5)"]
-cosmosdbsql = ["pydocumentdb (==2.3.5)"]
-couchbase = ["couchbase (>=3.0.0)"]
-couchdb = ["pycouchdb (==1.14.2)"]
-django = ["Django (>=2.2.28)"]
-dynamodb = ["boto3 (>=1.26.143)"]
-elasticsearch = ["elastic-transport (<=8.13.0)", "elasticsearch (<=8.13.0)"]
-eventlet = ["eventlet (>=0.32.0)"]
-gcs = ["google-cloud-storage (>=2.10.0)"]
-gevent = ["gevent (>=1.5.0)"]
-librabbitmq = ["librabbitmq (>=2.0.0)"]
-memcache = ["pylibmc (==1.6.3)"]
-mongodb = ["pymongo[srv] (>=4.0.2)"]
-msgpack = ["msgpack (==1.0.8)"]
-pymemcache = ["python-memcached (>=1.61)"]
-pyro = ["pyro4 (==4.82)"]
-pytest = ["pytest-celery[all] (>=1.0.0)"]
-redis = ["redis (>=4.5.2,!=4.5.5,<6.0.0)"]
-s3 = ["boto3 (>=1.26.143)"]
-slmq = ["softlayer-messaging (>=1.0.3)"]
-solar = ["ephem (==4.1.5)"]
-sqlalchemy = ["sqlalchemy (>=1.4.48,<2.1)"]
-sqs = ["boto3 (>=1.26.143)", "kombu[sqs] (>=5.3.4)", "pycurl (>=7.43.0.5)", "urllib3 (>=1.26.16)"]
-tblib = ["tblib (>=1.3.0)", "tblib (>=1.5.0)"]
-yaml = ["PyYAML (>=3.10)"]
-zookeeper = ["kazoo (>=1.3.1)"]
-zstd = ["zstandard (==0.22.0)"]
 
 [[package]]
 name = "certifi"
@@ -363,69 +282,6 @@ files = [
 ]
 
 [[package]]
-name = "click"
-version = "8.1.7"
-description = "Composable command line interface toolkit"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "click-8.1.7-py3-none-any.whl", hash = "sha256:ae74fb96c20a0277a1d615f1e4d73c8414f5a98db8b799a7931d1582f3390c28"},
-    {file = "click-8.1.7.tar.gz", hash = "sha256:ca9853ad459e787e2192211578cc907e7594e294c7ccc834310722b41b9ca6de"},
-]
-
-[package.dependencies]
-colorama = {version = "*", markers = "platform_system == \"Windows\""}
-
-[[package]]
-name = "click-didyoumean"
-version = "0.3.1"
-description = "Enables git-like *did-you-mean* feature in click"
-optional = false
-python-versions = ">=3.6.2"
-files = [
-    {file = "click_didyoumean-0.3.1-py3-none-any.whl", hash = "sha256:5c4bb6007cfea5f2fd6583a2fb6701a22a41eb98957e63d0fac41c10e7c3117c"},
-    {file = "click_didyoumean-0.3.1.tar.gz", hash = "sha256:4f82fdff0dbe64ef8ab2279bd6aa3f6a99c3b28c05aa09cbfc07c9d7fbb5a463"},
-]
-
-[package.dependencies]
-click = ">=7"
-
-[[package]]
-name = "click-plugins"
-version = "1.1.1"
-description = "An extension module for click to enable registering CLI commands via setuptools entry-points."
-optional = false
-python-versions = "*"
-files = [
-    {file = "click-plugins-1.1.1.tar.gz", hash = "sha256:46ab999744a9d831159c3411bb0c79346d94a444df9a3a3742e9ed63645f264b"},
-    {file = "click_plugins-1.1.1-py2.py3-none-any.whl", hash = "sha256:5d262006d3222f5057fd81e1623d4443e41dcda5dc815c06b442aa3c02889fc8"},
-]
-
-[package.dependencies]
-click = ">=4.0"
-
-[package.extras]
-dev = ["coveralls", "pytest (>=3.6)", "pytest-cov", "wheel"]
-
-[[package]]
-name = "click-repl"
-version = "0.3.0"
-description = "REPL plugin for Click"
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "click-repl-0.3.0.tar.gz", hash = "sha256:17849c23dba3d667247dc4defe1757fff98694e90fe37474f3feebb69ced26a9"},
-    {file = "click_repl-0.3.0-py3-none-any.whl", hash = "sha256:fb7e06deb8da8de86180a33a9da97ac316751c094c6899382da7feeeeb51b812"},
-]
-
-[package.dependencies]
-click = ">=7.0"
-prompt-toolkit = ">=3.0.36"
-
-[package.extras]
-testing = ["pytest (>=7.2.1)", "pytest-cov (>=4.0.0)", "tox (>=4.4.3)"]
-
-[[package]]
 name = "colorama"
 version = "0.4.6"
 description = "Cross-platform colored terminal text."
@@ -455,18 +311,19 @@ django-crispy-forms = ">=2"
 test = ["pytest", "pytest-django"]
 
 [[package]]
-name = "cron-descriptor"
-version = "1.4.5"
-description = "A Python library that converts cron expressions into human readable strings."
+name = "croniter"
+version = "3.0.3"
+description = "croniter provides iteration for datetime object with cron like format"
 optional = false
-python-versions = "*"
+python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,>=2.6"
 files = [
-    {file = "cron_descriptor-1.4.5-py3-none-any.whl", hash = "sha256:736b3ae9d1a99bc3dbfc5b55b5e6e7c12031e7ba5de716625772f8b02dcd6013"},
-    {file = "cron_descriptor-1.4.5.tar.gz", hash = "sha256:f51ce4ffc1d1f2816939add8524f206c376a42c87a5fca3091ce26725b3b1bca"},
+    {file = "croniter-3.0.3-py2.py3-none-any.whl", hash = "sha256:b3bd11f270dc54ccd1f2397b813436015a86d30ffc5a7a9438eec1ed916f2101"},
+    {file = "croniter-3.0.3.tar.gz", hash = "sha256:34117ec1741f10a7bd0ec3ad7d8f0eb8fa457a2feb9be32e6a2250e158957668"},
 ]
 
-[package.extras]
-dev = ["polib"]
+[package.dependencies]
+python-dateutil = "*"
+pytz = ">2021.1"
 
 [[package]]
 name = "cryptography"
@@ -554,40 +411,6 @@ argon2 = ["argon2-cffi (>=19.1.0)"]
 bcrypt = ["bcrypt"]
 
 [[package]]
-name = "django-celery-beat"
-version = "2.7.0"
-description = "Database-backed Periodic Tasks."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "django_celery_beat-2.7.0-py3-none-any.whl", hash = "sha256:851c680d8fbf608ca5fecd5836622beea89fa017bc2b3f94a5b8c648c32d84b1"},
-    {file = "django_celery_beat-2.7.0.tar.gz", hash = "sha256:8482034925e09b698c05ad61c36ed2a8dbc436724a3fe119215193a4ca6dc967"},
-]
-
-[package.dependencies]
-celery = ">=5.2.3,<6.0"
-cron-descriptor = ">=1.2.32"
-Django = ">=2.2,<5.2"
-django-timezone-field = ">=5.0"
-python-crontab = ">=2.3.4"
-tzdata = "*"
-
-[[package]]
-name = "django-celery-results"
-version = "2.5.1"
-description = "Celery result backends for Django."
-optional = false
-python-versions = "*"
-files = [
-    {file = "django_celery_results-2.5.1-py3-none-any.whl", hash = "sha256:0da4cd5ecc049333e4524a23fcfc3460dfae91aa0a60f1fae4b6b2889c254e01"},
-    {file = "django_celery_results-2.5.1.tar.gz", hash = "sha256:3ecb7147f773f34d0381bac6246337ce4cf88a2ea7b82774ed48e518b67bb8fd"},
-]
-
-[package.dependencies]
-celery = ">=5.2.7,<6.0"
-Django = ">=3.2.18"
-
-[[package]]
 name = "django-crispy-forms"
 version = "2.3"
 description = "Best way to have Django DRY forms"
@@ -636,6 +459,43 @@ doc = ["markdown-include", "mkdocs", "mkdocs-material", "mkdocstrings"]
 test = ["django-stubs", "mypy (==1.7.1)", "psycopg2-binary", "pytest", "pytest-asyncio", "pytest-cov", "pytest-django", "ruff (==0.5.7)"]
 
 [[package]]
+name = "django-picklefield"
+version = "3.2"
+description = "Pickled object field for Django"
+optional = false
+python-versions = ">=3"
+files = [
+    {file = "django-picklefield-3.2.tar.gz", hash = "sha256:aa463f5d79d497dbe789f14b45180f00a51d0d670067d0729f352a3941cdfa4d"},
+    {file = "django_picklefield-3.2-py3-none-any.whl", hash = "sha256:e9a73539d110f69825d9320db18bcb82e5189ff48dbed41821c026a20497764c"},
+]
+
+[package.dependencies]
+Django = ">=3.2"
+
+[package.extras]
+tests = ["tox"]
+
+[[package]]
+name = "django-q2"
+version = "1.7.2"
+description = "A multiprocessing distributed task queue for Django"
+optional = false
+python-versions = "<4,>=3.8"
+files = [
+    {file = "django_q2-1.7.2-py3-none-any.whl", hash = "sha256:3c480d8afd90a87006404b208a49766d370d5fc864a8dd1d3a0221ec22b12bc0"},
+    {file = "django_q2-1.7.2.tar.gz", hash = "sha256:ab30bbf597cc8ade99ed4deeea37c3ade1c4e5976a61be6452930d14d9ebcd1c"},
+]
+
+[package.dependencies]
+django = ">=4.2,<6"
+django-picklefield = ">=3.1,<4.0"
+
+[package.extras]
+rollbar = ["django-q-rollbar (>=0.1)"]
+sentry = ["django-q-sentry (>=0.1)"]
+testing = ["blessed (>=1.19.1,<2.0.0)", "boto3 (>=1.24.92,<2.0.0)", "croniter (>=2.0.1,<3.0.0)", "django-redis (>=5.2.0,<6.0.0)", "hiredis (>=2.0.0,<3.0.0)", "iron-mq (>=0.9,<0.10)", "psutil (>=5.9.2,<6.0.0)", "pymongo (>=4.2.0,<5.0.0)", "redis (>=4.3.4,<5.0.0)", "setproctitle (>=1.3.2,<2.0.0)"]
+
+[[package]]
 name = "django-tables2"
 version = "2.7.0"
 description = "Table/data-grid framework for Django"
@@ -651,20 +511,6 @@ Django = ">=3.2"
 
 [package.extras]
 tablib = ["tablib"]
-
-[[package]]
-name = "django-timezone-field"
-version = "7.0"
-description = "A Django app providing DB, form, and REST framework fields for zoneinfo and pytz timezone objects."
-optional = false
-python-versions = "<4.0,>=3.8"
-files = [
-    {file = "django_timezone_field-7.0-py3-none-any.whl", hash = "sha256:3232e7ecde66ba4464abb6f9e6b8cc739b914efb9b29dc2cf2eee451f7cc2acb"},
-    {file = "django_timezone_field-7.0.tar.gz", hash = "sha256:aa6f4965838484317b7f08d22c0d91a53d64e7bbbd34264468ae83d4023898a7"},
-]
-
-[package.dependencies]
-Django = ">=3.2,<6.0"
 
 [[package]]
 name = "docutils"
@@ -760,38 +606,6 @@ MarkupSafe = ">=2.0"
 
 [package.extras]
 i18n = ["Babel (>=2.7)"]
-
-[[package]]
-name = "kombu"
-version = "5.4.0"
-description = "Messaging library for Python."
-optional = false
-python-versions = ">=3.8"
-files = [
-    {file = "kombu-5.4.0-py3-none-any.whl", hash = "sha256:c8dd99820467610b4febbc7a9e8a0d3d7da2d35116b67184418b51cc520ea6b6"},
-    {file = "kombu-5.4.0.tar.gz", hash = "sha256:ad200a8dbdaaa2bbc5f26d2ee7d707d9a1fded353a0f4bd751ce8c7d9f449c60"},
-]
-
-[package.dependencies]
-amqp = ">=5.1.1,<6.0.0"
-vine = "5.1.0"
-
-[package.extras]
-azureservicebus = ["azure-servicebus (>=7.10.0)"]
-azurestoragequeues = ["azure-identity (>=1.12.0)", "azure-storage-queue (>=12.6.0)"]
-confluentkafka = ["confluent-kafka (>=2.2.0)"]
-consul = ["python-consul2 (==0.1.5)"]
-librabbitmq = ["librabbitmq (>=2.0.0)"]
-mongodb = ["pymongo (>=4.1.1)"]
-msgpack = ["msgpack (==1.0.8)"]
-pyro = ["pyro4 (==4.82)"]
-qpid = ["qpid-python (>=0.26)", "qpid-tools (>=0.26)"]
-redis = ["redis (>=4.5.2,!=4.5.5,!=5.0.2)"]
-slmq = ["softlayer-messaging (>=1.0.3)"]
-sqlalchemy = ["sqlalchemy (>=1.4.48,<2.1)"]
-sqs = ["boto3 (>=1.26.143)", "pycurl (>=7.43.0.5)", "urllib3 (>=1.26.16)"]
-yaml = ["PyYAML (>=3.10)"]
-zookeeper = ["kazoo (>=2.8.0)"]
 
 [[package]]
 name = "markupsafe"
@@ -969,20 +783,6 @@ mic = ["olefile"]
 tests = ["check-manifest", "coverage", "defusedxml", "markdown2", "olefile", "packaging", "pyroma", "pytest", "pytest-cov", "pytest-timeout"]
 typing = ["typing-extensions"]
 xmp = ["defusedxml"]
-
-[[package]]
-name = "prompt-toolkit"
-version = "3.0.47"
-description = "Library for building powerful interactive command lines in Python"
-optional = false
-python-versions = ">=3.7.0"
-files = [
-    {file = "prompt_toolkit-3.0.47-py3-none-any.whl", hash = "sha256:0d7bfa67001d5e39d02c224b663abc33687405033a8c422d0d675a5a13361d10"},
-    {file = "prompt_toolkit-3.0.47.tar.gz", hash = "sha256:1e1b29cb58080b1e69f207c893a1a7bf16d127a5c30c9d17a25a5d77792e5360"},
-]
-
-[package.dependencies]
-wcwidth = "*"
 
 [[package]]
 name = "pyasn1"
@@ -1176,24 +976,6 @@ docs = ["sphinx (!=5.2.0,!=5.2.0.post0,!=7.2.5)", "sphinx-rtd-theme"]
 test = ["pretend", "pytest (>=3.0.1)", "pytest-rerunfailures"]
 
 [[package]]
-name = "python-crontab"
-version = "3.2.0"
-description = "Python Crontab API"
-optional = false
-python-versions = "*"
-files = [
-    {file = "python_crontab-3.2.0-py3-none-any.whl", hash = "sha256:82cb9b6a312d41ff66fd3caf3eed7115c28c195bfb50711bc2b4b9592feb9fe5"},
-    {file = "python_crontab-3.2.0.tar.gz", hash = "sha256:40067d1dd39ade3460b2ad8557c7651514cd3851deffff61c5c60e1227c5c36b"},
-]
-
-[package.dependencies]
-python-dateutil = "*"
-
-[package.extras]
-cron-description = ["cron-descriptor"]
-cron-schedule = ["croniter"]
-
-[[package]]
 name = "python-dateutil"
 version = "2.9.0.post0"
 description = "Extensions to the standard Python datetime module"
@@ -1206,6 +988,17 @@ files = [
 
 [package.dependencies]
 six = ">=1.5"
+
+[[package]]
+name = "pytz"
+version = "2024.2"
+description = "World timezone definitions, modern and historical"
+optional = false
+python-versions = "*"
+files = [
+    {file = "pytz-2024.2-py2.py3-none-any.whl", hash = "sha256:31c7c1817eb7fae7ca4b8c7ee50c72f93aa2dd863de768e1ef4245d426aa0725"},
+    {file = "pytz-2024.2.tar.gz", hash = "sha256:2aa355083c50a0f93fa581709deac0c9ad65cca8a9e9beac660adcbd493c798a"},
+]
 
 [[package]]
 name = "requests"
@@ -1516,28 +1309,6 @@ socks = ["pysocks (>=1.5.6,!=1.5.7,<2.0)"]
 zstd = ["zstandard (>=0.18.0)"]
 
 [[package]]
-name = "vine"
-version = "5.1.0"
-description = "Python promises."
-optional = false
-python-versions = ">=3.6"
-files = [
-    {file = "vine-5.1.0-py3-none-any.whl", hash = "sha256:40fdf3c48b2cfe1c38a49e9ae2da6fda88e4794c810050a728bd7413811fb1dc"},
-    {file = "vine-5.1.0.tar.gz", hash = "sha256:8b62e981d35c41049211cf62a0a1242d8c1ee9bd15bb196ce38aefd6799e61e0"},
-]
-
-[[package]]
-name = "wcwidth"
-version = "0.2.13"
-description = "Measures the displayed width of unicode strings in a terminal"
-optional = false
-python-versions = "*"
-files = [
-    {file = "wcwidth-0.2.13-py2.py3-none-any.whl", hash = "sha256:3da69048e4540d84af32131829ff948f1e022c1c6bdb8d6102117aac784f6859"},
-    {file = "wcwidth-0.2.13.tar.gz", hash = "sha256:72ea0c06399eb286d978fdedb6923a9eb47e1c486ce63e9b4e64fc18303972b5"},
-]
-
-[[package]]
 name = "werkzeug"
 version = "3.0.4"
 description = "The comprehensive WSGI web application library."
@@ -1557,4 +1328,4 @@ watchdog = ["watchdog (>=2.3)"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "2cdbcf8edb3bec6741214bfcf4e5656bca50282d3343d7b4726f397aa6a68b33"
+content-hash = "b159d91fe1714589ec57a5e565f3872526cca8f0ab93e34764d9b6a0e8e86e94"

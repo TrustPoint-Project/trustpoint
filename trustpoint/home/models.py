@@ -21,6 +21,7 @@ class NotificationStatus(models.Model):
         CONFIRMED = 'CONF', _('Confirmed')
         IN_PROGRESS = 'PROG', _('In Progress')
         SOLVED = 'SOLV', _('Solved')
+        NOT_SOLVED = 'NOSOL', _('Not Solved')
         ESCALATED = 'ESC', _('Escalated')
         SUSPENDED = 'SUS', _('Suspended')
         REJECTED = 'REJ', _('Rejected')

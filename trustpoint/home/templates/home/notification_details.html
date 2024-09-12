@@ -89,7 +89,7 @@
                     <strong>{% trans "Message:" %}</strong>
                     <span>{{ notification.message.short_description }}</span>
                     {% if notification.message.long_description %}
-                        <p>{{ notification.message.long_description }}</p>
+                        <p>{{ notification.message.long_description|safe }}</p>
                     {% endif %}
                 </div>
 
@@ -120,6 +120,14 @@
                 <button type="button" class="btn btn-secondary" onClick="history.back()">
                     {% trans 'Back' %}
                 </button>
+                {% if notification.notification_type == 'WAR' or notification.notification_type == 'CRI' %}
+                    {% if not is_solved %}
+                        <!-- Mark as Solved Button -->
+                        <a href="{% url 'home:mark_as_solved' notification.pk %}" class="btn btn-success">
+                            {% trans 'Mark as Solved' %}
+                        </a>
+                    {% endif %}
+                {% endif %}
             </div>
         </div>
     </div>

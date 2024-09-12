@@ -1,4 +1,3 @@
-from celery import shared_task
 from datetime import datetime, timedelta
 from django.utils import timezone
 
@@ -11,7 +10,6 @@ logger = logging.getLogger('tp.users')
 new_status, created = NotificationStatus.objects.get_or_create(status='NEW')
 
 
-@shared_task
 def setup_trustpoint_notifications():
     """
     Task to create initial setup notifications for a new Trustpoint instance.
@@ -38,9 +36,9 @@ def setup_trustpoint_notifications():
         project_info_message = NotificationMessage.objects.create(
             short_description='Explore the Trustpoint project',
             long_description='Visit the Trustpoint GitHub repository for more information: '
-                             '[Trustpoint GitHub](https://github.com/TrustPoint-Project)\n'
-                             'Learn more about industrial security and the Trustpoint project on our homepage: '
-                             'https://industrial-security.io'
+                              '<a href="https://github.com/TrustPoint-Project">Trustpoint GitHub</a>\n'
+                             'Learn more about industrial security and the Trustpoint project on our '
+                             '<a href="https://industrial-security.io">homepage</a>'
         )
         notification = NotificationModel.objects.create(
             event='TRUSTPOINT_PROJECT_INFO',
@@ -55,17 +53,19 @@ def setup_trustpoint_notifications():
         documentation_message = NotificationMessage.objects.create(
             short_description='Access the Trustpoint Documentation',
             long_description='You can find the official Trustpoint documentation here: '
-                             '[Trustpoint Documentation](https://docs.industrial-security.io)'
+                             '<a href="https://docs.industrial-security.io">Trustpoint Documentation</a>'
         )
-        NotificationModel.objects.create(
+        notification = NotificationModel.objects.create(
             event='TRUSTPOINT_DOCUMENTATION',
             created_at=timezone.now(),
             notification_source=NotificationModel.NotificationSource.SYSTEM,
             notification_type=NotificationModel.NotificationTypes.INFO,
             message=documentation_message
         )
+        notification.statuses.add(new_status)
 
-@shared_task
+
+
 def check_system_health():
     """
     Task to perform a system health check.
@@ -87,7 +87,7 @@ def check_system_health():
         )
 
 
-@shared_task
+
 def check_for_security_vulnerabilities():
     """
     Task to check for known security vulnerabilities in system components.
@@ -108,7 +108,7 @@ def check_for_security_vulnerabilities():
             message=message
         )
 
-@shared_task
+
 def check_certificate_validity():
     """
     Task to check if any certificates are expiring soon.
@@ -134,13 +134,14 @@ def check_certificate_validity():
             )
             notification.statuses.add(new_status)
 
-@shared_task
+
 def check_issuing_ca_validity():
     """
     Task to check if any issuing CAs are expiring soon.
     """
     expiry_threshold = datetime.now() + timedelta(days=30)
-    expiring_issuing_cas = IssuingCaModel.objects.filter(not_valid_after=expiry_threshold)
+    expiring_issuing_cas = IssuingCaModel.objects.filter(issuing_ca_certificate__not_valid_after=expiry_threshold)
+
 
     for ca in expiring_issuing_cas:
         if not NotificationModel.objects.filter(event='ISSUING_CA_EXPIRING', issuing_ca=ca).exists():
@@ -160,7 +161,7 @@ def check_issuing_ca_validity():
 
 
 
-@shared_task
+
 def check_expired_certificates():
     """
     Task to create critical notifications if certificates have expired.
@@ -185,12 +186,12 @@ def check_expired_certificates():
 
 
 
-@shared_task
+
 def check_expired_issuing_cas():
     """
     Task to create critical notifications if Issuing CAs have expired.
     """
-    expired_issuing_cas = IssuingCaModel.objects.filter(not_valid_after=datetime.now())
+    expired_issuing_cas = IssuingCaModel.objects.filter(issuing_ca_certificate__not_valid_after=datetime.now())
 
     for ca in expired_issuing_cas:
         if not NotificationModel.objects.filter(event='ISSUING_CA_EXPIRED', issuing_ca=ca).exists():
@@ -210,7 +211,7 @@ def check_expired_issuing_cas():
 
 
 
-@shared_task
+
 def check_domain_issuing_ca():
     """
     Task to create an info notification if a domain has no Issuing CA assigned.
@@ -220,8 +221,8 @@ def check_domain_issuing_ca():
     for domain in domains_without_issuing_ca:
         if not NotificationModel.objects.filter(event='DOMAIN_NO_ISSUING_CA', domain=domain).exists():
             message = NotificationMessage.objects.create(
-                short_description=f'Domain {domain.name} has no Issuing CA assigned',
-                long_description=f'The domain {domain.name} currently has no Issuing CA assigned.'
+                short_description=f'Domain {domain.unique_name} has no Issuing CA assigned',
+                long_description=f'The domain {domain.unique_name} currently has no Issuing CA assigned.'
             )
             notification = NotificationModel.objects.create(
                 domain=domain,
@@ -233,7 +234,7 @@ def check_domain_issuing_ca():
             )
             notification.statuses.add(new_status)
 
-@shared_task
+
 def check_non_onboarded_devices():
     """
     Task to create an info notification if a device is not onboarded.
@@ -243,8 +244,8 @@ def check_non_onboarded_devices():
     for device in non_onboarded_devices:
         if not NotificationModel.objects.filter(event='DEVICE_NOT_ONBOARDED', device=device).exists():
             message = NotificationMessage.objects.create(
-                short_description=f'Device {device.name} is not onboarded',
-                long_description=f'The device {device.name} has not completed onboarding.'
+                short_description=f'Device {device.device_name} is not onboarded in {device.domain}',
+                long_description=f'The device {device.device_name} has not completed onboarding.'
             )
             notification = NotificationModel.objects.create(
                 device=device,
@@ -255,7 +256,7 @@ def check_non_onboarded_devices():
                 message=message
             )
             notification.statuses.add(new_status)
-@shared_task
+
 def check_devices_with_failed_onboarding():
     """
     Task to check if any devices have failed onboarding and create critical notifications.
@@ -278,7 +279,7 @@ def check_devices_with_failed_onboarding():
             )
             notification.statuses.add(new_status)
 
-@shared_task
+
 def check_devices_with_revoked_certificates():
     """
     Task to check if any devices have had their certificates revoked and create informational notifications.
@@ -302,7 +303,7 @@ def check_devices_with_revoked_certificates():
             notification.statuses.add(new_status)
 
 
-@shared_task
+
 def check_for_weak_signature_algorithms():
     """
     Task to check if any certificates are using weak or deprecated signature algorithms.
@@ -327,7 +328,7 @@ def check_for_weak_signature_algorithms():
             )
             notification.statuses.add(new_status)
 
-@shared_task
+
 def check_for_insufficient_key_length():
     """
     Task to check if any certificates are using insufficient key lengths.
@@ -355,7 +356,7 @@ def check_for_insufficient_key_length():
             notification.statuses.add(new_status)
 
 
-@shared_task
+
 def check_for_weak_ecc_curves():
     """
     Task to check if any certificates are using deprecated or weak ECC curves.
@@ -379,28 +380,5 @@ def check_for_weak_ecc_curves():
                 message=message
             )
             notification.statuses.add(new_status)
-@shared_task
-def test_task():
-    """
-    Task to test if the celery task is working
-    """
-    try:
-        raise ValueError("TEST")
 
-        message = NotificationMessage.objects.create(
-            short_description='Celery test task executed',
-            long_description=f'This is a test task to check if Celery is working as expected'
-        )
-    except Exception as e:
-        message = NotificationMessage.objects.create(
-            short_description='Exception while Celery test task executed',
-            long_description=f'This is a test task to check if Celery is working as expected'
-        )
-    finally:
-        NotificationModel.objects.create(
-            notification_type='SETUP',
-            notification_source='SYSTEM',
-            created_at=timezone.now(),
-            message=message
-        )
 

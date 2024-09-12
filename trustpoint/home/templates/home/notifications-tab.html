@@ -17,6 +17,9 @@
                 {% if all_notifications_critical > 0 %}
                     <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ all_notifications_critical }}</span>
                 {% endif %}
+                {% if all_notifications_warn > 0 %}
+                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ all_notifications_warn }}</span>
+                {% endif %}
             </a>
         </li>
         <li class="nav-item" role="presentation">
@@ -28,6 +31,9 @@
                 {% endif %}
                 {% if system_notifications_critical > 0 %}
                     <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ system_notifications_critical }}</span>
+                {% endif %}
+                {% if system_notifications_warn > 0 %}
+                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ system_notifications_warn }}</span>
                 {% endif %}
             </a>
         </li>
@@ -41,6 +47,9 @@
                 {% if certificate_notifications_critical > 0 %}
                     <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ certificate_notifications_critical }}</span>
                 {% endif %}
+                {% if certificate_notifications_warn > 0 %}
+                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ certificate_notifications_warn }}</span>
+                {% endif %}
             </a>
         </li>
         <li class="nav-item" role="presentation">
@@ -52,6 +61,9 @@
                 {% endif %}
                 {% if issuing_ca_notifications_critical > 0 %}
                     <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ issuing_ca_notifications_critical }}</span>
+                {% endif %}
+                {% if issuing_ca_notifications_warn > 0 %}
+                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ issuing_ca_notifications_warn }}</span>
                 {% endif %}
             </a>
         </li>
@@ -65,6 +77,9 @@
                 {% if domain_notifications_critical > 0 %}
                     <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ domain_notifications_critical }}</span>
                 {% endif %}
+                {% if domain_notifications_warn > 0 %}
+                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ domain_notifications_warn }}</span>
+                {% endif %}
             </a>
         </li>
         <li class="nav-item" role="presentation">
@@ -76,6 +91,9 @@
                 {% endif %}
                 {% if device_notifications_critical > 0 %}
                     <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ device_notifications_critical }}</span>
+                {% endif %}
+                {% if device_notifications_warn > 0 %}
+                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ device_notifications_warn }}</span>
                 {% endif %}
             </a>
         </li>

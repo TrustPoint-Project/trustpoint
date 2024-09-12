@@ -15,7 +15,7 @@ if TYPE_CHECKING:
 # CHECKBOX_ATTRS: dict[str, dict[str, str]] =
 # {'th': {'id': 'checkbox-column'}, 'td': {'class': 'row_checkbox'}}    # noqa: ERA001
 
-from home.models import NotificationModel
+from home.models import NotificationModel, NotificationStatus
 
 format_html_lazy = lazy(format_html, str)
 class NotificationTable(tables.Table):
@@ -77,3 +77,32 @@ class NotificationTable(tables.Table):
         """Creates the HTML hyperlink for the delete-view."""
         return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn"">{}</a>',
                            record.pk, _('Delete'))
+
+    @staticmethod
+    def render_created_at(record: NotificationModel) -> SafeString:
+        """Render the created_at field with a badge if the status is 'New'."""
+        created_at_display = record.created_at.strftime("%Y-%m-%d %H:%M:%S")
+
+        if record.statuses.filter(status=NotificationStatus.StatusChoices.NEW).exists():
+            return format_html(
+                '{} <span class="badge bg-secondary">New</span>',
+                created_at_display
+            )
+
+        return format_html('{}', created_at_display)
+
+    @staticmethod
+    def render_notification_type(record: NotificationModel) -> SafeString:
+        """Render the notification type with a badge according to the type."""
+        type_display = record.get_notification_type_display()
+
+        if record.notification_type == NotificationModel.NotificationTypes.CRITICAL:
+            badge_class = 'bg-danger'
+        elif record.notification_type == NotificationModel.NotificationTypes.WARNING:
+            badge_class = 'bg-warning'
+        elif record.notification_type == NotificationModel.NotificationTypes.INFO:
+            badge_class = 'bg-info'
+        else:  # Setup or other types default to secondary
+            badge_class = 'bg-secondary'
+
+        return format_html('<span class="badge {}">{}</span>', badge_class, type_display)
