@@ -21,7 +21,7 @@ from trustpoint.schema import ErrorSchema, SuccessSchema
 router = Router()
 
 class RawFileSchema(Schema):
-    """"Wildcard schema, works for arbitrary content."""
+    """Wildcard schema, works for arbitrary content."""
 
 # --- PUBLIC ONBOARDING API ENDPOINTS ---
 
@@ -40,6 +40,10 @@ def trust_store(request: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpRe
     response = HttpResponse(trust_store, status=200, content_type='application/x-pem-file')
     response['hmac-signature'] = onboarding_process.get_hmac()
     response['domain'] = onboarding_process.device.domain.unique_name
+    issuing_ca_cert = onboarding_process.device.domain.issuing_ca.issuing_ca_certificate
+    response['algorithm'] = issuing_ca_cert.spki_algorithm
+    response['curve'] = issuing_ca_cert.spki_ec_curve
+    response['key-size'] = issuing_ca_cert.spki_key_size
     response['Content-Disposition'] = 'attachment; filename="tp-trust-store.pem"'
     if onboarding_process.state == OnboardingProcessState.HMAC_GENERATED:
         onboarding_process.state = OnboardingProcessState.TRUST_STORE_SENT
