@@ -113,8 +113,9 @@ def check_certificate_validity():
     """
     Task to check if any certificates are expiring soon.
     """
-    expiry_threshold = datetime.now() + timedelta(days=30)
-    expiring_certificates = CertificateModel.objects.filter(not_valid_after=expiry_threshold)
+    naive_datetime = datetime.now() + timedelta(days=30)
+    aware_datetime = timezone.make_aware(naive_datetime)
+    expiring_certificates = CertificateModel.objects.filter(not_valid_after=aware_datetime)
 
     logger.info("Task for checking Certificate validity is triggered")
 
@@ -139,8 +140,9 @@ def check_issuing_ca_validity():
     """
     Task to check if any issuing CAs are expiring soon.
     """
-    expiry_threshold = datetime.now() + timedelta(days=30)
-    expiring_issuing_cas = IssuingCaModel.objects.filter(issuing_ca_certificate__not_valid_after=expiry_threshold)
+    naive_datetime = datetime.now() + timedelta(days=30)
+    aware_datetime = timezone.make_aware(naive_datetime)
+    expiring_issuing_cas = IssuingCaModel.objects.filter(issuing_ca_certificate__not_valid_after=aware_datetime)
 
 
     for ca in expiring_issuing_cas:
@@ -166,7 +168,9 @@ def check_expired_certificates():
     """
     Task to create critical notifications if certificates have expired.
     """
-    expired_certificates = CertificateModel.objects.filter(not_valid_after=datetime.now())
+    naive_datetime = datetime.now()
+    aware_datetime = timezone.make_aware(naive_datetime)
+    expired_certificates = CertificateModel.objects.filter(not_valid_after=aware_datetime)
 
     for cert in expired_certificates:
         if not NotificationModel.objects.filter(event='CERTIFICATE_EXPIRED', certificate=cert).exists():
@@ -191,7 +195,9 @@ def check_expired_issuing_cas():
     """
     Task to create critical notifications if Issuing CAs have expired.
     """
-    expired_issuing_cas = IssuingCaModel.objects.filter(issuing_ca_certificate__not_valid_after=datetime.now())
+    naive_datetime = datetime.now()
+    aware_datetime = timezone.make_aware(naive_datetime)
+    expired_issuing_cas = IssuingCaModel.objects.filter(issuing_ca_certificate__not_valid_after=aware_datetime)
 
     for ca in expired_issuing_cas:
         if not NotificationModel.objects.filter(event='ISSUING_CA_EXPIRED', issuing_ca=ca).exists():
