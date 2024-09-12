@@ -1,6 +1,9 @@
 """API endpoints for the onboarding app."""
 
+# TODO: Remove this and please add proper annotations!
 # ruff: noqa: ANN201 # no need to annotate return type which is always "-> tuple[int, dict] | HttpResponse"
+
+# TODO: you can use noqa in the lines where it is required.
 # ruff: noqa: ARG001 # "request" argument is not used in many endpoints, but required for compatibility
 
 from __future__ import annotations
@@ -41,7 +44,7 @@ def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:
 
     response = HttpResponse(trust_store, status=200, content_type='application/x-pem-file')
     response['hmac-signature'] = onboarding_process.get_hmac()
-    response['domain'] = onboarding_process.device.domain
+    response['domain'] = onboarding_process.device.domain.unique_name
     response['Content-Disposition'] = 'attachment; filename="tp-trust-store.pem"'
     if onboarding_process.state == OnboardingProcessState.HMAC_GENERATED:
         onboarding_process.state = OnboardingProcessState.TRUST_STORE_SENT
@@ -92,7 +95,7 @@ def ldevid(request: HttpRequest, url_ext: str):
             return 404, {'error': 'Onboarding process not found.'}
 
     response = HttpResponse(status=401)
-    response['WWW-Authenticate'] = 'Basic realm="%s"' % url_ext
+    response['WWW-Authenticate'] = f'Basic realm="{url_ext}"'
     return response
 
 @router.get('/ldevid/cert-chain/{url_ext}',
