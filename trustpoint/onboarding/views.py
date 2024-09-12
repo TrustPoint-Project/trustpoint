@@ -302,6 +302,7 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             'device_name': device.device_name,
             'device': device.device_name,
             'device_id': device.id,
+            'url': onboarding_process.url
         }
 
         if device.onboarding_protocol == Device.OnboardingProtocol.TP_CLIENT:
