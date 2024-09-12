@@ -175,7 +175,8 @@ class DeviceTable(tables.Table):
         is_manual = record.onboarding_protocol == Device.OnboardingProtocol.MANUAL
         is_cli = record.onboarding_protocol == Device.OnboardingProtocol.CLI
         is_client = record.onboarding_protocol == Device.OnboardingProtocol.TP_CLIENT
-        if is_cli or is_client or is_manual:
+        is_browser = record.onboarding_protocol == Device.OnboardingProtocol.BROWSER
+        if is_cli or is_client or is_manual or is_browser:
             return self._render_manual_onboarding_action(record)
 
         is_brski = record.onboarding_protocol == Device.OnboardingProtocol.BRSKI

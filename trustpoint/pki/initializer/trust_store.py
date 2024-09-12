@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from sys import exc_info
+
+from cryptography.hazmat.primitives import hashes
 from django.db import transaction
 from cryptography import x509
 
@@ -16,6 +19,11 @@ if TYPE_CHECKING:
     from typing import Union
     from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
+
+
+__all__ = [
+    'TrustStoreInitializer'
+]
 
 
 class TrustStoreInitializer:
@@ -39,7 +47,11 @@ class TrustStoreInitializer:
         saved_certs = []
 
         for certificate in self._trust_store:
-            saved_certs.append(self._cert_model_class.save_certificate(certificate))
+            sha256_fingerprint = certificate.fingerprint(algorithm=hashes.SHA256()).hex().upper()
+            try:
+                saved_certs.append(CertificateModel.objects.get(sha256_fingerprint=sha256_fingerprint))
+            except CertificateModel.DoesNotExist:
+                saved_certs.append(self._cert_model_class.save_certificate(certificate))
 
         trust_store_model = self._trust_store_model_class(unique_name=self._unique_name)
         trust_store_model.save()

@@ -1,22 +1,17 @@
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from pyasn1.codec.der import decoder
 from pyasn1_modules import rfc4210
 
 from pki.models import DomainModel
-from pki.pki.request.message import (
-    PkiRequestMessage,
-    PkiResponseMessage,
-    Protocol,
-    MimeType,
-    HttpStatusCode,
-    Operation)
-
-from typing import TYPE_CHECKING
+from pki.pki.request.message import HttpStatusCode, MimeType, Operation, PkiRequestMessage, PkiResponseMessage, Protocol
 
 if TYPE_CHECKING:
     from typing import Union
-    from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
+
+    from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
     from pyasn1.type.base import Asn1Type
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 

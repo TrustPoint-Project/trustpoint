@@ -288,6 +288,12 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     margin-right: 0;
 }
 
+.tp-sticky-footer {
+    position: sticky;
+    bottom: 0;
+    min-height: 55px;
+}
+
 .tp-main-users {
     width: max-content;
     position: absolute;
@@ -382,12 +388,12 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 }
 
 .tp-table-btn {
-    padding: 0.2rem 0.4rem;
+    padding: 0.2rem 0.8rem;
     min-width: 5rem;
 }
 
 .tp-onboarding-btn {
-    padding: 0.2rem 0.4rem;
+    padding: 0.2rem 0.8rem;
     width: 12rem;
 }
 
