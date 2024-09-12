@@ -16,9 +16,10 @@ class AokiInitResponseSchema(Schema):
     server_tls_cert: str  # PEM
     # + 'aoki-server-signature' in response HTTP header
 
+
 class AokiFinalizationMessageSchema(Schema):
     """Schema for the finalization message sent by the client."""
-    # (empty)
+    server_nonce: str
     # + 'aoki-client-signature' in response HTTP header
 
 

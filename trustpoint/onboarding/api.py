@@ -9,23 +9,32 @@ import base64
 import logging
 
 from cryptography import x509
+from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from devices.models import Device
+from django.db.utils import IntegrityError
 from django.http import HttpRequest, HttpResponse
 from ninja import Router, Schema
 from ninja.responses import Response, codes_4xx
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
+from onboarding.crypto_backend import VerificationError, OnboardingError
 from onboarding.models import (
     DownloadOnboardingProcess,
     ManualOnboardingProcess,
+    AokiOnboardingProcess,
     OnboardingProcess,
     OnboardingProcessState,
 )
 from trustpoint.schema import ErrorSchema, SuccessSchema
-from onboarding.schema import AokiInitMessageSchema, AokiInitResponseSchema, AokiFinalizationMessageSchema, AokiFinalizationResponseSchema
-from pki.models import CertificateModel, TrustStoreModel
+from onboarding.schema import (
+    AokiInitMessageSchema,
+    AokiInitResponseSchema,
+    AokiFinalizationMessageSchema,
+    AokiFinalizationResponseSchema
+)
+from pki.models import CertificateModel, TrustStoreModel, DomainModel
 
 log = logging.getLogger('tp.onboarding')
 
@@ -133,12 +142,13 @@ def cert_chain(request: HttpRequest, url_ext: str):
 def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
     """Initializes the AOKI Zero Touch onboarding process."""
     # get request data
-    idevid = data.idevid
+    idevid = data.idevid.encode()
     client_nonce = data.client_nonce
 
     try:
-        idevid_cert = x509.load_pem_x509_certificate(idevid.encode())
-    except ValueError:
+        idevid_cert = x509.load_pem_x509_certificate(idevid)
+        idevid_subject_sn = idevid_cert.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value
+    except (ValueError, IndexError):
         return 400, {'error': 'IDevID certificate not parsable.'}
     # verify IDevID against chains of trust stored in Trust stores
     # TODO (Air): extra trust store in Trustpoint for IDevID verification?
@@ -162,7 +172,6 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
     # TODO (Air): consider check if a device with this IDevID is already onboarded?
 
     # TODO (Air): Even more inefficient
-    idevid_serial_attr = idevid_cert.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)
     ownership_cert = None
     for ts in TrustStoreModel.objects.all():
         for cert in ts.certificates.all():
@@ -170,29 +179,41 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
             dc_attr = candidate.subject.get_attributes_for_oid(x509.NameOID.DOMAIN_COMPONENT)
             serial_attr = candidate.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)
             
-            if (dc_attr and serial_attr and idevid_serial_attr
+            if (dc_attr and serial_attr
                 and dc_attr[0].value == 'Owner'
-                and serial_attr[0].value == idevid_serial_attr[0].value):
+                and serial_attr[0].value == idevid_subject_sn):
                 ownership_cert = candidate
                 break
 
     if not ownership_cert:
         return 404, {'error': 'Not found.'}
     
+    aoki_device = Device.objects.filter(device_serial_number=idevid_subject_sn).first()
 
-    #.get_by_serial_number(idevid.serial_number)
+    if aoki_device:
+        log.warning(f'Onboarding existing AOKI device {aoki_device.pk} ({idevid_subject_sn})!')
+    else:
+        aoki_device = Device(
+            device_name=f'AOKI{idevid_subject_sn}', # temporary name until we know PK
+            device_serial_number=idevid_subject_sn,
+            onboarding_protocol=Device.OnboardingProtocol.AOKI
+        )
+        # TODO (Air): set proper domain (this must be configurable per ownership certificate)
+        aoki_device.domain = DomainModel.objects.first()
+        aoki_device.save() # save to get PK assigned
+        aoki_device.device_name = f'AOKI Device {aoki_device.pk}'
+        aoki_device.save()
+    
+    onboarding_process = OnboardingProcess.make_onboarding_process(aoki_device, AokiOnboardingProcess)
+    onboarding_process.set_idevid_cert(idevid)
 
-    #onboarding_process = OnboardingProcess.make_onboarding_process(None, ManualOnboardingProcess)
-    #if not onboarding_process:
-        #return 404, {'error': 'Onboarding process not found.'}
-
-    # TODO (Air): get the private key for the ownership certificate (we )
+    # TODO (Air): get the private key for the ownership certificate
     with open('owner_private.key', 'rb') as keyfile:
         ownership_private_key = serialization.load_pem_private_key(keyfile.read(), password=None)
 
     response = {
         'ownership_cert': ownership_cert.public_bytes(serialization.Encoding.PEM).decode(),
-        'server_nonce': Crypt.get_nonce(),
+        'server_nonce': onboarding_process.get_server_nonce(),
         'client_nonce': client_nonce,
         'server_tls_cert': Crypt.get_server_tls_cert(),	
     }
@@ -207,18 +228,41 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
     print(f'Signer public key: {ownership_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()}')
     return Response(response, status=200, headers={'aoki-server-signature': server_signature})
 
+
 @router.post('/aoki/finalize', response={200: AokiFinalizationResponseSchema, 404: ErrorSchema}, auth=None, exclude_none=True)
 def aoki_finalize(request: HttpRequest, data: AokiFinalizationMessageSchema):
     """Finalizes the AOKI Zero Touch onboarding process."""
 
     try:
-        client_signature = base64.b64decode(request.headers['aoki-client-signature'])
+        client_signature = base64.b64decode(request.headers['aoki-client-signature'].encode('utf-8'))
     except KeyError:
         return 400, {'error': 'No.'}
     
-    # can't be stateless, need to keep track of the nonce from the init message
-
-    return 404, {'error': 'Not implemented.'}
+    server_nonce = data.server_nonce
+    onboarding_process = AokiOnboardingProcess.get_by_nonce(server_nonce)
+    if not onboarding_process:
+        return 404, {'error': 'Not found.'}
+    
+    print(data)
+    data_bytes = data.model_dump_json().encode()
+    print(data_bytes)
+    print(type(data))
+    print('Client Signature:', client_signature)
+    try:
+        onboarding_process.verify_client_signature(data_bytes, client_signature)
+    except (VerificationError, InvalidSignature, OnboardingError):
+        log.debug('AOKI client signature verification failed.')
+        return 404, {'error': 'Not found.'}
+    
+    log.debug('AOKI client signature verified successfully.')
+    
+    response = {
+        'otp': onboarding_process.otp,
+        'salt': onboarding_process.salt,
+        'url_ext': onboarding_process.url
+    }
+    
+    return 200, response
     
 
 # --- ONBOARDING MANAGEMENT API ENDPOINTS ---
