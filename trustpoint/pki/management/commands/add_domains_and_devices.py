@@ -37,51 +37,51 @@ class Command(BaseCommand):
 
         data = {
             "arburg": [
-                "ALLROUNDER Injection Molding Machine",
-                "freeformer 3D Printer",
-                "SELOGICA Control System",
-                "MULTILIFT Robotic Systems",
-                "ARBIDRIVE Servo Motor",
-                "ALS (Arburg Leitrechner System)"
+                "ALLROUNDER-Injection-Molding-Machine",
+                "freeformer-3D-Printer",
+                "SELOGICA-Control-System",
+                "MULTILIFT-Robotic-Systems",
+                "ARBIDRIVE-Servo-Motor",
+                "ALS_Arburg-Leitrechner-System"
             ],
             "homag": [
-                "CENTATEQ CNC Processing Center",
-                "EDGETEQ Edge Banding Machine",
-                "powerTouch Control",
-                "intelliGuide Assist System",
-                "DRILLTEQ Drilling and Dowel Insertion Machine",
-                "STORETEQ Storage System"
+                "CENTATEQ-CNC-Processing-Center",
+                "EDGETEQ-Edge-Banding-Machine",
+                "powerTouch-Control",
+                "intelliGuide-Assist-System",
+                "DRILLTEQ-Drilling-and-Dowel-Insertion-Machine",
+                "STORETEQ-Storage-System"
             ],
             "belden": [
-                "Hirschmann Industrial Ethernet Switches",
-                "Lumberg Automation Connectors",
-                "GarrettCom Magnum Routers",
-                "TROMPETER Coaxial Connectors",
-                "Belden I/O Modules"
+                "Hirschmann-Industrial-Ethernet-Switches",
+                "Lumberg-Automation-Connectors",
+                "GarrettCom-Magnum-Routers",
+                "TROMPETER-Coaxial-Connectors",
+                "Belden-I_O-Modules"
             ],
             "siemens": [
-                "SIMATIC PLC",
-                "SINAMICS Drive Systems",
-                "SIRIUS Control Devices",
-                "SIMOTICS Electric Motors",
-                "SIMATIC HMI Panels",
-                "SITOP Power Supplies"
+                "SIMATIC-PLC",
+                "SINAMICS-Drive-Systems",
+                "SIRIUS-Control-Devices",
+                "SIMOTICS-Electric-Motors",
+                "SIMATIC-HMI-Panels",
+                "SITOP-Power-Supplies"
             ],
             "phoenix_contact": [
-                "CLIPLINE Terminal Blocks",
-                "QUINT Power Supplies",
-                "PLCnext Control",
-                "TERMITRAB Surge Protection",
-                "CONTACTRON Motor Starters",
-                "ME-PLC Modular Controller"
+                "CLIPLINE-Terminal-Blocks",
+                "QUINT-Power-Supplies",
+                "PLCnext-Control",
+                "TERMITRAB-Surge-Protection",
+                "CONTACTRON-Motor-Starters",
+                "ME-PLC_Modular-Controller"
             ],
             "schmalz": [
-                "Vacuum Generators",
-                "Vacuum Grippers",
-                "Vacuum Clamping Systems",
-                "Suction Pads",
-                "Vacuum Layer Grippers",
-                "Vacuum Ejectors"
+                "Vacuum-Generators",
+                "Vacuum-Grippers",
+                "Vacuum-Clamping-Systems",
+                "Suction-Pads",
+                "Vacuum-Layer-Grippers",
+                "Vacuum-Ejectors"
             ]
         }
 

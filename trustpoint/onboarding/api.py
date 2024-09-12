@@ -41,6 +41,7 @@ def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:
 
     response = HttpResponse(trust_store, status=200, content_type='application/x-pem-file')
     response['hmac-signature'] = onboarding_process.get_hmac()
+    response['domain'] = onboarding_process.device.domain
     response['Content-Disposition'] = 'attachment; filename="tp-trust-store.pem"'
     if onboarding_process.state == OnboardingProcessState.HMAC_GENERATED:
         onboarding_process.state = OnboardingProcessState.TRUST_STORE_SENT

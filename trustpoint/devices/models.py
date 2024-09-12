@@ -13,6 +13,8 @@ from pki.models import CertificateModel, DomainModel, RevokedCertificate
 
 from .exceptions import UnknownOnboardingStatusError
 
+from pki.validator.field import UniqueNameValidator, UniqueNameLowerCaseValidator
+
 log = logging.getLogger('tp.devices')
 
 
@@ -53,7 +55,7 @@ class Device(models.Model):
         TP_CLIENT = 'TP', _('Trustpoint Client')
         BRSKI = 'BR', _('BRSKI')
 
-    device_name = models.CharField(max_length=100, unique=True, default='test')
+    device_name = models.CharField(max_length=100, unique=True, default='test', validators=[UniqueNameValidator()])
     device_serial_number = models.CharField(max_length=100, blank=True)
     ldevid = models.ForeignKey(CertificateModel, on_delete=models.SET_NULL, blank=True, null=True)
     onboarding_protocol = models.CharField(
@@ -127,5 +129,6 @@ class Device(models.Model):
 
         return True, None
 
-    def get_device_name_as_url_extension(self) -> str:
-        return re.sub('[^a-zA-Z0-9_-]+', '-', self.device_name.lower())
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)

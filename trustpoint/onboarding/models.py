@@ -69,7 +69,7 @@ class OnboardingProcess:
         self.id = OnboardingProcess.id_counter
         self.state = OnboardingProcessState.STARTED
         self.error_reason = ''
-        self.url = dev.get_device_name_as_url_extension()
+        self.url = dev.device_name
         self.timer = threading.Timer(onboarding_timeout, self._timeout)
         # TODO (Air): instead of daemon, consider using events to exit gracefully on shutdown
         self.timer.daemon = True
@@ -232,7 +232,7 @@ class ManualOnboardingProcess(OnboardingProcess):
         """Initializes a new manual onboarding process for a device."""
         super().__init__(dev)
         self.otp = secrets.token_hex(8)
-        self.salt = dev.get_device_name_as_url_extension()
+        self.salt = dev.device_name
         self.gen_thread = threading.Thread(target=self._calc_hmac, daemon=True)
         self.gen_thread.start()
         self.hmac = None

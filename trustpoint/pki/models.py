@@ -1345,6 +1345,10 @@ class IssuingCaModel(models.Model):
             return UnprotectedLocalIssuingCa(self)
         raise RuntimeError('Unexpected error occurred. No matching IssuingCa object found.')
 
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
+
 
 class CertificateChainOrderModel(models.Model):
 
@@ -1397,6 +1401,10 @@ class DomainModel(models.Model):
         if self.issuing_ca:
             return f'Domain({self.unique_name}, {self.issuing_ca.unique_name})'
         return f'Domain({self.unique_name}, None)'
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class RevokedCertificate(models.Model):
@@ -1483,6 +1491,10 @@ class TrustStoreModel(models.Model):
         return CertificateCollectionSerializer(
             [cert_model.get_certificate_serializer() for cert_model in self.certificates.all()]
         )
+
+    def save(self, *args, **kwargs):
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
 class TrustStoreOrderModel(models.Model):

@@ -299,10 +299,8 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             'page_name': 'manual',
             'otp': onboarding_process.otp,
             'host': request.get_host(),
-            # 'url': device.get_device_name_as_url_extension(),
-            # 'sn': device.device_serial_number,
             'device_name': device.device_name,
-            'device': device.get_device_name_as_url_extension(),
+            'device': device.device_name,
             'device_id': device.id,
         }
 
