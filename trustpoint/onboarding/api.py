@@ -44,6 +44,8 @@ def trust_store(request: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpRe
     response['algorithm'] = issuing_ca_cert.spki_algorithm
     response['curve'] = issuing_ca_cert.spki_ec_curve
     response['key-size'] = issuing_ca_cert.spki_key_size
+    response['device-id'] = str(onboarding_process.device.id)
+    response['default-pki-protocol'] = 'CMP'
     response['Content-Disposition'] = 'attachment; filename="tp-trust-store.pem"'
     if onboarding_process.state == OnboardingProcessState.HMAC_GENERATED:
         onboarding_process.state = OnboardingProcessState.TRUST_STORE_SENT
