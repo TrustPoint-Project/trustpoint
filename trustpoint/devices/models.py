@@ -152,8 +152,10 @@ class Device(models.Model):
 
         is_brski = self.onboarding_protocol == Device.OnboardingProtocol.BRSKI
         is_fido = self.onboarding_protocol == Device.OnboardingProtocol.FIDO
-        if is_brski or is_fido:
+        is_aoki = self.onboarding_protocol == Device.OnboardingProtocol.AOKI
+        if is_brski or is_fido or is_aoki:
             return self._render_zero_touch_onboarding_action()
+
         return format_html('<span class="text-danger">' + _('Unknown onboarding protocol!') + '</span>')
 
     def _render_zero_touch_onboarding_action(self) -> str:
