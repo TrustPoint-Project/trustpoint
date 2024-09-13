@@ -6,7 +6,9 @@ from __future__ import annotations
 import logging
 
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from pki.models import CertificateModel, DomainModel, RevokedCertificate
 
@@ -126,3 +128,95 @@ class Device(models.Model):
             log.warning('Re-onboarding device %s which is already onboarded.', device.device_name)
 
         return True, None
+
+
+    def render_onboarding_action(self) -> str:
+        """Creates the html hyperlink button for onboarding action.
+
+        Returns:
+            str: The html hyperlink for the details-view.
+
+        Raises:
+            UnknownOnboardingProtocolError:
+                Raised when an unknown onboarding protocol was found and thus cannot be rendered appropriately.
+        """
+        if not self.domain:
+            return ''
+        is_manual = self.onboarding_protocol == Device.OnboardingProtocol.MANUAL
+        is_cli = self.onboarding_protocol == Device.OnboardingProtocol.CLI
+        is_client = self.onboarding_protocol == Device.OnboardingProtocol.TP_CLIENT
+        is_browser = self.onboarding_protocol == Device.OnboardingProtocol.BROWSER
+        if is_cli or is_client or is_manual or is_browser:
+            return self._render_manual_onboarding_action()
+
+        is_brski = self.onboarding_protocol == Device.OnboardingProtocol.BRSKI
+        is_fido = self.onboarding_protocol == Device.OnboardingProtocol.FIDO
+        if is_brski or is_fido:
+            return self._render_zero_touch_onboarding_action()
+        return format_html('<span class="text-danger">' + _('Unknown onboarding protocol!') + '</span>')
+
+    def _render_zero_touch_onboarding_action(self) -> str:
+        """Renders the device onboarding section for the manual onboarding cases.
+
+        Returns:
+            str: The html hyperlink for the details-view.
+
+        Raises:
+            UnknownOnboardingStatusError:
+                Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
+        """
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
+            return format_html(
+                '<button class="btn btn-success tp-onboarding-btn" disabled>{}</a>',
+                _('Zero-Touch Pending')
+            )
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
+            return format_html(
+                '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn">{}</a>',
+                self.pk, _('Reset Context')
+            )
+        raise UnknownOnboardingStatusError(self.device_onboarding_status)
+
+    def _render_manual_onboarding_action(self) -> str:
+        """Renders the device onboarding button for manual onboarding cases.
+
+        Returns:
+            str:
+                The html hyperlink for the details-view.
+
+        Raises:
+            UnknownOnboardingStatusError:
+                Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
+        """
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+            return format_html(
+                '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
+                reverse('onboarding:revoke', kwargs={'device_id': self.pk}),
+                _('Revoke Certificate')
+            )
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+            return format_html(
+                '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
+                reverse('onboarding:exit', kwargs={'device_id': self.pk}),
+                _('Cancel Onboarding')
+            )
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
+            return format_html(
+                '<a href="{}" class="btn btn-success tp-onboarding-btn">{}</a>',
+                reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
+                _('Start Onboarding')
+            )
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
+            return format_html(
+                '<a href="{}" class="btn btn-warning tp-onboarding-btn">{}</a>',
+                reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
+                _('Retry Onboarding')
+            )
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.REVOKED:
+            return format_html(
+                '<a href="{}" class="btn btn-info tp-onboarding-btn">{}</a>',
+                reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
+                _('Onboard again')
+            )
+        log.error(f'Unknown onboarding status {self.device_onboarding_status}. Failed to render entry in table.')
+        raise UnknownOnboardingStatusError(self.device_onboarding_status)
