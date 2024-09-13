@@ -64,6 +64,13 @@ class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
     pk_url_kwarg = 'pk'
     template_name = 'devices/details.html'
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        device = (self.get_object())
+
+        context['onboarding_button'] = device.render_onboarding_action()
+        return context
+
 
 class DevicesBulkDeleteView(
     DeviceContextMixin,
