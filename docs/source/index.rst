@@ -7,19 +7,20 @@ Welcome to Trustpoint's documentation!
 ======================================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: Contents:
 
-   devices
-   home
-   manage
-   onboarding
+   architecture
+   issuing_cas_gui
+   domains_gui
    pki
-   sysconf
-   trustpoint
-   users
-   util
+   pki_models
+   pki_issuing_ca
+   domains
 
+   validators
+
+   api/api
 
 
 Indices and tables

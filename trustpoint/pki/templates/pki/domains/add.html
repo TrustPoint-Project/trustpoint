@@ -1,0 +1,33 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+
+    <form method="POST" autocomplete="off">
+        {% csrf_token %}
+
+        <div class="card tp-card-centered">
+            <div class="card-header">
+                <div>
+                    <h1>{% trans 'Add new Domain' %}</h1>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="tp-card-centered-content">
+                    <h2>{% trans 'New Domain' %}</h2>
+                    <hr>
+
+                    {{ form|crispy }}
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="tp-card-btn-footer">
+                    <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                    <a href="{% url 'pki:domains' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                    <button type="submit" class="btn btn-primary">{% trans "Add New Domain" %}</button>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock content %}

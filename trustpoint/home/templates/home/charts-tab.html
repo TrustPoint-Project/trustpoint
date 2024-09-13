@@ -1,0 +1,119 @@
+<div class="row py-3 px-0">
+  <h1>Charts</h1>
+</div>
+<!-- Chart row -->
+<div class="row p-3 shadow">
+  <!-- table  Tab Navigation -->
+  <ul class="nav nav-tabs" id="chartTabs">
+    <li class="nav-alert">
+      <a class="nav-link active" data-bs-toggle="tab" href="#deviceChartTab">Device</a>
+    </li>
+    <li class="nav-alert">
+      <a class="nav-link" data-bs-toggle="tab" href="#certChartTab">Certificate</a>
+    </li>
+    <li class="nav-alert">
+      <a class="nav-link" data-bs-toggle="tab" href="#caChartTab">CA</a>
+    </li>
+  </ul>
+
+  <!-- chart Tab Content -->
+  <div class="tab-content px-0">
+    <div class="text-end py-2">
+      <button class="btn btn-blue">Today</button>
+      <button class="btn btn-blue">Last Week</button>
+      <button class="btn btn-blue">Last Month</button>
+      <button class="btn btn-blue">Life</button>
+    </div>
+    <!-- device chart tab content -->
+    <div class="tab-pane fade show active" id="deviceChartTab">
+      <div class="row p-3">
+        <div class="col-5 px-3 shadow">
+          <h2 class="p-2">Devices</h2>
+          <canvas id="lineChartDevice" width="400" height="200"></canvas>
+        </div>
+        <div class="col-3 px-3 shadow">
+          <h2 class="p-2">Current Devices</h2>
+          <canvas id="donutChartDevice" width="200" height="200"></canvas>
+        </div>
+        <div class="col-4 shadow">
+          <h2 class="p-2">Devices</h2>
+          <canvas id="barChartDevice" width="400" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+    <!-- certificate chart tab content -->
+    <div class="tab-pane fade" id="certChartTab">
+      <div class="row p-3">
+        <div class="col-5 shadow">
+          <h2 class="p-2">Certificates</h2>
+          <canvas id="lineChartCert" width="400" height="200"></canvas>
+        </div>
+        <div class="col-3 shadow">
+          <h2 class="p-2">Current Certificates</h2>
+          <canvas id="donutChartCert" width="200" height="200"></canvas>
+        </div>
+        <div class="col-4 shadow">
+          <h2 class="p-2">Certificate Templates</h2>
+          <canvas id="barChartCert" width="400" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+    <!-- CA chart tab content -->
+    <div class="tab-pane fade" id="caChartTab">
+      <div class="row p-3">
+        <div class="col-3 shadow">
+          <div class="row py-3">
+            <div class="col-5"><h2>Issuing CA 1</h2></div>
+            <div class="col-7">
+              <div
+                class="progress col-12 p-0"
+                role="progressbar"
+                aria-valuenow="23"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <div class="progress-bar progress-bar-striped" style="width: 23%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="row py-3">
+            <div class="col-5"><h2>Issuing CA 2</h2></div>
+            <div class="col-7">
+              <div
+                class="progress col-12 p-0"
+                role="progressbar"
+                aria-valuenow="66"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <div class="progress-bar progress-bar-striped bg-warning" style="width: 66%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="row py-3">
+            <div class="col-5"><h2>Issuing CA 3</h2></div>
+            <div class="col-7">
+              <div
+                class="progress col-12 p-0"
+                role="progressbar"
+                aria-valuenow="92"
+                aria-valuemin="0"
+                aria-valuemax="100"
+              >
+                <div class="progress-bar progress-bar-striped bg-danger" style="width: 92%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-6 shadow">
+          <h2 class="p-2">Issued Certificates</h2>
+          <canvas id="barChartCA" width="400" height="200"></canvas>
+        </div>
+        <div class="col-3 shadow">
+          <h2 class="p-2">Issuing CA</h2>
+          <canvas id="donutChartCA" width="200" height="200"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

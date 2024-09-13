@@ -2,16 +2,20 @@
 
 
 from __future__ import annotations
+
 import logging
 
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from pki.models import Certificate, DomainProfile, RevokedCertificate
+from pki.models import CertificateModel, DomainModel, RevokedCertificate
 
 from .exceptions import UnknownOnboardingStatusError
 
 log = logging.getLogger('tp.devices')
+
 
 class Device(models.Model):
     """Device Model."""
@@ -45,6 +49,7 @@ class Device(models.Model):
         """Supported Onboarding Protocols."""
 
         MANUAL = 'MA', _('Manual download')
+        BROWSER = 'BO', _('Browser download')
         CLI = 'CI', _('Device CLI')
         TP_CLIENT = 'TP', _('Trustpoint Client')
         BRSKI = 'BR', _('BRSKI')
@@ -52,21 +57,21 @@ class Device(models.Model):
 
     device_name = models.CharField(max_length=100, unique=True, default='test')
     device_serial_number = models.CharField(max_length=100, blank=True)
-    ldevid = models.ForeignKey(Certificate, on_delete=models.SET_NULL, blank=True, null=True)
+    ldevid = models.ForeignKey(CertificateModel, on_delete=models.SET_NULL, blank=True, null=True)
     onboarding_protocol = models.CharField(
         max_length=2, choices=OnboardingProtocol, default=OnboardingProtocol.MANUAL, blank=True
     )
     device_onboarding_status = models.CharField(
         max_length=1, choices=DeviceOnboardingStatus, default=DeviceOnboardingStatus.NOT_ONBOARDED, blank=True
     )
-    domain_profile = models.ForeignKey(DomainProfile, on_delete=models.SET_NULL, blank=True, null=True)
+    domain = models.ForeignKey(DomainModel, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
 
     def __str__(self: Device) -> str:
         """Returns a Device object in human-readable format."""
         return f'Device({self.device_name}, {self.device_serial_number})'
 
-    def revoke_ldevid(self: Device) -> bool:
+    def revoke_ldevid(self: Device, revocation_reason) -> bool:
         """Revokes the LDevID.
 
         Deletes the LDevID file and sets the device status to REVOKED.
@@ -78,23 +83,9 @@ class Device(models.Model):
         if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
             self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
 
-        RevokedCertificate.objects.create(
-                device_name=self.device_name,
-                device_serial_number=self.device_serial_number,
-                cert_serial_number=self.ldevid.serial_number,
-                revocation_datetime=timezone.now(),
-                revocation_reason='Requested by user',
-                issuing_ca=self.domain_profile.issuing_ca,
-                domain_profile=self.domain_profile
-            )
-
-        self.ldevid.revoke()
+        self.ldevid.revoke(revocation_reason)
         self.ldevid = None
         self.save()
-
-        # generate CRLs
-        self.domain_profile.generate_crl()
-        self.domain_profile.issuing_ca.generate_crl()
 
         log.info('Revoked LDevID for device %s', self.device_name)
         return True
@@ -117,11 +108,11 @@ class Device(models.Model):
         if not device:
             return False, f'Onboarding: Device with ID {device_id} not found.'
 
-        if not device.domain_profile:
-            return False, f'Onboarding: Please select an domain profile for device {device.device_name} first.'
+        if not device.domain:
+            return False, f'Onboarding: Please select a domain for device {device.device_name} first.'
 
-        if not device.domain_profile.issuing_ca:
-            return False, f'Onboarding: domain profile {device.domain_profile.unique_name} has no issuing CA set.'
+        if not device.domain.issuing_ca:
+            return False, f'Onboarding: domain {device.domain.unique_name} has no issuing CA set.'
 
         if device.onboarding_protocol not in allowed_onboarding_protocols:
             try:
@@ -137,3 +128,95 @@ class Device(models.Model):
             log.warning('Re-onboarding device %s which is already onboarded.', device.device_name)
 
         return True, None
+
+
+    def render_onboarding_action(self) -> str:
+        """Creates the html hyperlink button for onboarding action.
+
+        Returns:
+            str: The html hyperlink for the details-view.
+
+        Raises:
+            UnknownOnboardingProtocolError:
+                Raised when an unknown onboarding protocol was found and thus cannot be rendered appropriately.
+        """
+        if not self.domain:
+            return ''
+        is_manual = self.onboarding_protocol == Device.OnboardingProtocol.MANUAL
+        is_cli = self.onboarding_protocol == Device.OnboardingProtocol.CLI
+        is_client = self.onboarding_protocol == Device.OnboardingProtocol.TP_CLIENT
+        is_browser = self.onboarding_protocol == Device.OnboardingProtocol.BROWSER
+        if is_cli or is_client or is_manual or is_browser:
+            return self._render_manual_onboarding_action()
+
+        is_brski = self.onboarding_protocol == Device.OnboardingProtocol.BRSKI
+        is_fido = self.onboarding_protocol == Device.OnboardingProtocol.FIDO
+        if is_brski or is_fido:
+            return self._render_zero_touch_onboarding_action()
+        return format_html('<span class="text-danger">' + _('Unknown onboarding protocol!') + '</span>')
+
+    def _render_zero_touch_onboarding_action(self) -> str:
+        """Renders the device onboarding section for the manual onboarding cases.
+
+        Returns:
+            str: The html hyperlink for the details-view.
+
+        Raises:
+            UnknownOnboardingStatusError:
+                Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
+        """
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
+            return format_html(
+                '<button class="btn btn-success tp-onboarding-btn" disabled>{}</a>',
+                _('Zero-Touch Pending')
+            )
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
+            return format_html(
+                '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn">{}</a>',
+                self.pk, _('Reset Context')
+            )
+        raise UnknownOnboardingStatusError(self.device_onboarding_status)
+
+    def _render_manual_onboarding_action(self) -> str:
+        """Renders the device onboarding button for manual onboarding cases.
+
+        Returns:
+            str:
+                The html hyperlink for the details-view.
+
+        Raises:
+            UnknownOnboardingStatusError:
+                Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
+        """
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+            return format_html(
+                '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
+                reverse('onboarding:revoke', kwargs={'device_id': self.pk}),
+                _('Revoke Certificate')
+            )
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+            return format_html(
+                '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
+                reverse('onboarding:exit', kwargs={'device_id': self.pk}),
+                _('Cancel Onboarding')
+            )
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
+            return format_html(
+                '<a href="{}" class="btn btn-success tp-onboarding-btn">{}</a>',
+                reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
+                _('Start Onboarding')
+            )
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
+            return format_html(
+                '<a href="{}" class="btn btn-warning tp-onboarding-btn">{}</a>',
+                reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
+                _('Retry Onboarding')
+            )
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.REVOKED:
+            return format_html(
+                '<a href="{}" class="btn btn-info tp-onboarding-btn">{}</a>',
+                reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
+                _('Onboard again')
+            )
+        log.error(f'Unknown onboarding status {self.device_onboarding_status}. Failed to render entry in table.')
+        raise UnknownOnboardingStatusError(self.device_onboarding_status)

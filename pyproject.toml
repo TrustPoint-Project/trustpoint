@@ -6,23 +6,30 @@ authors = ["TrustPoint-Project"]
 readme = "README.md"
 
 [tool.poetry.dependencies]
-python = "^3.12"
-django = "^5.0.4"
+python = "^3.10"
 django-tables2 = "^2.7.0"
-cryptography = "^42.0.5"
-django-crispy-forms = "^2.1"
+pyasn1 = "^0.6.0"
+pyasn1-modules = "^0.4.0"
+django-crispy-forms = "^2.3"
 crispy-bootstrap5 = "^2024.2"
-django-ninja = "^1.1.0"
-devtools = "^0.12.2"
-zeroconf = "^0.132.2"
+django-ninja = "^1.3.0"
+django-q2 = "^1.7.2"
+croniter = "^3.0.3"
+django = "^5.1.1"
+cryptography = "^43.0.1"
+zeroconf = "^0.134.0"
 
 [tool.poetry.group.dev.dependencies]
-sphinx = "^7.2.6"
+sphinx = "^8.0.2"
+sphinxcontrib-plantuml = "^0.30"
+devtools = "^0.12.2"
 django-extensions = "^3.2.3"
-pyopenssl = "^24.1.0"
-werkzeug = "^3.0.2"
-furo = "^2024.1.29"
-ruff = "^0.2.2"
+pyopenssl = "^24.2.1"
+werkzeug = "^3.0.4"
+furo = "^2024.8.6"
+ruff = "^0.6.3"
+pillow = "^10.4.0"
+docutils-stubs = "^0.0.22"
 
 [build-system]
 requires = ["poetry-core"]
@@ -41,7 +48,7 @@ multiline-quotes = "double"
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "ANN101", "ANN401",
+    "ANN101", "ANN102", "ANN401",
     "D203", "D213", "D415",
     "TD003",
     # TODO(Alex): FIX should be added again, after we are departing from the PoC phase

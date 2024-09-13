@@ -87,12 +87,29 @@ function chooseFileFormatForm() {
 
 const checkboxColumn = document.querySelector('#checkbox-column > input');
 const checkboxes = document.querySelectorAll('.row_checkbox > input');
-const tableSelectBtn = document.getElementById('tp-table-select-btn');
+const tableSelectButtons = document.querySelectorAll('.tp-table-select-btn');
 
-if (checkboxColumn && tableSelectBtn) {
-    checkboxColumn.addEventListener('change', toggleAllCheckboxes);
-    tableSelectBtn.addEventListener('click', urlRedirect);
+
+checkboxColumn?.addEventListener('change', toggleAllCheckboxes);
+if (checkboxColumn) {
+    tableSelectButtons.forEach(function(el) {
+        el.addEventListener('click', function(event) {
+            let url_path = event.target.getAttribute('data-tp-url') + '/';
+            console.log(url_path)
+            let at_least_one_checked = false;
+            checkboxes.forEach(function(el) {
+                if (el.checked) {
+                    url_path += el.value + '/';
+                    at_least_one_checked = true;
+                }
+            });
+            if (at_least_one_checked === true) {
+                window.location.href = url_path;
+            }
+        })
+    });
 }
+
 
 function toggleAllCheckboxes() {
     if (checkboxColumn.checked) {
@@ -103,20 +120,6 @@ function toggleAllCheckboxes() {
         checkboxes.forEach(function(el) {
             el.checked = false;
         });
-    }
-}
-
-function urlRedirect() {
-    let url_path = tableSelectBtn.getAttribute('data-tp-url') + '/';
-    let at_least_one_checked = false;
-    checkboxes.forEach(function(el) {
-        if (el.checked) {
-            url_path += el.value + '/';
-            at_least_one_checked = true;
-        }
-    });
-    if (at_least_one_checked === true) {
-        window.location.href = url_path;
     }
 }
 
@@ -222,3 +225,9 @@ function togglePemSelectDisable() {
             certFileFormatSelect.value = 'pem';
     }
 }
+
+// ----------------------------------------------- Global Popper Enable ------------------------------------------------
+
+$(function () {
+  $('[data-toggle="popover"]').popover()
+})

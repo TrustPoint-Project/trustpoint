@@ -3,18 +3,18 @@
 
 from __future__ import annotations
 
+from itertools import product
 from pathlib import Path
+
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
-from itertools import product
+from pki.models import CertificateModel
 
-from django.core.management import BaseCommand
-from pki.models import Certificate
-
+from .base_commands import CertificateCreationCommandMixin
+from django.core.management.base import BaseCommand
 from . import Algorithm
 
-
-class Command(BaseCommand):
+class Command(CertificateCreationCommandMixin, BaseCommand):
     """Django management command for adding issuing CA test data."""
 
     help = 'Just some stuff for manual testing.'
@@ -39,6 +39,6 @@ class Command(BaseCommand):
                 cert_pem = f.read()
 
             ext_cert = x509.load_pem_x509_certificate(cert_pem)
-            Certificate.save_certificate_and_key(cert=ext_cert, priv_key=ext_key)
+            CertificateModel.save_certificate(ext_cert)
 
     print('\nDONE\n')

@@ -7,17 +7,18 @@ from __future__ import annotations
 import hashlib
 import hmac
 import logging
+import secrets
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec
-from cryptography.hazmat.primitives.serialization import NoEncryption, pkcs12
-from django.core.files.base import ContentFile
+from pki.models import CertificateModel
+from pki.pki.request.handler.factory import CaRequestHandlerFactory
+from pki.pki.request.message.rest import PkiRestCsrRequestMessage, PkiRestPkcs12RequestMessage
 from util.strings import StringValidator
-from pki.models import Certificate
 
 if TYPE_CHECKING:
     from cryptography.hazmat.primitives.asymmetric.types import CertificatePublicKeyTypes, PrivateKeyTypes
@@ -28,6 +29,7 @@ PBKDF2_ITERATIONS = 1000000
 PBKDF2_DKLEN = 32
 
 log = logging.getLogger('tp.onboarding')
+
 
 class OnboardingError(Exception):
     """Exception raised for errors in the onboarding process."""
@@ -74,7 +76,7 @@ class CryptoBackend:
             return certfile.read()
 
     @staticmethod
-    def _get_ca(device: Device) -> Certificate:
+    def _get_ca(device: Device) -> CertificateModel:
         """Returns the CA private key, certificate and the CA certificate chain for a given device.
 
         Args:
@@ -86,12 +88,12 @@ class CryptoBackend:
                 The CA certificate, incl. private key, certificate and the CA certificate chain.
         """
         log.debug('Accessing CA for device %s', device.device_name)
-        if not device.domain_profile:
+        if not device.domain:
             msg = 'No domain profile configured for device.'
             raise OnboardingError(msg)
 
         try:
-            signing_ca = device.domain_profile.issuing_ca
+            signing_ca = device.domain.issuing_ca
         except AttributeError as e:
             msg = 'Could not obtain issuing CA from domain profile.'
             raise OnboardingError(msg) from e
@@ -103,54 +105,8 @@ class CryptoBackend:
         if not signing_ca.issuing_ca_certificate:
             msg = 'CA does not have issuing CA certificate.'
             raise OnboardingError(msg)
-        
+
         return signing_ca.issuing_ca_certificate
-
-
-    @staticmethod
-    def _sign_ldevid(pub_key: CertificatePublicKeyTypes, device: Device) -> X509Certificate:
-        if not device.device_serial_number:
-            exc_msg = 'No serial number provided.'
-            raise OnboardingError(exc_msg)
-
-        subject = x509.Name([
-            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'ldevid.trustpoint.local'),
-            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.device_serial_number)
-        ])
-
-        ca_certificate = CryptoBackend._get_ca(device)
-        private_ca_key = ca_certificate.get_private_key_as_crypto()
-        ca_cert = ca_certificate.get_cert_as_crypto()
-
-        log.debug('Issuing LDevID for device %s', device.device_name)
-
-        cert = (
-            x509.CertificateBuilder()
-            .subject_name(subject)
-            .issuer_name(ca_cert.subject)
-            .public_key(pub_key)
-            .serial_number(x509.random_serial_number())  # This is NOT the device serial number
-            .not_valid_before(
-                datetime.now(timezone.utc) - timedelta(hours=1)  # backdate a bit in case of client clock skew
-            )
-            .not_valid_after(
-                # TODO(Air): configurable validity period
-                datetime.now(timezone.utc) + timedelta(days=365)
-                # Sign our certificate with our private key
-            )
-            .add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
-            .sign(private_ca_key, hashes.SHA256())
-        )
-
-        device_cert = Certificate()
-        device.ldevid = device_cert.save_certificate(cert)
-
-        # keep track of the device once we send out a cert, even if onboarding fails afterwards
-        device.save()
-        log.info('Issued and stored LDevID for device %s', device.device_name)
-
-        return cert
-
 
     @staticmethod
     def sign_ldevid_from_csr(csr_pem: bytes, device: Device) -> bytes:
@@ -176,8 +132,9 @@ class CryptoBackend:
             csr_serial = None
 
         if not device.device_serial_number and not csr_serial:
-            exc_msg = 'No serial number provided.'
-            raise OnboardingError(exc_msg)
+            log.warning('No serial number provided in CSR for device %s', device.device_name)
+            serial = 'tp_' + secrets.token_urlsafe(12)
+            device.device_serial_number = serial
         if csr_serial and not StringValidator.is_urlsafe(csr_serial):
             exc_msg = 'Invalid serial number in CSR.'
             raise OnboardingError(exc_msg)
@@ -187,7 +144,22 @@ class CryptoBackend:
         serial_no = device.device_serial_number or csr_serial
         device.device_serial_number = serial_no
 
-        return CryptoBackend._sign_ldevid(csr.public_key(), device).public_bytes(serialization.Encoding.PEM)
+        log.debug('Issuing LDevID for device %s', device.device_name)
+
+        pki_request = PkiRestCsrRequestMessage(
+            domain_unique_name=device.domain.unique_name, csr=csr, serial_number=serial_no
+        )
+        request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
+        pki_response = request_handler.process_request()
+        cert_model = pki_response.cert_model
+        if (not isinstance(cert_model, CertificateModel)):
+            exc_msg = 'PKI response error: not a certificate: %s' % cert_model
+            raise OnboardingError(exc_msg)
+
+        device.ldevid = cert_model
+        device.save()
+        log.info('Issued and stored LDevID for device %s', device.device_name)
+        return pki_response.raw_response
 
     @staticmethod
     def get_cert_chain(device: Device) -> bytes:
@@ -200,7 +172,7 @@ class CryptoBackend:
         """
         ca_certificate = CryptoBackend._get_ca(device)
 
-        return ca_certificate.get_cert_chain_as_crypto()
+        return ca_certificate.get_certificate_serializer().as_pem()
 
     @staticmethod
     def _gen_private_key() -> PrivateKeyTypes:
@@ -219,26 +191,36 @@ class CryptoBackend:
     def gen_keypair_and_ldevid(device: Device) -> bytes:
         """Generates a keypair and LDevID certificate for the device.
 
-        Returns: The keypair and LDevID certificate as bytes in PEM format.
+        Returns: The keypair and LDevID certificate as PKCS12 bytes.
 
         Raises:
             OnboardingError: If the keypair generation or LDevID signing fails.
         """
-        private_key = CryptoBackend._gen_private_key()
-
-        ldevid = CryptoBackend._sign_ldevid(private_key.public_key(), device)
-
-        ca_certificate = CryptoBackend._get_ca(device)
-        ca_cert = ca_certificate.get_cert_as_crypto()
-
         log.debug('Generating PKCS12 for device %s', device.device_name)
 
-        pkcs12 = serialization.pkcs12.serialize_key_and_certificates(
-            name=device.device_serial_number.encode(),
-            key=private_key,
-            cert=ldevid,
-            cas=[ca_cert],
-            encryption_algorithm=NoEncryption()
-        )
+        if not device.device_serial_number:
+            exc_msg = f'No serial number provided in CSR for device {device.device_name}'
+            raise OnboardingError(exc_msg)
+        serial_no = device.device_serial_number
 
-        return pkcs12
+        log.debug('Issuing LDevID for device %s', device.device_name)
+
+        subject = x509.Name([
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'ldevid.trustpoint.local'),
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, serial_no)
+        ])
+
+        pki_request = PkiRestPkcs12RequestMessage(
+            domain_unique_name=device.domain.unique_name, subject=subject
+        )
+        request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
+        pki_response = request_handler.process_request()
+        cert_model = pki_response.cert_model
+        if (not isinstance(cert_model, CertificateModel)):
+            exc_msg = 'PKI response error: not a certificate: %s' % cert_model
+            raise OnboardingError(exc_msg)
+
+        device.ldevid = cert_model
+        device.save()
+        log.info('Issued and stored LDevID for device %s', device.device_name)
+        return pki_response.raw_response

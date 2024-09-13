@@ -1,5 +1,5 @@
 {% extends 'trustpoint/base.html' %}
-
+{% load i18n %}
 {% block content %}
 
     <form method="POST">
@@ -13,9 +13,10 @@
                 {% include 'devices/sub_details.html' %}
 
                 <div class="tp-form-btn-group tp-form-btn-group mt-5">
-                    <a href="{% url 'devices:devices' %}" class="btn btn-primary">Back</a>
+                    <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                    <a href="{% url 'devices:devices-edit' device.pk %}" class="btn btn-primary tp-table-btn">Edit</a>
+                    {{ onboarding_button|safe }}
                 </div>
-
             </div>
         </div>
     </form>

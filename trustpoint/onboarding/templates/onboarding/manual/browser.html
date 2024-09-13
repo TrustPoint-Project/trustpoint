@@ -1,0 +1,49 @@
+{% extends 'trustpoint/base.html' %}
+{% load crispy_forms_filters %}
+{% load static %}
+{% load i18n %}
+{% block head %}
+    <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
+    <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:exit' device_id %}"</script>
+    <script src="{% url 'javascript-catalog' %}"></script>
+    <script src="{% static 'js/onboarding.js' %}"></script>
+{% endblock head %}
+{% block content %}
+    <div class="card card-main text-center">
+        <div class="card-header d-flex">
+            <h1>{% blocktranslate %}Save details for {{ device_name }}{% endblocktranslate %}</h1>
+        </div>
+        <div class="card-body tp-main-centered pt-3 pb-4">
+            <div id="onboarding-state-bo" class="alert alert-info d-flex align-items-center mt-3 breathing-anim dl" role="alert">  
+                <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
+                <div>{% trans "Fetching state from server..." %}</div>                
+            </div>
+            <h2>Device ID</h2>
+            {{ device_id }}
+            <hr>
+            <h2>OTP</h2>
+            <div class="d-flex justify-content-center align-items-center">
+                <span id="otp-value">{{ otp }}</span>&nbsp;
+                <button class="btn btn-primary" onclick="copyToClipboard(this,'#otp-value', true)">{% trans "Copy" %}</button>
+            </div>
+            <h2>Download URL</h2>
+            <div>
+                <a href="{{ download_url }}" target="_blank" rel="noopener noreferrer">
+                    {{ download_url }}
+                </a>
+            </div>
+            <div class="text-center">
+              <!-- <a href="{% url 'onboarding:api-p12-download' device_id %}" download="{{ device_name }}.p12" class="btn btn-primary mt-2 w-50">{% trans "Download PKCS12" %}</a> -->
+            </div>
+            <hr>
+            <!-- <h2>{% trans "Keypair in PEM format" %}</h2>
+            <hr>
+            <h2>{% trans "LDevID certificate" %}</h2> -->
+            
+        </div>
+        <div class="card-footer text-body-secondary">
+            <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans "Back" %}</a>
+            <a href="{% url 'onboarding:exit' device_id %}" class="btn btn-danger">{% trans "Cancel" %}</a>
+        </div>
+    </div>
+{% endblock content %}

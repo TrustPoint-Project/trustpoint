@@ -1,24 +1,40 @@
 import logging
-from .models import Certificate, KeyUsageExtension, BasicConstraintsExtension, IssuingCa
-from django.db.models.signals import post_delete
+
+from django.db.backends.signals import connection_created
+from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 
-log = logging.getLogger('tp.pki')
+from .models import IssuingCaModel
+from .tasks import add_crl_to_schedule, remove_crl_from_schedule
 
-# TODO:
-# @receiver([post_delete], sender=Certificate)
-# def update_delete_student(sender, instance, **kwargs):
-#     BasicConstraintsExtension.objects.filter(certificates__isnull=True).delete()
-#     KeyUsageExtension.objects.filter(certificates__isnull=True).delete()
+logger = logging.getLogger('tp.pki')
 
 
-@receiver([post_delete], sender=IssuingCa)
-def update_delete_student(sender, instance, **kwargs):
-    # RuntimeError is raised if the issuing ca certificate has other references pointing to it.
-    # Hence, it will not be deleted in this case.
-    try:
-        instance.issuing_ca_certificate.delete()
-    except RuntimeError:
-        log.warning(
-            f'Issuing CA certificate {instance.issuing_ca_certificate} remains in DB as it has issued certificates.')
-        pass
+@receiver(post_save, sender=IssuingCaModel)
+def handle_post_save(sender, instance, created, **kwargs) -> None:
+    if created:
+        add_crl_to_schedule(instance)
+
+
+@receiver(post_delete, sender=IssuingCaModel)
+def handle_post_delete(sender, instance, **kwargs) -> None:
+    remove_crl_from_schedule(instance)
+
+
+@receiver(pre_delete, sender=IssuingCaModel)
+def handle_pre_delete(sender, instance, **kwargs) -> None:
+    print(sender)
+    instance.issuing_ca_certificate.remove_private_key()
+
+
+crl_thread_started = False
+
+
+@receiver(connection_created)
+def initial_database_connection(sender, connection, **kwargs):
+    global crl_thread_started
+    if crl_thread_started:
+        return
+    crl_thread_started = True
+
+    logger.info('Initial database connection established: %s', connection.alias)

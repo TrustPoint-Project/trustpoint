@@ -8,11 +8,11 @@ from typing import TYPE_CHECKING
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, FormMixin, UpdateView
+from django.views.generic.edit import CreateView, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_tables2 import SingleTableView
 
-from trustpoint.views import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
+from trustpoint.views.base import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
 
 from .models import Device
 from .tables import DeviceTable
@@ -43,17 +43,17 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
     """Device Create View."""
 
     model = Device
-    fields = ['device_name', 'onboarding_protocol', 'domain_profile']  # noqa: RUF012
+    fields = ['device_name', 'onboarding_protocol', 'domain']  # noqa: RUF012
     template_name = 'devices/add.html'
     success_url = reverse_lazy('devices:devices')
 
 
-class UpdateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
-    """Device Update View."""
+class EditDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
+    """Device Edit View."""
 
     model = Device
-    fields = ['device_name', 'onboarding_protocol', 'domain_profile']  # noqa: RUF012
-    template_name = 'devices/update.html'
+    fields = ['device_name', 'onboarding_protocol', 'domain']  # noqa: RUF012
+    template_name = 'devices/edit.html'
     success_url = reverse_lazy('devices:devices')
 
 
@@ -63,6 +63,13 @@ class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
     model = Device
     pk_url_kwarg = 'pk'
     template_name = 'devices/details.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        device = (self.get_object())
+
+        context['onboarding_button'] = device.render_onboarding_action()
+        return context
 
 
 class DevicesBulkDeleteView(

@@ -2,23 +2,42 @@ from django.contrib import admin
 
 
 from .models import (
-    Certificate,
-    IssuingCa,
-    BasicConstraintsExtension,
-    KeyUsageExtension,
     AttributeTypeAndValue,
+    BasicConstraintsExtension,
+    CertificateChainOrderModel,
+    CertificateModel,
+    CRLStorage,
+    DomainModel,
     IssuerAlternativeNameExtension,
-    SubjectAlternativeNameExtension)
+    IssuingCaModel,
+    KeyUsageExtension,
+    SubjectAlternativeNameExtension,
+    TrustStoreModel
+)
 
 
 class IssuingCaAdmin(admin.ModelAdmin):
-    pass
+    readonly_fields = [
+        'unique_name',
+        'root_ca_certificate',
+        'intermediate_ca_certificates',
+        'issuing_ca_certificate',
+        'private_key_pem',
+        'added_at'
+    ]
+
+
+class CertificateChainOrderModelAdmin(admin.ModelAdmin):
+    readonly_fields = [
+        'order',
+        'certificate',
+        'issuing_ca'
+    ]
 
 
 class TrustStoreAdmin(admin.ModelAdmin):
     readonly_fields = [
-        'unique_name',
-        'leaf_certs'
+        'unique_name'
     ]
 
 
@@ -70,8 +89,8 @@ class KeyUsageExtensionAdmin(admin.ModelAdmin):
 
 class CertificateAdmin(admin.ModelAdmin):
     readonly_fields = (
-        'certificate_hierarchy_type',
-        'certificate_hierarchy_depth',
+        # 'certificate_hierarchy_type',
+        # 'certificate_hierarchy_depth',
 
         'sha256_fingerprint',
         'common_name',
@@ -101,7 +120,7 @@ class CertificateAdmin(admin.ModelAdmin):
 
         'cert_pem',
         'public_key_pem',
-        'private_key_pem',
+        'issuing_ca_model',
 
         'key_usage_extension',
         'subject_alternative_name_extension',
@@ -109,11 +128,28 @@ class CertificateAdmin(admin.ModelAdmin):
         'basic_constraints_extension'
     )
 
+class CRLStorageAdmin(admin.ModelAdmin):
+    readonly_fields = (
+        'crl',
+        'created_at',
+        'ca'
+    )
 
-admin.site.register(IssuingCa, IssuingCaAdmin)
+class DomainModelAdmin(admin.ModelAdmin):
+    readonly_fields = (
+        'unique_name',
+        'issuing_ca'
+    )
+
+
+admin.site.register(TrustStoreModel, TrustStoreAdmin)
+admin.site.register(IssuingCaModel, IssuingCaAdmin)
 admin.site.register(SubjectAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(IssuerAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(AttributeTypeAndValue, AttributeTypeAndValueAdmin)
 admin.site.register(BasicConstraintsExtension, BasicConstraintsExtensionAdmin)
 admin.site.register(KeyUsageExtension, KeyUsageExtensionAdmin)
-admin.site.register(Certificate, CertificateAdmin)
+admin.site.register(CertificateModel, CertificateAdmin)
+admin.site.register(CertificateChainOrderModel, CertificateChainOrderModelAdmin)
+admin.site.register(CRLStorage, CRLStorageAdmin)
+admin.site.register(DomainModel, DomainModelAdmin)

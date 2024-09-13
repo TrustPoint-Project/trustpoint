@@ -20,7 +20,7 @@
             </div>
             <h2>{% trans "Download PKCS12 key and certificate" %}</h2>
             <div class="text-center">
-              <a href="{% url 'onboarding:api-p12-download' device_id %}" download="{{ device_name }}.p12" class="btn btn-primary mt-2 w-50">{% trans "Download PKCS12" %}</a>
+              <a href="{% url 'onboarding:api-p12-download' device_id %}?token={{ download_token }}" download="{{ device_name }}.p12" class="btn btn-primary mt-2 w-50">{% trans "Download PKCS12" %}</a>
             </div>
             <hr>
             <h2>{% trans "Keypair in PEM format" %}</h2>

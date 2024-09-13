@@ -2,17 +2,19 @@ import io
 import sys
 from typing import TYPE_CHECKING
 
+import cryptography.x509
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import pkcs12, BestAvailableEncryption, NoEncryption
+from cryptography.x509.oid import NameOID
 
 from cryptography.hazmat.primitives.serialization import pkcs7
 from cryptography import x509
 import requests, base64
 from util.x509.credentials import CredentialUploadHandler
-from pki.models import IssuingCa
+from pki.models import IssuingCaModel
 from django.core.files.uploadedfile import InMemoryUploadedFile
 
 if TYPE_CHECKING:
@@ -177,7 +179,7 @@ class Enrollment:
             p12_bytes_io, 'p12', f'{unique_name}.p12', 'application/x-pkcs12', sys.getsizeof(p12_bytes_io), None
         )
 
-        ca = IssuingCa(unique_name=unique_name,
+        ca = IssuingCaModel(unique_name=unique_name,
                        common_name=cert_p12.common_name,
                        not_valid_before=cert_p12.not_valid_before,
                        not_valid_after=cert_p12.not_valid_after,
@@ -256,3 +258,15 @@ class Enrollment:
                 file.read(), password, default_backend()
             )
         return p12
+    
+    @staticmethod
+    def get_extension_for_oid_or_none(extensions: x509.Extensions, oid: NameOID) -> x509.Extension | None:
+        """Determines if the given extensions contain an extension with the given OID.
+        Args:
+            extensions (x509.Extensions): The extensions to search.
+            oid (NameOID): The OID to search for.
+        """
+        try:
+            return extensions.get_extension_for_oid(oid)
+        except x509.ExtensionNotFound:
+            return None

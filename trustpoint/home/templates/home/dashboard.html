@@ -1,195 +1,88 @@
-{% extends 'trustpoint/base.html' %} {% block content %}
-<div class="row p-3">
-  <div class="col-6">
-    <canvas id="lineChart" width="400" height="200"></canvas>
-  </div>
-  <div class="col-6">
-    <canvas id="barChart" width="400" height="200"></canvas>
-  </div>
-</div>
-<div class="row p-3">
-  <div class="col-8">
-    <h2>Number of Endpoints</h2>
-    <canvas id="stackedAreaChart" width="400" height="200"></canvas>
-  </div>
-  <div class="col-4">
-    <h2>Number of Devices</h2>
-    <canvas id="donutChartDevice" width="200" height="200"></canvas>
-  </div>
-</div>
-<div class="row p-3">
-  <div class="col-4">
-    <h2>Number of Endpoints</h2>
-    <canvas id="donutChartEndpoint" width="200" height="200"></canvas>
-  </div>
-  <div class="col-8">
-    <h2>Number of Devices</h2>
-    <canvas id="stackChart" width="400" height="200"></canvas>
-  </div>
-</div>
-<!-- Number panels row -->
-<div class="row p-3">
-  <!-- number of root CAs -->
-  <div class="col-3">
-    <div class="card count bg-secondary text-white">
-      <!-- <h2 class="text-center pb-4"><i class="bi bi-cpu"></i></h2> -->
-      <h2 class="text-center pb-4">Number of Root CAs</h2>
-      <!-- <h1 class="text-center pb-4">{{number_of_root_cas}}</h1> -->
-      <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_root_cas}}</p>
-      <div class="row p-0">
-        <div class="col-5 small">Active: 2</div>
-        <div class="col-5 offset-2 small p-0">Inactive: 0</div>
-      </div>
-      <div class="row pt-0 pb-1">
-        <div class="progress col-5 p-0">
-          <div
-            class="progress-bar bg-progress progress-bar-striped w-100"
-            role="progressbar "
-            aria-valuenow="100"
-            aria-valuemin="0"
-            aria-valuemax="100"
-          ></div>
-        </div>
-        <div class="progress col-5 p-0 offset-2">
-          <div
-            class="progress-bar bg-warning progress-bar-striped w-0"
-            role="progressbar"
-            aria-valuenow="0"
-            aria-valuemin="0"
-            aria-valuemax="100"
-          ></div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- number of issuing CAs -->
-  <div class="col-3">
-    <div class="card count bg-secondary text-white">
-      <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
-      <h2 class="text-center pb-4">Number of Issuing CAs</h2>
-      <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_issuing_cas}}</p>
-      <div class="row p-0">
-        <div class="col-5 small">Active: 2</div>
-        <div class="col-5 offset-2 small p-0">Inactive: 1</div>
-      </div>
-      <div class="row pt-0 pb-1">
-        <div
-          class="progress col-5 p-0"
-          role="progressbar"
-          aria-valuenow="66"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          <div class="progress-bar progress-bar-striped" style="width: 66%"></div>
-        </div>
-        <div
-          class="progress col-5 p-0 offset-2"
-          role="progressbar"
-          aria-valuenow="33"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          <div class="progress-bar progress-bar-striped bg-warning" style="width: 34%"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- number of endpoints -->
-  <div class="col-3">
-    <div class="card count bg-secondary text-white">
-      <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
-      <h2 class="text-center pb-4">Number of Endpoints</h2>
-      <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_endpoints}}</p>
-      <div class="row p-0">
-        <div class="col-5 small">Active: 3</div>
-        <div class="col-5 offset-2 small p-0">Inactive: 1</div>
-      </div>
-      <div class="row pt-0 pb-1">
-        <div
-          class="progress col-5 p-0"
-          role="progressbar"
-          aria-valuenow="75"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          <div class="progress-bar progress-bar-striped" style="width: 75%"></div>
-        </div>
-        <div
-          class="progress col-5 p-0 offset-2"
-          role="progressbar"
-          aria-valuenow="25"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          <div class="progress-bar progress-bar-striped bg-warning" style="width: 25%"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-  <!-- number of devices -->
-  <div class="col-3">
-    <div class="card count bg-secondary text-white">
-      <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
-      <h2 class="text-center pb-4">Number of Devices</h2>
-      <p style="font-size: 40px" class="text-center font-weight-bold">{{number_of_devices}}</p>
-      <div class="row p-0">
-        <div class="col-5 small">Onboard: 12</div>
-        <div class="col-5 offset-2 small p-0">Notonboard: 3</div>
-      </div>
-      <div class="row pt-0 pb-1">
-        <div
-          class="progress col-5 p-0"
-          role="progressbar"
-          aria-valuenow="80"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          <div class="progress-bar progress-bar-striped" style="width: 80%"></div>
-        </div>
-        <div
-          class="progress col-5 p-0 offset-2"
-          role="progressbar"
-          aria-valuenow="20"
-          aria-valuemin="0"
-          aria-valuemax="100"
-        >
-          <div class="progress-bar progress-bar-striped bg-warning" style="width: 20%"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-</div>
+{% extends 'trustpoint/base.html' %}
+
+{% block content %}
+
+{% include 'home/counts-panel.html' %} 
+{% include 'home/notifications-tab.html' %}
+{% include 'home/charts-tab.html' %}
 
 <script>
   document.addEventListener("DOMContentLoaded", function () {
-    var ctx = document.getElementById("lineChart").getContext("2d");
+
+    //device charts data from context
+    var stackChartConfig = JSON.parse("{{ line_chart_device_config|escapejs }}");
+    var donutChartDeviceConfig = JSON.parse("{{ donut_chart_device_config|escapejs }}");
+    var barChartDeviceConfig = JSON.parse("{{ bar_chart_device_config|escapejs }}");
+
+    //cert charts data from context
+    var lineChartCertConfig = JSON.parse("{{ line_chart_cert_config|escapejs }}");
+    var donutChartCertConfig = JSON.parse("{{ donut_chart_cert_config|escapejs }}");
+    var barChartCertConfig = JSON.parse("{{ bar_chart_cert_config|escapejs }}");
+    
+    //CA charts data from context
+    var barChartCAConfig = JSON.parse("{{ bar_chart_ca_config|escapejs }}");
     var lineChartConfig = JSON.parse("{{ line_chart_config|escapejs }}");
-    var lineChart = new Chart(ctx, lineChartConfig);
-  });
-  document.addEventListener("DOMContentLoaded", function () {
-    var ctx = document.getElementById("barChart").getContext("2d");
-    var barChartConfig = JSON.parse("{{ bar_chart_config|escapejs }}");
-    var lineChart = new Chart(ctx, barChartConfig);
-  });
-  document.addEventListener("DOMContentLoaded", function () {
-    var ctx = document.getElementById("stackChart").getContext("2d");
-    var stackChartConfig = JSON.parse("{{ stack_chart_config|escapejs }}");
-    var lineChart = new Chart(ctx, stackChartConfig);
-  });
-  document.addEventListener("DOMContentLoaded", function () {
-    var ctx = document.getElementById("donutChartDevice").getContext("2d");
-    var donutChartConfig = JSON.parse("{{ donut_chart_config|escapejs }}");
-    var lineChart = new Chart(ctx, donutChartConfig);
-  });
-  document.addEventListener("DOMContentLoaded", function () {
-    var ctx = document.getElementById("donutChartEndpoint").getContext("2d");
-    var donutChartConfig = JSON.parse("{{ endpoint_donut_chart_config|escapejs }}");
-    var lineChart = new Chart(ctx, donutChartConfig);
-  });
-  document.addEventListener("DOMContentLoaded", function () {
-    var ctx = document.getElementById("stackedAreaChart").getContext("2d");
-    var stackedAreaChartConfig = JSON.parse("{{ stack_area_chart_config|escapejs }}");
-    var lineChart = new Chart(ctx, stackedAreaChartConfig);
+    var donutChartCAConfig = JSON.parse("{{ donut_chart_ca_config|escapejs }}");
+
+    var chartTabEl = document.getElementById("chartTabs");
+    var chartTab = new bootstrap.Tab(chartTabEl);
+    // Initial update for the active chart tab
+    var activeChartTabId = document
+      .querySelector("#chartTabs .nav-link.active")
+      .getAttribute("href")
+      .substring(1);
+    updateChartContent(activeChartTabId);
+
+    // Add event listener to the charts tab for the 'shown.bs.tab' event
+    chartTabEl.addEventListener("shown.bs.tab", function (event) {
+      var targetId = event.target.getAttribute("href").substring(1);
+      updateChartContent(targetId);
+    });
+
+    var lineChartDevice, donutChartDevice, barChartDevice; 
+    var lineChartCert, donutChartCert, barChartCert;
+    var lineChart, barChartCA, donutChartCA;
+    // function to update charts content based on chart tab id
+    function updateChartContent(chartTabId) {
+      //console.log("chartTabId", chartTabId);
+      if (chartTabId == "deviceChartTab") {
+        var lineChartDeviceEle = document.getElementById("lineChartDevice").getContext("2d");
+        if(!lineChartDevice) 
+          lineChartDevice = new Chart(lineChartDeviceEle, stackChartConfig);
+
+        var donutChartDeviceEle = document.getElementById("donutChartDevice").getContext("2d");
+        if(!donutChartDevice)
+          donutChartDevice  = new Chart(donutChartDeviceEle, donutChartDeviceConfig);
+
+        var barChartDeviceEle = document.getElementById("barChartDevice").getContext("2d");
+        if(!barChartDevice)
+          barChartDevice  = new Chart(barChartDeviceEle, barChartDeviceConfig);
+      } else if (chartTabId == "certChartTab") {
+        var lineChartCertEle = document.getElementById("lineChartCert").getContext("2d");
+        if(!lineChartCert)
+          lineChartCert = new Chart(lineChartCertEle, lineChartCertConfig);
+
+        var donutChartCertEle = document.getElementById("donutChartCert").getContext("2d");
+        if(!donutChartCert)
+          donutChartCert = new Chart(donutChartCertEle, donutChartCertConfig);
+
+        var barChartCertEle = document.getElementById("barChartCert").getContext("2d");
+        if(!barChartCert)
+          barChartCert = new Chart(barChartCertEle, barChartCertConfig);
+      } else if (chartTabId == "caChartTab") {
+        // var lineChartEle = document.getElementById("lineChart").getContext("2d");
+        // if(!lineChart)
+        //   lineChart = new Chart(lineChartEle, lineChartConfig);
+
+        var barChartCAEle = document.getElementById("barChartCA").getContext("2d");
+        if(!barChartCA)
+          barChartCA = new Chart(barChartCAEle, barChartCAConfig);
+
+        var donutChartCAEle = document.getElementById("donutChartCA").getContext("2d");
+        if(!donutChartCA)
+          donutChartCA = new Chart(donutChartCAEle, donutChartCAConfig);
+      }
+    }
   });
 </script>
 

@@ -162,6 +162,19 @@ Alternatively, use the following command to run a development HTTPS server (self
 python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server.crt --key-file ../tests/data/x509/https_server.pem
 ```
 
+#### Background Task Management with Django-Q
+This project uses Django-Q, a task queue system for Django that allows you to run background tasks, schedule jobs, and manage asynchronous workflows. 
+
+In addition to the usual Django management commands (e.g., python manage.py runserver), you need to start the Django-Q task cluster to enable background task execution.
+
+To run the Django-Q task cluster, use the following command in a separate terminal window or process:
+
+```bash
+python manage.py qcluster
+```
+
+This command starts the Django-Q worker cluster, which will monitor and execute tasks in the background.
+
 #### Logging in
 
 Browsing to any page should redirect you to the login page.
@@ -172,7 +185,7 @@ Use the username and password which you previously provided through the **create
 #### Management commands for testing and development purposes
 
 ```bash
-python manage.py clear_db
+python manage.py reset_db
 ```
 
 Clears all IssuingCA, EndpointProfile, and Device instances from the database.

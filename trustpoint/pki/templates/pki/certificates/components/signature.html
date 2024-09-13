@@ -38,11 +38,7 @@
     <div class="tp-card-split">
         <div>Signature Algorithm Key Size</div>
         <div>
-            {% if cert.issuer %}
-                {{ cert.issuer.spki_key_size }} Bits
-            {% else %}
-                {{ cert.spki_key_size }} Bits
-            {% endif %}
+            {{ cert.issuer_references.first.spki_key_size }} Bits
         </div>
     </div>
 {% endblock signature %}
