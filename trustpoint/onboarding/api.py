@@ -208,8 +208,12 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
     onboarding_process.set_idevid_cert(idevid)
 
     # TODO (Air): get the private key for the ownership certificate
-    with open('owner_private.key', 'rb') as keyfile:
-        ownership_private_key = serialization.load_pem_private_key(keyfile.read(), password=None)
+    try:
+        with open('owner_private.key', 'rb') as keyfile:
+            ownership_private_key = serialization.load_pem_private_key(keyfile.read(), password=None)
+    except (FileNotFoundError, ValueError):
+        log.exception('Could not load owner private key.', exc_info=True)
+        return 404, {'error': 'Not found.'}  # Technically an accurate error message, but we don't give too much away
 
     response = {
         'ownership_cert': ownership_cert.public_bytes(serialization.Encoding.PEM).decode(),
