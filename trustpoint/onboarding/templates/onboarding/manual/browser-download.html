@@ -22,17 +22,17 @@
             </div>
             <h2>{% trans "Download PKCS12 key and certificate" %}</h2>
             <div class="text-center">
-                <a href="{% url 'onboarding:api-p12-download' device_id %}?token={{ download_token }}" download="{{ device.device_name }}.p12" class="btn btn-primary mt-2 w-50">{% trans "Download PKCS12" %}</a>
+                <a href="{% url 'onboarding:api-p12-download' device_id %}?token={{ download_token }}" download="{{ device.device_name }}.p12" class="btn btn-primary mt-2 min-width-15">{% trans "Download PKCS12" %}</a>
             </div>
             <hr>
-            <h2>{% trans "Keypair in PEM format" %}</h2>
+            <h2>{% trans "Certificate and keypair in PEM format" %}</h2>
             <div class="text-center">
-                <a href="{% url 'onboarding:pem-download' device_id %}?token={{ download_token }}" download="{{ device.device_name }}.pem" class="btn btn-secondary mt-2 w-50">{% trans "Download PEM" %}</a>
+                <a href="{% url 'onboarding:pem-download' device_id %}?token={{ download_token }}" download="{{ device.device_name }}.pem" class="btn btn-secondary mt-2 min-width-15">{% trans "Download PEM" %}</a>
             </div>
             <hr>
             <h2>{% trans "Java KeyStore" %}</h2>
             <div class="text-center">
-                <a href="{% url 'onboarding:keystore-download' device_id %}" download="{{ device.device_name }}.jks" class="btn btn-secondary mt-2 w-50">{% trans "Download Java KeyStore" %}</a>
+                <a href="{% url 'onboarding:keystore-download' device_id %}" download="{{ device.device_name }}.jks" class="btn btn-secondary mt-2 min-width-15 disabled">{% trans "Download Java KeyStore" %}</a>
             </div>
         </div>
         <div class="card-footer text-body-secondary">
