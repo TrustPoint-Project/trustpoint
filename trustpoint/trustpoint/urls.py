@@ -51,6 +51,7 @@ urlpatterns = [
         name='javascript-catalog'
     ),
     path('', base.IndexView.as_view()),
+    path('logs/', include("log.urls")),
 ]
 
 if settings.DEBUG:

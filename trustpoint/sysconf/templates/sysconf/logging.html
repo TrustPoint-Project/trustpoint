@@ -1,23 +1,28 @@
 {% extends 'trustpoint/base.html' %}
 {% load i18n %}
 {% load crispy_forms_filters %}
+
 {% block content %}
-<div class="card card-main">
-    <div class="card-header tp-card-header">
-        <h1>{% trans "Logging Configuration" %}</h1>
-    </div>
-    <div class="card-body tp-main-centered pt-4 pb-4">
-        <form method="POST" class="tp-main-form text-start" enctype="multipart/form-data" id="logging_configuration">
-            {% csrf_token %}
-            <fieldset class="form-group tp-form-group">
-                {{ logging_config_form|crispy }}
-            </fieldset>
-        </form>
-    </div>
-    <div class="card-footer text-body-secondary">
-        <button class="btn btn-primary ms-3 float-end" type="submit" form="logging_configuration">
-            {% trans "Save" %}
-        </button>
-    </div>
-</div>
+    <form method="POST" autocomplete="off" enctype="multipart/form-data">
+        {% csrf_token %}
+        <div class="card tp-card-centered">
+            <div class="card-header">
+                <div>
+                    <h1>{% trans "Logging Configuration" %}</h1>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="tp-card-centered-content">
+                    {{ form|crispy }}
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center tp-sticky-footer">
+                <div class="tp-card-btn-footer">
+                    <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                    <a href="{% url 'log:logs' %}" class="btn btn-primary">{% trans 'View logs' %}</a>
+                </div>
+                <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
+            </div>
+        </div>
+    </form>
 {% endblock content %}
