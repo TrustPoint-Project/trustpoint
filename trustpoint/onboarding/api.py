@@ -201,7 +201,7 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
         # TODO (Air): set proper domain (this must be configurable per ownership certificate)
         aoki_device.domain = DomainModel.objects.first()
         aoki_device.save() # save to get PK assigned
-        aoki_device.device_name = f'AOKI Device {aoki_device.pk}'
+        aoki_device.device_name = f'AOKI_Device_{aoki_device.pk}'
         aoki_device.save()
     
     onboarding_process = OnboardingProcess.make_onboarding_process(aoki_device, AokiOnboardingProcess)
@@ -262,8 +262,7 @@ def aoki_finalize(request: HttpRequest, data: AokiFinalizationMessageSchema):
     
     response = {
         'otp': onboarding_process.otp,
-        'salt': onboarding_process.salt,
-        'url_ext': onboarding_process.url
+        'device': onboarding_process.device.device_name
     }
     
     return 200, response
