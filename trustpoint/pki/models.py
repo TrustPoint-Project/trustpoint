@@ -1192,7 +1192,7 @@ class CertificateModel(models.Model):
         cls._save_issuer(cert_model, issuer)
 
         cls._save_extensions(cert_model, certificate)
-        cert_model._save()
+        cert_model._save()  # noqa: SLF001
 
         # ------------------------------------------ Adding issuer references ------------------------------------------
 
@@ -1203,6 +1203,7 @@ class CertificateModel(models.Model):
                 certificate.verify_directly_issued_by(
                     issuer_candidate.get_certificate_serializer().as_crypto())
                 cert_model.issuer_references.add(issuer_candidate)
+                issuer_candidate.issuing_ca_model.increment_issued_certificates_count()
             except (ValueError, TypeError, InvalidSignature):
                 pass
 
@@ -1316,6 +1317,8 @@ class IssuingCaModel(models.Model):
 
     next_crl_generation_time = models.IntegerField(default=(24*60))
 
+    issued_certificates_count = models.PositiveIntegerField(default=0, editable=False)
+
     def __str__(self) -> str:
         return f'IssuingCa({self.unique_name})'
 
@@ -1344,6 +1347,11 @@ class IssuingCaModel(models.Model):
         if self.private_key_pem:
             return UnprotectedLocalIssuingCa(self)
         raise RuntimeError('Unexpected error occurred. No matching IssuingCa object found.')
+
+    def increment_issued_certificates_count(self) -> None:
+        """Increments issued_certificates_count by one"""
+        self.issued_certificates_count = models.F('issued_certificates_count') + 1
+        self.save(update_fields=['issued_certificates_count'])
 
 
 class CertificateChainOrderModel(models.Model):
@@ -1397,6 +1405,15 @@ class DomainModel(models.Model):
         if self.issuing_ca:
             return f'Domain({self.unique_name}, {self.issuing_ca.unique_name})'
         return f'Domain({self.unique_name}, None)'
+
+    def get_url_path_segment(self):
+        """@BytesWelder: I don't know what we need this for. @Alex mentioned this in his doc.
+
+        Returns:
+            str:
+                URL path segment.
+        """
+        return self.unique_name.lower().replace(' ', '-')
 
 
 class RevokedCertificate(models.Model):
