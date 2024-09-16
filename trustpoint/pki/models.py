@@ -1317,7 +1317,7 @@ class IssuingCaModel(models.Model):
     next_crl_generation_time = models.IntegerField(default=(24*60))
 
     def __str__(self) -> str:
-        return f'IssuingCa({self.unique_name})'
+        return self.unique_name
 
     def get_issuing_ca_certificate(self) -> CertificateModel:
         return self.issuing_ca_certificate
@@ -1394,9 +1394,7 @@ class DomainModel(models.Model):
             str:
                 Human-readable representation of the EndpointProfile model instance.
         """
-        if self.issuing_ca:
-            return f'Domain({self.unique_name}, {self.issuing_ca.unique_name})'
-        return f'Domain({self.unique_name}, None)'
+        return self.unique_name
 
 
 class RevokedCertificate(models.Model):
