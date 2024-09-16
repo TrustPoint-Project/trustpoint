@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+import datetime
 from django.utils import timezone
 
 from devices.models import Device
@@ -36,7 +36,7 @@ def setup_trustpoint_notifications():
         project_info_message = NotificationMessage.objects.create(
             short_description='Explore the Trustpoint project',
             long_description='Visit the Trustpoint GitHub repository for more information: '
-                              '<a href="https://github.com/TrustPoint-Project">Trustpoint GitHub</a>\n'
+                             '<a href="https://github.com/TrustPoint-Project">Trustpoint GitHub</a>\n'
                              'Learn more about industrial security and the Trustpoint project on our '
                              '<a href="https://industrial-security.io">homepage</a>'
         )
@@ -65,7 +65,6 @@ def setup_trustpoint_notifications():
         notification.statuses.add(new_status)
 
 
-
 def check_system_health():
     """
     Task to perform a system health check.
@@ -85,7 +84,6 @@ def check_system_health():
             notification_type=NotificationModel.NotificationTypes.CRITICAL,
             message=message
         )
-
 
 
 def check_for_security_vulnerabilities():
@@ -111,19 +109,24 @@ def check_for_security_vulnerabilities():
 
 def check_certificate_validity():
     """
-    Task to check if any certificates are expiring soon.
+    Task to check for expiring and expired certificates.
+    Expiring certificates trigger a WARNING notification, while expired certificates trigger a CRITICAL notification.
     """
-    naive_datetime = datetime.now() + timedelta(days=30)
-    aware_datetime = timezone.make_aware(naive_datetime)
-    expiring_certificates = CertificateModel.objects.filter(not_valid_after=aware_datetime)
+    expiring_threshold = datetime.datetime.now() + datetime.timedelta(days=30)
+    expiring_threshold_aware = timezone.make_aware(expiring_threshold)
 
-    logger.info("Task for checking Certificate validity is triggered")
+    current_time = timezone.now()
 
+    expiring_certificates = CertificateModel.objects.filter(not_valid_after__lte=expiring_threshold_aware,
+                                                            not_valid_after__gt=current_time)
+    expired_certificates = CertificateModel.objects.filter(not_valid_after__lte=current_time)
+
+    logger.info(f"Found {expiring_certificates.count()} expiring certificates.")
     for cert in expiring_certificates:
         if not NotificationModel.objects.filter(event='CERTIFICATE_EXPIRING', certificate=cert).exists():
             message = NotificationMessage.objects.create(
-                short_description=f'Certificate {cert.name} is expiring soon',
-                long_description=f'The certificate {cert.name} is set to expire on {cert.not_valid_after}.'
+                short_description=f'Certificate {cert.common_name} is expiring soon',
+                long_description=f'The certificate {cert.common_name} is set to expire on {cert.not_valid_after}.'
             )
             notification = NotificationModel.objects.create(
                 certificate=cert,
@@ -135,48 +138,12 @@ def check_certificate_validity():
             )
             notification.statuses.add(new_status)
 
-
-def check_issuing_ca_validity():
-    """
-    Task to check if any issuing CAs are expiring soon.
-    """
-    naive_datetime = datetime.now() + timedelta(days=30)
-    aware_datetime = timezone.make_aware(naive_datetime)
-    expiring_issuing_cas = IssuingCaModel.objects.filter(issuing_ca_certificate__not_valid_after=aware_datetime)
-
-
-    for ca in expiring_issuing_cas:
-        if not NotificationModel.objects.filter(event='ISSUING_CA_EXPIRING', issuing_ca=ca).exists():
-            message = NotificationMessage.objects.create(
-                short_description=f'Issuing CA {ca.name} is expiring soon',
-                long_description=f'The issuing CA {ca.name} is set to expire on {ca.not_valid_after}.'
-            )
-            notification = NotificationModel.objects.create(
-                issuing_ca=ca,
-                created_at=timezone.now(),
-                notification_source=NotificationModel.NotificationSource.ISSUING_CA,
-                notification_type=NotificationModel.NotificationTypes.WARNING,
-                event='ISSUING_CA_EXPIRING',
-                message=message
-            )
-            notification.statuses.add(new_status)
-
-
-
-
-def check_expired_certificates():
-    """
-    Task to create critical notifications if certificates have expired.
-    """
-    naive_datetime = datetime.now()
-    aware_datetime = timezone.make_aware(naive_datetime)
-    expired_certificates = CertificateModel.objects.filter(not_valid_after=aware_datetime)
-
+    logger.info(f"Found {expired_certificates.count()} expired certificates.")
     for cert in expired_certificates:
         if not NotificationModel.objects.filter(event='CERTIFICATE_EXPIRED', certificate=cert).exists():
             message = NotificationMessage.objects.create(
-                short_description=f'Certificate {cert.name} has expired',
-                long_description=f'The certificate {cert.name} expired on {cert.not_valid_after}.'
+                short_description=f'Certificate {cert.common_name} has expired',
+                long_description=f'The certificate {cert.common_name} expired on {cert.not_valid_after}.'
             )
             notification = NotificationModel.objects.create(
                 certificate=cert,
@@ -189,21 +156,44 @@ def check_expired_certificates():
             notification.statuses.add(new_status)
 
 
-
-
-def check_expired_issuing_cas():
+def check_issuing_ca_validity():
     """
-    Task to create critical notifications if Issuing CAs have expired.
+    Task to check for both expiring and expired Issuing CAs.
+    Expiring CAs trigger a WARNING notification, while expired CAs trigger a CRITICAL notification.
     """
-    naive_datetime = datetime.now()
-    aware_datetime = timezone.make_aware(naive_datetime)
-    expired_issuing_cas = IssuingCaModel.objects.filter(issuing_ca_certificate__not_valid_after=aware_datetime)
+    current_time = timezone.now()
+    expiring_threshold = current_time + datetime.timedelta(days=60)
+
+    expiring_issuing_cas = IssuingCaModel.objects.filter(
+        issuing_ca_certificate__not_valid_after__lte=expiring_threshold,
+        issuing_ca_certificate__not_valid_after__gt=current_time  # Still valid, not expired
+    )
+
+    expired_issuing_cas = IssuingCaModel.objects.filter(
+        issuing_ca_certificate__not_valid_after__lte=current_time
+    )
+
+    for ca in expiring_issuing_cas:
+        if not NotificationModel.objects.filter(event='ISSUING_CA_EXPIRING', issuing_ca=ca).exists():
+            message = NotificationMessage.objects.create(
+                short_description=f'Issuing CA {ca.unique_name} is expiring soon',
+                long_description=f'The issuing CA {ca.unique_name} is set to expire on {ca.issuing_ca_certificate.not_valid_after}.'
+            )
+            notification = NotificationModel.objects.create(
+                issuing_ca=ca,
+                created_at=timezone.now(),
+                notification_source=NotificationModel.NotificationSource.ISSUING_CA,
+                notification_type=NotificationModel.NotificationTypes.WARNING,
+                event='ISSUING_CA_EXPIRING',
+                message=message
+            )
+            notification.statuses.add(new_status)
 
     for ca in expired_issuing_cas:
         if not NotificationModel.objects.filter(event='ISSUING_CA_EXPIRED', issuing_ca=ca).exists():
             message = NotificationMessage.objects.create(
-                short_description=f'Issuing CA {ca.name} has expired',
-                long_description=f'The issuing CA {ca.name} expired on {ca.not_valid_after}.'
+                short_description=f'Issuing CA {ca.unique_name} has expired',
+                long_description=f'The issuing CA {ca.unique_name} expired on {ca.issuing_ca_certificate.not_valid_after}.'
             )
             notification = NotificationModel.objects.create(
                 issuing_ca=ca,
@@ -214,8 +204,6 @@ def check_expired_issuing_cas():
                 message=message
             )
             notification.statuses.add(new_status)
-
-
 
 
 def check_domain_issuing_ca():
@@ -263,11 +251,13 @@ def check_non_onboarded_devices():
             )
             notification.statuses.add(new_status)
 
+
 def check_devices_with_failed_onboarding():
     """
     Task to check if any devices have failed onboarding and create critical notifications.
     """
-    failed_onboarding_devices = Device.objects.filter(device_onboarding_status=Device.DeviceOnboardingStatus.ONBOARDING_FAILED)
+    failed_onboarding_devices = Device.objects.filter(
+        device_onboarding_status=Device.DeviceOnboardingStatus.ONBOARDING_FAILED)
 
     for device in failed_onboarding_devices:
         if not NotificationModel.objects.filter(event='DEVICE_ONBOARDING_FAILED', device=device).exists():
@@ -307,7 +297,6 @@ def check_devices_with_revoked_certificates():
                 message=message
             )
             notification.statuses.add(new_status)
-
 
 
 def check_for_weak_signature_algorithms():
@@ -362,7 +351,6 @@ def check_for_insufficient_key_length():
             notification.statuses.add(new_status)
 
 
-
 def check_for_weak_ecc_curves():
     """
     Task to check if any certificates are using deprecated or weak ECC curves.
@@ -386,5 +374,3 @@ def check_for_weak_ecc_curves():
                 message=message
             )
             notification.statuses.add(new_status)
-
-
