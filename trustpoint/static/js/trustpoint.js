@@ -95,16 +95,24 @@ if (checkboxColumn) {
     tableSelectButtons.forEach(function(el) {
         el.addEventListener('click', function(event) {
             let url_path = event.target.getAttribute('data-tp-url') + '/';
+            let url_extension = '';
             console.log(url_path)
             let at_least_one_checked = false;
+            let number_of_checked = 0;
             checkboxes.forEach(function(el) {
                 if (el.checked) {
-                    url_path += el.value + '/';
+                    url_extension += el.value + '/';
                     at_least_one_checked = true;
+                    number_of_checked += 1;
                 }
             });
             if (at_least_one_checked === true) {
-                window.location.href = url_path;
+                if(number_of_checked == 1) {
+                  window.location.href = 'download/' + url_extension;
+                }
+                else {
+                  window.location.href = url_path + url_extension;
+                }
             }
         })
     });
