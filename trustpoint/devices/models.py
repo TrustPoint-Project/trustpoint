@@ -129,7 +129,31 @@ class Device(models.Model):
             log.warning('Re-onboarding device %s which is already onboarded.', device.device_name)
 
         return True, None
+    
 
+    def _render_onboarded_revoke(self) -> str:
+        """Renders the 'Revoke' onboarding action for devices that have status Onboarded.
+
+        Returns:
+            str: The html hyperlink for the details-view.
+        """
+        return format_html(
+            '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
+            reverse('onboarding:revoke', kwargs={'device_id': self.pk}),
+            _('Revoke Certificate')
+        )
+    
+    def _render_running_cancel(self) -> str:
+        """Renders the 'Cancel' action for devices that have status Running.
+
+        Returns:
+            str: The html hyperlink for the details-view.
+        """
+        return format_html(
+            '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
+            reverse('onboarding:exit', kwargs={'device_id': self.pk}),
+            _('Cancel Onboarding')
+        )
 
     def render_onboarding_action(self) -> str:
         """Creates the html hyperlink button for onboarding action.
@@ -159,7 +183,7 @@ class Device(models.Model):
         return format_html('<span class="text-danger">' + _('Unknown onboarding protocol!') + '</span>')
 
     def _render_zero_touch_onboarding_action(self) -> str:
-        """Renders the device onboarding section for the manual onboarding cases.
+        """Renders the device onboarding section for the zero touch onboarding cases.
 
         Returns:
             str: The html hyperlink for the details-view.
@@ -168,6 +192,16 @@ class Device(models.Model):
             UnknownOnboardingStatusError:
                 Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
         """
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+            # TODO (Air): Revoked devices are free to re-onboard, perhaps also delete IDevID from truststore?
+            return self._render_onboarded_revoke()
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+            return self._render_running_cancel()
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.REVOKED:
+            return format_html(
+                '<a href="onboarding/reset/{}/" class="btn btn-info tp-onboarding-btn disabled">{}</a>',
+                self.pk, _('Onboard again')
+            )
         if self.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
             return format_html(
                 '<button class="btn btn-success tp-onboarding-btn" disabled>{}</a>',
@@ -175,7 +209,7 @@ class Device(models.Model):
             )
         if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
             return format_html(
-                '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn">{}</a>',
+                '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn disabled">{}</a>',
                 self.pk, _('Reset Context')
             )
         raise UnknownOnboardingStatusError(self.device_onboarding_status)
@@ -192,17 +226,9 @@ class Device(models.Model):
                 Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
         """
         if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
-            return format_html(
-                '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
-                reverse('onboarding:revoke', kwargs={'device_id': self.pk}),
-                _('Revoke Certificate')
-            )
+            return self._render_onboarded_revoke()
         if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
-            return format_html(
-                '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
-                reverse('onboarding:exit', kwargs={'device_id': self.pk}),
-                _('Cancel Onboarding')
-            )
+            return self._render_running_cancel()
         if self.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
             return format_html(
                 '<a href="{}" class="btn btn-success tp-onboarding-btn">{}</a>',
