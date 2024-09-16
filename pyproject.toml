@@ -17,6 +17,7 @@ django-q2 = "^1.7.2"
 croniter = "^3.0.3"
 django = "^5.1.1"
 cryptography = "^43.0.1"
+zeroconf = "^0.134.0"
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^8.0.2"
