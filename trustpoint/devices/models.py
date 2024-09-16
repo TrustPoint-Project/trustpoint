@@ -11,6 +11,7 @@ from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from pki.models import CertificateModel, DomainModel, RevokedCertificate
+from taggit.managers import TaggableManager
 
 from .exceptions import UnknownOnboardingStatusError
 
@@ -66,6 +67,7 @@ class Device(models.Model):
     )
     domain = models.ForeignKey(DomainModel, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
+    tags = TaggableManager()
 
     def __str__(self: Device) -> str:
         """Returns a Device object in human-readable format."""

@@ -5,6 +5,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django_filters.views import FilterView
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
@@ -14,6 +15,7 @@ from django_tables2 import SingleTableView
 
 from trustpoint.views.base import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
 
+from .filters import DeviceFilter
 from .models import Device
 from .tables import DeviceTable
 
@@ -31,19 +33,21 @@ class DeviceContextMixin(TpLoginRequiredMixin, ContextDataMixin):
     context_page_name = 'devices'
 
 
-class DeviceListView(DeviceContextMixin, TpLoginRequiredMixin, SingleTableView):
+class DeviceListView(DeviceContextMixin, TpLoginRequiredMixin, FilterView, SingleTableView):
     """Endpoint Profiles List View."""
 
     model = Device
     table_class = DeviceTable
     template_name = 'devices/devices.html'
 
+    filterset_class = DeviceFilter
+
 
 class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
     """Device Create View."""
 
     model = Device
-    fields = ['device_name', 'onboarding_protocol', 'domain']  # noqa: RUF012
+    fields = ['device_name', 'onboarding_protocol', 'domain', 'tags']  # noqa: RUF012
     template_name = 'devices/add.html'
     success_url = reverse_lazy('devices:devices')
 
@@ -52,7 +56,7 @@ class EditDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
     """Device Edit View."""
 
     model = Device
-    fields = ['device_name', 'onboarding_protocol', 'domain']  # noqa: RUF012
+    fields = ['device_name', 'onboarding_protocol', 'domain', 'tags']  # noqa: RUF012
     template_name = 'devices/edit.html'
     success_url = reverse_lazy('devices:devices')
 

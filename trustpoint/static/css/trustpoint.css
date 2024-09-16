@@ -714,4 +714,14 @@ code {
     }
   }
 }
+
+
+/* ----- Filter ----- */
+.tags-column {
+    max-width: 200px;
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+
 /* ----- Testing ----- */
