@@ -161,6 +161,10 @@ cython_debug/
 .idea/
 
 media/
+# A very verbose way to ensure git tracks the /media/log directory
+!trustpoint/media/
+trustpoint/media/*
+!trustpoint/media/log/
 
 migrations/
 
