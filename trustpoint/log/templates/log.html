@@ -14,6 +14,7 @@
                 {% render_table table %}
             </div>
             <div class="card-footer tp-table-footer-btn-group d-flex justify-content-between align-items-center tp-sticky-footer">
+                <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
                 <button type="submit" class="btn btn-primary">
                     {% trans "Download selected" %}
                 </button>
