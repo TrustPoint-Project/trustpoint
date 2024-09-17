@@ -1,0 +1,122 @@
+{% load django_tables2 %}
+{% load i18n %}
+
+{% block content %}
+    <div class="row py-3 px-0">
+        <h1>Notifications</h1>
+    </div>
+
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link active" id="all-tab" data-bs-toggle="tab" href="#all" role="tab" aria-controls="all"
+               aria-selected="true">
+                All
+                {% if all_notifications_count > 0 %}
+                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="New notifications">{{ all_notifications_count }}</span>
+                {% endif %}
+                {% if all_notifications_critical > 0 %}
+                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ all_notifications_critical }}</span>
+                {% endif %}
+                {% if all_notifications_warn > 0 %}
+                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ all_notifications_warn }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="system-tab" data-bs-toggle="tab" href="#system" role="tab" aria-controls="system"
+               aria-selected="false">
+                System
+                {% if system_notifications_count > 0 %}
+                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="New notifications">{{ system_notifications_count }}</span>
+                {% endif %}
+                {% if system_notifications_critical > 0 %}
+                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ system_notifications_critical }}</span>
+                {% endif %}
+                {% if system_notifications_warn > 0 %}
+                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ system_notifications_warn }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="certificate-tab" data-bs-toggle="tab" href="#certificate" role="tab"
+               aria-controls="certificate" aria-selected="false">
+                Certificate
+                {% if certificate_notifications_count > 0 %}
+                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="New notifications">{{ certificate_notifications_count }}</span>
+                {% endif %}
+                {% if certificate_notifications_critical > 0 %}
+                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ certificate_notifications_critical }}</span>
+                {% endif %}
+                {% if certificate_notifications_warn > 0 %}
+                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ certificate_notifications_warn }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="issuingca-tab" data-bs-toggle="tab" href="#issuingca" role="tab"
+               aria-controls="issuingca" aria-selected="false">
+                Issuing CA
+                {% if issuing_ca_notifications_count > 0 %}
+                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="New notifications">{{ issuing_ca_notifications_count }}</span>
+                {% endif %}
+                {% if issuing_ca_notifications_critical > 0 %}
+                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ issuing_ca_notifications_critical }}</span>
+                {% endif %}
+                {% if issuing_ca_notifications_warn > 0 %}
+                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ issuing_ca_notifications_warn }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="domain-tab" data-bs-toggle="tab" href="#domain" role="tab" aria-controls="domain"
+               aria-selected="false">
+                Domain
+                {% if domain_notifications_count > 0 %}
+                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="New notifications">{{ domain_notifications_count }}</span>
+                {% endif %}
+                {% if domain_notifications_critical > 0 %}
+                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ domain_notifications_critical }}</span>
+                {% endif %}
+                {% if domain_notifications_warn > 0 %}
+                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ domain_notifications_warn }}</span>
+                {% endif %}
+            </a>
+        </li>
+        <li class="nav-item" role="presentation">
+            <a class="nav-link" id="device-tab" data-bs-toggle="tab" href="#device" role="tab" aria-controls="device"
+               aria-selected="false">
+                Device
+                {% if device_notifications_count > 0 %}
+                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="New notifications">{{ device_notifications_count }}</span>
+                {% endif %}
+                {% if device_notifications_critical > 0 %}
+                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ device_notifications_critical }}</span>
+                {% endif %}
+                {% if device_notifications_warn > 0 %}
+                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ device_notifications_warn }}</span>
+                {% endif %}
+            </a>
+        </li>
+    </ul>
+
+    <div class="tab-content px-0 shadow">
+        <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
+            {% render_table all_notifications_table %}
+        </div>
+        <div class="tab-pane fade" id="system" role="tabpanel" aria-labelledby="system-tab">
+            {% render_table system_notifications_table %}
+        </div>
+        <div class="tab-pane fade" id="certificate" role="tabpanel" aria-labelledby="certificate-tab">
+            {% render_table certificate_notifications_table %}
+        </div>
+        <div class="tab-pane fade" id="issuingca" role="tabpanel" aria-labelledby="issuingca-tab">
+            {% render_table issuing_ca_notifications_table %}
+        </div>
+        <div class="tab-pane fade" id="domain" role="tabpanel" aria-labelledby="domain-tab">
+            {% render_table domain_notifications_table %}
+        </div>
+        <div class="tab-pane fade" id="device" role="tabpanel" aria-labelledby="device-tab">
+            {% render_table device_notifications_table %}
+        </div>
+    </div>
+{% endblock %}

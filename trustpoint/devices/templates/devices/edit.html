@@ -1,5 +1,6 @@
 {% extends 'trustpoint/base.html' %}
 {% load crispy_forms_filters %}
+{% load i18n %}
 {% block content %}
     <div class="card card-main text-center">
         <div class="card-header d-flex">
@@ -14,11 +15,10 @@
                 {% csrf_token %}
                 {{ form|crispy }}
                 <div class="tp-form-btn-group tp-form-btn-group mt-5">
-                    <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Cancel</a>
+                    <button type="button" value="Back" class="btn btn-secondary tp-table-select-btn" onClick="history.back()">{% trans 'Back' %}</button>
                     <button class="btn btn-primary w-100 mt-1" type="submit" name="edit-device">Apply Changes</button>
                 </div>
             </form>
-
         </div>
 
 
