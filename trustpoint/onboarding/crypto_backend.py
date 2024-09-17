@@ -31,6 +31,9 @@ PBKDF2_DKLEN = 32
 
 log = logging.getLogger('tp.onboarding')
 
+TLS_BASE_PATH = Path(__file__).parent.parent.parent / Path('tests/data/x509/')
+TLS_SERVER_CERT_PATH = TLS_BASE_PATH / 'https_server.crt'
+
 
 class OnboardingError(Exception):
     """Exception raised for errors in the onboarding process."""
@@ -81,7 +84,7 @@ class CryptoBackend:
         Raises:
             FileNotFoundError: If the TLS certificate file is not found.
         """
-        with Path('../tests/data/x509/https_server.crt').open() as certfile:
+        with TLS_SERVER_CERT_PATH.open() as certfile:
             return certfile.read()
 
     @staticmethod
