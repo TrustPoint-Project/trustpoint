@@ -56,6 +56,7 @@ class Device(models.Model):
         CLI = 'CI', _('Device CLI')
         TP_CLIENT = 'TP', _('Trustpoint Client')
         BRSKI = 'BR', _('BRSKI')
+        AOKO = 'AO', _('AOKI')
 
     device_name = models.CharField(max_length=100, unique=True, default='test', validators=[UniqueNameValidator()])
     device_serial_number = models.CharField(max_length=100, blank=True)
@@ -176,9 +177,8 @@ class Device(models.Model):
             return self._render_manual_onboarding_action()
 
         is_brski = self.onboarding_protocol == Device.OnboardingProtocol.BRSKI
-        is_fido = self.onboarding_protocol == Device.OnboardingProtocol.FIDO
         is_aoki = self.onboarding_protocol == Device.OnboardingProtocol.AOKI
-        if is_brski or is_fido or is_aoki:
+        if is_brski or is_aoki:
             return self._render_zero_touch_onboarding_action()
 
         return format_html('<span class="text-danger">' + _('Unknown onboarding protocol!') + '</span>')
