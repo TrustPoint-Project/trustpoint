@@ -1203,7 +1203,8 @@ class CertificateModel(models.Model):
                 certificate.verify_directly_issued_by(
                     issuer_candidate.get_certificate_serializer().as_crypto())
                 cert_model.issuer_references.add(issuer_candidate)
-                issuer_candidate.issuing_ca_model.increment_issued_certificates_count()
+                if hasattr(issuer_candidate, 'issuing_ca_model'):
+                    issuer_candidate.issuing_ca_model.increment_issued_certificates_count()
             except (ValueError, TypeError, InvalidSignature):
                 pass
 
