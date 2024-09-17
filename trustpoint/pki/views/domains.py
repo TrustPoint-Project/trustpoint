@@ -1,15 +1,17 @@
 from __future__ import annotations
 
-from devices.models import Device
 from django.urls import reverse_lazy
+
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
-from django_tables2 import RequestConfig, SingleTableView
+from django_tables2 import SingleTableView, RequestConfig
 
-from pki.forms import DomainCreateForm, DomainUpdateForm
-from pki.models import DomainModel, TrustStoreModel
-from pki.tables import DomainTable, ProtocolConfigTable, TrustStoreConfigFromDomainTable
 from trustpoint.views.base import BulkDeleteView, ContextDataMixin, TpLoginRequiredMixin
+
+from ..forms import DomainCreateForm, DomainUpdateForm
+from ..models import DomainModel, TrustStoreModel
+
+from ..tables import DomainTable, ProtocolConfigTable, TrustStoreConfigFromDomainTable
 
 
 class DomainContextMixin(ContextDataMixin):
@@ -43,6 +45,7 @@ class DomainUpdateView(DomainContextMixin, TpLoginRequiredMixin, UpdateView):
     form_class = DomainUpdateForm
     success_url = reverse_lazy('pki:domains')
     ignore_url = reverse_lazy('pki:domains')
+    
 
 
 class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
@@ -60,8 +63,6 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
         trust_store_table = TrustStoreConfigFromDomainTable(self.get_trust_store_data())
         RequestConfig(self.request).configure(trust_store_table)
         context['trust_store_table'] = trust_store_table
-        devices_count = Device.count_devices_by_domain_and_status(domain=self.get_object())
-        context['devices_count'] = {item['device_onboarding_status']: item['count'] for item in devices_count}
 
         return context
 

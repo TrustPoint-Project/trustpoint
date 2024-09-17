@@ -6,7 +6,6 @@ from __future__ import annotations
 import logging
 
 from django.db import models
-from django.db.models import Count
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
@@ -250,10 +249,3 @@ class Device(models.Model):
             )
         log.error(f'Unknown onboarding status {self.device_onboarding_status}. Failed to render entry in table.')
         raise UnknownOnboardingStatusError(self.device_onboarding_status)
-
-    @staticmethod
-    def count_devices_by_domain_and_status(domain: DomainModel) -> int:
-        """Returns the number of devices for a given domain, grouped by onboarding status."""
-        return Device.objects.filter(domain=domain) \
-            .values('device_onboarding_status') \
-            .annotate(count=Count('device_onboarding_status'))

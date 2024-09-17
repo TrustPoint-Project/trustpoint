@@ -16,7 +16,7 @@ from pki.forms import (
     IssuingCaAddFileImportSeparateFilesForm,
     IssuingCaAddMethodSelectForm,
 )
-from pki.models import CertificateModel, CRLStorage, IssuingCaModel
+from pki.models import CRLStorage, IssuingCaModel
 from pki.tables import IssuingCaTable
 from trustpoint.views.base import (
     BulkDeleteView,
@@ -91,13 +91,13 @@ class IssuingCaConfigView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailVie
     def get_form_kwargs(self):
         """Pass the instance to the ModelForm."""
         kwargs = super().get_form_kwargs()
-        kwargs['instance'] = self.get_object()
+        kwargs['instance'] = self.get_object()  # Übergebe die Instanz an die Form
         return kwargs
 
     def get_second_form_kwargs(self):
         """Pass the instance to the second ModelForm."""
         return {
-            'instance': self.get_object()
+            'instance': self.get_object()  # Übergebe auch die Instanz an die zweite Form
         }
 
     def get_context_data(self, **kwargs):
