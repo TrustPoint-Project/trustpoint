@@ -154,43 +154,43 @@ class FileImportLocalIssuingCaInitializer(IssuingCaInitializer, abc.ABC):
         if not self._is_initialized:
             raise InternalServerError
 
+        # try:
+        issuing_ca_certificate = self._credential_serializer.credential_certificate.as_crypto()
+
         try:
-            issuing_ca_certificate = self._credential_serializer.credential_certificate.as_crypto()
+            saved_certs = [self._cert_model_class.save_certificate(issuing_ca_certificate)]
+        except ValueError:
 
-            try:
-                saved_certs = [self._cert_model_class.save_certificate(issuing_ca_certificate)]
-            except ValueError:
+            cert_model = self._cert_model_class.objects.get(
+                sha256_fingerprint=Sha256Fingerprint.get_fingerprint_hex_str(issuing_ca_certificate))
 
-                cert_model = self._cert_model_class.objects.get(
-                    sha256_fingerprint=Sha256Fingerprint.get_fingerprint_hex_str(issuing_ca_certificate))
+            if hasattr(cert_model, 'issuing_ca_model'):
+                raise IssuingCaAlreadyExistsError(name=cert_model.issuing_ca_model.unique_name)
 
-                if hasattr(cert_model, 'issuing_ca_model'):
-                    raise IssuingCaAlreadyExistsError(name=cert_model.issuing_ca_model.unique_name)
+            saved_certs = [cert_model]
 
-                saved_certs = [cert_model]
+        for certificate in self._credential_serializer.additional_certificates.crypto_iterator():
+            saved_certs.append(self._cert_model_class.save_certificate(certificate, exist_ok=True))
 
-            for certificate in self._credential_serializer.additional_certificates.crypto_iterator():
-                saved_certs.append(self._cert_model_class.save_certificate(certificate, exist_ok=True))
+        issuing_ca_model = self._issuing_ca_model_class(
+            unique_name=self._unique_name,
+            auto_crl=self._auto_crl,
+            private_key_pem=self._credential_serializer.credential_private_key.as_pkcs1_pem(None).decode("utf-8")
+        )
 
-            issuing_ca_model = self._issuing_ca_model_class(
-                unique_name=self._unique_name,
-                auto_crl=self._auto_crl,
-                private_key_pem=self._credential_serializer.credential_private_key.as_pkcs1_pem(None).decode("utf-8")
-            )
+        issuing_ca_model.issuing_ca_certificate = saved_certs[0]
+        issuing_ca_model.root_ca_certificate = saved_certs[-1]
+        issuing_ca_model.save()
 
-            issuing_ca_model.issuing_ca_certificate = saved_certs[0]
-            issuing_ca_model.root_ca_certificate = saved_certs[-1]
-            issuing_ca_model.save()
-
-            for number, certificate in enumerate(saved_certs[1:-1]):
-                cert_chain_order_model = self._cert_chain_order_model_class()
-                cert_chain_order_model.order = number
-                cert_chain_order_model.certificate = certificate
-                cert_chain_order_model.issuing_ca = issuing_ca_model
-                cert_chain_order_model.save()
-        except Exception as exception:
-            log.error(exception)
-            raise InternalServerError(exception)
+        for number, certificate in enumerate(saved_certs[1:-1]):
+            cert_chain_order_model = self._cert_chain_order_model_class()
+            cert_chain_order_model.order = number
+            cert_chain_order_model.certificate = certificate
+            cert_chain_order_model.issuing_ca = issuing_ca_model
+            cert_chain_order_model.save()
+        # except Exception as exception:
+        #     log.error(exception)
+        #     raise InternalServerError(exception)
 
 
 class UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(FileImportLocalIssuingCaInitializer):
