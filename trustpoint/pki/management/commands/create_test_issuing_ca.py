@@ -34,7 +34,7 @@ class Command(CertificateCreationCommandMixin, BaseCommand):
         )
 
         root_1, root_1_key = self.create_root_ca('Root CA')
-        issuing_1, issuing_1_key = self.create_issuing_ca(root_1_key, 'Root CA', 'Issuing CA')
+        issuing_1, issuing_1_key = self.create_issuing_ca(root_1_key, 'Root CA', 'Issuing CA', validity_days=50)
 
         self.store_issuing_ca(issuing_1, [root_1], issuing_1_key, 'issuing_ca.p12')
         self.save_issuing_ca(issuing_1, root_1, [], issuing_1_key)
@@ -42,11 +42,15 @@ class Command(CertificateCreationCommandMixin, BaseCommand):
         ee_certs = {}
         ee_keys = {}
         for i in range(0, 100):
+            random_integer = random.randint(20, 80)
+            sign = random.choice([1, -1])
+            validity_days = random_integer * sign
             ee, key = self.create_ee(
                 issuer_private_key=issuing_1_key,
                 issuer_cn='Issuing CA',
                 subject_cn=f'EE {i}',
-                key_usage_extension=key_usage_extension
+                key_usage_extension=key_usage_extension,
+                validity_days=validity_days
             )
             ee_certs[f'ee{i}'] = ee
             ee_keys[f'key{i}'] = key

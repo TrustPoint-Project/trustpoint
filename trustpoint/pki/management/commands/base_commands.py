@@ -27,8 +27,9 @@ PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448Pri
 class CertificateCreationCommandMixin:
 
     @staticmethod
-    def create_root_ca(cn: str) -> tuple[x509.Certificate, rsa.RSAPrivateKey]:
-        one_day = datetime.timedelta(365, 0, 0)
+    def create_root_ca(cn: str,
+            validity_days: int = 7300) -> tuple[x509.Certificate, rsa.RSAPrivateKey]:
+        one_day = datetime.timedelta(1, 0, 0)
         private_key = rsa.generate_private_key(
             public_exponent=65537,
             key_size=2048,
@@ -42,7 +43,7 @@ class CertificateCreationCommandMixin:
             x509.NameAttribute(NameOID.COMMON_NAME, cn),
         ]))
         builder = builder.not_valid_before(datetime.datetime.today() - one_day)
-        builder = builder.not_valid_after(datetime.datetime.today() + (one_day * 30))
+        builder = builder.not_valid_after(datetime.datetime.today() + (one_day * validity_days))
         builder = builder.serial_number(x509.random_serial_number())
         builder = builder.public_key(public_key)
         builder = builder.add_extension(
@@ -57,8 +58,10 @@ class CertificateCreationCommandMixin:
     def create_issuing_ca(
             issuer_private_key: rsa.RSAPrivateKey,
             issuer_cn: str, subject_cn,
-            private_key: None | rsa.RSAPrivateKey = None) -> tuple[x509.Certificate, rsa.RSAPrivateKey]:
-        one_day = datetime.timedelta(365, 0, 0)
+            private_key: None | rsa.RSAPrivateKey = None,
+            validity_days: int = 3650
+    ) -> tuple[x509.Certificate, rsa.RSAPrivateKey]:
+        one_day = datetime.timedelta(1, 0, 0)
         if private_key is None:
             private_key = rsa.generate_private_key(
                 public_exponent=65537,
@@ -73,7 +76,7 @@ class CertificateCreationCommandMixin:
             x509.NameAttribute(NameOID.COMMON_NAME, issuer_cn),
         ]))
         builder = builder.not_valid_before(datetime.datetime.today() - one_day)
-        builder = builder.not_valid_after(datetime.datetime.today() + (one_day * 30))
+        builder = builder.not_valid_after(datetime.datetime.today() + (one_day * validity_days))
         builder = builder.serial_number(x509.random_serial_number())
         builder = builder.public_key(public_key)
         builder = builder.add_extension(
@@ -171,12 +174,19 @@ class CertificateCreationCommandMixin:
     def create_ee(
             issuer_private_key: rsa.RSAPrivateKey,
             issuer_cn: str, subject_cn,
-            key_usage_extension: x509.KeyUsage=None) -> tuple[x509.Certificate, rsa.RSAPrivateKey]:
-        one_day = datetime.timedelta(365, 0, 0)
+            key_usage_extension: x509.KeyUsage=None,
+            validity_days: int = 365) -> tuple[x509.Certificate, rsa.RSAPrivateKey]:
+        one_day = datetime.timedelta(1, 0, 0)
         private_key = rsa.generate_private_key(
             public_exponent=65537,
             key_size=2048
         )
+        if validity_days >= 0:
+            not_valid_before = datetime.datetime.today()
+            not_valid_after = not_valid_before + (one_day * validity_days)
+        else:
+            not_valid_after = datetime.datetime.today() + (one_day * validity_days / 2)
+            not_valid_before = not_valid_after + (one_day * validity_days)
         public_key = private_key.public_key()
         builder = x509.CertificateBuilder()
         builder = builder.subject_name(x509.Name([
@@ -185,8 +195,8 @@ class CertificateCreationCommandMixin:
         builder = builder.issuer_name(x509.Name([
             x509.NameAttribute(NameOID.COMMON_NAME, issuer_cn),
         ]))
-        builder = builder.not_valid_before(datetime.datetime.today() - one_day)
-        builder = builder.not_valid_after(datetime.datetime.today() + (one_day * 30))
+        builder = builder.not_valid_before(not_valid_before)
+        builder = builder.not_valid_after(not_valid_after)
         builder = builder.serial_number(x509.random_serial_number())
         builder = builder.public_key(public_key)
         builder = builder.add_extension(

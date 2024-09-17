@@ -225,6 +225,65 @@ class OnboardingProcess:
     datetime_started = models.DateTimeField(auto_now_add=True)
 
 
+class LDevIDOnboardingProcessMixin:
+    """Mixin that provides all methods required for onboarding process types using the /api/onboarding/ldevid endpoint"""
+
+    def __init__(self):
+        """Initializes the mixin"""
+        super().__init__()
+        self.otp = secrets.token_hex(8)
+        self.salt = secrets.token_hex(8)
+
+    def check_ldevid_auth(self, uname: str, passwd: str) -> bool:
+        """Checks the provided credentials against OTP stored in the onboarding process."""
+        if not self.active:
+            return False
+        if uname == self.salt and passwd == self.otp:
+            self.state = OnboardingProcessState.DEVICE_VALIDATED
+            log.debug(f'Device {self.device.device_name} validated for onboarding process {self.id}.')
+            return True
+
+        self._fail('Client provided invalid credentials.')
+        return False
+
+    def sign_ldevid(self, csr: bytes) -> bytes | None:
+        """Issues LDevID certificate with the onboarding CA based on provided CSR."""
+        if not self.active:
+            return None
+        if self.state != OnboardingProcessState.DEVICE_VALIDATED:
+            return None
+        try:
+            ldevid = Crypt.sign_ldevid_from_csr(csr, self.device)
+        except Exception as e:
+            self._fail(str(e))  # TODO(Air): is it safe to print exception messages to the user UI?
+            log.exception('Error signing LDevID certificate.', exc_info=True)
+            raise
+        if ldevid:
+            self.state = OnboardingProcessState.LDEVID_SENT
+            if isinstance(self, AokiOnboardingProcess):
+                self._success()
+                self.cancel()
+            log.info(f'LDevID issued for device {self.device.device_name} in onboarding process {self.id}.')
+        else:
+            self._fail('No LDevID was generated.')
+        return ldevid
+
+    def get_cert_chain(self) -> bytes | None:
+        """Returns the certificate chain of the LDevID certificate."""
+        if not self.active:
+            return None
+        if self.state != OnboardingProcessState.LDEVID_SENT:
+            return None
+        try:
+            chain = Crypt.get_cert_chain(self.device)
+        except Exception as e:
+            self._fail(str(e))
+            raise
+
+        self._success()
+        return chain
+
+
 class ManualOnboardingProcess(OnboardingProcess):
     """Onboarding process for a device using the full manual onboarding with OTP and HMAC trust store verification."""
 
@@ -323,27 +382,69 @@ class BrowserOnboardingProcess(OnboardingProcess):
     def __init__(self, dev: Device) -> None:
         """Initializes a new download onboarding process for a device."""
         super().__init__(dev)
-        self.__otp = None
+        self._browser_otp = None
         self.password_tries = 0
 
     def start_onboarding(self):
-        self.__otp = None
+        self._browser_otp = None
         self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
         self.gen_thread.start()
         self.cred_serializer = None
 
     def set_otp(self, otp: str) -> None:
-        self.__otp = otp
+        self._browser_otp = otp
 
     def check_otp(self, otp: str) -> tuple:
         self.password_tries += 1
         if self.password_tries < self.MAXPWTRIES:
-            if self.__otp  and self.__otp == otp:
+            if self._browser_otp  and self._browser_otp == otp:
                 return (True, None)
         else:
             self.cancel()
             self._fail()
         return (False, self.MAXPWTRIES - self.password_tries)
+
+
+class ZeroTouchOnboardingProcess(OnboardingProcess):
+    """Parent of all zero-touch onboarding process types."""
+
+
+class AokiOnboardingProcess(ZeroTouchOnboardingProcess, LDevIDOnboardingProcessMixin):
+    """Onboarding process for a device using the AOKI protocol."""
+
+    _idevid_cert: bytes
+    _server_nonce : str
+
+    def __init__(self, device: Device) -> None:
+        """Initializes a new AOKI onboarding process for a device."""
+        super().__init__(device)
+        self._idevid_cert = None
+        self._server_nonce = Crypt.get_nonce()
+
+    def get_server_nonce(self) -> str:
+        """Returns the server nonce."""
+        return self._server_nonce
+
+    def set_idevid_cert(self, idevid_cert: bytes) -> None:
+        """Sets the device's IDevID certificate."""
+        self._idevid_cert = idevid_cert
+
+    def verify_client_signature(self, message: bytes, signature: bytes) -> None:
+        """Verifies the client signature of the server nonce message"""
+        try:
+            Crypt.verify_signature(message=message, cert=self._idevid_cert, signature=signature)
+        except Exception as e:
+            self._fail(str(e))
+            self.cancel()
+            raise OnboardingError from e
+
+    @staticmethod
+    def get_by_nonce(server_nonce: str) -> AokiOnboardingProcess | None:
+        for op in onboarding_processes:
+            if (isinstance(op, AokiOnboardingProcess)
+                and op._server_nonce == server_nonce):
+                    return op
+        return None
 
 
 onboarding_processes = []

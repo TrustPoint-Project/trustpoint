@@ -1,5 +1,5 @@
 from devices.models import Device
-from pki.models import CertificateModel
+from pki.models import ReasonCode
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 
@@ -8,4 +8,4 @@ from django.dispatch import receiver
 def device_pre_delete(sender, instance, **kwargs):
     """Revoke certificate on device deletion."""
     if instance.ldevid:
-        instance.revoke_ldevid()
+        instance.revoke_ldevid(revocation_reason=ReasonCode.CESSATION)

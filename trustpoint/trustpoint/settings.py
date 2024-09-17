@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
     'log.apps.LogConfig',
+    'discovery.apps.DiscoveryConfig',
     'onboarding.apps.OnboardingConfig',
     'pki.apps.PkiConfig',
     'sysconf.apps.SysconfConfig',
@@ -57,6 +58,7 @@ INSTALLED_APPS = [
     # use "python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server.crt
     # --key-file ../tests/data/x509/https_server.pem" to run with HTTPS
     # note: replaces default exception debug page with worse one
+    'django_q'
 ]
 
 MIDDLEWARE = [
@@ -170,3 +172,14 @@ LOGIN_URL = 'users:login'
 DJANGO_LOG_LEVEL = 'INFO'
 
 LOGGING = logging_config
+
+
+Q_CLUSTER = {
+    'name': 'Django-Q',
+    'workers': 4,  # Number of worker processes
+    'recycle': 500,
+    'timeout': 60,
+    'queue_limit': 50,
+    'bulk': 10,
+    'orm': 'default',  # Use Django's ORM as the broker
+}
