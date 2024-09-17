@@ -1,10 +1,14 @@
 """Global logging utilities and configuration."""
 
-import logging
 import os
-from pathlib import Path
 
 from log.utils import UTCFormatter
+from pathlib import Path
+
+LOG_PATH = Path(__file__).parent.parent / Path('media/log/tp.log')
+
+if not LOG_PATH.exists():
+    LOG_PATH.open('w').write('')
 
 logging_config = {
     'version': 1,
@@ -14,7 +18,7 @@ logging_config = {
             'class': 'logging.handlers.TimedRotatingFileHandler',
             'level': 'DEBUG',
             'formatter': 'detailed',
-            'filename': 'media/log/tp.log',
+            'filename': str(LOG_PATH),
             'when': 'midnight',
             'interval': 1,
             'backupCount': 365,  # Keep at least a year of logs
