@@ -3,10 +3,15 @@ from __future__ import annotations
 from pki.pki.request.handler import est, cmp, rest
 from pki.issuing_ca import UnprotectedLocalIssuingCa
 from pki.pki.request.message.est import PkiEstSimpleEnrollRequestMessage
-from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage
+
+from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage, PkiCmpRevocationRequestMessage, \
+    PkiCmpGetRootUpdateRequestMessage, PkiCmpGetCrlsRequestMessage, PkiCmpGetCertReqTemplateRequestMessage, \
+    PkiCmpGetCaCertsRequestMessage, PkiCmpCertificationRequestMessage, PkiCmpKeyUpdateRequestMessage
+
 from pki.pki.request.message.rest import PkiRestCsrRequestMessage, PkiRestPkcs12RequestMessage
 
 from typing import TYPE_CHECKING
+import traceback
 
 if TYPE_CHECKING:
     from pki.pki.request.handler import CaRequestHandler
@@ -24,6 +29,27 @@ class CaRequestHandlerFactory:
 
             if isinstance(request, PkiCmpInitializationRequestMessage):
                 return cmp.LocalCmpInitializationRequestHandler(request)
+
+            if isinstance(request, PkiCmpCertificationRequestMessage):
+                return cmp.LocalCmpCertificationRequestHandler(request)
+
+            if isinstance(request, PkiCmpKeyUpdateRequestMessage):
+                return cmp.LocalCmpKeyUpdateRequestHandler(request)
+
+            if isinstance(request, PkiCmpRevocationRequestMessage):
+                return cmp.LocalCmpRevocationRequestHandler(request)
+
+            if isinstance(request, PkiCmpGetRootUpdateRequestMessage):
+                return cmp.LocalCmpGetRootUpdateHandler(request)
+
+            if isinstance(request, PkiCmpGetCertReqTemplateRequestMessage):
+                return cmp.LocalCmpGetCertReqTemplateHandler(request)
+
+            if isinstance(request, PkiCmpGetCaCertsRequestMessage):
+                return cmp.LocalCmpGetCaCertsHandler(request)
+
+            if isinstance(request, PkiCmpGetCrlsRequestMessage):
+                return cmp.LocalCmpGetCrlsHandler(request)
             
             if isinstance(request, PkiRestCsrRequestMessage):
                 return rest.LocalCaRestCsrRequestHandler(request)

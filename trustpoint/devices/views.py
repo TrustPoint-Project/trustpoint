@@ -17,6 +17,8 @@ from trustpoint.views.base import BulkDeletionMixin, ContextDataMixin, TpLoginRe
 from .models import Device
 from .tables import DeviceTable
 
+from pki.validator.field import UniqueNameValidator
+
 if TYPE_CHECKING:
     from typing import Any
 
@@ -46,6 +48,10 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
     fields = ['device_name', 'onboarding_protocol', 'domain']  # noqa: RUF012
     template_name = 'devices/add.html'
     success_url = reverse_lazy('devices:devices')
+
+    def clean_device_name(self, device_name) -> str:
+        UniqueNameValidator(device_name)
+        return device_name
 
 
 class EditDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):

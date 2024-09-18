@@ -25,7 +25,7 @@ class TrustpointMDNSResponder:
             addresses=[socket.inet_aton("127.0.0.1"),
                        #socket.inet_aton(get_local_ip())
                       ],
-            port=8000,
+            port=443, # TODO: Do not hardcode port
             #properties=desc,
             server="tp.local.",
         )

@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import logging
+import re
 
 from django.db import models
 from django.db.models import Count
@@ -14,6 +15,8 @@ from django.utils.translation import gettext_lazy as _
 from pki.models import CertificateModel, DomainModel, RevokedCertificate
 
 from .exceptions import UnknownOnboardingStatusError
+
+from pki.validator.field import UniqueNameValidator, UniqueNameLowerCaseValidator
 
 log = logging.getLogger('tp.devices')
 
@@ -54,10 +57,9 @@ class Device(models.Model):
         CLI = 'CI', _('Device CLI')
         TP_CLIENT = 'TP', _('Trustpoint Client')
         BRSKI = 'BR', _('BRSKI')
-        FIDO = 'FI', _('FIDO FDO')
         AOKI = 'AO', _('AOKI')
 
-    device_name = models.CharField(max_length=100, unique=True, default='test')
+    device_name = models.CharField(max_length=100, unique=True, default='test', validators=[UniqueNameValidator()])
     device_serial_number = models.CharField(max_length=100, blank=True)
     ldevid = models.ForeignKey(CertificateModel, on_delete=models.SET_NULL, blank=True, null=True)
     onboarding_protocol = models.CharField(
@@ -130,7 +132,6 @@ class Device(models.Model):
             log.warning('Re-onboarding device %s which is already onboarded.', device.device_name)
 
         return True, None
-    
 
     def _render_onboarded_revoke(self) -> str:
         """Renders the 'Revoke' onboarding action for devices that have status Onboarded.
@@ -176,9 +177,8 @@ class Device(models.Model):
             return self._render_manual_onboarding_action()
 
         is_brski = self.onboarding_protocol == Device.OnboardingProtocol.BRSKI
-        is_fido = self.onboarding_protocol == Device.OnboardingProtocol.FIDO
         is_aoki = self.onboarding_protocol == Device.OnboardingProtocol.AOKI
-        if is_brski or is_fido or is_aoki:
+        if is_brski or is_aoki:
             return self._render_zero_touch_onboarding_action()
 
         return format_html('<span class="text-danger">' + _('Unknown onboarding protocol!') + '</span>')

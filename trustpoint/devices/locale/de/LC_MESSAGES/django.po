@@ -50,10 +50,6 @@ msgstr "Trustpoint Client"
 msgid "BRSKI"
 msgstr "BRSKI"
 
-#: .\devices\models.py:46
-msgid "FIDO FDO"
-msgstr "FIDO FDO"
-
 #: .\devices\models.py:109
 msgid "Onboarding: Please select a valid onboarding protocol."
 msgstr "Onboarding: Bitte ein gültiges Onboarding-Protokoll wählen."

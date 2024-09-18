@@ -1,7 +1,5 @@
 """API endpoints for the onboarding app."""
 
-# ruff: noqa: ANN201 # no need to annotate return type which is always "-> tuple[int, dict] | HttpResponse"
-# ruff: noqa: ARG001 # "request" argument is not used in many endpoints, but required for compatibility
 
 from __future__ import annotations
 
@@ -41,12 +39,12 @@ log = logging.getLogger('tp.onboarding')
 router = Router()
 
 class RawFileSchema(Schema):
-    """"Wildcard schema, works for arbitrary content."""
+    """Wildcard schema, works for arbitrary content."""
 
 # --- PUBLIC ONBOARDING API ENDPOINTS ---
 
 @router.get('/trust-store/{url_ext}', response={200: RawFileSchema, 404: ErrorSchema}, auth=None, exclude_none=True)
-def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:
+def trust_store(request: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpResponse:
     """Returns the trust store for the onboarding process."""
     onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
     if not onboarding_process:
@@ -59,6 +57,13 @@ def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:
 
     response = HttpResponse(trust_store, status=200, content_type='application/x-pem-file')
     response['hmac-signature'] = onboarding_process.get_hmac()
+    response['domain'] = onboarding_process.device.domain.unique_name
+    issuing_ca_cert = onboarding_process.device.domain.issuing_ca.issuing_ca_certificate
+    response['algorithm'] = issuing_ca_cert.spki_algorithm
+    response['curve'] = issuing_ca_cert.spki_ec_curve
+    response['key-size'] = issuing_ca_cert.spki_key_size
+    response['device-id'] = str(onboarding_process.device.id)
+    response['default-pki-protocol'] = 'CMP'
     response['Content-Disposition'] = 'attachment; filename="tp-trust-store.pem"'
     if onboarding_process.state == OnboardingProcessState.HMAC_GENERATED:
         onboarding_process.state = OnboardingProcessState.TRUST_STORE_SENT
@@ -71,7 +76,7 @@ def ldevid(request: HttpRequest, url_ext: str):
     """Handles the LDevID certificate signing request.
 
     Inputs:
-        Onbarding process URL extension (in request path)
+        Onboarding process URL extension (in request path)
 
     Returns: LDevID certificate chain (in response body)
     """
@@ -109,13 +114,13 @@ def ldevid(request: HttpRequest, url_ext: str):
             return 404, {'error': 'Onboarding process not found.'}
 
     response = HttpResponse(status=401)
-    response['WWW-Authenticate'] = 'Basic realm="%s"' % url_ext
+    response['WWW-Authenticate'] = f'Basic realm="{url_ext}"'
     return response
 
 @router.get('/ldevid/cert-chain/{url_ext}',
             response={200: RawFileSchema, 404: ErrorSchema},
             auth=None, exclude_none=True)
-def cert_chain(request: HttpRequest, url_ext: str):
+def cert_chain(request: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpResponse:
     """Returns the certificate chain of the LDevID certificate."""
     onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
     if not onboarding_process:
@@ -279,7 +284,7 @@ def state(request: HttpRequest, url_ext: str):
     return 200, onboarding_process.state
 
 @router.post('/{device_id}')
-def start(request: HttpRequest, device_id: int):
+def start(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
     """Starts the onboarding process for a device.
 
     Restarts if already onboarded. Does nothing if process already running.
@@ -324,7 +329,7 @@ def start(request: HttpRequest, device_id: int):
 
 
 @router.delete('/{device_id}', response={200: SuccessSchema, 404: ErrorSchema, 422: ErrorSchema}, exclude_none=True)
-def stop(request: HttpRequest, device_id: int):
+def stop(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
     """Stops and removes the onboarding process for a device.
 
     Cancels the process if it is running.
@@ -350,7 +355,7 @@ def stop(request: HttpRequest, device_id: int):
 @router.post('/revoke/{device_id}',
              response={200: SuccessSchema, 404: ErrorSchema, 422: ErrorSchema},
              exclude_none=True)
-def revoke(request: HttpRequest, device_id: int):
+def revoke(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
     """Revokes the LDevID certificate for a device."""
     device = Device.get_by_id(device_id)
     if not device:

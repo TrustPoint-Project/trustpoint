@@ -31,6 +31,7 @@ PBKDF2_DKLEN = 32
 
 log = logging.getLogger('tp.onboarding')
 
+HTTPS_SERVER_CERT_PATH = Path(__file__).parent.parent.parent / 'tests/data/x509/https_server.crt'
 
 class OnboardingError(Exception):
     """Exception raised for errors in the onboarding process."""
@@ -81,7 +82,7 @@ class CryptoBackend:
         Raises:
             FileNotFoundError: If the TLS certificate file is not found.
         """
-        with Path('../tests/data/x509/https_server.crt').open() as certfile:
+        with HTTPS_SERVER_CERT_PATH.open() as certfile:
             return certfile.read()
 
     @staticmethod
@@ -195,7 +196,7 @@ class CryptoBackend:
         """
         ca_certificate = CryptoBackend._get_ca(device)
 
-        return ca_certificate.get_certificate_serializer().as_pem()
+        return ca_certificate.get_certificate_chain_serializers()[0].as_pem()
 
     @staticmethod
     def _gen_private_key() -> PrivateKeyTypes:
