@@ -17,6 +17,8 @@ django-q2 = "^1.7.2"
 croniter = "^3.0.3"
 django = "^5.1.1"
 cryptography = "^43.0.1"
+django-taggit = "^6.0.0"
+django-filter = "^24.3"
 zeroconf = "^0.134.0"
 
 [tool.poetry.group.dev.dependencies]

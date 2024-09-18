@@ -12,6 +12,7 @@ from django.utils.translation import gettext_lazy as _
 
 from .exceptions import UnknownOnboardingProtocolError, UnknownOnboardingStatusError
 from .models import Device
+from taggit.managers import TaggableManager
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
@@ -43,6 +44,7 @@ class DeviceTable(tables.Table):
             'details',
             'edit',
             'delete',
+            'tags',
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
@@ -60,6 +62,9 @@ class DeviceTable(tables.Table):
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
     edit = tables.Column(empty_values=(), orderable=False, verbose_name=_('Edit'))
     delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
+    tags = tables.Column(empty_values=(), orderable=False, verbose_name=_('Tags'), attrs={
+        'td': {'class': 'tags-column'}
+    })
 
     @staticmethod
     def render_device_onboarding_status(record: Device) -> str:
@@ -224,3 +229,10 @@ class DeviceTable(tables.Table):
         """
         return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
                            record.pk, _('Delete'))
+
+    @staticmethod
+    def render_tags(value: TaggableManager):
+        """Renders the tags as a comma-separated list."""
+        if value:
+            return ', '.join([tag.name for tag in value.all()])
+        return '-'
