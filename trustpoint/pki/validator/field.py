@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 class UniqueNameValidator(RegexValidator):
 
     form_label = _(
-        '(Must start with a letter. Can only contain lower case letters, digits, underscores and hyphens)')
+        '(Must start with a letter. Can only contain letters, digits, underscores and hyphens)')
 
     def __init__(self, *args, **kwargs):
         super().__init__(

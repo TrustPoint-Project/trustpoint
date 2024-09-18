@@ -1351,7 +1351,8 @@ class IssuingCaModel(models.Model):
 
     def increment_issued_certificates_count(self) -> None:
         """Increments issued_certificates_count by one"""
-        self.issued_certificates_count = models.F('issued_certificates_count') + 1
+        #self.issued_certificates_count = models.F('issued_certificates_count') + 1
+        self.issued_certificates_count += 1
         self.save(update_fields=['issued_certificates_count'])
 
     def save(self, *args, **kwargs):
