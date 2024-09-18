@@ -39,7 +39,7 @@ Full Name is required, all other fields are optional.
 * Alexander Harig
 * Christian Schwinne (Aircoookie) <christian.schwinne A hshl.de> - Hamm-Lippstadt University of Applied Sciences
 * Dominik Isaak
-* Florian Handke
+* Florian Handke (FHatCSW) <florian.handke A campus-schwarzwald.de> - Campus Schwarzwald gGmbH
 * Mario Kemper
 * Omkar Joglekar
 * Rohit Bohara

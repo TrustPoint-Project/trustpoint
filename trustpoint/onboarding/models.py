@@ -51,7 +51,7 @@ class NoOnboardingProcessError(Exception):
 
 
 # NOT a database-backed model
-class OnboardingProcess:
+class OnboardingProcess():
     """Represents an onboarding process for a device.
 
     This model is not written to the database.
@@ -65,11 +65,12 @@ class OnboardingProcess:
 
         Generates secrets, starts two threads for trust store HMAC generation and a timer for timeout.
         """
+        super().__init__()
         self.device = dev
         self.id = OnboardingProcess.id_counter
         self.state = OnboardingProcessState.STARTED
         self.error_reason = ''
-        self.url = secrets.token_urlsafe(4)
+        self.url = dev.device_name
         self.timer = threading.Timer(onboarding_timeout, self._timeout)
         # TODO (Air): instead of daemon, consider using events to exit gracefully on shutdown
         self.timer.daemon = True
@@ -225,16 +226,14 @@ class OnboardingProcess:
     datetime_started = models.DateTimeField(auto_now_add=True)
 
 
-class ManualOnboardingProcess(OnboardingProcess):
-    """Onboarding process for a device using the full manual onboarding with OTP and HMAC trust store verification."""
+class LDevIDOnboardingProcessMixin():
+    """Mixin that provides all methods required for onboarding process types using the /api/onboarding/ldevid endpoint"""
 
-    def __init__(self, dev: Device) -> None:
-        """Initializes a new manual onboarding process for a device."""
+    def __init__(self, dev: Device):
+        """Initializes the mixin"""
         super().__init__(dev)
         self.otp = secrets.token_hex(8)
-        self.tsotp = secrets.token_hex(8)
-        self.salt = secrets.token_hex(8)
-        self.tssalt = secrets.token_hex(8)
+        self.salt = self.url
         self.gen_thread = threading.Thread(target=self._calc_hmac, daemon=True)
         self.gen_thread.start()
         self.hmac = None
@@ -245,7 +244,7 @@ class ManualOnboardingProcess(OnboardingProcess):
         Runs in separate gen_thread thread started by __init__ as it typically takes about a second.
         """
         try:
-            self.hmac = Crypt.pbkdf2_hmac_sha256(self.tsotp, self.tssalt, Crypt.get_trust_store().encode())
+            self.hmac = Crypt.pbkdf2_hmac_sha256(self.otp, self.salt, Crypt.get_trust_store().encode())
         except Exception as e:  # noqa: BLE001
             msg = 'Error generating trust store HMAC.'
             self._fail(msg)
@@ -285,6 +284,9 @@ class ManualOnboardingProcess(OnboardingProcess):
             raise
         if ldevid:
             self.state = OnboardingProcessState.LDEVID_SENT
+            if isinstance(self, AokiOnboardingProcess):
+                self._success()
+                self.cancel()
             log.info(f'LDevID issued for device {self.device.device_name} in onboarding process {self.id}.')
         else:
             self._fail('No LDevID was generated.')
@@ -306,17 +308,32 @@ class ManualOnboardingProcess(OnboardingProcess):
         return chain
 
 
+class ManualOnboardingProcess(LDevIDOnboardingProcessMixin, OnboardingProcess):
+    """Onboarding process for a device using the full manual onboarding with OTP and HMAC trust store verification."""
+
+    def __init__(self, dev: Device) -> None:
+        """Initializes a new manual onboarding process for a device."""
+        super().__init__(dev)
+        print('init ManualOnboardingProcess')
+        self.tsotp = secrets.token_hex(8)
+        self.tssalt = secrets.token_hex(8)
+        self.gen_thread = threading.Thread(target=self._calc_hmac, daemon=True)
+        self.gen_thread.start()
+        self.hmac = None
+
+
 class DownloadOnboardingProcess(OnboardingProcess):
     """Onboarding process for a device using the download onboarding method."""
-    _device: Device
+    #_device: Device
 
-    def __init__(self, device: Device) -> None:
+    def __init__(self, dev: Device) -> None:
         """Initializes a new download onboarding process for a device."""
-        super().__init__(device)
-        self._device = device
+        super().__init__(dev)
+        #self._device = dev
         self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
         self.gen_thread.start()
         self.cred_serializer = None
+
 
 class BrowserOnboardingProcess(OnboardingProcess):
     """Onboarding process for a device using the download onboarding method."""
@@ -325,27 +342,69 @@ class BrowserOnboardingProcess(OnboardingProcess):
     def __init__(self, dev: Device) -> None:
         """Initializes a new download onboarding process for a device."""
         super().__init__(dev)
-        self.__otp = None
+        self._browser_otp = None
         self.password_tries = 0
 
     def start_onboarding(self):
-        self.__otp = None
+        self._browser_otp = None
         self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
         self.gen_thread.start()
         self.cred_serializer = None
 
     def set_otp(self, otp: str) -> None:
-        self.__otp = otp
+        self._browser_otp = otp
 
     def check_otp(self, otp: str) -> tuple:
         self.password_tries += 1
         if self.password_tries < self.MAXPWTRIES:
-            if self.__otp  and self.__otp == otp:
+            if self._browser_otp  and self._browser_otp == otp:
                 return (True, None)
         else:
             self.cancel()
             self._fail()
         return (False, self.MAXPWTRIES - self.password_tries)
+
+
+class ZeroTouchOnboardingProcess(OnboardingProcess):
+    """Parent of all zero-touch onboarding process types."""
+
+
+class AokiOnboardingProcess(LDevIDOnboardingProcessMixin, ZeroTouchOnboardingProcess):
+    """Onboarding process for a device using the AOKI protocol."""
+
+    _idevid_cert: bytes
+    _server_nonce : str
+
+    def __init__(self, device: Device) -> None:
+        """Initializes a new AOKI onboarding process for a device."""
+        super().__init__(device)
+        self._idevid_cert = None
+        self._server_nonce = Crypt.get_nonce()
+
+    def get_server_nonce(self) -> str:
+        """Returns the server nonce."""
+        return self._server_nonce
+    
+    def set_idevid_cert(self, idevid_cert: bytes) -> None:
+        """Sets the device's IDevID certificate."""
+        self._idevid_cert = idevid_cert
+
+    def verify_client_signature(self, message: bytes, signature: bytes) -> None:
+        """Verifies the client signature of the server nonce message"""
+        try:
+            Crypt.verify_signature(message=message, cert=self._idevid_cert, signature=signature)
+        except Exception as e:
+            self._fail(str(e))
+            self.cancel()
+            raise OnboardingError from e
+
+    @staticmethod
+    def get_by_nonce(server_nonce: str) -> AokiOnboardingProcess | None:
+        for op in onboarding_processes:
+            if (isinstance(op, AokiOnboardingProcess)
+                and op._server_nonce == server_nonce):
+                    return op
+        return None
 
 
 onboarding_processes = []

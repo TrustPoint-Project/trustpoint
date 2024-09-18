@@ -387,12 +387,12 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     overflow-x: auto;
 }
 
-.tp-table-btn {
+table .tp-table-btn {
     padding: 0.2rem 0.8rem;
     min-width: 5rem;
 }
 
-.tp-onboarding-btn {
+table .tp-onboarding-btn {
     padding: 0.2rem 0.8rem;
     width: 12rem;
 }

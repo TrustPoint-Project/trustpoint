@@ -189,11 +189,8 @@ class FileImportLocalIssuingCaInitializer(IssuingCaInitializer, abc.ABC):
                 cert_chain_order_model.issuing_ca = issuing_ca_model
                 cert_chain_order_model.save()
         except Exception as exception:
-            error_msg = str(exception)
-            if len(error_msg) >= 4:
-                error_msg = error_msg[2:-2]
-            log.error(error_msg)
-            raise InternalServerError(error_msg)
+            log.error(exception)
+            raise InternalServerError(exception)
 
 
 class UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(FileImportLocalIssuingCaInitializer):

@@ -29,14 +29,11 @@ class CliCommandBuilder:
                 return f' -{short_flag} {val}'
             return f' --{key} {val}'
 
-        cmd = 'python -m trustpoint_client provision'
-        cmd += _flag('tsotp', 'p')
-        cmd += _flag('tssalt', 'z')
+        cmd = 'trustpoint-client provision'
         cmd += _flag('otp', 'o')
-        cmd += _flag('salt', 's')
-        cmd += _flag('url', 'u')
+        cmd += _flag('device', 'd')
         cmd += _flag('host', 'h')
-        cmd += _flag('sn', 'n')
+
 
         return cmd
 

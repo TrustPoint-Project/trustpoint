@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import secrets
 from typing import TYPE_CHECKING
+import re
 
 from devices.models import Device
 from django.contrib import messages
@@ -297,14 +298,11 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             'page_category': 'onboarding',
             'page_name': 'manual',
             'otp': onboarding_process.otp,
-            'salt': onboarding_process.salt,
-            'tsotp': onboarding_process.tsotp,
-            'tssalt': onboarding_process.tssalt,
             'host': request.get_host(),
-            'url': onboarding_process.url,
-            'sn': device.device_serial_number,
             'device_name': device.device_name,
+            'device': device.device_name,
             'device_id': device.id,
+            'url': onboarding_process.url
         }
 
         if device.onboarding_protocol == Device.OnboardingProtocol.TP_CLIENT:

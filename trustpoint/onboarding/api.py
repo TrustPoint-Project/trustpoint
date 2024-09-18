@@ -1,34 +1,50 @@
 """API endpoints for the onboarding app."""
 
-# ruff: noqa: ANN201 # no need to annotate return type which is always "-> tuple[int, dict] | HttpResponse"
-# ruff: noqa: ARG001 # "request" argument is not used in many endpoints, but required for compatibility
 
 from __future__ import annotations
 
 import base64
+import logging
 
+from cryptography import x509
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes, serialization
+from cryptography.hazmat.primitives.asymmetric import ec
 from devices.models import Device
+from django.db.utils import IntegrityError
 from django.http import HttpRequest, HttpResponse
 from ninja import Router, Schema
+from ninja.responses import Response, codes_4xx
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
+from onboarding.crypto_backend import VerificationError, OnboardingError
 from onboarding.models import (
     DownloadOnboardingProcess,
     ManualOnboardingProcess,
+    AokiOnboardingProcess,
     OnboardingProcess,
     OnboardingProcessState,
 )
 from trustpoint.schema import ErrorSchema, SuccessSchema
+from onboarding.schema import (
+    AokiInitMessageSchema,
+    AokiInitResponseSchema,
+    AokiFinalizationMessageSchema,
+    AokiFinalizationResponseSchema
+)
+from pki.models import CertificateModel, TrustStoreModel, DomainModel
+
+log = logging.getLogger('tp.onboarding')
 
 router = Router()
 
 class RawFileSchema(Schema):
-    """"Wildcard schema, works for arbitrary content."""
+    """Wildcard schema, works for arbitrary content."""
 
 # --- PUBLIC ONBOARDING API ENDPOINTS ---
 
 @router.get('/trust-store/{url_ext}', response={200: RawFileSchema, 404: ErrorSchema}, auth=None, exclude_none=True)
-def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:
+def trust_store(request: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpResponse:
     """Returns the trust store for the onboarding process."""
     onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
     if not onboarding_process:
@@ -41,6 +57,13 @@ def trust_store(request: HttpRequest, url_ext: str) -> HttpResponse:
 
     response = HttpResponse(trust_store, status=200, content_type='application/x-pem-file')
     response['hmac-signature'] = onboarding_process.get_hmac()
+    response['domain'] = onboarding_process.device.domain.unique_name
+    issuing_ca_cert = onboarding_process.device.domain.issuing_ca.issuing_ca_certificate
+    response['algorithm'] = issuing_ca_cert.spki_algorithm
+    response['curve'] = issuing_ca_cert.spki_ec_curve
+    response['key-size'] = issuing_ca_cert.spki_key_size
+    response['device-id'] = str(onboarding_process.device.id)
+    response['default-pki-protocol'] = 'CMP'
     response['Content-Disposition'] = 'attachment; filename="tp-trust-store.pem"'
     if onboarding_process.state == OnboardingProcessState.HMAC_GENERATED:
         onboarding_process.state = OnboardingProcessState.TRUST_STORE_SENT
@@ -53,7 +76,7 @@ def ldevid(request: HttpRequest, url_ext: str):
     """Handles the LDevID certificate signing request.
 
     Inputs:
-        Onbarding process URL extension (in request path)
+        Onboarding process URL extension (in request path)
 
     Returns: LDevID certificate chain (in response body)
     """
@@ -91,13 +114,13 @@ def ldevid(request: HttpRequest, url_ext: str):
             return 404, {'error': 'Onboarding process not found.'}
 
     response = HttpResponse(status=401)
-    response['WWW-Authenticate'] = 'Basic realm="%s"' % url_ext
+    response['WWW-Authenticate'] = f'Basic realm="{url_ext}"'
     return response
 
 @router.get('/ldevid/cert-chain/{url_ext}',
             response={200: RawFileSchema, 404: ErrorSchema},
             auth=None, exclude_none=True)
-def cert_chain(request: HttpRequest, url_ext: str):
+def cert_chain(request: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpResponse:
     """Returns the certificate chain of the LDevID certificate."""
     onboarding_process = OnboardingProcess.get_by_url_ext(url_ext)
     if not onboarding_process:
@@ -118,6 +141,138 @@ def cert_chain(request: HttpRequest, url_ext: str):
     response['Content-Disposition'] = 'attachment; filename="tp-cert-chain.pem"'
     return response
 
+# --- AOKI ZERO TOUCH ONBOARDING API ENDPOINTS ---
+
+@router.post('/aoki/init', response={200: AokiInitResponseSchema, codes_4xx: ErrorSchema}, auth=None, exclude_none=True)
+def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
+    """Initializes the AOKI Zero Touch onboarding process."""
+    # get request data
+    idevid = data.idevid.encode()
+    client_nonce = data.client_nonce
+
+    try:
+        idevid_cert = x509.load_pem_x509_certificate(idevid)
+        idevid_subject_sn = idevid_cert.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value
+    except (ValueError, IndexError):
+        return 400, {'error': 'IDevID certificate not parsable.'}
+    # verify IDevID against chains of trust stored in Trust stores
+    # TODO (Air): extra trust store in Trustpoint for IDevID verification?
+    log.warning('AokiInit: IDevID verification not fully implemented.')
+    idevid_cert_serial = format(idevid_cert.serial_number, 'X')
+    log.debug(f'AokiInit: IDevID: {idevid_cert.subject} SN: {idevid_cert_serial}')
+    # TODO (Air): Chain validation so that actual cert is not required in TS, only the root
+    idevid_cert_db = None
+    # TODO (Air): This loop is horribly inefficient
+    # consider adding a field to TrustStoreModel to store if an entry is for IDevID verification
+    for ts in TrustStoreModel.objects.all():
+        try:
+            idevid_cert_db = ts.certificates.get(serial_number=idevid_cert_serial)
+            break
+        except CertificateModel.DoesNotExist:
+            pass
+
+    if not idevid_cert_db:
+        return 403, {'error': 'Unauthorized.'}
+
+    # TODO (Air): consider check if a device with this IDevID is already onboarded?
+
+    # TODO (Air): Even more inefficient
+    ownership_cert = None
+    for ts in TrustStoreModel.objects.all():
+        for cert in ts.certificates.all():
+            candidate : x509.Certificate = cert.get_certificate_serializer().as_crypto()
+            dc_attr = candidate.subject.get_attributes_for_oid(x509.NameOID.DOMAIN_COMPONENT)
+            serial_attr = candidate.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)
+            
+            if (dc_attr and serial_attr
+                and dc_attr[0].value == 'Owner'
+                and serial_attr[0].value == idevid_subject_sn):
+                ownership_cert = candidate
+                break
+
+    if not ownership_cert:
+        return 404, {'error': 'Not found.'}
+    
+    aoki_device = Device.objects.filter(device_serial_number=idevid_subject_sn).first()
+
+    if aoki_device:
+        log.warning(f'Onboarding existing AOKI device {aoki_device.pk} ({idevid_subject_sn})!')
+    else:
+        aoki_device = Device(
+            device_name=f'AOKI{idevid_subject_sn}', # temporary name until we know PK
+            device_serial_number=idevid_subject_sn,
+            onboarding_protocol=Device.OnboardingProtocol.AOKI
+        )
+        # TODO (Air): set proper domain (this must be configurable per ownership certificate)
+        aoki_device.domain = DomainModel.objects.first()
+        aoki_device.save() # save to get PK assigned
+        aoki_device.device_name = f'AOKI_Device_{aoki_device.pk}'
+        aoki_device.save()
+    
+    onboarding_process = OnboardingProcess.make_onboarding_process(aoki_device, AokiOnboardingProcess)
+    onboarding_process.set_idevid_cert(idevid)
+
+    # TODO (Air): get the private key for the ownership certificate
+    try:
+        with open('owner_private.key', 'rb') as keyfile:
+            ownership_private_key = serialization.load_pem_private_key(keyfile.read(), password=None)
+    except (FileNotFoundError, ValueError):
+        log.exception('Could not load owner private key.', exc_info=True)
+        return 404, {'error': 'Not found.'}  # Technically an accurate error message, but we don't give too much away
+
+    response = {
+        'ownership_cert': ownership_cert.public_bytes(serialization.Encoding.PEM).decode(),
+        'server_nonce': onboarding_process.get_server_nonce(),
+        'client_nonce': client_nonce,
+        'server_tls_cert': Crypt.get_server_tls_cert(),	
+    }
+    response_bytes = str(response).encode()
+    hash = hashes.Hash(hashes.SHA256())
+    hash.update(response_bytes)
+    log.debug(f'SHA-256 hash of message: {hash.finalize().hex()}')
+    server_signature = ownership_private_key.sign(data=response_bytes, signature_algorithm=ec.ECDSA(hashes.SHA256()))
+    print(server_signature)
+    server_signature = base64.b64encode(server_signature).decode()
+    print(f'Server signature: {server_signature}')
+    print(f'Signer public key: {ownership_private_key.public_key().public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()}')
+    return Response(response, status=200, headers={'aoki-server-signature': server_signature})
+
+
+@router.post('/aoki/finalize', response={200: AokiFinalizationResponseSchema, 404: ErrorSchema}, auth=None, exclude_none=True)
+def aoki_finalize(request: HttpRequest, data: AokiFinalizationMessageSchema):
+    """Finalizes the AOKI Zero Touch onboarding process."""
+
+    try:
+        client_signature = base64.b64decode(request.headers['aoki-client-signature'].encode('utf-8'))
+    except KeyError:
+        return 400, {'error': 'No.'}
+    
+    server_nonce = data.server_nonce
+    onboarding_process = AokiOnboardingProcess.get_by_nonce(server_nonce)
+    if not onboarding_process:
+        return 404, {'error': 'Not found.'}
+    
+    print(data)
+    data_bytes = data.model_dump_json().encode()
+    print(data_bytes)
+    print(type(data))
+    print('Client Signature:', client_signature)
+    try:
+        onboarding_process.verify_client_signature(data_bytes, client_signature)
+    except (VerificationError, InvalidSignature, OnboardingError):
+        log.debug('AOKI client signature verification failed.')
+        return 404, {'error': 'Not found.'}
+    
+    log.debug('AOKI client signature verified successfully.')
+    
+    response = {
+        'otp': onboarding_process.otp,
+        'device': onboarding_process.device.device_name
+    }
+    
+    return 200, response
+    
+
 # --- ONBOARDING MANAGEMENT API ENDPOINTS ---
 
 @router.get('/state/{url_ext}', response={200: int, 404: int}, auth=None)
@@ -129,7 +284,7 @@ def state(request: HttpRequest, url_ext: str):
     return 200, onboarding_process.state
 
 @router.post('/{device_id}')
-def start(request: HttpRequest, device_id: int):
+def start(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
     """Starts the onboarding process for a device.
 
     Restarts if already onboarded. Does nothing if process already running.
@@ -174,7 +329,7 @@ def start(request: HttpRequest, device_id: int):
 
 
 @router.delete('/{device_id}', response={200: SuccessSchema, 404: ErrorSchema, 422: ErrorSchema}, exclude_none=True)
-def stop(request: HttpRequest, device_id: int):
+def stop(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
     """Stops and removes the onboarding process for a device.
 
     Cancels the process if it is running.
@@ -200,7 +355,7 @@ def stop(request: HttpRequest, device_id: int):
 @router.post('/revoke/{device_id}',
              response={200: SuccessSchema, 404: ErrorSchema, 422: ErrorSchema},
              exclude_none=True)
-def revoke(request: HttpRequest, device_id: int):
+def revoke(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
     """Revokes the LDevID certificate for a device."""
     device = Device.get_by_id(device_id)
     if not device:

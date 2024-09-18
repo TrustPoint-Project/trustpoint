@@ -19,7 +19,6 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument('--force', action=argparse.BooleanOptionalAction, default=False)
-        # parser.add_argument('args', nargs='*', type=str)
 
     def handle(self, *args, **options) -> None:
         # Explicit user confirmation for deleting the database

@@ -8,16 +8,26 @@ from django.contrib import messages
 from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect, render
+from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
 from django.views.generic.base import RedirectView
+from django.views.generic.edit import FormView
 
+from trustpoint.views.base import (
+    BulkDeleteView,
+    ContextDataMixin,
+    PrimaryKeyFromUrlToQuerysetMixin,
+    TpLoginRequiredMixin,
+)
+
+from .forms import LoggingConfigForm, NetworkConfigForm, NTPConfigForm, SecurityConfigForm
+from .models import LoggingConfig, NetworkConfig, NTPConfig, SecurityConfig
 from .security.manager import SecurityFeatures, SecurityManager
 
 if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
 
-from .forms import LoggingConfigForm, NetworkConfigForm, NTPConfigForm, SecurityConfigForm
-from .models import LoggingConfig, NetworkConfig, NTPConfig, SecurityConfig
+
 
 
 class SecurityLevelMixin:
@@ -104,34 +114,41 @@ def language(request: HttpRequest) -> HttpResponse:
     context = {'page_category': 'sysconf', 'page_name': 'language'}
     return render(request, 'sysconf/language.html', context=context)
 
-# Create your views here.
-def logging(request: HttpRequest) -> HttpResponse:
-    """Handle logging Configuration
 
-    Returns: HTTPResponse
-    """
-    context = {'page_category': 'sysconf', 'page_name': 'logging'}
-    try:
-        logging_config = LoggingConfig.objects.get(id=1)
-    except ObjectDoesNotExist:
-        # create an empty configuration
-        logging_config = LoggingConfig()
+class LoggingConfigView(TpLoginRequiredMixin, FormView):
+    template_name = 'sysconf/logging.html'
+    form_class = LoggingConfigForm
+    success_url = reverse_lazy('sysconf:logging')
 
-    if request.method == 'POST':
-        logging_config_form = LoggingConfigForm(request.POST, instance=logging_config)
-        if logging_config_form.is_valid():
-            logging_config_form.save()
-            messages.success(request, _('Your changes were saved successfully.'))
-        else:
-            messages.error(request, _('Error saving the configuration'))
 
-        context['logging_config_form'] = logging_config_form
-        return render(request, 'sysconf/logging.html', context=context)
+    def get_initial(self):
+        try:
+            logging_config = LoggingConfig.objects.get(id=1)
+            if logging_config:
+                return {
+                    'logging_server_address': logging_config.logging_server_address,
+                    'logging_server_port': logging_config.logging_server_port,
+                    'logging_type': logging_config.logging_type,
+                    'network_type': logging_config.network_type}
+        except ObjectDoesNotExist:
+            return {}
 
-    else:
-        context['logging_config_form'] = LoggingConfigForm(instance=logging_config)
+    def form_valid(self, form):
+        try:
+            logging_config = LoggingConfig.objects.get(id=1)
+        except ObjectDoesNotExist:
+            logging_config = LoggingConfig()
 
-        return render(request, 'sysconf/logging.html', context=context)
+        logging_config = form.save(commit=False)
+        logging_config.save()
+
+        messages.success(self.request, 'Your changes were saved successfully.')
+        return super().form_valid(form)
+
+
+    def form_invalid(self, form):
+        messages.error(self.request, _('Error saving the configuration.'))
+        return self.render_to_response(self.get_context_data(form=form))
 
 
 def network(request: HttpRequest) -> HttpResponse:
