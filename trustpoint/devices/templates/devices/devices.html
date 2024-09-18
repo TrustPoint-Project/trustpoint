@@ -5,51 +5,65 @@
 
 {% block content %}
 
-<div class="card card-main" style="max-height: 100%; display: flex; flex-direction: column;">
+<div class="card card-main" style="display: flex; flex-direction: column;">
     <div class="card-header tp-card-header" style="min-height: 40px;">
         <h1>{% trans 'Devices' %}</h1>
     </div>
 
-    <button class="btn btn-secondary" type="button" data-bs-toggle="collapse" data-bs-target="#filter-form" aria-expanded="false" aria-controls="filter-form">
+    <button class="btn btn-primary mx-2 my-2" type="button" data-bs-toggle="collapse" data-bs-target="#filter-form" aria-expanded="false" aria-controls="filter-form" style="max-width: 150px;">
         {% trans 'Filter' %}
     </button>
-
-    <div class="collapse mt-3" id="filter-form">
+    
+    <div class="collapse mt-3 mx-2" id="filter-form">
         <form method="get">
-            <div class="col-md-3">
-                {{ filter.form.device_name.label_tag }} {{ filter.form.device_name }}
+            <div class="filter-label">
+                {{ filter.form.device_name.label_tag }}
             </div>
-            <div class="col-md-3">
-                {{ filter.form.device_onboarding_status.label_tag }} {{ filter.form.device_onboarding_status }}
+            <div class="filter-dropdown">
+                {{ filter.form.device_name }}
             </div>
-            <div class="col-md-3">
-                {{ filter.form.onboarding_protocol.label_tag }} {{ filter.form.onboarding_protocol }}
+            <div class="filter-label">
+                {{ filter.form.device_onboarding_status.label_tag }}
             </div>
-            <div class="col-md-3">
-                {{ filter.form.domain.label_tag }} {{ filter.form.domain }}
+            <div class="filter-dropdown">
+                {{ filter.form.device_onboarding_status }}
             </div>
+            <div class="filter-label">
+                {{ filter.form.onboarding_protocol.label_tag }}
+            </div>
+            <div class="filter-dropdown">
+                {{ filter.form.onboarding_protocol }}
+            </div>
+            <div class="filter-label">
+                {{ filter.form.domain.label_tag }}
+            </div>
+            <div class="filter-dropdown">
+                {{ filter.form.domain }}
+            </div>
+            <br>
             <h5>Filter by Tags</h5>
             <div class="filter-tags">
                 {{ filter.form.tags }}
             </div>
-                <button type="submit" class="btn btn-primary mt-3">Filter</button>
-                <a href="{% url 'devices:devices' %}" class="btn btn-secondary mt-3">Reset</a>
+                <button type="submit" class="btn btn-primary filter-btn">Filter</button>
+                <a href="{% url 'devices:devices' %}" class="btn btn-secondary filter-btn">Reset</a>
             </div>
         </form>
     </div>
-
-    <div class="card-body text-start" style="overflow-y: auto; flex-grow: 1; max-height: 90%;">
+    <div class="card-body text-start" style="overflow-y: auto; flex-grow: 1; max-height: 80%;">
         {% render_table table %}
     </div>
-
-    <div class="card-footer d-flex justify-content-between tp-sticky-footer">
+        
         <div>
-            <button type="button" class="btn btn-secondary tp-table-select-btn" data-tp-url="delete">{% trans "Delete selected" %}</button>
-        </div>
-        <div>
-            <a class="btn btn-primary" href="{% url 'devices:devices-add' %}">
-                {% trans "Add new Device" %}
-            </a>
+        <div class="card-footer d-flex justify-content-between tp-sticky-footer">
+            <div>
+                <button type="button" class="btn btn-secondary tp-table-select-btn" data-tp-url="delete">{% trans "Delete selected" %}</button>
+            </div>
+            <div>
+                <a class="btn btn-primary" href="{% url 'devices:devices-add' %}">
+                    {% trans "Add new Device" %}
+                </a>
+            </div>
         </div>
     </div>
 
