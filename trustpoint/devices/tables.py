@@ -79,70 +79,6 @@ class DeviceTable(tables.Table):
             '</span>'
         )
 
-    @staticmethod
-    def _render_manual_onboarding_action(record: Device) -> str:
-        """Renders the device onboarding section for the manual onboarding cases.
-
-        Args:
-            record (Device):
-                Record / instance of the device model.
-
-        Returns:
-            str:
-                The html hyperlink for the details-view.
-
-        Raises:
-            UnknownOnboardingStatusError:
-                Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
-        """
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
-            return format_html(
-                '<a href="{}" class="btn btn-success tp-onboarding-btn">{}</a>',
-                reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
-                _('Start Onboarding')
-            )
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
-            return format_html(
-                '<a href="{}" class="btn btn-warning tp-onboarding-btn">{}</a>',
-                reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
-                _('Retry Onboarding')
-            )
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.REVOKED:
-            return format_html(
-                '<a href="{}" class="btn btn btn-info tp-onboarding-btn">{}</a>',
-                reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
-                _('Onboard again')
-            )
-        exc_msg = f'Unknown onboarding status {record.device_onboarding_status}. Failed to render entry in table.'
-        raise UnknownOnboardingStatusError(record.device_onboarding_status)
-
-    @staticmethod
-    def _render_zero_touch_onboarding_action(record: Device) -> str:
-        """Renders the device onboarding section for the manual onboarding cases.
-
-        Args:
-            record (Device):
-                Record / instance of the device model.
-
-        Returns:
-            str: The html hyperlink for the details-view.
-
-        Raises:
-            UnknownOnboardingStatusError:
-                Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
-        """
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
-            return format_html(
-                '<button class="btn btn-success tp-onboarding-btn" disabled>{}</a>',
-                _('Zero-Touch Pending')
-            )
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
-            return format_html(
-                '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn">{}</a>',
-                record.pk, _('Reset Context')
-            )
-        raise UnknownOnboardingStatusError(record.device_onboarding_status)
-
     def render_onboarding_action(self: DeviceTable, record: Device) -> str:
         """Creates the html hyperlink for the details-view.
 
@@ -180,7 +116,8 @@ class DeviceTable(tables.Table):
             return self._render_manual_onboarding_action(record)
 
         is_brski = record.onboarding_protocol == Device.OnboardingProtocol.BRSKI
-        if is_brski:
+        is_aoki = record.onboarding_protocol == Device.OnboardingProtocol.AOKI
+        if is_brski or is_aoki:
             return self._render_zero_touch_onboarding_action(record)
 
         #raise UnknownOnboardingProtocolError(record.onboarding_protocol)

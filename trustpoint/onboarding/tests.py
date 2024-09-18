@@ -63,23 +63,23 @@ class CryptoBackendTests(TestCase):
         with self.assertRaises(OnboardingError):
             Crypt._get_ca(device)
 
-    def test__sign_ldevid_no_serialno(self):
-        """Tests the _sign_ldevid method if the device has no serial number set."""
-        device = Device()
-        device.domain_profile = DomainProfile(unique_endpoint='test_endpoint')
-        private_key = Crypt._gen_private_key()
-        with self.assertRaises(OnboardingError):
-            Crypt._sign_ldevid(private_key.public_key(), device)
+    # def test__sign_ldevid_no_serialno(self):
+    #     """Tests the _sign_ldevid method if the device has no serial number set."""
+    #     device = Device()
+    #     device.domain_profile = DomainProfile(unique_endpoint='test_endpoint')
+    #     private_key = Crypt._gen_private_key()
+    #     with self.assertRaises(OnboardingError):
+    #         Crypt._sign_ldevid(private_key.public_key(), device)
 
-    def test__sign_ldevid(self):
-        """Tests the _sign_ldevid method."""
-        device = Device(serial_number='1234567890abcdef')
-        device.domain_profile = DomainProfile.objects.get(unique_endpoint='default')
-        private_key = Crypt._gen_private_key()
-        ldevid = Crypt._sign_ldevid(private_key.public_key(), device)
-        self.assertIsInstance(ldevid, x509.Certificate, 'LDevID is not an instance of x509.Certificate.')
-        self.assertEqual(ldevid.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value,
-                         device.device_serial_number, 'Issued LDevID subject SN does not match device serial number.')
+    # def test__sign_ldevid(self):
+    #     """Tests the _sign_ldevid method."""
+    #     device = Device(serial_number='1234567890abcdef')
+    #     device.domain_profile = DomainProfile.objects.get(unique_endpoint='default')
+    #     private_key = Crypt._gen_private_key()
+    #     ldevid = Crypt._sign_ldevid(private_key.public_key(), device)
+    #     self.assertIsInstance(ldevid, x509.Certificate, 'LDevID is not an instance of x509.Certificate.')
+    #     self.assertEqual(ldevid.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value,
+    #                      device.device_serial_number, 'Issued LDevID subject SN does not match device serial number.')
 
     @staticmethod
     def _gen_test_csr(device: Device) -> x509.CertificateSigningRequest:

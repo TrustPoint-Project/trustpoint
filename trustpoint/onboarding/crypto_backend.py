@@ -14,6 +14,7 @@ from typing import TYPE_CHECKING
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from pki.models import CertificateModel
 from pki.pki.request.handler.factory import CaRequestHandlerFactory
@@ -41,6 +42,14 @@ class OnboardingError(Exception):
         super().__init__(self.message)
         log.exception(self.message, exc_info=True)
 
+class VerificationError(Exception):
+    """Exception raised for errors in signature verification."""
+    
+    def __init__(self, message: str = 'An error occurred during signature verification.') -> None:
+        """Initializes a new VerificationError with a given message."""
+        self.message = message
+        super().__init__(self.message)
+        log.exception(self.message, exc_info=True)
 
 class CryptoBackend:
     """Provides cryptographic operations for use during the onboarding process."""
@@ -60,6 +69,21 @@ class CryptoBackend:
         pkey = hashlib.pbkdf2_hmac('sha256', hexpass.encode(), hexsalt.encode(), iterations, dklen)
         h = hmac.new(pkey, message, hashlib.sha256)
         return h.hexdigest()
+    
+    @staticmethod
+    def get_server_tls_cert() -> str:
+        """Returns the TLS certificate used by the Trustpoint server.
+
+        TODO: Make location and included certificates configurable and verify that they are valid
+
+        Returns:
+            PEM string of the TLS  server certificate.
+
+        Raises:
+            FileNotFoundError: If the TLS certificate file is not found.
+        """
+        with HTTPS_SERVER_CERT_PATH.open() as certfile:
+            return certfile.read()
 
     @staticmethod
     def get_trust_store() -> str:
@@ -73,8 +97,7 @@ class CryptoBackend:
         Raises:
             FileNotFoundError: If the trust store file is not found.
         """
-        with HTTPS_SERVER_CERT_PATH.open() as certfile:
-            return certfile.read()
+        return CryptoBackend.get_server_tls_cert()
 
     @staticmethod
     def _get_ca(device: Device) -> CertificateModel:
@@ -225,3 +248,33 @@ class CryptoBackend:
         device.save()
         log.info('Issued and stored LDevID for device %s', device.device_name)
         return pki_response.raw_response
+    
+    @staticmethod
+    def get_nonce(nbytes: int = 16) -> str:
+        """Generates a new nonce for use in the onboarding process."""
+        return secrets.token_urlsafe(nbytes)
+
+
+    @staticmethod
+    def verify_signature(message: bytes, cert: bytes, signature: bytes) -> None:
+        """Verifies the message was signed by the cert provided (e.g. IDevID).
+        
+        Raises: VerificationError if certificate could not be loaded.
+                InvalidSignature if signature does not match.
+        """
+
+        log.debug('Verifying (client) signature...')
+        hash = hashes.Hash(hashes.SHA256())
+        hash.update(message)
+        log.debug(f'SHA-256 hash of message: {hash.finalize().hex()}')
+
+        try:
+            cert = x509.load_pem_x509_certificate(cert)
+            signer_public_key = cert.public_key()
+            print(f'Signer public key: {signer_public_key.public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()}')
+        except Exception as e:
+            exc_msg = 'Failed to load public key from certificate.'
+            raise VerificationError(exc_msg) from e
+        
+        # print(f'signature: {signature}')
+        signer_public_key.verify(signature=signature, data=message, signature_algorithm=ec.ECDSA(hashes.SHA256()))

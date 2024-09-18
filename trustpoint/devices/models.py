@@ -7,7 +7,9 @@ import logging
 import re
 
 from django.db import models
+from django.urls import reverse
 from django.utils import timezone
+from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from pki.models import CertificateModel, DomainModel, RevokedCertificate
 
@@ -54,6 +56,7 @@ class Device(models.Model):
         CLI = 'CI', _('Device CLI')
         TP_CLIENT = 'TP', _('Trustpoint Client')
         BRSKI = 'BR', _('BRSKI')
+        AOKI = 'AO', _('AOKI')
 
     device_name = models.CharField(max_length=100, unique=True, default='test', validators=[UniqueNameValidator()])
     device_serial_number = models.CharField(max_length=100, blank=True)
