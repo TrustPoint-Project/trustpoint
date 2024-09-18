@@ -71,7 +71,7 @@ class Device(models.Model):
     )
     domain = models.ForeignKey(DomainModel, on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
-    tags = TaggableManager()
+    tags = TaggableManager(blank=True)
 
     def __str__(self: Device) -> str:
         """Returns a Device object in human-readable format."""
