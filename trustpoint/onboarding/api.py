@@ -267,8 +267,7 @@ def aoki_finalize(request: HttpRequest, data: AokiFinalizationMessageSchema):
     
     response = {
         'otp': onboarding_process.otp,
-        'salt': onboarding_process.salt,
-        'url_ext': onboarding_process.url
+        'device': onboarding_process.url
     }
     
     return 200, response

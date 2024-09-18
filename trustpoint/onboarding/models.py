@@ -229,11 +229,11 @@ class OnboardingProcess():
 class LDevIDOnboardingProcessMixin():
     """Mixin that provides all methods required for onboarding process types using the /api/onboarding/ldevid endpoint"""
 
-    def __init__(self):
+    def __init__(self, dev: Device):
         """Initializes the mixin"""
-        super().__init__()
+        super().__init__(dev)
         self.otp = secrets.token_hex(8)
-        self.salt = self.device.device_name # TODO!
+        self.salt = self.url
         self.gen_thread = threading.Thread(target=self._calc_hmac, daemon=True)
         self.gen_thread.start()
         self.hmac = None
@@ -308,37 +308,18 @@ class LDevIDOnboardingProcessMixin():
         return chain
 
 
-class ManualOnboardingProcess(OnboardingProcess, LDevIDOnboardingProcessMixin):
+class ManualOnboardingProcess(LDevIDOnboardingProcessMixin, OnboardingProcess):
     """Onboarding process for a device using the full manual onboarding with OTP and HMAC trust store verification."""
 
     def __init__(self, dev: Device) -> None:
         """Initializes a new manual onboarding process for a device."""
         super().__init__(dev)
+        print('init ManualOnboardingProcess')
         self.tsotp = secrets.token_hex(8)
         self.tssalt = secrets.token_hex(8)
         self.gen_thread = threading.Thread(target=self._calc_hmac, daemon=True)
         self.gen_thread.start()
         self.hmac = None
-
-    def _calc_hmac(self) -> None:
-        """Calculates the HMAC signature of the trust store.
-
-        Runs in separate gen_thread thread started by __init__ as it typically takes about a second.
-        """
-        try:
-            self.hmac = Crypt.pbkdf2_hmac_sha256(self.tsotp, self.tssalt, Crypt.get_trust_store().encode())
-        except Exception as e:  # noqa: BLE001
-            msg = 'Error generating trust store HMAC.'
-            self._fail(msg)
-            raise OnboardingError(msg) from e
-
-        if self.state == OnboardingProcessState.STARTED:
-            self.state = OnboardingProcessState.HMAC_GENERATED
-
-    def get_hmac(self) -> str:
-        """Returns the HMAC signature of the trust store and the PBKDF2 of the trust store OTP and salt."""
-        self.gen_thread.join()
-        return self.hmac
 
 
 class DownloadOnboardingProcess(OnboardingProcess):
@@ -388,7 +369,7 @@ class ZeroTouchOnboardingProcess(OnboardingProcess):
     """Parent of all zero-touch onboarding process types."""
 
 
-class AokiOnboardingProcess(ZeroTouchOnboardingProcess, LDevIDOnboardingProcessMixin):
+class AokiOnboardingProcess(LDevIDOnboardingProcessMixin, ZeroTouchOnboardingProcess):
     """Onboarding process for a device using the AOKI protocol."""
 
     _idevid_cert: bytes

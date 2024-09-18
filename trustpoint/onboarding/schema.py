@@ -26,5 +26,4 @@ class AokiFinalizationMessageSchema(Schema):
 class AokiFinalizationResponseSchema(Schema):
     """Schema for the server response to the finalization message sent by the client."""
     otp: str
-    salt: str
-    url_ext: str
+    device: str
