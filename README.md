@@ -292,7 +292,7 @@ You can also build and run Trustpoint as a Docker image.
    ```
    docker compose exec trustpoint tail /var/log/apache2/access.log -f
    ```
-4. access the trustpoint server at http://localhost:8080
+4. access the trustpoint server at http://localhost:8000
 
 ## Usage
 
