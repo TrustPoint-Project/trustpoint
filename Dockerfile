@@ -18,15 +18,36 @@ RUN python -m venv $POETRY_HOME && $POETRY_HOME/bin/pip install poetry==1.8.2
 # Copy the current directory contents into the container
 COPY ./ /var/www/html/trustpoint/
 
+# Set the working directory in the container
 WORKDIR /var/www/html/trustpoint/
+
+# Change owner and group
+RUN chown -R www-data:www-data .
 
 # Install dependencies (we do not need venv in the container)
 RUN $POETRY_HOME/bin/poetry config virtualenvs.create false && $POETRY_HOME/bin/poetry install --no-interaction 
 
 WORKDIR /var/www/html/trustpoint/trustpoint
-# # Run Django migrations and create superuser
+
+#RUN chown www-data:www-data db.sqlite3
+RUN chmod 664 db.sqlite3
+
+# Run Django migrations and create superuser
 RUN python manage.py makemigrations && python manage.py migrate
-# #RUN echo "from django.contrib.auth import get_user_model; User = get_user_model(); User.objects.create_superuser('admin', 'admin@example.com', 'admin')" | python manage.py shell
+
+# After running migrations, add the following to create a superuser
+# Set environment variables for superuser creation
+ENV DJANGO_SUPERUSER_USERNAME=testadmin \
+    DJANGO_SUPERUSER_PASSWORD=testadmin321 \
+    DJANGO_SUPERUSER_EMAIL=testadmin@example.com
+    
+RUN echo "from django.contrib.auth import get_user_model; \
+  User = get_user_model(); \
+  User.objects.create_superuser( \
+    '$DJANGO_SUPERUSER_USERNAME', \
+    '$DJANGO_SUPERUSER_EMAIL', \
+    '$DJANGO_SUPERUSER_PASSWORD'\
+  )" | python manage.py shell
 
 # Copy Apache configuration
 ADD ./trustpoint.conf /etc/apache2/sites-available/000-default.conf
