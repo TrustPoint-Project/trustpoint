@@ -6,7 +6,8 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 RUN apt-get update && apt-get install -y \
     apt-utils vim curl apache2 apache2-utils \
-    python3 libapache2-mod-wsgi-py3
+    python3 libapache2-mod-wsgi-py3 \
+    && a2enmod ssl
 
 RUN ln /usr/bin/python3 /usr/bin/python
 RUN apt-get -y install python3-pip python3-venv
@@ -40,7 +41,7 @@ RUN python manage.py makemigrations && python manage.py migrate
 ENV DJANGO_SUPERUSER_USERNAME=testadmin \
     DJANGO_SUPERUSER_PASSWORD=testadmin321 \
     DJANGO_SUPERUSER_EMAIL=testadmin@example.com
-    
+
 RUN echo "from django.contrib.auth import get_user_model; \
   User = get_user_model(); \
   User.objects.create_superuser( \
@@ -49,11 +50,23 @@ RUN echo "from django.contrib.auth import get_user_model; \
     '$DJANGO_SUPERUSER_PASSWORD'\
   )" | python manage.py shell
 
+# Generate self-signed certificates
+RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+ -keyout /etc/ssl/private/apache-selfsigned.key \
+  -out /etc/ssl/certs/apache-selfsigned.crt  \
+    -subj "/C=DE/ST=BW/L=Stuttgart/O=Trustpoint/OU=Trustpoint/CN=localhost"
+
+
 # Copy Apache configuration
-ADD ./trustpoint.conf /etc/apache2/sites-available/000-default.conf
+#ADD ./trustpoint-apache-http.conf /etc/apache2/sites-available/000-default.conf
+ADD ./trustpoint-apache-https.conf /etc/apache2/sites-available/localhost.conf
+
+
+# Enable the site configuration
+RUN a2ensite localhost.conf
 
 # Make port 80 available to the world outside this container
-EXPOSE 80
+EXPOSE 80 443
 
 # Run development server with HTTPS when the container launches
 # CMD python manage.py runserver_plus 0.0.0.0:8000 --cert-file ../tests/data/x509/https_server.crt --key-file ../tests/data/x509/https_server.pem
