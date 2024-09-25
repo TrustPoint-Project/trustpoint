@@ -22,19 +22,22 @@ COPY ./ /var/www/html/trustpoint/
 # Set the working directory in the container
 WORKDIR /var/www/html/trustpoint/
 
-# Change owner and group
-RUN chown -R www-data:www-data .
-
 # Install dependencies (we do not need venv in the container)
 RUN $POETRY_HOME/bin/poetry config virtualenvs.create false && $POETRY_HOME/bin/poetry install --no-interaction 
 
 WORKDIR /var/www/html/trustpoint/trustpoint
 
-#RUN chown www-data:www-data db.sqlite3
+# change permission for db file
 RUN chmod 664 db.sqlite3
+
+# reset database
+RUN yes | python manage.py reset_db
 
 # Run Django migrations and create superuser
 RUN python manage.py makemigrations && python manage.py migrate
+
+# Change owner and group
+RUN chown -R www-data:www-data .
 
 # After running migrations, add the following to create a superuser
 # Set environment variables for superuser creation
