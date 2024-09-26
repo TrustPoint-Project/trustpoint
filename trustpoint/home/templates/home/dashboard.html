@@ -7,6 +7,31 @@
 {% include 'home/charts-tab.html' %}
 
 <script>
+  async function fetchDeviceCount() {
+    try {
+      const response = await fetch("/api/home/device-count");
+      //console.log("res", response);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error("Error fetching device count:", error);
+      return null; // Handle the error appropriately
+    }
+  }
+  // Function to display the device count
+  async function displayDeviceCount() {
+    const deviceCounts = await fetchDeviceCount();
+
+    if (deviceCounts !== null) {
+      const totalDeviceCountEl = document.getElementById("total-device-count");
+      totalDeviceCountEl.innerText = `${deviceCounts.total}`;
+    }
+  }
+
+  // Call the function to fetch and display the count
+  displayDeviceCount();
   document.addEventListener("DOMContentLoaded", function () {
 
     //device charts data from context
