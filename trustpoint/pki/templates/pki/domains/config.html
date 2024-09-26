@@ -73,7 +73,34 @@
                         <div class="card-body">
                             <h3>PKI Protocol Configuration</h3>
                             <hr>
-                            {% render_table protocol_table  %}
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Protocol</th>
+                                        <th>Status</th>
+                                        <th>Operations</th>
+                                        <th>URL Path</th>
+                                        <th>Details</th>
+                                        <th>Config</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for protocol_name, protocol in protocols.items %}
+                                        {% if protocol %}
+                                            <tr>
+                                                <td>{{ protocol_name }}</td>
+                                                <td>
+                                                    <input type="checkbox" name="protocols" value="{{ protocol_name }}" {% if protocol.status %}checked{% endif %}>
+                                                </td>
+                                                <td>{{ domain.cmp_protocol.get_operation_list|length }}/{{ domain.cmp_protocol.Operations|length }}</td>
+                                                <td>{{ domain.cmp_protocol.url_path }}</td>
+                                                <td><a href="{% url 'pki:domains' %}" class="btn btn-primary">{% trans 'Details' %}</a></td>
+                                                <td><a href="{% url 'pki:domains' %}" class="btn btn-primary">{% trans 'Config' %}</a></td>
+                                            </tr>
+                                        {% endif %}
+                                    {% endfor %}
+                                </tbody>
+                            </table>                       
                         </div>
                         <div class="card-body">
                             <h3>PKI Truststore Configuration</h3>

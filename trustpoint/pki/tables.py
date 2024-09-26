@@ -251,16 +251,31 @@ class ProtocolConfigTable(tables.Table):
 
 
 class TrustStoreConfigFromDomainTable(tables.Table):
-    """Table representation of the Trust Store config for the Domain config."""
-    # @TODO When Trust stores get implemented. Update url
-    details = tables.TemplateColumn('<a href="{% url \'home:dashboard\' %}" class="btn btn-secondary">Details</a>', orderable=False)
-    remove = tables.TemplateColumn('<a href="{% url \'home:dashboard\' %}" class="btn btn-danger">Remove</a>', orderable=False)
+    """Table representation of the Trust Store config for assigning to a Domain."""
+
+    row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
+
+    details = tables.TemplateColumn(
+        '<a href="{% url "pki:truststore_details" pk=record.pk %}" class="btn btn-secondary">Details</a>',
+        orderable=False
+    )
 
     class Meta:
         model = TrustStoreModel
-        template_name = "django_tables2/bootstrap5.html"
-        fields = ("unique_name", "url_path", )
-        attrs = {"class": "table"}
+        template_name = 'django_tables2/bootstrap5.html'
+        fields = ('row_checkbox', 'unique_name', 'url_path')
+        attrs = {'class': 'table'}
+
+    def render_row_checkbox(self, record: TrustStoreModel):
+        """Render the checkbox reflecting whether the trust store is assigned to the domain."""
+        domain = self.context['domain']
+        is_checked = record in domain.truststores.all()
+
+        return format_html(
+            '<input type="checkbox" name="truststores" value="{}" {}>',
+            record.pk,
+            'checked' if is_checked else ''
+        )
 
 
 class TrustStoreTable(tables.Table):

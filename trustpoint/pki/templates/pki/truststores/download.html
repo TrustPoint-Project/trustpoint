@@ -52,7 +52,13 @@
 
                     <div class="tp-card-split">
                         <div>Distributed by Domains</div>
-                            N/A {# TODO #}
+                        <div>
+                            {% for domain in truststore.domain_truststores.all %}
+                            <a href="{% url 'pki:domains-detail' pk=domain.pk %}"> {{ domain.unique_name }}</a><br/>
+                            {% empty %}
+                                <span>No domains assigned.</span>
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>

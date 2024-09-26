@@ -11,7 +11,7 @@ from pki.models import DomainModel
 from pki.pki.request.message import (
     PkiRequestMessage,
     PkiResponseMessage,
-    Protocol,
+    Protocols,
     MimeType,
     HttpStatusCode,
     Operation)
@@ -37,7 +37,7 @@ class PkiRestCsrRequestMessage(PkiRequestMessage):
                  csr: x509.CertificateSigningRequest,
                  serial_number: str):
         super().__init__(
-            protocol=Protocol.REST,
+            protocol=Protocols.REST,
             operation=RestOperation.ISSUE_CERT_CSR,
             domain_unique_name=domain_unique_name)
 
@@ -99,7 +99,7 @@ class PkiRestPkcs12RequestMessage(PkiRequestMessage):
                 domain_unique_name: str,
                 subject: x509.Name):
         super().__init__(
-            protocol=Protocol.REST,
+            protocol=Protocols.REST,
             operation=RestOperation.ISSUE_CERT_PKCS12,
             domain_unique_name=domain_unique_name)
         

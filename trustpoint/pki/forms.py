@@ -5,12 +5,11 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from pki.initializer import (
+    TrustStoreInitializer,
     UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer,
     UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer,
-
-    TrustStoreInitializer)
-from pki.models import IssuingCaModel, DomainModel
-
+)
+from pki.models import DomainModel, IssuingCaModel, TrustStoreModel
 from pki.validator.field import UniqueNameValidator
 
 

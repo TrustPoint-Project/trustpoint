@@ -16,6 +16,8 @@ from cryptography.x509.extensions import ExtensionNotFound
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
+from pki.pki.request import Protocols
+
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
 from .serializer import CertificateCollectionSerializer, CertificateSerializer, PublicKeySerializer
@@ -1383,47 +1385,6 @@ class CertificateChainOrderModel(models.Model):
         return f'CertificateChainOrderModel({self.certificate.common_name})'
 
 
-class DomainModel(models.Model):
-    """Endpoint Profile model."""
-
-    unique_name = models.CharField(
-        f'Unique Name',
-        max_length=100,
-        unique=True,
-        validators=[UniqueNameValidator()])
-
-    issuing_ca = models.ForeignKey(
-        IssuingCaModel,
-        on_delete=models.CASCADE,
-        blank=True,
-        null=True,
-        verbose_name=_('Issuing CA'),
-        related_name='domain',
-    )
-
-    def __str__(self) -> str:
-        """Human-readable representation of the Domain model instance.
-
-        Returns:
-            str:
-                Human-readable representation of the EndpointProfile model instance.
-        """
-        return self.unique_name
-
-    def get_url_path_segment(self):
-        """@BytesWelder: I don't know what we need this for. @Alex mentioned this in his doc.
-
-        Returns:
-            str:
-                URL path segment.
-        """
-        return self.unique_name.lower().replace(' ', '-')
-
-    def save(self, *args, **kwargs):
-        self.full_clean()
-        super().save(*args, **kwargs)
-
-
 class RevokedCertificate(models.Model):
     """Certificate Revocation model."""
     cert = models.ForeignKey(CertificateModel, on_delete=models.PROTECT)
@@ -1502,7 +1463,7 @@ class TrustStoreModel(models.Model):
         return len(self.certificates.all())
 
     def __str__(self) -> str:
-        return f'TrustStoreModel({self.unique_name})'
+        return self.unique_name
 
     def get_serializer(self) -> CertificateCollectionSerializer:
         return CertificateCollectionSerializer(
@@ -1526,3 +1487,83 @@ class TrustStoreOrderModel(models.Model):
         editable=False,
         related_name='trust_store_components')
     trust_store = models.ForeignKey(TrustStoreModel, on_delete=models.CASCADE, editable=False)
+
+
+class CMPModel(models.Model):
+    """CMP Protocol Model for managing CMP-specific settings."""
+
+    class Operations(models.TextChoices):
+        IR = 'ir', 'Initial Request'
+        CR = 'cr', 'Certificate Request'
+        P10CR = 'p10cr', 'PKCS#10 Certificate Request'
+        CERTCONF = 'certConf', 'Certificate Confirmation'
+        RR = 'rr', 'Revocation Request'
+        NESTED = 'nested', 'Nested Message'
+        KUR = 'kur', 'Key Update Request'
+
+    domain = models.OneToOneField('DomainModel', on_delete=models.CASCADE, related_name='cmp_protocol')
+    status = models.BooleanField(default=False)
+    url_path = models.URLField(max_length=1024, verbose_name='CMP URL Path')
+    operation_modes = models.TextField(blank=True, verbose_name="Selected Operations")
+
+    def get_operation_list(self):
+        """Convert the comma-separated string to a list."""
+        if self.operation_modes:
+            return self.operation_modes.split(',')
+        return []
+
+    def set_operation_list(self, operations):
+        """Convert a list of operations to a comma-separated string."""
+        self.operation_modes = ','.join(operations)
+
+
+
+class DomainModel(models.Model):
+    """Endpoint Profile model."""
+
+    unique_name = models.CharField(
+        f'Unique Name',
+        max_length=100,
+        unique=True,
+        validators=[UniqueNameValidator()])
+
+    issuing_ca = models.ForeignKey(
+        IssuingCaModel,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name=_('Issuing CA'),
+        related_name='domain',
+    )
+
+    truststores = models.ManyToManyField(
+        to=TrustStoreModel,
+        verbose_name=_('Truststores'),
+        related_name='domain_truststores'
+    )
+
+    def __str__(self) -> str:
+        """Human-readable representation of the Domain model instance.
+
+        Returns:
+            str:
+                Human-readable representation of the EndpointProfile model instance.
+        """
+        return self.unique_name
+
+    def save(self, *args, **kwargs) -> None:
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+    def get_url_path_segment(self):
+        """@BytesWelder: I don't know what we need this for. @Alex mentioned this in his doc.
+
+        Returns:
+            str:
+                URL path segment.
+        """
+        return self.unique_name.lower().replace(' ', '-')
+
+    def get_cmp_object(self):
+        """Get correspondig CMP object"""
+        return self.cmp_protocol
