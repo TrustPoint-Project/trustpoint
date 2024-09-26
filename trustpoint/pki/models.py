@@ -1517,6 +1517,32 @@ class CMPModel(models.Model):
         self.operation_modes = ','.join(operations)
 
 
+class ESTModel(models.Model):
+    """CMP Protocol Model for managing CMP-specific settings."""
+
+    class Operations(models.TextChoices):
+        CACERTS = 'cacerts', 'Distribution of CA Certificates'
+        SIMPLEENROLL = 'simpleenroll', 'Enrollment of Clients'
+        SIMPLEREENROLL = 'simplereenroll', 'Re-enrollment of Clients'
+        FULLCMC = 'fullcmc', 'Full CMC'
+        SERVERKEYGEN = 'serverkeygen', 'Server-Side Key Generation'
+        CSRATTRS = 'csrattrs', 'CSR Attributes'
+
+    domain = models.OneToOneField('DomainModel', on_delete=models.CASCADE, related_name='est_protocol')
+    status = models.BooleanField(default=False)
+    url_path = models.URLField(max_length=1024, verbose_name='CMP URL Path')
+    operation_modes = models.TextField(blank=True, verbose_name="Selected Operations")
+
+    def get_operation_list(self):
+        """Convert the comma-separated string to a list."""
+        if self.operation_modes:
+            return self.operation_modes.split(',')
+        return []
+
+    def set_operation_list(self, operations):
+        """Convert a list of operations to a comma-separated string."""
+        self.operation_modes = ','.join(operations)
+
 
 class DomainModel(models.Model):
     """Endpoint Profile model."""
@@ -1564,6 +1590,10 @@ class DomainModel(models.Model):
         """
         return self.unique_name.lower().replace(' ', '-')
 
-    def get_cmp_object(self):
+    def get_protocol_object(self, protocol):
         """Get correspondig CMP object"""
-        return self.cmp_protocol
+        if protocol == 'cmp':
+            return self.cmp_protocol
+        if protocol == 'est':
+            return self.est_protocol
+        return None

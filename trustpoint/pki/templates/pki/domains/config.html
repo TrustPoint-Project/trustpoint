@@ -92,8 +92,8 @@
                                                 <td>
                                                     <input type="checkbox" name="protocols" value="{{ protocol_name }}" {% if protocol.status %}checked{% endif %}>
                                                 </td>
-                                                <td>{{ domain.cmp_protocol.get_operation_list|length }}/{{ domain.cmp_protocol.Operations|length }}</td>
-                                                <td>{{ domain.cmp_protocol.url_path }}</td>
+                                                <td>{{ protocol.get_operation_list|length }}/{{ protocol.Operations|length }}</td>
+                                                <td>{{ protocol.url_path }}</td>
                                                 <td><a href="{% url 'pki:domains' %}" class="btn btn-primary">{% trans 'Details' %}</a></td>
                                                 <td><a href="{% url 'pki:domains' %}" class="btn btn-primary">{% trans 'Config' %}</a></td>
                                             </tr>

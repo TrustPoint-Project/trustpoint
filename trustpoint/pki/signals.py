@@ -6,7 +6,7 @@ from django.dispatch import receiver
 
 from pki.pki.request.message import Protocols
 
-from .models import DomainModel, IssuingCaModel, CMPModel
+from .models import DomainModel, IssuingCaModel, CMPModel, ESTModel
 from .tasks import add_crl_to_schedule, remove_crl_from_schedule
 
 logger = logging.getLogger('tp.pki')
@@ -46,5 +46,8 @@ def initial_database_connection(sender, connection, **kwargs):
 def initialize_protocol_statuses(sender, instance, created, **kwargs):
     """Signal to initialize protocol statuses after a domain is created."""
     if created:
-        url_path = '/.well-known/cmp/p/' + instance.get_url_path_segment()
-        CMPModel.objects.get_or_create(domain=instance, url_path=url_path)
+        cmp_path = '/.well-known/cmp/p/' + instance.get_url_path_segment()
+        CMPModel.objects.get_or_create(domain=instance, url_path=cmp_path)
+
+        est_path = '/.well-known/est/' + instance.get_url_path_segment()
+        ESTModel.objects.get_or_create(domain=instance, url_path=est_path)

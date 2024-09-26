@@ -87,30 +87,10 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
 
         for protocol in Protocols:
             protocol_name = protocol.value
-            if protocol_name == 'cmp':
-                cmp_object = domain.get_cmp_object()
-                cmp_object.status = protocol_name in active_protocols
-                cmp_object.save()
-
-            # elif protocol_name == 'est':
-            #     est_object = domain.get_est_object()
-            #     est_object.status = protocol_name in active_protocols
-            #     est_object.save()
-
-            # elif protocol_name == 'acme':
-            #     acme_object = domain.get_acme_object()
-            #     acme_object.status = protocol_name in active_protocols
-            #     acme_object.save()
-
-            # elif protocol_name == 'scep':
-            #     scep_object = domain.get_scep_object()
-            #     scep_object.status = protocol_name in active_protocols
-            #     scep_object.save()
-
-            # elif protocol_name == 'rest':
-            #     rest_object = domain.get_rest_object()
-            #     rest_object.status = protocol_name in active_protocols
-            #     rest_object.save()
+            protocol_object = domain.get_protocol_object(protocol_name)
+            if protocol_object is not None:
+                protocol_object.status = protocol_name in active_protocols
+                protocol_object.save()
 
         return self.get(request, *args, **kwargs)
 
