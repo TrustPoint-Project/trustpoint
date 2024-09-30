@@ -91,7 +91,6 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
                 return JsonResponse({'success': False, 'error': 'Unknown protocol'})
 
             if form.is_valid():
-                print('Form is valid')
                 form.save()
 
         selected_truststore_ids = request.POST.getlist('truststores')

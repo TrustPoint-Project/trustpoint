@@ -1596,5 +1596,5 @@ class DomainModel(models.Model):
             return self.cmp_protocol
         if protocol == 'est':
             return self.est_protocol
-        msg = f'Unknown protocol: {protocol}.'
-        raise ValueError(msg)
+        # msg = f'Unknown protocol: {protocol}.'
+        # raise ValueError(msg)
