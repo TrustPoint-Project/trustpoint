@@ -9,7 +9,7 @@ from pki.initializer import (
     UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer,
     UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer,
 )
-from pki.models import DomainModel, IssuingCaModel, TrustStoreModel
+from pki.models import CMPModel, DomainModel, ESTModel, IssuingCaModel, TrustStoreModel
 from pki.validator.field import UniqueNameValidator
 
 
@@ -327,3 +327,50 @@ class TruststoresDownloadForm(forms.Form):
         ],
         initial='pem',
         required=True)
+
+
+class CMPForm(forms.ModelForm):
+    class Meta:
+        model = CMPModel
+        fields = ['operation_modes']
+
+    operation_modes = forms.MultipleChoiceField(
+        choices=CMPModel.Operations.choices,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Select Operations"
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+
+    def save(self, commit=True):
+        """Override save to store the operations as a comma-separated string."""
+        instance = super().save(commit=False)
+        operations_list = self.cleaned_data['operation_modes']
+        instance.set_operation_list(operations_list)
+        if commit:
+            instance.save()
+        return instance
+
+
+class ESTForm(forms.ModelForm):
+    class Meta:
+        model = ESTModel
+        fields = ['operation_modes']
+
+    operation_modes = forms.MultipleChoiceField(
+        choices=ESTModel.Operations.choices,
+        widget=forms.CheckboxSelectMultiple,
+        required=False,
+        label="Select Operations"
+    )
+
+    def save(self, commit=True):
+        """Override save to store the operations as a comma-separated string."""
+        instance = super().save(commit=False)
+        operations_list = self.cleaned_data['operation_modes']
+        instance.set_operation_list(operations_list)
+        if commit:
+            instance.save()
+        return instance

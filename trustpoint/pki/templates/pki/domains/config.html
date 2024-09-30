@@ -3,6 +3,8 @@
 {% load crispy_forms_filters %}
 {% load django_tables2 %}
 {% block content %}
+{% load static %}
+    <script src="{% static 'js/domains.js' %}"></script>
     <div class="card tp-card-centered">
         <div class="card-header">
             <h2>{{ domain.unique_name }} {% trans "Configuration" %}</h2>
@@ -95,12 +97,29 @@
                                                 <td>{{ protocol.get_operation_list|length }}/{{ protocol.Operations|length }}</td>
                                                 <td>{{ protocol.url_path }}</td>
                                                 <td><a href="{% url 'pki:domains' %}" class="btn btn-primary">{% trans 'Details' %}</a></td>
-                                                <td><a href="{% url 'pki:domains' %}" class="btn btn-primary">{% trans 'Config' %}</a></td>
+                                                <td>
+                                                    <button type="button" class="btn btn-primary config-button" data-url="{% url 'pki:protocol-config' protocol_name=protocol_name domain_id=domain.pk%}" data-bs-toggle="modal" data-bs-target="#configModal">
+                                                        {% trans 'Config' %}
+                                                    </button>
+                                                </td>
                                             </tr>
                                         {% endif %}
                                     {% endfor %}
                                 </tbody>
-                            </table>                       
+                            </table>
+                            <!-- Modal window -->
+                            <div class="modal fade" id="configModal" tabindex="-1" aria-labelledby="configModalLabel" aria-hidden="true">
+                                <div class="modal-dialog">
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title" id="configModalLabel">Protocol Configuration</h5>
+                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                        </div>
+                                        <div class="modal-body">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         <div class="card-body">
                             <h3>PKI Truststore Configuration</h3>
@@ -119,5 +138,4 @@
             </div>
         </form>
     </div>
-
 {% endblock content %}

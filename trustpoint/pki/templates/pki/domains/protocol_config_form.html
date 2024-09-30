@@ -1,0 +1,7 @@
+{% load i18n %}
+{% load crispy_forms_filters %}
+
+{{ form.as_p }}
+<input type="hidden" name="protocol" value="{{ protocol_name }}">
+<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+<button type="submit" class="btn btn-primary">Save changes</button>

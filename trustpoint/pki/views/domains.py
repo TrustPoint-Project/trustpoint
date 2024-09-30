@@ -1,13 +1,17 @@
 from __future__ import annotations
 
 from devices.models import Device
+from django.http import HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404
+from django.template.loader import render_to_string
 from django.urls import reverse_lazy
+from django.views import View
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView
+from django.views.generic.edit import CreateView, FormView, UpdateView
 from django_tables2 import RequestConfig, SingleTableView
 
-from pki.forms import DomainCreateForm, DomainUpdateForm
-from pki.models import DomainModel, TrustStoreModel
+from pki.forms import CMPForm, DomainCreateForm, DomainUpdateForm, ESTForm
+from pki.models import CMPModel, DomainModel, ESTModel, TrustStoreModel
 from pki.pki.request import Protocols
 from pki.tables import DomainTable, ProtocolConfigTable, TrustStoreConfigFromDomainTable
 from trustpoint.views.base import BulkDeleteView, ContextDataMixin, TpLoginRequiredMixin
@@ -55,23 +59,18 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
         context = super().get_context_data(**kwargs)
         domain = self.get_object()
 
-        context['cmp_protocol'] = domain.cmp_protocol if hasattr(domain, 'cmp_protocol') else None
-        context['est_protocol'] = domain.est_protocol if hasattr(domain, 'est_protocol') else None
-        context['acme_protocol'] = domain.acme_protocol if hasattr(domain, 'acme_protocol') else None
-        context['scep_protocol'] = domain.scep_protocol if hasattr(domain, 'scep_protocol') else None
-        context['rest_protocol'] = domain.rest_protocol if hasattr(domain, 'rest_protocol') else None
-
         context['protocols'] = {
-            'cmp': context['cmp_protocol'],
-            'est': context['est_protocol'],
-            'acme': context['acme_protocol'],
-            'scep': context['scep_protocol'],
-            'rest': context['rest_protocol']
+            'cmp': domain.cmp_protocol if hasattr(domain, 'cmp_protocol') else None,
+            'est': domain.est_protocol if hasattr(domain, 'est_protocol') else None,
+            'acme': domain.acme_protocol if hasattr(domain, 'acme_protocol') else None,
+            'scep': domain.scep_protocol if hasattr(domain, 'scep_protocol') else None,
+            'rest': domain.rest_protocol if hasattr(domain, 'rest_protocol') else None
         }
 
         trust_store_table = TrustStoreConfigFromDomainTable(TrustStoreModel.objects.all())
         RequestConfig(self.request).configure(trust_store_table)
         context['trust_store_table'] = trust_store_table
+
         devices_count = Device.count_devices_by_domain_and_status(domain=domain)
         context['devices_count'] = {item['device_onboarding_status']: item['count'] for item in devices_count}
 
@@ -79,6 +78,22 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
 
     def post(self, request, *args, **kwargs):
         domain = self.get_object()
+
+        if 'protocol' in request.POST:
+            protocol_name = request.POST.get('protocol')
+            if protocol_name == 'cmp':
+                cmp_protocol = domain.cmp_protocol
+                form = CMPForm(request.POST, instance=cmp_protocol)
+            elif protocol_name == 'est':
+                est_protocol = domain.est_protocol
+                form = ESTForm(request.POST, instance=est_protocol)
+            else:
+                return JsonResponse({'success': False, 'error': 'Unknown protocol'})
+
+            if form.is_valid():
+                print('Form is valid')
+                form.save()
+
         selected_truststore_ids = request.POST.getlist('truststores')
         selected_truststores = TrustStoreModel.objects.filter(pk__in=selected_truststore_ids)
         domain.truststores.set(selected_truststores)
@@ -94,6 +109,15 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
 
         return self.get(request, *args, **kwargs)
 
+    def get_protocol_form(self, protocol_name):
+        """Returns the form instance for a given protocol."""
+        domain = self.get_object()
+        if protocol_name == 'cmp':
+            return CMPForm(instance=domain.cmp_protocol)
+        elif protocol_name == 'est':
+            return ESTForm(instance=domain.est_protocol)
+        return None
+
 class DomainDetailView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
 
     model = DomainModel
@@ -108,3 +132,29 @@ class DomainBulkDeleteConfirmView(DomainContextMixin, TpLoginRequiredMixin, Bulk
     ignore_url = reverse_lazy('pki:domains')
     template_name = 'pki/domains/confirm_delete.html'
     context_object_name = 'domains'
+
+
+class ProtocolConfigView(DomainContextMixin, View):
+    template_name = 'pki/domains/protocol_config_form.html'
+
+    def get(self, request, protocol_name, *args, **kwargs):
+        domain = DomainModel.objects.get(pk=self.kwargs.get('domain_id'))
+        form = None
+
+        if protocol_name == "cmp":
+            cmp_protocol = domain.get_protocol_object('cmp')
+            initial_data = {'operation_modes': cmp_protocol.get_operation_list()}
+            form = CMPForm(instance=cmp_protocol, initial=initial_data)
+        elif protocol_name == "est":
+            est_protocol = domain.get_protocol_object('est')
+            initial_data = {'operation_modes': est_protocol.get_operation_list()}
+            form = ESTForm(instance=est_protocol, initial=initial_data)
+
+        if form:
+            form_html = render_to_string(self.template_name, {
+                'form': form,
+                'protocol_name': protocol_name
+            })
+            return HttpResponse(form_html)
+        else:
+            return HttpResponse('<p>Invalid protocol name</p>', status=400)
