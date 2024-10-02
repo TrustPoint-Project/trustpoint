@@ -1,16 +1,21 @@
 FROM ubuntu
-#FROM python:3.12.2-slim-bookworm
+# This will not work, since debian uses a slightly different apache2 config structure.
+# Current Dockerfile is meant to be used with the ubuntu apache2 setup.
+# FROM python:3.12.2-slim-bookworm
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
-RUN apt-get update && apt-get install -y \
-    apt-utils vim curl apache2 apache2-utils \
-    python3 libapache2-mod-wsgi-py3 \
-    && a2enmod ssl
+# Make port 80 and 443 available to the world outside this container.
+# 80 will be redirected to 443 using TLS through the apache.
+EXPOSE 80 443
+
+RUN apt-get update && apt-get install -y apt-utils vim curl apache2 apache2-utils python3 libapache2-mod-wsgi-py3 python3-pip python3-venv
+
+RUN a2enmod ssl
+RUN a2enmod rewrite
 
 RUN ln /usr/bin/python3 /usr/bin/python
-RUN apt-get -y install python3-pip python3-venv
 
 # Install poetry
 ENV POETRY_HOME=/opt/poetry
@@ -47,12 +52,8 @@ RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 ADD ./trustpoint-apache-http.conf /etc/apache2/sites-available/000-default.conf
 ADD ./trustpoint-apache-https.conf /etc/apache2/sites-available/localhost.conf
 
-
 # Enable the site configuration
 RUN a2ensite localhost.conf
 
-# Make port 80 and 443 available to the world outside this container. 80 will be redirected to 443 using TLS.
-EXPOSE 80 443
-
-# Run Apache in the foreground
+## Run Apache in the foreground
 CMD ["apache2ctl", "-D", "FOREGROUND"]
