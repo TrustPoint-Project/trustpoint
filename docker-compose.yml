@@ -1,0 +1,7 @@
+services:
+  trustpoint:
+    build: .
+    container_name: trustpoint
+    ports:
+      - "80:80"
+      - "443:443"

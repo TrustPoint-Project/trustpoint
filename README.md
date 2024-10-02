@@ -28,7 +28,6 @@ As a result, Trustpoint aims to offer a solution tailored to the domain of machi
 
 - supports concepts for zero-touch onboarding as well as user-driven onboarding
 
-
 ## What are the features of this early technology preview?
 
 - Django-based responsive GUI
@@ -145,6 +144,7 @@ python manage.py createsuperuser
 ```
 
 Use any database client to connect to the database. you need to configure two settings
+
 - database type : SQLite
 - database file path: path to `db.sqlite3` file in trustpoint folder
 
@@ -163,7 +163,8 @@ python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server
 ```
 
 #### Background Task Management with Django-Q
-This project uses Django-Q, a task queue system for Django that allows you to run background tasks, schedule jobs, and manage asynchronous workflows. 
+
+This project uses Django-Q, a task queue system for Django that allows you to run background tasks, schedule jobs, and manage asynchronous workflows.
 
 In addition to the usual Django management commands (e.g., python manage.py runserver), you need to start the Django-Q task cluster to enable background task execution.
 
@@ -263,6 +264,35 @@ You can also build and run Trustpoint as a Docker image.
    ```
    docker run -p 8000:8000 trustpoint
    ```
+
+### docker compose
+
+You can also build and run Trustpoint as a Docker image.
+
+1. Build the Docker image:
+
+   - Open a terminal and navigate to your project's root directory.
+   - Run the following command to build the Docker image:
+
+   ```
+   docker compose build
+   ```
+
+2. Run the Docker container:
+   - Once the image is built, you can run a container based on that image:
+   ```
+   docker compose up
+   ```
+   or to run in daemon mode
+   ```
+   docker compose up -d
+   ```
+3. check the apache access logs
+   - once the container is running
+   ```
+   docker compose exec trustpoint tail /var/log/apache2/access.log -f
+   ```
+4. access the trustpoint server at http://localhost:8000
 
 ## Usage
 
