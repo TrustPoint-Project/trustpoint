@@ -33,25 +33,8 @@ RUN chmod 664 db.sqlite3
 # reset database
 RUN yes | python manage.py reset_db
 
-# Run Django migrations and create superuser
-RUN python manage.py makemigrations && python manage.py migrate
-
 # Change owner and group
 RUN chown -R www-data:www-data .
-
-# After running migrations, add the following to create a superuser
-# Set environment variables for superuser creation
-ENV DJANGO_SUPERUSER_USERNAME=testadmin \
-    DJANGO_SUPERUSER_PASSWORD=testadmin321 \
-    DJANGO_SUPERUSER_EMAIL=testadmin@example.com
-
-RUN echo "from django.contrib.auth import get_user_model; \
-  User = get_user_model(); \
-  User.objects.create_superuser( \
-    '$DJANGO_SUPERUSER_USERNAME', \
-    '$DJANGO_SUPERUSER_EMAIL', \
-    '$DJANGO_SUPERUSER_PASSWORD'\
-  )" | python manage.py shell
 
 # Generate self-signed certificates
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -61,20 +44,15 @@ RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
 
 
 # Copy Apache configuration
-#ADD ./trustpoint-apache-http.conf /etc/apache2/sites-available/000-default.conf
+ADD ./trustpoint-apache-http.conf /etc/apache2/sites-available/000-default.conf
 ADD ./trustpoint-apache-https.conf /etc/apache2/sites-available/localhost.conf
 
 
 # Enable the site configuration
 RUN a2ensite localhost.conf
 
-# Make port 80 available to the world outside this container
+# Make port 80 and 443 available to the world outside this container. 80 will be redirected to 443 using TLS.
 EXPOSE 80 443
-
-# Run development server with HTTPS when the container launches
-# CMD python manage.py runserver_plus 0.0.0.0:8000 --cert-file ../tests/data/x509/https_server.crt --key-file ../tests/data/x509/https_server.pem
-# CMD ["python", "manage.py", "runserver_plus", "8000", "--cert-file", "../tests/data/x509/https_server.crt", "--key-file", "../tests/data/x509/https_server.pem"]
-# CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
 
 # Run Apache in the foreground
 CMD ["apache2ctl", "-D", "FOREGROUND"]
