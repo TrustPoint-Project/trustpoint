@@ -16,27 +16,75 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     }
   }
 
-  // Function to display the device count
-  async function displayDeviceCount(deviceCounts) {
-    console.log("deviceCounts", deviceCounts)
-    const totalDeviceCountEl = document.getElementById("total-device-count");
-    totalDeviceCountEl.innerText = `${deviceCounts.total}`;
+  // Function to update the device counts
+  async function updateDeviceCounts(deviceCounts) {
+    console.log("deviceCounts", deviceCounts);
+
+    document.getElementById("total-device-count").textContent = `${deviceCounts.total}`;
+    document.getElementById("onboared-device-count").textContent = `Onboarded: ${deviceCounts.O}`;
+    document.getElementById("pending-device-count").textContent = `Waiting: ${deviceCounts.P}`;
+    // Update progress bars
+    document.getElementById("onboared-device-progress").style.width = `${
+      (deviceCounts.O * 100) / deviceCounts.total
+    }%`;
+    document.getElementById("pending-device-progress").style.width = `${
+      (deviceCounts.P * 100) / deviceCounts.total
+    }%`;
+  }
+
+  // Function to update the cert counts
+  async function updateCertCounts(certCounts) {
+    console.log("certCounts", certCounts);
+    // update certificate count panel
+    document.getElementById("total-cert-count").textContent = `${certCounts.total}`;
+    document.getElementById("active-cert-count").textContent = `Active: ${certCounts.active}`;
+    document.getElementById("expired-cert-count").textContent = `Expired: ${certCounts.expired}`;
+    // Update progress bars
+    document.getElementById("active-cert-progress").style.width = `${
+      (certCounts.active * 100) / certCounts.total
+    }%`;
+    document.getElementById("expired-cert-progress").style.width = `${
+      (certCounts.expired * 100) / certCounts.total
+    }%`;
+
+    // update expiring certificate count panel
+    document.getElementById(
+      "total-expiring-cert-count"
+    ).textContent = `${certCounts.expiring_in_7_days}`;
+    document.getElementById(
+      "expiring-1day-cert-count"
+    ).textContent = `Next 24 hours: ${certCounts.expiring_in_1_day}`;
+    document.getElementById(
+      "expiring-7days-cert-count"
+    ).textContent = `Next 7 days: ${certCounts.expiring_in_7_days}`;
+    // Update progress bars
+    document.getElementById("expiring-1day-cert-progress").style.width = `${
+      (certCounts.expiring_in_1_day * 100) / certCounts.total
+    }%`;
+    document.getElementById("expiring-7days-cert-progress").style.width = `${
+      (certCounts.expiring_in_7_days * 100) / certCounts.total
+    }%`;
   }
 
   // Function to dashboard data
-  async function fetschAndDisplayDashboardData() {
+  async function fetchAndUpdateDashboardData() {
     const dashboardData = await fetchDasbhboardData();
-    //console.log("dashboardData", dashboardData);
-    if ("device_counts" in dashboardData) {
-      displayDeviceCount(dashboardData.device_counts)
+    console.log("dashboardData", dashboardData);
+    if (dashboardData) {
+      if ("device_counts" in dashboardData) {
+        updateDeviceCounts(dashboardData.device_counts);
+      }
+      if ("cert_counts" in dashboardData) {
+        updateCertCounts(dashboardData.cert_counts);
+      }
     }
   }
 
   // Call the function to fetch and display dashboard data
-  fetschAndDisplayDashboardData();
+  fetchAndUpdateDashboardData();
   // every 20 seconds
-  setInterval(fetschAndDisplayDashboardData, 1000*20);
-  
+  //setInterval(fetchAndUpdateDashboardData, 1000*20);
+
   document.addEventListener("DOMContentLoaded", function () {
     //device charts data from context
     var stackChartConfig = JSON.parse("{{ line_chart_device_config|escapejs }}");
