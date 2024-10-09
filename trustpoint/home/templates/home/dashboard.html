@@ -1,16 +1,11 @@
-{% extends 'trustpoint/base.html' %}
-
-{% block content %}
-
-{% include 'home/counts-panel.html' %} 
-{% include 'home/notifications-tab.html' %}
-{% include 'home/charts-tab.html' %}
+{% extends 'trustpoint/base.html' %} {% block content %} {% include 'home/counts-panel.html' %} {%
+include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
 <script>
-  async function fetchDeviceCount() {
+  async function fetchDasbhboardData() {
     try {
-      const response = await fetch("/api/home/device-count");
-      //console.log("res", response);
+      const response = await fetch("/api/home/dashboard_data");
+      console.log("res", response);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -20,20 +15,29 @@
       return null; // Handle the error appropriately
     }
   }
-  // Function to display the device count
-  async function displayDeviceCount() {
-    const deviceCounts = await fetchDeviceCount();
 
-    if (deviceCounts !== null) {
-      const totalDeviceCountEl = document.getElementById("total-device-count");
-      totalDeviceCountEl.innerText = `${deviceCounts.total}`;
+  // Function to display the device count
+  async function displayDeviceCount(deviceCounts) {
+    console.log("deviceCounts", deviceCounts)
+    const totalDeviceCountEl = document.getElementById("total-device-count");
+    totalDeviceCountEl.innerText = `${deviceCounts.total}`;
+  }
+
+  // Function to dashboard data
+  async function fetschAndDisplayDashboardData() {
+    const dashboardData = await fetchDasbhboardData();
+    //console.log("dashboardData", dashboardData);
+    if ("device_counts" in dashboardData) {
+      displayDeviceCount(dashboardData.device_counts)
     }
   }
 
-  // Call the function to fetch and display the count
-  displayDeviceCount();
+  // Call the function to fetch and display dashboard data
+  fetschAndDisplayDashboardData();
+  // every 20 seconds
+  setInterval(fetschAndDisplayDashboardData, 1000*20);
+  
   document.addEventListener("DOMContentLoaded", function () {
-
     //device charts data from context
     var stackChartConfig = JSON.parse("{{ line_chart_device_config|escapejs }}");
     var donutChartDeviceConfig = JSON.parse("{{ donut_chart_device_config|escapejs }}");
@@ -43,7 +47,7 @@
     var lineChartCertConfig = JSON.parse("{{ line_chart_cert_config|escapejs }}");
     var donutChartCertConfig = JSON.parse("{{ donut_chart_cert_config|escapejs }}");
     var barChartCertConfig = JSON.parse("{{ bar_chart_cert_config|escapejs }}");
-    
+
     //CA charts data from context
     var barChartCAConfig = JSON.parse("{{ bar_chart_ca_config|escapejs }}");
     var lineChartConfig = JSON.parse("{{ line_chart_config|escapejs }}");
@@ -64,7 +68,7 @@
       updateChartContent(targetId);
     });
 
-    var lineChartDevice, donutChartDevice, barChartDevice; 
+    var lineChartDevice, donutChartDevice, barChartDevice;
     var lineChartCert, donutChartCert, barChartCert;
     var lineChart, barChartCA, donutChartCA;
     // function to update charts content based on chart tab id
@@ -72,40 +76,33 @@
       //console.log("chartTabId", chartTabId);
       if (chartTabId == "deviceChartTab") {
         var lineChartDeviceEle = document.getElementById("lineChartDevice").getContext("2d");
-        if(!lineChartDevice) 
-          lineChartDevice = new Chart(lineChartDeviceEle, stackChartConfig);
+        if (!lineChartDevice) lineChartDevice = new Chart(lineChartDeviceEle, stackChartConfig);
 
         var donutChartDeviceEle = document.getElementById("donutChartDevice").getContext("2d");
-        if(!donutChartDevice)
-          donutChartDevice  = new Chart(donutChartDeviceEle, donutChartDeviceConfig);
+        if (!donutChartDevice)
+          donutChartDevice = new Chart(donutChartDeviceEle, donutChartDeviceConfig);
 
         var barChartDeviceEle = document.getElementById("barChartDevice").getContext("2d");
-        if(!barChartDevice)
-          barChartDevice  = new Chart(barChartDeviceEle, barChartDeviceConfig);
+        if (!barChartDevice) barChartDevice = new Chart(barChartDeviceEle, barChartDeviceConfig);
       } else if (chartTabId == "certChartTab") {
         var lineChartCertEle = document.getElementById("lineChartCert").getContext("2d");
-        if(!lineChartCert)
-          lineChartCert = new Chart(lineChartCertEle, lineChartCertConfig);
+        if (!lineChartCert) lineChartCert = new Chart(lineChartCertEle, lineChartCertConfig);
 
         var donutChartCertEle = document.getElementById("donutChartCert").getContext("2d");
-        if(!donutChartCert)
-          donutChartCert = new Chart(donutChartCertEle, donutChartCertConfig);
+        if (!donutChartCert) donutChartCert = new Chart(donutChartCertEle, donutChartCertConfig);
 
         var barChartCertEle = document.getElementById("barChartCert").getContext("2d");
-        if(!barChartCert)
-          barChartCert = new Chart(barChartCertEle, barChartCertConfig);
+        if (!barChartCert) barChartCert = new Chart(barChartCertEle, barChartCertConfig);
       } else if (chartTabId == "caChartTab") {
         // var lineChartEle = document.getElementById("lineChart").getContext("2d");
         // if(!lineChart)
         //   lineChart = new Chart(lineChartEle, lineChartConfig);
 
         var barChartCAEle = document.getElementById("barChartCA").getContext("2d");
-        if(!barChartCA)
-          barChartCA = new Chart(barChartCAEle, barChartCAConfig);
+        if (!barChartCA) barChartCA = new Chart(barChartCAEle, barChartCAConfig);
 
         var donutChartCAEle = document.getElementById("donutChartCA").getContext("2d");
-        if(!donutChartCA)
-          donutChartCA = new Chart(donutChartCAEle, donutChartCAConfig);
+        if (!donutChartCA) donutChartCA = new Chart(donutChartCAEle, donutChartCAConfig);
       }
     }
   });
