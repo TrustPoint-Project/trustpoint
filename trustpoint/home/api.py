@@ -15,9 +15,9 @@ router = Router()
 
 # --- PUBLIC HOME API ENDPOINTS ---
 
-@router.get('/device-count', exclude_none=True)
-def device_count(request: HttpRequest):
-    """Get devices count by their onboarding status."""
+@router.get('/dashboard_data', exclude_none=True)
+def dashboard_data(request: HttpRequest):
+    """Get dashboard data for panels, tables and charts"""
     device_qr = Device.objects.values('device_onboarding_status').annotate(count=Count('device_onboarding_status'))
     device_counts = {item['device_onboarding_status']: item['count'] for item in device_qr}
 
@@ -27,4 +27,6 @@ def device_count(request: HttpRequest):
 
     device_counts['total'] = sum(device_counts.values())
     #print("dev", device_counts)
-    return Response(device_counts)
+
+    dash_data = {"device_counts": device_counts}
+    return Response(dash_data)
