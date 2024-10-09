@@ -9,19 +9,19 @@
       <div class="card count bg-gray shadow">
         <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
         <h2 class="text-center pb-4 pt-2">Certificates</h2>
-        <p style="font-size: 40px" class="text-center font-weight-bold">
+        <p style="font-size: 40px" class="text-center font-weight-bold" id="total-cert-count">
           {{number_of_certificates}}
         </p>
         <div class="row px-3">
-          <div class="col-6 p-0 small">Active: 16</div>
-          <div class="col-6 p-0 small text-end">Expired: 2</div>
+          <div class="col-6 p-0 small" id="active-cert-count">Active: 16</div>
+          <div class="col-6 p-0 small text-end" id="expired-cert-count">Expired: 2</div>
         </div>
         <div class="row pt-0 pb-1 mb-2 px-3">
           <div class="progress col-12 p-0" role="progressbar" aria-valuenow="66" aria-valuemin="0" aria-valuemax="100">
             <!-- First Section of the Progress Bar-->
-            <div class="progress-bar progress-bar-striped bg-success" style="width: 88%"></div>
+            <div class="progress-bar progress-bar-striped bg-success" style="width: 88%" id="active-cert-progress"></div>
             <!-- Second Section of the Progress -->
-            <div class="progress-bar progress-bar-striped bg-warning" style="width: 12%"></div>
+            <div class="progress-bar progress-bar-striped bg-warning" style="width: 12%" id="expired-cert-progress"></div>
           </div>
         </div>
       </div>
@@ -33,17 +33,17 @@
       <div class="card count bg-gray shadow">
         <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
         <h2 class="text-center pb-4 pt-2">Expiring Certificates</h2>
-        <p style="font-size: 40px" class="text-center font-weight-bold">6</p>
+        <p style="font-size: 40px" class="text-center font-weight-bold" id="total-expiring-cert-count">6</p>
         <div class="row p-0 px-3">
-          <div class="col-6 small p-0">Next 24 hours: 2</div>
-          <div class="col-6 small p-0 text-end">Next 7 days: 4</div>
+          <div class="col-6 small p-0" id="expiring-1day-cert-count">Next 24 hours: 2</div>
+          <div class="col-6 small p-0 text-end" id="expiring-7days-cert-count">Next 7 days: 4</div>
         </div>
         <div class="row pt-0 pb-1 mb-2 px-3">
           <div class="progress col-12 p-0" role="progressbar" aria-valuenow="66" aria-valuemin="0" aria-valuemax="100">
             <!-- First Section of the Progress Bar-->
-            <div class="progress-bar progress-bar-striped bg-danger" style="width: 75%"></div>
+            <div class="progress-bar progress-bar-striped bg-danger" style="width: 75%" id="expiring-1day-cert-progress"></div>
             <!-- Second Section of the Progress -->
-            <div class="progress-bar progress-bar-striped bg-warning" style="width: 25%"></div>
+            <div class="progress-bar progress-bar-striped bg-warning" style="width: 25%" id="expiring-7days-cert-progress"></div>
           </div>
         </div>
       </div>
@@ -57,15 +57,15 @@
         <h2 class="text-center pb-4 pt-2">Devices</h2>
         <p style="font-size: 40px" class="text-center font-weight-bold"  id="total-device-count">{{number_of_devices}}</p>
         <div class="row p-0 px-3">
-          <div class="col-6 small p-0">Onboarded: 12</div>
-          <div class="col-6 small p-0 text-end">Waiting: 3</div>
+          <div class="col-6 small p-0" id="onboared-device-count">Onboarded: 12</div>
+          <div class="col-6 small p-0 text-end" id="pending-device-count">Waiting: 3</div>
         </div>
         <div class="row pt-0 pb-1 mb-2 px-3">
           <div class="progress col-12 p-0" role="progressbar" aria-valuenow="66" aria-valuemin="0" aria-valuemax="100">
             <!-- First Section of the Progress Bar-->
-            <div class="progress-bar progress-bar-striped bg-success" style="width: 80%"></div>
+            <div class="progress-bar progress-bar-striped bg-success" style="width: 80%" id="onboared-device-progress"></div>
             <!-- Second Section of the Progress -->
-            <div class="progress-bar progress-bar-striped bg-warning" style="width: 20%"></div>
+            <div class="progress-bar progress-bar-striped bg-warning" style="width: 20%" id="pending-device-progress"></div>
           </div>
         </div>
       </div>
