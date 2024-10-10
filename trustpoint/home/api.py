@@ -146,7 +146,7 @@ def dashboard_data(request: HttpRequest):
     
     ###### Get device count by onboarding protocol ######
     device_counts_by_op = get_device_count_by_onboarding_protocol()
-    print("device count by onboarding protocol", device_counts_by_op)
+    #print("device count by onboarding protocol", device_counts_by_op)
     if device_counts_by_op:
       dashboard_data["device_counts_by_op"] = device_counts_by_op
 

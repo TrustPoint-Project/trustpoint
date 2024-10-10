@@ -93,7 +93,6 @@
   }
 
   function updateDeviceDomainChart(deviceDomainCounts) {
-    console.log("donut", deviceDomainCounts)
     var donutChartDeviceEle = document.getElementById("donutChartDevice").getContext("2d");
     donutChartDevice != undefined ? donutChartDevice.destroy() : "";
     var chartLabels = [];
@@ -102,7 +101,7 @@
       chartLabels.push(item.unique_name);
       chartData.push(item.device_count);
     });
-    console.log("donut", deviceDomainCounts, chartData, chartLabels);
+    console.log("donut", chartData, chartLabels);
     donutChartDevice = new Chart(donutChartDeviceEle, {
       type: "doughnut",
       data: {
@@ -121,14 +120,14 @@
 
   function updateDeviceOPChart(deviceOPCounts) {
     var barChartDeviceEle = document.getElementById("barChartDevice").getContext("2d");
-    barChartDeviceEle != undefined ? barChartDevice.destroy() : "";
+    barChartDevice != undefined ? barChartDevice.destroy() : "";
     var chartLabels = [];
     var chartData = [];
     Object.entries(deviceOPCounts).forEach(([key, value]) => {
       chartLabels.push(key);
       chartData.push(value);
     });
-    console.log(chartData, chartLabels);
+    //console.log(chartData, chartLabels);
     barChartDevice = new Chart(barChartDeviceEle, {
       type: "bar",
       data: {
