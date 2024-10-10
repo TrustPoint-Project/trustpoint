@@ -66,6 +66,26 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     }%`;
   }
 
+  // Function to update the issuing ca counts
+  async function updateIssuingCACounts(issuingCACounts) {
+    console.log("issuingCACounts", issuingCACounts);
+
+    document.getElementById("total-issuing-ca-count").textContent = `${issuingCACounts.total}`;
+    document.getElementById(
+      "active-issuing-ca-count"
+    ).textContent = `Active: ${issuingCACounts.active}`;
+    document.getElementById(
+      "expired-issuing-ca-count"
+    ).textContent = `Expired: ${issuingCACounts.expired}`;
+    // Update progress bars
+    document.getElementById("active-issuing-ca-progress").style.width = `${
+      (issuingCACounts.active * 100) / issuingCACounts.total
+    }%`;
+    document.getElementById("expired-issuing-ca-progress").style.width = `${
+      (issuingCACounts.expired * 100) / issuingCACounts.total
+    }%`;
+  }
+
   // Function to dashboard data
   async function fetchAndUpdateDashboardData() {
     const dashboardData = await fetchDasbhboardData();
@@ -76,6 +96,9 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
       }
       if ("cert_counts" in dashboardData) {
         updateCertCounts(dashboardData.cert_counts);
+      }
+      if ("iussuing_ca_counts" in dashboardData) {
+        updateIssuingCACounts(dashboardData.iussuing_ca_counts);
       }
     }
   }
