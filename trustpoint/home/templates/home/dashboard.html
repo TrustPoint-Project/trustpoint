@@ -5,6 +5,9 @@
 {% include 'home/charts-tab.html' %}
 
 <script>
+  var lineChartDevice, donutChartDevice, barChartDevice;
+  var lineChartCert, donutChartCert, barChartCert;
+  var lineChart, barChartCA, donutChartCA;
   async function fetchDasbhboardData() {
     try {
       const response = await fetch("/api/home/dashboard_data");
@@ -20,7 +23,7 @@
   }
 
   // Function to update the device counts
-  async function updateDeviceCounts(deviceCounts) {
+  function updateDeviceCounts(deviceCounts) {
     console.log("deviceCounts", deviceCounts);
 
     document.getElementById("total-device-count").textContent = `${deviceCounts.total}`;
@@ -36,7 +39,7 @@
   }
 
   // Function to update the cert counts
-  async function updateCertCounts(certCounts) {
+  function updateCertCounts(certCounts) {
     console.log("certCounts", certCounts);
     // update certificate count panel
     document.getElementById("total-cert-count").textContent = `${certCounts.total}`;
@@ -70,7 +73,7 @@
   }
 
   // Function to update the issuing ca counts
-  async function updateIssuingCACounts(issuingCACounts) {
+  function updateIssuingCACounts(issuingCACounts) {
     console.log("issuingCACounts", issuingCACounts);
 
     document.getElementById("total-issuing-ca-count").textContent = `${issuingCACounts.total}`;
@@ -89,6 +92,69 @@
     }%`;
   }
 
+  function updateDeviceDounutChart(deviceOPCounts) {
+    var donutChartDeviceEle = document.getElementById("donutChartDevice").getContext("2d");
+    donutChartDevice != undefined ? donutChartDevice.destroy() : "";
+    var chartLabels = [];
+    var chartData = [];
+    Object.entries(deviceOPCounts).forEach(([key, value]) => {
+      console.log(key, value);
+      chartLabels.push(key);
+      chartData.push(value);
+    });
+    console.log(chartData, chartLabels);
+    donutChartDevice = new Chart(donutChartDeviceEle, {
+      type: "doughnut",
+      data: {
+        labels: chartLabels,
+        datasets: [
+          {
+            data: chartData,
+            borderWidth: 1,
+            backgroundColor: ["#0d6efd", "#ffc107", "#d10c15"],
+            hoverOffset: 4,
+          },
+        ],
+      },
+    });
+  }
+
+  function updateDeviceOPChart(deviceOPCounts) {
+    var barChartDeviceEle = document.getElementById("barChartDevice").getContext("2d");
+    barChartDeviceEle != undefined ? barChartDevice.destroy() : "";
+    var chartLabels = [];
+    var chartData = [];
+    Object.entries(deviceOPCounts).forEach(([key, value]) => {
+      console.log(key, value);
+      chartLabels.push(key);
+      chartData.push(value);
+    });
+    console.log(chartData, chartLabels);
+    barChartDevice = new Chart(barChartDeviceEle, {
+      type: "bar",
+      data: {
+        labels: chartLabels,
+        datasets: [
+          {
+            label: "Number of Devices",
+            data: chartData,
+            borderColor: "#0d6efd",
+            backgroundColor: "#0d6efd",
+            tension: 0.4,
+            fill: "true",
+          },
+        ],
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: "true",
+          },
+        },
+      },
+    });
+  }
+
   // Function to dashboard data
   async function fetchAndUpdateDashboardData() {
     const dashboardData = await fetchDasbhboardData();
@@ -102,6 +168,9 @@
       }
       if ("iussuing_ca_counts" in dashboardData) {
         updateIssuingCACounts(dashboardData.iussuing_ca_counts);
+      }
+      if ("device_op_counts" in dashboardData) {
+        updateDeviceOPChart(dashboardData.device_op_counts);
       }
     }
   }
@@ -142,9 +211,6 @@
       updateChartContent(targetId);
     });
 
-    var lineChartDevice, donutChartDevice, barChartDevice;
-    var lineChartCert, donutChartCert, barChartCert;
-    var lineChart, barChartCA, donutChartCA;
     // function to update charts content based on chart tab id
     function updateChartContent(chartTabId) {
       //console.log("chartTabId", chartTabId);
