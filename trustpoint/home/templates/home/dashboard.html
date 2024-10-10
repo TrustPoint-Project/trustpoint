@@ -1,5 +1,8 @@
-{% extends 'trustpoint/base.html' %} {% block content %} {% include 'home/counts-panel.html' %} {%
-include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
+{% extends 'trustpoint/base.html' %}
+{% block content %}
+{% include 'home/counts-panel.html' %}
+{% include 'home/notifications-tab.html' %}
+{% include 'home/charts-tab.html' %}
 
 <script>
   async function fetchDasbhboardData() {
