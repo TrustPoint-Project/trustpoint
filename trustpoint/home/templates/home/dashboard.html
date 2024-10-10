@@ -92,17 +92,17 @@
     }%`;
   }
 
-  function updateDeviceDounutChart(deviceOPCounts) {
+  function updateDeviceDomainChart(deviceDomainCounts) {
+    console.log("donut", deviceDomainCounts)
     var donutChartDeviceEle = document.getElementById("donutChartDevice").getContext("2d");
     donutChartDevice != undefined ? donutChartDevice.destroy() : "";
     var chartLabels = [];
     var chartData = [];
-    Object.entries(deviceOPCounts).forEach(([key, value]) => {
-      console.log(key, value);
-      chartLabels.push(key);
-      chartData.push(value);
+    deviceDomainCounts.forEach((item) => {
+      chartLabels.push(item.unique_name);
+      chartData.push(item.device_count);
     });
-    console.log(chartData, chartLabels);
+    console.log("donut", deviceDomainCounts, chartData, chartLabels);
     donutChartDevice = new Chart(donutChartDeviceEle, {
       type: "doughnut",
       data: {
@@ -111,7 +111,7 @@
           {
             data: chartData,
             borderWidth: 1,
-            backgroundColor: ["#0d6efd", "#ffc107", "#d10c15"],
+            //backgroundColor: ["#0d6efd", "#ffc107", "#d10c15"],
             hoverOffset: 4,
           },
         ],
@@ -125,7 +125,6 @@
     var chartLabels = [];
     var chartData = [];
     Object.entries(deviceOPCounts).forEach(([key, value]) => {
-      console.log(key, value);
       chartLabels.push(key);
       chartData.push(value);
     });
@@ -169,8 +168,11 @@
       if ("iussuing_ca_counts" in dashboardData) {
         updateIssuingCACounts(dashboardData.iussuing_ca_counts);
       }
-      if ("device_op_counts" in dashboardData) {
-        updateDeviceOPChart(dashboardData.device_op_counts);
+      if ("device_counts_by_op" in dashboardData) {
+        updateDeviceOPChart(dashboardData.device_counts_by_op);
+      }
+      if ("device_counts_by_domain" in dashboardData) {
+        updateDeviceDomainChart(dashboardData.device_counts_by_domain);
       }
     }
   }
