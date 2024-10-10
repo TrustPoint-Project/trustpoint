@@ -5,7 +5,7 @@ from ninja import Router, Schema
 from django.http import HttpRequest
 from ninja.responses import Response, codes_4xx
 from devices.models import Device
-from pki.models import CertificateModel, IssuingCaModel
+from pki.models import CertificateModel, IssuingCaModel, DomainModel
 from trustpoint.schema import ErrorSchema, SuccessSchema
 from django.db.models import Count, Q,  Case, When, Value, IntegerField
 from django.utils import timezone
@@ -101,7 +101,24 @@ def get_device_count_by_onboarding_protocol():
 
   #device_op_counts['total'] = sum(device_op_counts.values())
   return device_op_counts
+
+def get_device_count_by_domain():
+  """Get device count by domain from database"""
+  device_counts_by_domain = {}
+  try:
+    device_domain_qr = (
+      DomainModel.objects
+        .annotate(device_count=Count('device'))
+        .values('unique_name', 'device_count')
+    )
+  except Exception as e:
+    print(f"Error occurred in device count by domain query: {e}")
   
+  # Convert the queryset to a list
+  device_counts_by_domain = list(device_domain_qr)
+
+  return device_counts_by_domain
+
 # --- PUBLIC HOME API ENDPOINTS ---
 @router.get('/dashboard_data', exclude_none=True)
 def dashboard_data(request: HttpRequest):
@@ -126,9 +143,15 @@ def dashboard_data(request: HttpRequest):
     #print("issuing_CA", issuing_ca_counts)
     if issuing_ca_counts:
       dashboard_data["issuing_ca_counts"] = issuing_ca_counts
+    
+    ###### Get device count by onboarding protocol ######
+    device_counts_by_op = get_device_count_by_onboarding_protocol()
+    print("device count by onboarding protocol", device_counts_by_op)
+    if device_counts_by_op:
+      dashboard_data["device_counts_by_op"] = device_counts_by_op
 
-    device_op_counts = get_device_count_by_onboarding_protocol()
-    print("device count by onboarding protocol", device_op_counts)
-    if device_op_counts:
-      dashboard_data["device_op_counts"] = device_op_counts
+    ###### Get device count by domain ######
+    device_counts_by_domain = get_device_count_by_domain()
+    if device_counts_by_domain:
+      dashboard_data["device_counts_by_domain"] = device_counts_by_domain
     return Response(dashboard_data)
