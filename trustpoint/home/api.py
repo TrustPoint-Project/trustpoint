@@ -5,9 +5,9 @@ from ninja import Router, Schema
 from django.http import HttpRequest
 from ninja.responses import Response, codes_4xx
 from devices.models import Device
-from pki.models import CertificateModel
+from pki.models import CertificateModel, IssuingCaModel
 from trustpoint.schema import ErrorSchema, SuccessSchema
-from django.db.models import Count, Q
+from django.db.models import Count, Q,  Case, When, Value, IntegerField
 from django.utils import timezone
 from datetime import timedelta
 
@@ -55,7 +55,36 @@ def dashboard_data(request: HttpRequest):
     except Exception as e:
       print(f"Error occurred in certificate count query: {e}")
 
-    # The result is a dictionary with the counts
     #print("certificate_counts", cert_counts)
     dashboard_data["cert_counts"] = cert_counts
+
+    ###### Get Issuing CA counts ######
+    # Current date
+    today = timezone.now().date()
+
+    try:
+      # Query to get total, active, and expired Issuing CAs
+      issuing_ca_counts = IssuingCaModel.objects.aggregate(
+        total=Count('id'),
+
+        active=Count(
+          Case(
+            When(issuing_ca_certificate__not_valid_after__gt=today, then=Value(1)),
+            output_field=IntegerField()
+          )
+        ),
+
+        expired=Count(
+          Case(
+            When(issuing_ca_certificate__not_valid_after__lte=today, then=Value(1)),
+            output_field=IntegerField()
+          )
+        )
+      )
+    except Exception as e:
+      print(f"Error occurred in issuing ca count query: {e}")
+
+    #print("issuing_CA", issuing_ca_counts)
+    dashboard_data["issuing_ca_counts"] = issuing_ca_counts
+
     return Response(dashboard_data)
