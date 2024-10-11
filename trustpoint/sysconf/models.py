@@ -63,7 +63,7 @@ class SecurityConfig(models.Model):
         HIGHEST = '4', _('Highest')
 
     security_mode = models.CharField(max_length=6, choices=SecurityModeChoices.choices, default=SecurityModeChoices.LOW)
-
+    enable_auto_gen_pki = models.BooleanField(default=False)
 
     def __str__(self) -> str:
         """Output as string"""

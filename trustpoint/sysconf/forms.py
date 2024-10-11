@@ -78,7 +78,9 @@ class SecurityConfigForm(forms.ModelForm):
     class Meta:
         """Meta class"""
         model = SecurityConfig
-        fields = ['security_mode']
+        fields = ['security_mode',
+                  'enable_auto_gen_pki']
         labels = {
             'security_mode': _('Security Level'),
+            'enable_auto_gen_pki': _('Enable local auto-generated PKI'),
         }
