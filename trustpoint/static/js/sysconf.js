@@ -46,8 +46,8 @@ function detectSettingsMismatch() {
     // tests if the set advanced security settings are lower than the defaults of the set security level
     if (!document.querySelector('#security_configuration')) return; // not in security settings
     let sl = document.querySelector('input[name="security_mode"]:checked').value;
-    sl -= 1; // 0-based index, 0 = basic, 1 = medium, 2 = high
-    if (sl < 0 || sl > 2) return; // invalid security level
+    sl -= 1; // 0-based index, 0 = dev, 1 = basic, 2 = medium, 3 = high, 4 = highest
+    if (sl < 0 || sl > 4) return; // invalid security level
     for (el of document.querySelectorAll('#security_configuration input')) {
         if (!el.dataset?.slDefaults) continue;
         arr = JSON.parse(el.dataset.slDefaults);

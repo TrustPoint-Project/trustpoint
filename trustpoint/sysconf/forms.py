@@ -61,13 +61,19 @@ class SecurityConfigForm(forms.ModelForm):
             ),
             Fieldset(
                 _('Advanced security settings'),
+                'enable_auto_gen_pki'
             )
         )
 
 
     security_mode = forms.ChoiceField(choices=SecurityConfig.SecurityModeChoices.choices,
-                                      widget=forms.Select(),
+                                      widget=forms.RadioSelect(),
                                       label='')
+    
+    enable_auto_gen_pki = forms.BooleanField(required=False, label=_('Enable local auto-generated PKI'),
+                                widget=forms.CheckboxInput(
+                                    attrs={'data-sl-defaults': '[true,true,false,false,false]',
+                                           'data-more-secure': 'false'}))
 
     class Meta:
         """Meta class"""
