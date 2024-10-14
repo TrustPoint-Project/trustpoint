@@ -3,6 +3,9 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MaxValueValidator, MinValueValidator
 
+from sysconf.security import SecurityFeatures, SecurityModeChoices
+from sysconf.security.manager import SecurityManager
+
 
 # class SystemConfig(models.Model):
 class NTPConfig(models.Model):
@@ -54,20 +57,21 @@ class NetworkConfig(models.Model):
 class SecurityConfig(models.Model):
     """Security Configuration model"""
 
-    class SecurityModeChoices(models.TextChoices):
-        """Types of security modes"""
-        DEV = '0', _('Testing env')
-        LOW = '1', _('Basic')
-        MEDIUM = '2', _('Medium')
-        HIGH = '3', _('High')
-        HIGHEST = '4', _('Highest')
-
     security_mode = models.CharField(max_length=6, choices=SecurityModeChoices.choices, default=SecurityModeChoices.LOW)
-    enable_auto_gen_pki = models.BooleanField(default=False)
+    auto_gen_pki = models.BooleanField(default=False)
+
+    _original_values = {}
 
     def __str__(self) -> str:
         """Output as string"""
         return f'{self.security_mode}'
+    
+    def save(self, *args, **kwargs):
+        """Override the save method to enforce allowed security levels"""
+        if not SecurityManager.is_feature_allowed(SecurityFeatures.AUTO_GEN_PKI, self.security_mode):
+            self.auto_gen_pki = False
+
+        super().save(*args, **kwargs)
 
 
 # -------------

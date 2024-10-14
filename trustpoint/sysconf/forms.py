@@ -6,7 +6,7 @@ from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, Fieldset
 
 from .models import LoggingConfig, NetworkConfig, NTPConfig, SecurityConfig
-
+from .security import SecurityModeChoices
 
 class NTPConfigForm(forms.ModelForm):
     """NTP configuration form"""
@@ -61,16 +61,15 @@ class SecurityConfigForm(forms.ModelForm):
             ),
             Fieldset(
                 _('Advanced security settings'),
-                'enable_auto_gen_pki'
+                'auto_gen_pki'
             )
         )
 
-
-    security_mode = forms.ChoiceField(choices=SecurityConfig.SecurityModeChoices.choices,
+    security_mode = forms.ChoiceField(choices=SecurityModeChoices.choices,
                                       widget=forms.RadioSelect(),
                                       label='')
     
-    enable_auto_gen_pki = forms.BooleanField(required=False, label=_('Enable local auto-generated PKI'),
+    auto_gen_pki = forms.BooleanField(required=False, label=_('Enable local auto-generated PKI'),
                                 widget=forms.CheckboxInput(
                                     attrs={'data-sl-defaults': '[true,true,false,false,false]',
                                            'data-more-secure': 'false'}))
@@ -79,8 +78,8 @@ class SecurityConfigForm(forms.ModelForm):
         """Meta class"""
         model = SecurityConfig
         fields = ['security_mode',
-                  'enable_auto_gen_pki']
+                  'auto_gen_pki']
         labels = {
             'security_mode': _('Security Level'),
-            'enable_auto_gen_pki': _('Enable local auto-generated PKI'),
+            'auto_gen_pki': _('Enable local auto-generated PKI'),
         }

@@ -32,7 +32,7 @@ last_modified_date = timezone.now()
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', api.api.urls),
+    #path('api/', api.api.urls),
     path('users/', include('users.urls')),
     path('pki/', include('pki.urls.pki')),
     path('.well-known/est/', include('pki.urls.est')),

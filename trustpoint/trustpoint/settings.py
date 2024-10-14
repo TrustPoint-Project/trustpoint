@@ -52,7 +52,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'django_tables2',
-    'ninja',
+    #'ninja',
     # TODO(Aircoookie): Required only for HTTPS testing with Django runserver_plus, remove for production
     'django_extensions',
     # use "python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server.crt

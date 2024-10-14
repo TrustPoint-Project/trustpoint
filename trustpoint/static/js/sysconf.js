@@ -73,9 +73,9 @@ function prevalidateSecuritySettings() {
 }
 
 function renderAutoGenPkiDisableWarning() {
-    var willDisable = (document.querySelector('#id_enable_auto_gen_pki').checked === false || 
-                        document.querySelector('#id_enable_auto_gen_pki').classList.contains('mismatch'));
-    var showWarning = (willDisable && initialValues['enable_auto_gen_pki'] === true)
+    var willDisable = (document.querySelector('#id_auto_gen_pki').checked === false || 
+                        document.querySelector('#id_auto_gen_pki').classList.contains('mismatch'));
+    var showWarning = (willDisable && initialValues['auto_gen_pki'] === true)
     document.querySelector('#auto_gen_pki_disable_warning').style.display = showWarning ? 'flex': 'none';
 }
 
