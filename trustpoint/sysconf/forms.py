@@ -71,7 +71,8 @@ class SecurityConfigForm(forms.ModelForm):
     
     auto_gen_pki = forms.BooleanField(required=False, label=_('Enable local auto-generated PKI'),
                                 widget=forms.CheckboxInput(
-                                    attrs={'data-sl-defaults': '[true,true,false,false,false]',
+                                    attrs={'data-sl-defaults': '[true, true, false, false, false]',
+                                           'data-hide-at-sl': '[false, false, true, true, true]',
                                            'data-more-secure': 'false'}))
 
     class Meta:

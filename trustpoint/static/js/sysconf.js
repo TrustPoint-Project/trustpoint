@@ -44,13 +44,24 @@ function dhcpState() {
 
 var initialValues = {};
 
+
 function prevalidateSecuritySettings() {
     // tests if the set advanced security settings are lower than the defaults of the set security level
     if (!document.querySelector('#security_configuration')) return; // only in security settings
     let sl = document.querySelector('input[name="security_mode"]:checked').value;
     // 0 = dev, 1 = basic, 2 = medium, 3 = high, 4 = highest
     if (sl < 0 || sl > 4) return; // invalid security level
+    document.querySelector('#hidden_input_note').style.display = 'none';
     for (el of document.querySelectorAll('#security_configuration input')) {
+        // hide settings that are not available for the selected security level
+        if (el.dataset?.hideAtSl) {
+            arr = JSON.parse(el.dataset.hideAtSl);
+            if (arr[sl] === true) {
+                document.querySelector('#hidden_input_note').style.display = 'block';
+            }
+            //el.parentElement.style.display = 'none';
+            el.parentElement.style.display = (arr[sl] === true) ? 'none':'block';
+        }
         if (!el.dataset?.slDefaults) continue;
         arr = JSON.parse(el.dataset.slDefaults);
         slDefault = arr[sl];
@@ -62,10 +73,10 @@ function prevalidateSecuritySettings() {
             value < slDefault && el.dataset.moreSecure === 'true') {
             el.classList.add('mismatch');
             el.dataset.target = slDefault;
-            el.parentElement.style.display = 'none'; // TODO: consider separate dataset for visibility of disallowed settings
+            //el.parentElement.style.display = 'none'; // TODO: consider separate dataset for visibility of disallowed settings
         } else {
             el.classList.remove('mismatch');
-            el.parentElement.style.display = 'block'; // TODO: consider separate dataset for visibility of disallowed settings
+            //el.parentElement.style.display = 'block'; // TODO: consider separate dataset for visibility of disallowed settings
         }
     }
     renderMismatchWarning();
