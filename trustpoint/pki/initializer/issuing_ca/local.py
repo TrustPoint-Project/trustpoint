@@ -99,8 +99,9 @@ class LocalIssuingCaInitializer(IssuingCaInitializer, abc.ABC):
 
                 saved_certs = [cert_model]
 
-            for certificate in self._credential_serializer.additional_certificates.crypto_iterator():
-                saved_certs.append(self._cert_model_class.save_certificate(certificate, exist_ok=True))
+            if (self._credential_serializer.additional_certificates):
+                for certificate in self._credential_serializer.additional_certificates.crypto_iterator():
+                    saved_certs.append(self._cert_model_class.save_certificate(certificate, exist_ok=True))
 
             issuing_ca_model = self._issuing_ca_model_class(
                 unique_name=self._unique_name,
