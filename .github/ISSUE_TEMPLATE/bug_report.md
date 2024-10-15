@@ -1,8 +1,8 @@
 ---
 name: Bug report
 about: Submit an issue about a problem in the Trustpoint software.
-title: ''
-labels: 'bug'
+title: "[BUG]"
+labels: bug
 assignees: ''
 
 ---

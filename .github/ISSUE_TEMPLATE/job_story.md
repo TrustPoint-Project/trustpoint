@@ -1,8 +1,8 @@
 ---
 name: Job Story
-about: Create a new Job Story.
-title: ''
-labels: 'job story'
+about: Create a new Job Story. (Maintainers Only)
+title: "[JOB-STORY]"
+labels: job story
 assignees: ''
 
 ---
@@ -13,5 +13,5 @@ Related to #x
 When _, I want to _ so I can _.
 
 **Acceptance Criteria**
-- [ ] A
-- [ ] B
+- [ ] [ Description ]
+- [ ] [ Description ]
