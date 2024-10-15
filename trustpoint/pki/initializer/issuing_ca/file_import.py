@@ -7,8 +7,6 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 from django.core.exceptions import ValidationError
 
-from pki.models import CertificateModel, IssuingCaModel, CertificateChainOrderModel
-
 from pki.serializer import (
     PrivateKeySerializer,
     CertificateCollectionSerializer,

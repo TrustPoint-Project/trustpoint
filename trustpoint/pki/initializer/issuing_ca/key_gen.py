@@ -9,6 +9,7 @@ from . import IssuingCaInitializerError
 from .local import LocalIssuingCaInitializer
 
 from pki.issuing_ca import UnprotectedLocalIssuingCa
+from pki.models import RootCaModel
 from pki.util.keys import KeyAlgorithm, KeyGenerator
 from pki.util.ca import CaGenerator
 
@@ -32,6 +33,7 @@ class UnprotectedKeyGenLocalCaInitializer(KeyGenLocalIssuingCaInitializer):
 
 class UnprotectedKeyGenLocalRootCaInitializer(UnprotectedKeyGenLocalCaInitializer):
     """Responsible for initializing the local root CA."""
+    _issuing_ca_model_class : type[RootCaModel] = RootCaModel # overriding IssuingCaModel
 
     def initialize(self) -> None:
         """Initializes the local root CA."""
