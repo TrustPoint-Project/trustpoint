@@ -32,11 +32,11 @@ RUN $POETRY_HOME/bin/poetry config virtualenvs.create false && $POETRY_HOME/bin/
 
 WORKDIR /var/www/html/trustpoint/trustpoint
 
-# change permission for db file
-RUN chmod 664 db.sqlite3
-
 # reset database
 RUN yes | python manage.py reset_db
+
+# change permission for db file
+RUN chmod 664 db.sqlite3
 
 # Change owner and group
 RUN chown -R www-data:www-data .
