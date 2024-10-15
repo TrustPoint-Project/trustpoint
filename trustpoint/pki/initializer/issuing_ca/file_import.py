@@ -17,6 +17,8 @@ from pki.serializer import (
 
 from . import IssuingCaInitializer
 from . import IssuingCaInitializerError
+from .local import LocalIssuingCaInitializer
+from .local import LocalIssuingCaInitializerError, InternalServerError, IssuingCaAlreadyExistsError
 
 from pki.util import Sha256Fingerprint, CredentialExtractor
 
@@ -30,23 +32,9 @@ if TYPE_CHECKING:
 log = logging.getLogger('tp.pki.initializer')
 
 
-class FileImportLocalIssuingCaInitializerError(IssuingCaInitializerError):
+class FileImportLocalIssuingCaInitializerError(LocalIssuingCaInitializerError):
+    """Base class for file import local issuing CA initializer errors."""	
     pass
-
-
-class InternalServerError(FileImportLocalIssuingCaInitializerError):
-    """Raised if an unexpected error occurred.
-
-     E.g. is raised, if .initialize() is not called before .save()
-     """
-
-    def __init__(self, message: None | str = None) -> None:
-        if message:
-            super().__init__(message=message)
-        else:
-            super().__init__(message=_(
-                f'An unexpected internal server error occurred.'
-                f'Please contact the Trust-Point support '))
 
 
 class FileSerializationError(FileImportLocalIssuingCaInitializerError):
@@ -65,34 +53,12 @@ class TooManyCertificatesError(FileImportLocalIssuingCaInitializerError):
             f'Refusing to process more than {limit} certificates.'))
 
 
-class IssuingCaAlreadyExistsError(FileImportLocalIssuingCaInitializerError):
-    """Raised if an Issuing CA already exists for a corresponding Issuing CA certificate."""
-
-    def __init__(self, name: str) -> None:
-        super().__init__(message=_(f'Issuing CA already exists with unique name: {name}.'))
-
-
-class FileImportLocalIssuingCaInitializer(IssuingCaInitializer, abc.ABC):
+class FileImportLocalIssuingCaInitializer(LocalIssuingCaInitializer, abc.ABC):
     """Base class for importing a new Issuing CA through a file upload(s)."""
 
     _CERTIFICATE_UPLOAD_FILE_LIMIT: int = 100
 
-    _unique_name: str
-    _auto_crl: bool
     _password: None | bytes
-
-    _is_initialized: bool = False
-
-    _credential_serializer: CredentialSerializer
-    _private_key_serializer: PrivateKeySerializer
-    _certificate_collection_serializer: CertificateCollectionSerializer
-
-    _credential_serializer_class: type[CredentialSerializer] = CredentialSerializer
-
-    _cert_model_class: type[CertificateModel] = CertificateModel
-    _issuing_ca_model_class: type[IssuingCaModel] = IssuingCaModel
-    _cert_chain_order_model_class: type[CertificateChainOrderModel] = CertificateChainOrderModel
-
 
     @abc.abstractmethod
     def _serialize_raw_data(self) -> None:
@@ -142,55 +108,6 @@ class FileImportLocalIssuingCaInitializer(IssuingCaInitializer, abc.ABC):
         self._is_initialized = True
 
         # self._validate_credential()
-
-    @transaction.atomic
-    def save(self):
-        """Saves the initialized Issuing CA in the database.
-
-        Raises:
-            InternalServerError: If the Issuing CA was not yet initialized or some other unexpected error occurred.
-        """
-
-        if not self._is_initialized:
-            raise InternalServerError
-
-        try:
-            issuing_ca_certificate = self._credential_serializer.credential_certificate.as_crypto()
-
-            try:
-                saved_certs = [self._cert_model_class.save_certificate(issuing_ca_certificate)]
-            except ValueError:
-
-                cert_model = self._cert_model_class.objects.get(
-                    sha256_fingerprint=Sha256Fingerprint.get_fingerprint_hex_str(issuing_ca_certificate))
-
-                if hasattr(cert_model, 'issuing_ca_model'):
-                    raise IssuingCaAlreadyExistsError(name=cert_model.issuing_ca_model.unique_name)
-
-                saved_certs = [cert_model]
-
-            for certificate in self._credential_serializer.additional_certificates.crypto_iterator():
-                saved_certs.append(self._cert_model_class.save_certificate(certificate, exist_ok=True))
-
-            issuing_ca_model = self._issuing_ca_model_class(
-                unique_name=self._unique_name,
-                auto_crl=self._auto_crl,
-                private_key_pem=self._credential_serializer.credential_private_key.as_pkcs1_pem(None).decode("utf-8")
-            )
-
-            issuing_ca_model.issuing_ca_certificate = saved_certs[0]
-            issuing_ca_model.root_ca_certificate = saved_certs[-1]
-            issuing_ca_model.save()
-
-            for number, certificate in enumerate(saved_certs[1:-1]):
-                cert_chain_order_model = self._cert_chain_order_model_class()
-                cert_chain_order_model.order = number
-                cert_chain_order_model.certificate = certificate
-                cert_chain_order_model.issuing_ca = issuing_ca_model
-                cert_chain_order_model.save()
-        except Exception as exception:
-            log.error(exception)
-            raise InternalServerError(exception)
 
 
 class UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(FileImportLocalIssuingCaInitializer):

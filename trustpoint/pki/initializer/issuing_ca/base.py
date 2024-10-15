@@ -6,7 +6,8 @@ from . import InitializerError
 
 
 class IssuingCaInitializer(Initializer, abc.ABC):
-    pass
+    _unique_name: str
+    _is_initialized: bool = False
 
 class IssuingCaInitializerError(InitializerError):
     pass
