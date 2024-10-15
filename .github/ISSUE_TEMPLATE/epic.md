@@ -11,5 +11,5 @@ assignees: ''
 
 
 **Acceptance Criteria**
-- [ ] TrustPoint-Project/trustpoint/[ job story ref ] : [ description ]
-- [ ] TrustPoint-Project/trustpoint/[ job story ref ] : [ description ]
+- [ ] Job Story #x : [ description ]
+- [ ] Job Story #x : [ description ]
