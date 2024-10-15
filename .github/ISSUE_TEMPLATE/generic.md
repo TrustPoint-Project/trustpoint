@@ -2,7 +2,7 @@
 name: Generic
 about: Generic issue.
 title: "[GENERIC]"
-labels: ''
+labels: generic
 assignees: ''
 
 ---
