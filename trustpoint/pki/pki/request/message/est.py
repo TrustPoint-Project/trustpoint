@@ -8,7 +8,7 @@ from pki.models import DomainModel
 from pki.pki.request.message import (
     PkiRequestMessage,
     PkiResponseMessage,
-    Protocol,
+    Protocols,
     MimeType,
     ContentTransferEncoding,
     HttpStatusCode,
@@ -35,7 +35,7 @@ class PkiEstSimpleEnrollRequestMessage(PkiRequestMessage):
                  domain_unique_name: str,
                  raw_request: bytes):
         super().__init__(
-            protocol=Protocol.EST,
+            protocol=Protocols.EST,
             operation=EstOperation.SIMPLE_ENROLL,
             domain_unique_name=domain_unique_name)
 

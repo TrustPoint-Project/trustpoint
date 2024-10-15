@@ -15,6 +15,7 @@ from django.db.utils import IntegrityError
 from django.http import HttpRequest, HttpResponse
 from ninja import Router, Schema
 from ninja.responses import Response, codes_4xx
+from pathlib import Path
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
 from onboarding.crypto_backend import VerificationError, OnboardingError
@@ -143,6 +144,8 @@ def cert_chain(request: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpRes
 
 # --- AOKI ZERO TOUCH ONBOARDING API ENDPOINTS ---
 
+AOKI_OWNER_PRIVATE_KEY_PATH = Path(__file__).parent.parent.parent / 'tests/data/aoki_zero_touch/owner_private.key'
+
 @router.post('/aoki/init', response={200: AokiInitResponseSchema, codes_4xx: ErrorSchema}, auth=None, exclude_none=True)
 def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
     """Initializes the AOKI Zero Touch onboarding process."""
@@ -214,7 +217,7 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
 
     # TODO (Air): get the private key for the ownership certificate
     try:
-        with open('owner_private.key', 'rb') as keyfile:
+        with AOKI_OWNER_PRIVATE_KEY_PATH.open('rb') as keyfile:
             ownership_private_key = serialization.load_pem_private_key(keyfile.read(), password=None)
     except (FileNotFoundError, ValueError):
         log.exception('Could not load owner private key.', exc_info=True)

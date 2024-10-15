@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import abc
 import enum
+from typing import TYPE_CHECKING
+
 from django.http import HttpResponse
 
 from pki.models import CertificateModel, DomainModel
-from typing import TYPE_CHECKING
+from pki.pki.request import Protocols
 
 if TYPE_CHECKING:
     from typing import Union
@@ -41,15 +43,8 @@ class HttpStatusCode(enum.Enum):
     UNSUPPORTED_MEDIA_TYPE = 415
 
 
-class Protocol(enum.Enum):
-
-    EST = 'est'
-    CMP = 'cmp'
-    REST = 'rest'
-
-
 class PkiRequestMessage(abc.ABC):
-    _protocol: Protocol
+    _protocol: Protocols
     _operation: Operation
     _mimetype: None | MimeType = None
     _content_transfer_encoding: None | ContentTransferEncoding = None
@@ -60,7 +55,7 @@ class PkiRequestMessage(abc.ABC):
     _is_valid: bool = True
     _invalid_response: None | PkiResponseMessage = None
 
-    def __init__(self, protocol: Protocol, operation: Operation, domain_unique_name: str) -> None:
+    def __init__(self, protocol: Protocols, operation: Operation, domain_unique_name: str) -> None:
         self._protocol = protocol
         self._operation = operation
         self._domain_unique_name = domain_unique_name
@@ -81,7 +76,7 @@ class PkiRequestMessage(abc.ABC):
             mimetype=MimeType.TEXT_PLAIN)
 
     @property
-    def protocol(self) -> Protocol:
+    def protocol(self) -> Protocols:
         return self._protocol
 
     @property

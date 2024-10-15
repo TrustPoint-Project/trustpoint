@@ -119,7 +119,7 @@ class LoggingConfigView(TpLoginRequiredMixin, FormView):
     template_name = 'sysconf/logging.html'
     form_class = LoggingConfigForm
     success_url = reverse_lazy('sysconf:logging')
-
+    extra_context = {'page_category': 'sysconf', 'page_name': 'logging'}
 
     def get_initial(self):
         try:

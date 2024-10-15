@@ -6,7 +6,7 @@ import logging
 from pki.models import DomainModel
 from pki.pki.request.message import (
     PkiRequestMessage,
-    Protocol,
+    Protocols,
     Operation)
 
 from typing import TYPE_CHECKING
@@ -37,7 +37,7 @@ class PkiCmpInitializationRequestMessage(PkiRequestMessage):
                  raw_request: bytes,
                  alias_unique_name: str):
         super().__init__(
-            protocol=Protocol.CMP,
+            protocol=Protocols.CMP,
             operation=CmpOperation.INITIALIZATION_REQUEST,
             domain_unique_name=domain_unique_name)
 
@@ -78,7 +78,7 @@ class PkiCmpCertificationRequestMessage(PkiRequestMessage):
                  domain_unique_name: str,
                  raw_request: bytes):
         super().__init__(
-            protocol=Protocol.CMP,
+            protocol=Protocols.CMP,
             operation=CmpOperation.CERTIFICATION_REQUEST,
             domain_unique_name=domain_unique_name)
 
@@ -121,7 +121,7 @@ class PkiCmpKeyUpdateRequestMessage(PkiRequestMessage):
                  domain_unique_name: str,
                  raw_request: bytes):
         super().__init__(
-            protocol=Protocol.CMP,
+            protocol=Protocols.CMP,
             operation=CmpOperation.KEYUPDATE_REQUEST,
             domain_unique_name=domain_unique_name)
 
@@ -161,7 +161,7 @@ class PkiCmpRevocationRequestMessage(PkiRequestMessage):
                  domain_unique_name: str,
                  raw_request: bytes):
         super().__init__(
-            protocol=Protocol.CMP,
+            protocol=Protocols.CMP,
             operation=CmpOperation.REVOCATION_REQUEST,
             domain_unique_name=domain_unique_name)
 
@@ -202,7 +202,7 @@ class PkiCmpGetRootUpdateRequestMessage(PkiRequestMessage):
                  domain_unique_name: str,
                  raw_request: bytes):
         super().__init__(
-            protocol=Protocol.CMP,
+            protocol=Protocols.CMP,
             operation=CmpOperation.GENERAL_MESSAGE,
             domain_unique_name=domain_unique_name)
 
@@ -243,7 +243,7 @@ class PkiCmpGetCrlsRequestMessage(PkiRequestMessage):
                  domain_unique_name: str,
                  raw_request: bytes):
         super().__init__(
-            protocol=Protocol.CMP,
+            protocol=Protocols.CMP,
             operation=CmpOperation.GENERAL_MESSAGE,
             domain_unique_name=domain_unique_name)
 
@@ -284,7 +284,7 @@ class PkiCmpGetCertReqTemplateRequestMessage(PkiRequestMessage):
                  domain_unique_name: str,
                  raw_request: bytes):
         super().__init__(
-            protocol=Protocol.CMP,
+            protocol=Protocols.CMP,
             operation=CmpOperation.GENERAL_MESSAGE,
             domain_unique_name=domain_unique_name)
 
@@ -325,7 +325,7 @@ class PkiCmpGetCaCertsRequestMessage(PkiRequestMessage):
                  domain_unique_name: str,
                  raw_request: bytes):
         super().__init__(
-            protocol=Protocol.CMP,
+            protocol=Protocols.CMP,
             operation=CmpOperation.GENERAL_MESSAGE,
             domain_unique_name=domain_unique_name)
 
