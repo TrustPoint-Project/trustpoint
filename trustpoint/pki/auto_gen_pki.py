@@ -94,6 +94,7 @@ class AutoGenPki:
             raise
         
         issuing_ca_instance = issuing_ca.get_issuing_ca()
+        issuing_ca_instance.revoke_all_certificates()
         issuing_ca_instance.get_issuing_ca_certificate().revoke(revocation_reason=ReasonCode.CESSATION)
         issuing_ca.delete()
         log.warning('Auto-generated PKI disabled.')

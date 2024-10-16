@@ -18,6 +18,8 @@ from django.utils.translation import gettext_lazy as _
 
 from pki.pki.request import Protocols
 
+from . import ReasonCode, CertificateStatus
+
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
 from .serializer import CertificateCollectionSerializer, CertificateSerializer, PublicKeySerializer
@@ -719,19 +721,6 @@ class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExten
 # class MsCertificateTemplateExtension(CertificateExtension, models.Model):
 #     pass
 
-class ReasonCode(models.TextChoices):
-    """Revocation reasons per RFC 5280"""
-    UNSPECIFIED = 'unspecified', _('Unspecified')
-    KEY_COMPROMISE = 'keyCompromise', _('Key Compromise')
-    CA_COMPROMISE = 'cACompromise', _('CA Compromise')
-    AFFILIATION_CHANGED = 'affiliationChanged', _('Affiliation Changed')
-    SUPERSEDED = 'superseded', _('Superseded')
-    CESSATION = 'cessationOfOperation', _('Cessation of Operation')
-    CERTIFICATE_HOLD = 'certificateHold', _('Certificate Hold')
-    PRIVILEGE_WITHDRAWN = 'privilegeWithdrawn', _('Privilege Withdrawn')
-    AA_COMPROMISE = 'aACompromise', _('AA Compromise')
-    REMOVE_FROM_CRL = 'removeFromCRL', _('Remove from CRL')
-
 
 class CertificateModel(models.Model):
     """X509 Certificate Model.
@@ -744,12 +733,6 @@ class CertificateModel(models.Model):
     # TODO
 
     # ------------------------------------------------- Django Choices -------------------------------------------------
-
-    class CertificateStatus(models.TextChoices):
-        OK = 'O', _('OK')
-        REVOKED = 'R', _('Revoked')
-        # EXPIRED = 'E', _('Expired')
-        # NOT_YET_VALID = 'N', _('Not Yet Valid')
 
     class Version(models.IntegerChoices):
         """X509 RFC 5280 - Certificate Version."""
@@ -1254,7 +1237,7 @@ class CertificateModel(models.Model):
         """Revokes the certificate.
         
         Returns: True if the certificate was successfully scheduled to be added to at least one CRL."""
-        if self.certificate_status == self.CertificateStatus.REVOKED:
+        if self.certificate_status == CertificateStatus.REVOKED:
             return True # already revoked, prevent duplicate addition to CRL
         
         self.revocation_reason = revocation_reason
@@ -1273,7 +1256,7 @@ class CertificateModel(models.Model):
                 except CertificateModel.issuing_ca_model.RelatedObjectDoesNotExist:
                     pass
         if added_to_crl:
-            self.certificate_status = self.CertificateStatus.REVOKED
+            self.certificate_status = CertificateStatus.REVOKED
             self._save()
             return True
         return False
@@ -1413,7 +1396,7 @@ class CertificateChainOrderModel(models.Model):
 
     def get_issuing_ca(
             self,
-            unprotected_local_issuing_ca_class: type(UnprotectedLocalIssuingCa) = UnprotectedLocalIssuingCa
+            unprotected_local_issuing_ca_class: type[UnprotectedLocalIssuingCa] = UnprotectedLocalIssuingCa
     ) -> BaseCaModel:
         return unprotected_local_issuing_ca_class(self)
 

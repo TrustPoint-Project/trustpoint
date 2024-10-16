@@ -9,6 +9,7 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from django.db import transaction
 
+from . import ReasonCode, CertificateStatus
 from .serializer import CertificateCollectionSerializer, PrivateKeySerializer
 
 if TYPE_CHECKING:
@@ -186,6 +187,28 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         """
         from .models import CRLStorage
         return CRLStorage.get_crl_object(ca=self._issuing_ca_model)
+    
+    def revoke_all_certificates(self) -> None:
+        """Revokes all certificates issued by the CA."""
+        log.info('Revoking all certificates issued by the CA %s.', self._issuing_ca_model.unique_name)
+        # Disable auto CRL generation so we don't generate a CRL for each revocation
+        auto_crl_state = self._issuing_ca_model.auto_crl
+        self._issuing_ca_model.auto_crl = False
+        self._issuing_ca_model.save()
+        # Get all non-revoked certificates issued by the CA
+        issued_certs = self.get_issuing_ca_certificate().issued_certificate_references.exclude(
+                            certificate_status=CertificateStatus.REVOKED)
+        # Check if any certificates are device LDevIDs, in that case revoke via device
+        for cert in issued_certs:
+            if cert.device_set.exists():
+                for device in cert.device_set.all():
+                    device.revoke_ldevid(revocation_reason=ReasonCode.CESSATION)
+            else:  # Revoke the certificate directly
+                cert.revoke(revocation_reason=ReasonCode.CESSATION)
+
+        self.generate_crl()
+        self._issuing_ca_model.auto_crl = auto_crl_state
+        self._issuing_ca_model.save()
 
     def get_ca_name(self) -> str:
         """Retrieves the unique name of the issuing CA.

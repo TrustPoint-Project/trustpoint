@@ -13,10 +13,10 @@ class SecurityManager:
 
     @classmethod
     def is_feature_allowed(cls, feature_name: SecurityFeatures, target_level: SecurityModeChoices = None):
-        print(f'highest_features:  {cls.highest_features}')
-        print(f'high_features:  {cls.high_features}')
-        print(f'medium_features:  {cls.medium_features}')
-        print(f'low_features:  {cls.low_features}')
+        # print(f'highest_features:  {cls.highest_features}')
+        # print(f'high_features:  {cls.high_features}')
+        # print(f'medium_features:  {cls.medium_features}')
+        # print(f'low_features:  {cls.low_features}')
 
         if (target_level is None):
             sec_level = cls.get_security_level()
