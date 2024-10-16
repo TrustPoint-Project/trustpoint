@@ -17,7 +17,7 @@ urlpatterns = [
         certificates.IssuedCertificatesTableView.as_view(),
         name='issued_certificates'),
     re_path(
-        r'^certificates/download/multiple/(?P<pks>([0-9]+/)+[0-9]+)/?$',
+        r'^certificates/download/(?P<pks>([0-9]+/)+[0-9]+)/?$',
         certificates.CertificateMultipleDownloadView.as_view(),
         name='certificates-download'
     ),
@@ -95,7 +95,7 @@ urlpatterns = [
         name='truststores-add'
     ),
     re_path(
-        r'^truststores/download/multiple/(?P<pks>([0-9]+/)+[0-9]+)/?$',
+        r'^truststores/download/(?P<pks>([0-9]+/)+[0-9]+)/?$',
         trust_stores.TrustStoresMultipleDownloadView.as_view(),
         name='truststores-download'
     ),
