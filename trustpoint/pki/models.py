@@ -1250,20 +1250,33 @@ class CertificateModel(models.Model):
         return cls._save_certificate(certificate=certificate, exist_ok=exist_ok)
 
     @transaction.atomic
-    def revoke(self, revocation_reason: ReasonCode) -> None:
-        """Revokes the certificate."""
-        self.certificate_status = self.CertificateStatus.REVOKED
+    def revoke(self, revocation_reason: ReasonCode) -> bool:
+        """Revokes the certificate.
+        
+        Returns: True if the certificate was successfully scheduled to be added to at least one CRL."""
+        if self.certificate_status == self.CertificateStatus.REVOKED:
+            return True # already revoked, prevent duplicate addition to CRL
+        
         self.revocation_reason = revocation_reason
+        added_to_crl = False
         qs = self.issuer_references.all()
         if qs:
             for entry in qs:
-                issuing_ca = entry.issuing_ca_model
-                rc = RevokedCertificate(cert=self)
-                rc.issuing_ca = issuing_ca
-                rc.save()
+                try:
+                    issuing_ca = entry.issuing_ca_model
+                    rc = RevokedCertificate(cert=self)
+                    rc.issuing_ca = issuing_ca
+                    rc.save()
+                    added_to_crl = True
+                    if issuing_ca.auto_crl:
+                        issuing_ca.get_issuing_ca().generate_crl()
+                except CertificateModel.issuing_ca_model.RelatedObjectDoesNotExist:
+                    pass
+        if added_to_crl:
+            self.certificate_status = self.CertificateStatus.REVOKED
             self._save()
-            if issuing_ca.auto_crl:
-                issuing_ca.get_issuing_ca().generate_crl()
+            return True
+        return False
 
     def remove_private_key(self):
         self.private_key = None
