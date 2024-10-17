@@ -8,6 +8,7 @@ from devices.models import Device
 from pki.models import CertificateModel, IssuingCaModel, DomainModel
 from trustpoint.schema import ErrorSchema, SuccessSchema
 from django.db.models import Count,F, Q,  Case, When, Value, IntegerField
+from django.db.models.functions import TruncDate
 from django.utils import timezone
 from datetime import timedelta
 
@@ -119,7 +120,7 @@ def get_device_count_by_domain():
 
   return device_counts_by_domain
 
-def get_certificate_counts_by_issuing_ca():
+def get_cert_counts_by_issuing_ca():
   """Get certificate count by issuing ca from database"""
   cert_counts_by_issuing_ca = {}
   try:
@@ -134,6 +135,26 @@ def get_certificate_counts_by_issuing_ca():
     print(f"Error occurred in certificate count by issuing ca query: {e}")
 
   return cert_counts_by_issuing_ca
+
+def get_cert_counts_by_issuing_ca_and_date():
+  """Get certificate count by issuing ca from database"""
+  cert_counts_by_issuing_ca_and_date = {}
+  try:
+    cert_issuing_ca_and_date_qr = CertificateModel.objects \
+    .filter(issuer_references__issuing_ca_model__isnull=False) \
+    .annotate(issue_date=TruncDate('added_at')) \
+    .values('issue_date', name=F('issuing_ca_model__unique_name')) \
+    .annotate(cert_count=Count('issued_certificate_references')) \
+    .filter(name__isnull=False) \
+    .order_by('added_at', 'name')
+
+     # Convert the queryset to a list
+    cert_counts_by_issuing_ca_and_date = list(cert_issuing_ca_and_date_qr)
+    #print("date", cert_counts_by_issuing_ca_and_date)
+  except Exception as e:
+    print(f"Error occurred in certificate count by issuing ca query: {e}")
+
+  return cert_counts_by_issuing_ca_and_date
 
 # --- PUBLIC HOME API ENDPOINTS ---
 @router.get('/dashboard_data', exclude_none=True)
@@ -172,8 +193,11 @@ def dashboard_data(request: HttpRequest):
       dashboard_data["device_counts_by_domain"] = device_counts_by_domain
     
     ###### Get certificate count by issuing ca ######
-    cert_counts_by_issuing_ca = get_certificate_counts_by_issuing_ca()
+    cert_counts_by_issuing_ca = get_cert_counts_by_issuing_ca()
     if cert_counts_by_issuing_ca:
       dashboard_data["cert_counts_by_issuing_ca"] = cert_counts_by_issuing_ca
+    cert_counts_by_issuing_ca_and_date = get_cert_counts_by_issuing_ca_and_date()
+    if cert_counts_by_issuing_ca_and_date:
+      dashboard_data["cert_counts_by_issuing_ca_and_date"] = cert_counts_by_issuing_ca_and_date
     return Response(dashboard_data)
 

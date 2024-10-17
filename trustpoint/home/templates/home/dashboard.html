@@ -1,8 +1,5 @@
-{% extends 'trustpoint/base.html' %}
-{% block content %}
-{% include 'home/counts-panel.html' %}
-{% include 'home/notifications-tab.html' %}
-{% include 'home/charts-tab.html' %}
+{% extends 'trustpoint/base.html' %} {% block content %} {% include 'home/counts-panel.html' %} {%
+include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
 <script>
   var lineChartDevice, donutChartDevice, barChartDevice;
@@ -24,7 +21,7 @@
 
   // Function to update the device counts
   function updateDeviceCounts(deviceCounts) {
-    console.log("deviceCounts", deviceCounts);
+    //console.log("deviceCounts", deviceCounts);
 
     document.getElementById("total-device-count").textContent = `${deviceCounts.total}`;
     document.getElementById("onboared-device-count").textContent = `Onboarded: ${deviceCounts.O}`;
@@ -40,7 +37,7 @@
 
   // Function to update the cert counts
   function updateCertCounts(certCounts) {
-    console.log("certCounts", certCounts);
+    //console.log("certCounts", certCounts);
     // update certificate count panel
     document.getElementById("total-cert-count").textContent = `${certCounts.total}`;
     document.getElementById("active-cert-count").textContent = `Active: ${certCounts.active}`;
@@ -74,7 +71,7 @@
 
   // Function to update the issuing ca counts
   function updateIssuingCACounts(issuingCACounts) {
-    console.log("issuingCACounts", issuingCACounts);
+    //console.log("issuingCACounts", issuingCACounts);
 
     document.getElementById("total-issuing-ca-count").textContent = `${issuingCACounts.total}`;
     document.getElementById(
@@ -155,7 +152,9 @@
 
   // Function to update the issuing ca counts
   function updateCertsByIssuingCAChart(certIssuingCACounts) {
-    var certsByIssuingCaDonutChartEle = document.getElementById("certsByIssuingCaDonutChart").getContext("2d");
+    var certsByIssuingCaDonutChartEle = document
+      .getElementById("certsByIssuingCaDonutChart")
+      .getContext("2d");
     certsByIssuingCaDonutChart != undefined ? certsByIssuingCaDonutChart.destroy() : "";
     var chartLabels = [];
     var chartData = [];
@@ -180,6 +179,46 @@
     });
   }
 
+  // Function to update the issuing ca certificate stack chart
+  function updateCertsByDateStackChart(certDateCounts) {
+    var barChartCAEle = document.getElementById("barChartCA").getContext("2d");
+    barChartCA != undefined ? barChartCAEle.destroy() : "";
+
+    const chartLabels = [...new Set(certDateCounts.map((item) => item.issue_date))]; // Unique dates
+    const datasets = {};
+
+    // Group data by 'name'
+    certDateCounts.forEach((item) => {
+      if (!datasets[item.name]) {
+        datasets[item.name] = {
+          label: item.name,
+          data: Array(chartLabels.length).fill(0), // Initialize count for each date
+          stack: "stack",
+          //backgroundColor: getRandomColor(), // Random color for each dataset
+        };
+      }
+      const index = chartLabels.indexOf(item.issue_date);
+      datasets[item.name].data[index] += item.cert_count; // Accumulate counts
+    });
+    // Convert datasets object to array for Chart.js
+    const chartDatasets = Object.values(datasets);
+    //console.log("stacked chart", chartDatasets);
+    barChartCA = new Chart(barChartCAEle, {
+      type: "bar",
+      data: {
+        labels: chartLabels,
+        datasets: chartDatasets,
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: "true",
+          },
+        },
+      },
+    });
+  }
+
   // Function to dashboard data
   async function fetchAndUpdateDashboardData() {
     const dashboardData = await fetchDasbhboardData();
@@ -200,8 +239,11 @@
       if ("device_counts_by_domain" in dashboardData) {
         updateDeviceDomainChart(dashboardData.device_counts_by_domain);
       }
-      if("cert_counts_by_issuing_ca" in dashboardData){
-        updateCertsByIssuingCAChart(dashboardData.cert_counts_by_issuing_ca)
+      if ("cert_counts_by_issuing_ca" in dashboardData) {
+        updateCertsByIssuingCAChart(dashboardData.cert_counts_by_issuing_ca);
+      }
+      if ("cert_counts_by_issuing_ca_and_date" in dashboardData) {
+        updateCertsByDateStackChart(dashboardData.cert_counts_by_issuing_ca_and_date);
       }
     }
   }
@@ -269,8 +311,8 @@
         // if(!lineChart)
         //   lineChart = new Chart(lineChartEle, lineChartConfig);
 
-        var barChartCAEle = document.getElementById("barChartCA").getContext("2d");
-        if (!barChartCA) barChartCA = new Chart(barChartCAEle, barChartCAConfig);
+        //var barChartCAEle = document.getElementById("barChartCA").getContext("2d");
+        //if (!barChartCA) barChartCA = new Chart(barChartCAEle, barChartCAConfig);
 
         var donutChartCAEle = document.getElementById("donutChartCA").getContext("2d");
         if (!donutChartCA) donutChartCA = new Chart(donutChartCAEle, donutChartCAConfig);
