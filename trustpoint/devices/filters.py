@@ -7,7 +7,8 @@ from .models import Device
 
 class DeviceFilter(django_filters.FilterSet):
     device_name = django_filters.CharFilter(
-        field_name='device_name', lookup_expr='icontains', label='Device Name'
+        field_name='device_name', lookup_expr='icontains', label='Device Name',
+        widget=forms.TextInput(attrs={'class': 'textinput form-control'})
     )
 
     tags = django_filters.ModelMultipleChoiceFilter(

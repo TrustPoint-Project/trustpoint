@@ -252,7 +252,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 
 .tp-main {
     grid-area: main;
-    padding: 3rem;
+    padding: 2.375rem;
     overflow-y: auto;
 }
 
@@ -293,7 +293,21 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     position: sticky;
     bottom: 0;
     min-height: 55px;
+    z-index: 5;
 }
+/* .tp-sticky-footer::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: -2px;
+    right: -2px;
+    height: 55px;
+    background: #f00;
+    background-size: cover;
+    z-index: -1;
+    background-color: var(--bs-body-bg);
+    overflow: hidden;
+  } */
 
 .tp-main-users {
     width: max-content;
@@ -384,9 +398,9 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 
 /* ----- Tables ----- */
 
-.table-container {
+/* .table-container {
     overflow-x: auto;
-}
+} */
 
 table .tp-table-btn {
     padding: 0.2rem 0.8rem;

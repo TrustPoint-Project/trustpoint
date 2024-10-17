@@ -89,7 +89,7 @@ class DevicesBulkDeleteView(
     TpLoginRequiredMixin,
     BaseListView,
 ):
-    """View that allows bulk deletion of Endpoint Profiles.
+    """View that allows bulk deletion of Devices.
 
     This view expects a path variable pks containing string with all primary keys separated by forward slashes /.
     It cannot start with a forward slash, however a trailing forward slash is optional.
