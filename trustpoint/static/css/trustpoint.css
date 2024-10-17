@@ -252,7 +252,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 
 .tp-main {
     grid-area: main;
-    padding: 2.375rem;
+    padding: 2.34rem;
     overflow-y: auto;
 }
 

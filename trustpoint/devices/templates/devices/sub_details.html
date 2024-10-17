@@ -1,8 +1,7 @@
 {% block sub_details %}
-    <h2 class="pt-5 text-start">Device</h2>
+    <h2 class="pt-1 text-start">{{ device.device_name }}</h2>
     <hr>
-    <ul class="list-group list-group-flush text-start tp-form-grid-2-2">
-        <li class="list-group-item"><span><strong>Device Name:</strong></span><span>{{ device.device_name }}</span></li>
+    <ul class="list-group list-group-flush text-start tp-form-grid-2-2 pb-3 mx-2">
         <li class="list-group-item"><span><strong>Serial Number:</strong></span><span>{{ device.device_serial_number }}</span></li>
         <li class="list-group-item"><span><strong>Certificate serial number:</strong></span>
         <span>
