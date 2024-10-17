@@ -257,8 +257,9 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 }
 
 .card-header, .card-footer {
-    min-height: 2rem;
+    min-height: 2.5rem;
     padding: 0.5rem;
+    flex-shrink: 0;
 }
 
 .tp-card-centered {
