@@ -7,7 +7,7 @@
 <script>
   var lineChartDevice, donutChartDevice, barChartDevice;
   var lineChartCert, donutChartCert, barChartCert;
-  var lineChart, barChartCA, donutChartCA;
+  var lineChart, barChartCA, donutChartCA, certsByIssuingCaDonutChart;
   async function fetchDasbhboardData() {
     try {
       const response = await fetch("/api/home/dashboard_data");
@@ -101,7 +101,7 @@
       chartLabels.push(item.unique_name);
       chartData.push(item.device_count);
     });
-    console.log("donut", chartData, chartLabels);
+    //console.log("deviceDomainCounts donut", chartData, chartLabels);
     donutChartDevice = new Chart(donutChartDeviceEle, {
       type: "doughnut",
       data: {
@@ -153,6 +153,33 @@
     });
   }
 
+  // Function to update the issuing ca counts
+  function updateCertsByIssuingCAChart(certIssuingCACounts) {
+    var certsByIssuingCaDonutChartEle = document.getElementById("certsByIssuingCaDonutChart").getContext("2d");
+    certsByIssuingCaDonutChart != undefined ? certsByIssuingCaDonutChart.destroy() : "";
+    var chartLabels = [];
+    var chartData = [];
+    certIssuingCACounts.forEach((item) => {
+      chartLabels.push(item.ca_name);
+      chartData.push(item.cert_count);
+    });
+    //console.log("certIssuingCACounts", chartData, chartLabels);
+    donutChartDevice = new Chart(certsByIssuingCaDonutChartEle, {
+      type: "doughnut",
+      data: {
+        labels: chartLabels,
+        datasets: [
+          {
+            data: chartData,
+            borderWidth: 1,
+            //backgroundColor: ["#0d6efd", "#ffc107", "#d10c15"],
+            hoverOffset: 4,
+          },
+        ],
+      },
+    });
+  }
+
   // Function to dashboard data
   async function fetchAndUpdateDashboardData() {
     const dashboardData = await fetchDasbhboardData();
@@ -172,6 +199,9 @@
       }
       if ("device_counts_by_domain" in dashboardData) {
         updateDeviceDomainChart(dashboardData.device_counts_by_domain);
+      }
+      if("cert_counts_by_issuing_ca" in dashboardData){
+        updateCertsByIssuingCAChart(dashboardData.cert_counts_by_issuing_ca)
       }
     }
   }
@@ -219,12 +249,12 @@
         var lineChartDeviceEle = document.getElementById("lineChartDevice").getContext("2d");
         if (!lineChartDevice) lineChartDevice = new Chart(lineChartDeviceEle, stackChartConfig);
 
-        var donutChartDeviceEle = document.getElementById("donutChartDevice").getContext("2d");
-        if (!donutChartDevice)
-          donutChartDevice = new Chart(donutChartDeviceEle, donutChartDeviceConfig);
+        //var donutChartDeviceEle = document.getElementById("donutChartDevice").getContext("2d");
+        //if (!donutChartDevice)
+        //  donutChartDevice = new Chart(donutChartDeviceEle, donutChartDeviceConfig);
 
-        var barChartDeviceEle = document.getElementById("barChartDevice").getContext("2d");
-        if (!barChartDevice) barChartDevice = new Chart(barChartDeviceEle, barChartDeviceConfig);
+        //var barChartDeviceEle = document.getElementById("barChartDevice").getContext("2d");
+        //if (!barChartDevice) barChartDevice = new Chart(barChartDeviceEle, barChartDeviceConfig);
       } else if (chartTabId == "certChartTab") {
         var lineChartCertEle = document.getElementById("lineChartCert").getContext("2d");
         if (!lineChartCert) lineChartCert = new Chart(lineChartCertEle, lineChartCertConfig);

@@ -7,7 +7,7 @@ from ninja.responses import Response, codes_4xx
 from devices.models import Device
 from pki.models import CertificateModel, IssuingCaModel, DomainModel
 from trustpoint.schema import ErrorSchema, SuccessSchema
-from django.db.models import Count, Q,  Case, When, Value, IntegerField
+from django.db.models import Count,F, Q,  Case, When, Value, IntegerField
 from django.utils import timezone
 from datetime import timedelta
 
@@ -119,6 +119,22 @@ def get_device_count_by_domain():
 
   return device_counts_by_domain
 
+def get_certificate_counts_by_issuing_ca():
+  """Get certificate count by issuing ca from database"""
+  cert_counts_by_issuing_ca = {}
+  try:
+    cert_issuing_ca_qr = CertificateModel.objects \
+    .annotate(cert_count=Count('issued_certificate_references')) \
+    .filter(issuing_ca_model__isnull=False) \
+    .values('cert_count', ca_name=F('issuing_ca_model__unique_name'))
+
+     # Convert the queryset to a list
+    cert_counts_by_issuing_ca = list(cert_issuing_ca_qr)
+  except Exception as e:
+    print(f"Error occurred in certificate count by issuing ca query: {e}")
+
+  return cert_counts_by_issuing_ca
+
 # --- PUBLIC HOME API ENDPOINTS ---
 @router.get('/dashboard_data', exclude_none=True)
 def dashboard_data(request: HttpRequest):
@@ -154,4 +170,10 @@ def dashboard_data(request: HttpRequest):
     device_counts_by_domain = get_device_count_by_domain()
     if device_counts_by_domain:
       dashboard_data["device_counts_by_domain"] = device_counts_by_domain
+    
+    ###### Get certificate count by issuing ca ######
+    cert_counts_by_issuing_ca = get_certificate_counts_by_issuing_ca()
+    if cert_counts_by_issuing_ca:
+      dashboard_data["cert_counts_by_issuing_ca"] = cert_counts_by_issuing_ca
     return Response(dashboard_data)
+
