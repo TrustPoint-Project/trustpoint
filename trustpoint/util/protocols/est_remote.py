@@ -1,4 +1,6 @@
-"""Implements EST client protocol for CA certificate retrieval"""
+"""Implements EST client protocol for CA certificate retrieval
+
+TODO: Update this code and integrate it into the PKI app"""
 
 from __future__ import annotations
 

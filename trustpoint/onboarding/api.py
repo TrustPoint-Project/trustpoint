@@ -33,7 +33,7 @@ from onboarding.schema import (
     AokiFinalizationMessageSchema,
     AokiFinalizationResponseSchema
 )
-from pki.models import CertificateModel, TrustStoreModel, DomainModel
+from pki.models import CertificateModel, TrustStoreModel, DomainModel, ReasonCode
 
 log = logging.getLogger('tp.onboarding')
 
@@ -364,6 +364,8 @@ def revoke(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpRespo
     if not device:
         return 404, {'error': 'Device not found.'}
 
-    if device.revoke_ldevid():
-        return 200, {'success': True}
+    if device.ldevid:
+        if device.revoke_ldevid(ReasonCode.CESSATION):
+            return 200, {'success': True}
+        return 422, {'error': 'Error during certificate revocation.'}
     return 422, {'error': 'Device has no LDevID certificate to revoke.'}

@@ -86,13 +86,19 @@ class Device(models.Model):
         if not self.ldevid:
             return False
 
-        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
-            self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
-
-        self.ldevid.revoke(revocation_reason)
+        revocation_success = self.ldevid.revoke(revocation_reason)
         self.ldevid = None
+        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+            if revocation_success:
+                self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
+            else:
+                # TODO(Air): Check if this makes sense to express the state "cannot revoke since CA is gone"
+                self.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_FAILED
         self.save()
 
+        if not revocation_success:
+            log.error('Failed to revoke LDevID for device %s', self.device_name)
+            return False
         log.info('Revoked LDevID for device %s', self.device_name)
         return True
 

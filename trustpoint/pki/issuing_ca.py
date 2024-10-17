@@ -9,12 +9,13 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from django.db import transaction
 
+from . import ReasonCode, CertificateStatus
 from .serializer import CertificateCollectionSerializer, PrivateKeySerializer
 
 if TYPE_CHECKING:
     from typing import Union
     from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
-    from .models import CertificateModel, IssuingCaModel, RevokedCertificate, CRLStorage
+    from .models import CertificateModel, BaseCaModel, RevokedCertificate, CRLStorage
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
     from serializer import CertificateSerializer, PublicKeySerializer
@@ -24,7 +25,7 @@ log = logging.getLogger('tp.pki')
 
 
 class IssuingCa(ABC):
-    _issuing_ca_model: IssuingCaModel
+    _issuing_ca_model: BaseCaModel
 
     def get_issuing_ca_certificate(self) -> CertificateModel:
         return self._issuing_ca_model.get_issuing_ca_certificate()
@@ -42,7 +43,7 @@ class IssuingCa(ABC):
         return self._issuing_ca_model.get_issuing_ca_certificate_chain_serializer()
 
     @property
-    def issuing_ca_model(self) -> IssuingCaModel:
+    def issuing_ca_model(self) -> BaseCaModel:
         return self._issuing_ca_model
 
 
@@ -51,11 +52,11 @@ class UnprotectedLocalIssuingCa(IssuingCa):
     _private_key: None | PrivateKey = None
     _builder: x509.CertificateRevocationListBuilder
 
-    def __init__(self, issuing_ca_model: IssuingCaModel, *args, **kwargs) -> None:
+    def __init__(self, issuing_ca_model: BaseCaModel, *args, **kwargs) -> None:
         """Initializes an UnprotectedLocalIssuingCa instance.
 
         Args:
-            issuing_ca_model (IssuingCaModel): The issuing CA model instance
+            issuing_ca_model (BaseCaModel): The issuing CA model instance
             representing the CA for which the CRL is being managed.
         """
         super().__init__(*args, **kwargs)
@@ -186,6 +187,28 @@ class UnprotectedLocalIssuingCa(IssuingCa):
         """
         from .models import CRLStorage
         return CRLStorage.get_crl_object(ca=self._issuing_ca_model)
+    
+    def revoke_all_certificates(self) -> None:
+        """Revokes all certificates issued by the CA."""
+        log.info('Revoking all certificates issued by the CA %s.', self._issuing_ca_model.unique_name)
+        # Disable auto CRL generation so we don't generate a CRL for each revocation
+        auto_crl_state = self._issuing_ca_model.auto_crl
+        self._issuing_ca_model.auto_crl = False
+        self._issuing_ca_model.save()
+        # Get all non-revoked certificates issued by the CA
+        issued_certs = self.get_issuing_ca_certificate().issued_certificate_references.exclude(
+                            certificate_status=CertificateStatus.REVOKED)
+        # Check if any certificates are device LDevIDs, in that case revoke via device
+        for cert in issued_certs:
+            if cert.device_set.exists():
+                for device in cert.device_set.all():
+                    device.revoke_ldevid(revocation_reason=ReasonCode.CESSATION)
+            else:  # Revoke the certificate directly
+                cert.revoke(revocation_reason=ReasonCode.CESSATION)
+
+        self.generate_crl()
+        self._issuing_ca_model.auto_crl = auto_crl_state
+        self._issuing_ca_model.save()
 
     def get_ca_name(self) -> str:
         """Retrieves the unique name of the issuing CA.

@@ -15,7 +15,7 @@ from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from cryptography.hazmat.primitives.serialization import BestAvailableEncryption, pkcs12
 from cryptography.x509.oid import NameOID
 
-from . import Algorithm
+from pki.util.keys import KeyAlgorithm, KeyGenerator
 from .base_commands import CertificateCreationCommandMixin
 from django.core.management.base import BaseCommand
 
@@ -25,7 +25,7 @@ class Command(CertificateCreationCommandMixin, BaseCommand):
 
     help = 'Removes all migrations, deletes db and runs makemigrations and migrate afterwards.'
 
-    def _create_cert_chain(self, algorithm: Algorithm, path: Path) -> None:
+    def _create_cert_chain(self, algorithm: KeyAlgorithm, path: Path) -> None:
 
         pem_root_cert, root_cert, root_private_key = self._create_certificate(
             common_name=f'{algorithm.value}-root-ca',
@@ -67,22 +67,14 @@ class Command(CertificateCreationCommandMixin, BaseCommand):
     def _create_certificate(
             cls,
             common_name: str,
-            algorithm: Algorithm,
+            algorithm: KeyAlgorithm,
             path: Path,
             issuer: None | x509.Certificate = None,
             issuer_priv_key: None | rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey = None,
             validity_days: int = 365) -> tuple[str, x509.Certificate, rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey]:
-
-        if algorithm == Algorithm.RSA2048:
-            private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-        elif algorithm == Algorithm.RSA4096:
-            private_key = rsa.generate_private_key(public_exponent=65537, key_size=4096)
-        elif algorithm == Algorithm.SECP256:
-            private_key = ec.generate_private_key(ec.SECP256R1())
-        elif algorithm == Algorithm.SECP521:
-            private_key = ec.generate_private_key(ec.SECP521R1())
-        else:
-            raise ValueError('Unknown algorithm.')
+        
+        kg = KeyGenerator(algorithm)
+        private_key = kg.generate_key()
 
         one_day = datetime.timedelta(1, 0, 0)
         public_key = private_key.public_key()
@@ -214,7 +206,7 @@ class Command(CertificateCreationCommandMixin, BaseCommand):
     @staticmethod
     def _create_trust_store(path: Path):
         certs = ''
-        for value in [algo.value for algo in Algorithm]:
+        for value in [algo.value for algo in KeyAlgorithm]:
             with open(path / f'{value}-chain.pem', 'r') as f:
                 certs += f.read()
 
@@ -226,14 +218,14 @@ class Command(CertificateCreationCommandMixin, BaseCommand):
         shutil.rmtree(tests_data_path, ignore_errors=True)
         tests_data_path.mkdir(exist_ok=True)
 
-        self._create_cert_chain(algorithm=Algorithm.RSA2048, path=tests_data_path)
-        self._create_cert_chain(algorithm=Algorithm.RSA4096, path=tests_data_path)
-        self._create_cert_chain(algorithm=Algorithm.SECP256, path=tests_data_path)
-        self._create_cert_chain(algorithm=Algorithm.SECP521, path=tests_data_path)
+        self._create_cert_chain(algorithm=KeyAlgorithm.RSA2048, path=tests_data_path)
+        self._create_cert_chain(algorithm=KeyAlgorithm.RSA4096, path=tests_data_path)
+        self._create_cert_chain(algorithm=KeyAlgorithm.SECP256, path=tests_data_path)
+        self._create_cert_chain(algorithm=KeyAlgorithm.SECP521, path=tests_data_path)
 
         self._create_trust_store(path=tests_data_path)
 
-        for algo in Algorithm:
+        for algo in KeyAlgorithm:
             cmd = (
                 f'openssl verify -CAfile {tests_data_path}/{algo.value}-root-ca-cert.pem -untrusted '
                 f'{tests_data_path}/{algo.value}-issuing-ca-cert.pem {tests_data_path}/{algo.value}-ee-cert.pem'

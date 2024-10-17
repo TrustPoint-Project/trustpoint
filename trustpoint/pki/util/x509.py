@@ -236,3 +236,16 @@ class CredentialExtractor:
             raise MultipleCertificateChainsFoundError
         return issuers[0]
 
+
+class OidUtil:
+    @staticmethod
+    def get_extension_for_oid_or_none(extensions: x509.Extensions, oid: x509.NameOID) -> x509.Extension | None:
+        """Determines if the given extensions contain an extension with the given OID.
+        Args:
+            extensions (x509.Extensions): The extensions to search.
+            oid (NameOID): The OID to search for.
+        """
+        try:
+            return extensions.get_extension_for_oid(oid)
+        except x509.ExtensionNotFound:
+            return None
