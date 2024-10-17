@@ -219,6 +219,33 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     });
   }
 
+  // Function to update the cert domain donut chart
+  function updateCertDomainChart(certDomainCounts) {
+    var donutChartCertEle = document.getElementById("donutChartCert").getContext("2d");
+    donutChartCert != undefined ? donutChartCert.destroy() : "";
+    var chartLabels = [];
+    var chartData = [];
+    certDomainCounts.forEach((item) => {
+      chartLabels.push(item.unique_name);
+      chartData.push(item.cert_count);
+    });
+    //console.log("certDomainCounts donut", chartData, chartLabels);
+    donutChartCert = new Chart(donutChartCertEle, {
+      type: "doughnut",
+      data: {
+        labels: chartLabels,
+        datasets: [
+          {
+            data: chartData,
+            borderWidth: 1,
+            //backgroundColor: ["#0d6efd", "#ffc107", "#d10c15"],
+            hoverOffset: 4,
+          },
+        ],
+      },
+    });
+  }
+
   // Function to dashboard data
   async function fetchAndUpdateDashboardData() {
     const dashboardData = await fetchDasbhboardData();
@@ -244,6 +271,9 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
       }
       if ("cert_counts_by_issuing_ca_and_date" in dashboardData) {
         updateCertsByDateStackChart(dashboardData.cert_counts_by_issuing_ca_and_date);
+      }
+      if ("cert_counts_by_domain" in dashboardData) {
+        updateCertDomainChart(dashboardData.cert_counts_by_domain);
       }
     }
   }
@@ -301,8 +331,8 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
         var lineChartCertEle = document.getElementById("lineChartCert").getContext("2d");
         if (!lineChartCert) lineChartCert = new Chart(lineChartCertEle, lineChartCertConfig);
 
-        var donutChartCertEle = document.getElementById("donutChartCert").getContext("2d");
-        if (!donutChartCert) donutChartCert = new Chart(donutChartCertEle, donutChartCertConfig);
+        //var donutChartCertEle = document.getElementById("donutChartCert").getContext("2d");
+        //if (!donutChartCert) donutChartCert = new Chart(donutChartCertEle, donutChartCertConfig);
 
         var barChartCertEle = document.getElementById("barChartCert").getContext("2d");
         if (!barChartCert) barChartCert = new Chart(barChartCertEle, barChartCertConfig);

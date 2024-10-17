@@ -156,6 +156,24 @@ def get_cert_counts_by_issuing_ca_and_date():
 
   return cert_counts_by_issuing_ca_and_date
 
+def get_cert_counts_by_domain():
+  """Get certificate count by domain from database"""
+  cert_counts_by_domain = {}
+  try:
+    cert_domain_qr = DomainModel.objects \
+    .filter(issuing_ca__issuing_ca_certificate__isnull=False) \
+    .annotate(cert_count=Count('issuing_ca__issuing_ca_certificate__issued_certificate_references')) \
+    .values('unique_name', 'cert_count') 
+    
+     # Convert the queryset to a list
+    cert_counts_by_domain = list(cert_domain_qr)
+    #print("cert_counts_by_domain", cert_counts_by_domain)
+  except Exception as e:
+    print(f"Error occurred in certificate count by issuing ca query: {e}")
+
+  return cert_counts_by_domain
+
+
 # --- PUBLIC HOME API ENDPOINTS ---
 @router.get('/dashboard_data', exclude_none=True)
 def dashboard_data(request: HttpRequest):
@@ -199,5 +217,9 @@ def dashboard_data(request: HttpRequest):
     cert_counts_by_issuing_ca_and_date = get_cert_counts_by_issuing_ca_and_date()
     if cert_counts_by_issuing_ca_and_date:
       dashboard_data["cert_counts_by_issuing_ca_and_date"] = cert_counts_by_issuing_ca_and_date
+    
+    cert_counts_by_domain = get_cert_counts_by_domain()
+    if cert_counts_by_domain:
+      dashboard_data["cert_counts_by_domain"] = cert_counts_by_domain
     return Response(dashboard_data)
 
