@@ -1,11 +1,9 @@
 """Django Views"""
 from __future__ import annotations
 
-from functools import wraps
 from typing import TYPE_CHECKING
 
 from django.contrib import messages
-from django.core.cache import cache
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
@@ -14,9 +12,6 @@ from django.views.generic.base import RedirectView
 from django.views.generic.edit import FormView
 
 from trustpoint.views.base import (
-    BulkDeleteView,
-    ContextDataMixin,
-    PrimaryKeyFromUrlToQuerysetMixin,
     TpLoginRequiredMixin,
 )
 
@@ -175,10 +170,8 @@ def network(request: HttpRequest) -> HttpResponse:
         context['network_config_form'] = network_configuration_form
         return render(request, 'sysconf/network.html', context=context)
 
-    else:
-        context['network_config_form'] = NetworkConfigForm(instance=network_config)
-
-        return render(request, 'sysconf/network.html', context=context)
+    context['network_config_form'] = NetworkConfigForm(instance=network_config)
+    return render(request, 'sysconf/network.html', context=context)
 
 
 def ntp(request: HttpRequest) -> HttpResponse:
@@ -204,10 +197,8 @@ def ntp(request: HttpRequest) -> HttpResponse:
         context['ntp_config_form'] = ntp_configuration_form
         return render(request, 'sysconf/ntp.html', context=context)
 
-    else:
-        context['ntp_config_form'] = NTPConfigForm(instance=ntp_config)
-
-        return render(request, 'sysconf/ntp.html', context=context)
+    context['ntp_config_form'] = NTPConfigForm(instance=ntp_config)
+    return render(request, 'sysconf/ntp.html', context=context)
 
 
 def ssh(request: HttpRequest) -> HttpResponse:
@@ -217,6 +208,7 @@ def ssh(request: HttpRequest) -> HttpResponse:
     """
     context = {'page_category': 'sysconf', 'page_name': 'ssh'}
     return render(request, 'sysconf/ssh.html', context=context)
+
 
 def security(request: HttpRequest) -> HttpResponse:
     """Handle Security Configuration
@@ -245,7 +237,5 @@ def security(request: HttpRequest) -> HttpResponse:
         context['security_config_form'] = security_configuration_form
         return render(request, 'sysconf/security.html', context=context)
 
-    else:
-        context['security_config_form'] = SecurityConfigForm(instance=security_config)
-        return render(request, 'sysconf/security.html', context=context)
-
+    context['security_config_form'] = SecurityConfigForm(instance=security_config)
+    return render(request, 'sysconf/security.html', context=context)

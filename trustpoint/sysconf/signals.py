@@ -1,3 +1,5 @@
+"""Signals for the sysconf app, e.g. on model save."""
+
 import logging
 
 from django.core.cache import cache
@@ -22,9 +24,9 @@ def update_security_level(sender, instance, **kwargs):
                         SecurityModeChoices(instance._original_values['security_mode']).label,
                         SecurityModeChoices(instance.security_mode).label)
 
-        if instance.auto_gen_pki and instance._original_values['auto_gen_pki'] == False:
+        if instance.auto_gen_pki and instance._original_values['auto_gen_pki'] is False:
             AutoGenPki.enable_auto_gen_pki(instance.auto_gen_pki_key_algorithm)
-        elif not instance.auto_gen_pki and instance._original_values['auto_gen_pki'] == True:
+        elif not instance.auto_gen_pki and instance._original_values['auto_gen_pki'] is True:
             AutoGenPki.disable_auto_gen_pki()
 
         # save newly saved values as new original values

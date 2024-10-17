@@ -8,7 +8,7 @@ class SecurityManager:
     highest_features = (SecurityFeatures.LOG_ACCESS, )
     high_features = (*highest_features, )
     medium_features = (*high_features, )
-    low_features = (*medium_features, SecurityFeatures.AUTO_GEN_PKI, )
+    low_features = (*medium_features, SecurityFeatures.AUTO_GEN_PKI )
 
 
     @classmethod
@@ -25,7 +25,7 @@ class SecurityManager:
 
         if sec_level == SecurityModeChoices.DEV:
             return True
-        elif sec_level == SecurityModeChoices.LOW:
+        if sec_level == SecurityModeChoices.LOW:
             return feature_name in cls.low_features
         elif sec_level == SecurityModeChoices.MEDIUM:
             return feature_name in cls.medium_features
@@ -36,7 +36,7 @@ class SecurityManager:
         return False
 
     @classmethod
-    def get_security_level(cls):
+    def get_security_level(cls) -> str:
         """Returns the security mode of the current security level instance.
 
         Returns:
@@ -53,7 +53,7 @@ class SecurityManager:
     def _set_cache(cls) -> None:
         """Sets the security level in the cache by fetching it from the database."""
         from sysconf.models import SecurityConfig
-        
+
         current_sec_config = SecurityConfig.objects.first()
         if current_sec_config:
             cache.set('security_level', current_sec_config.security_mode)

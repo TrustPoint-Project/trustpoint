@@ -1,8 +1,6 @@
 import abc
 
-from . import Initializer
-from . import InitializerError
-
+from . import Initializer, InitializerError
 
 
 class IssuingCaInitializer(Initializer, abc.ABC):

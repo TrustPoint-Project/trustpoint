@@ -2,37 +2,30 @@ from __future__ import annotations
 
 import abc
 import logging
-
-from django.db import transaction
-from django.utils.translation import gettext_lazy as _
-from django.core.exceptions import ValidationError
-
-from pki.serializer import (
-    PrivateKeySerializer,
-    CertificateCollectionSerializer,
-    CredentialSerializer
-)
-
-from . import IssuingCaInitializer
-from . import IssuingCaInitializerError
-from .local import LocalIssuingCaInitializer
-from .local import LocalIssuingCaInitializerError, InternalServerError, IssuingCaAlreadyExistsError
-
-from pki.util import Sha256Fingerprint, CredentialExtractor
-
 from typing import TYPE_CHECKING
+
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+
+from pki.serializer import CertificateCollectionSerializer, PrivateKeySerializer
+from pki.util import CredentialExtractor
+
+from .local import (
+    LocalIssuingCaInitializer,
+    LocalIssuingCaInitializerError,
+)
 
 if TYPE_CHECKING:
     from typing import Union
-    from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
+
+    from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 log = logging.getLogger('tp.pki.initializer')
 
 
 class FileImportLocalIssuingCaInitializerError(LocalIssuingCaInitializerError):
-    """Base class for file import local issuing CA initializer errors."""	
-    pass
+    """Base class for file import local issuing CA initializer errors."""
 
 
 class FileSerializationError(FileImportLocalIssuingCaInitializerError):
