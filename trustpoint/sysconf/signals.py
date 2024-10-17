@@ -23,7 +23,7 @@ def update_security_level(sender, instance, **kwargs):
                         SecurityModeChoices(instance.security_mode).label)
 
         if instance.auto_gen_pki and instance._original_values['auto_gen_pki'] == False:
-            AutoGenPki.enable_auto_gen_pki()
+            AutoGenPki.enable_auto_gen_pki(instance.auto_gen_pki_key_algorithm)
         elif not instance.auto_gen_pki and instance._original_values['auto_gen_pki'] == True:
             AutoGenPki.disable_auto_gen_pki()
 

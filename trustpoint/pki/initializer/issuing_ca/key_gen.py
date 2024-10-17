@@ -40,7 +40,7 @@ class UnprotectedKeyGenLocalRootCaInitializer(UnprotectedKeyGenLocalCaInitialize
 
         self._private_key = KeyGenerator(self._key_algorithm).generate_key()
 
-        subject_ = CaGenerator.generate_subject('trustpoint.auto_gen_pki.root')
+        subject_ = CaGenerator.generate_subject('trustpoint.auto_gen_pki.%s.root' %  self._key_algorithm.value.lower())
 
         not_valid_before = datetime.datetime.today() - ONE_DAY
         not_valid_after = datetime.datetime.today() + ONE_DAY * 365 * 10

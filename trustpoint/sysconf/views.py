@@ -219,7 +219,7 @@ def ssh(request: HttpRequest) -> HttpResponse:
     return render(request, 'sysconf/ssh.html', context=context)
 
 def security(request: HttpRequest) -> HttpResponse:
-    """Handle ssh Configuration
+    """Handle Security Configuration
 
     Returns: HTTPResponse
     """
@@ -237,8 +237,11 @@ def security(request: HttpRequest) -> HttpResponse:
         if security_configuration_form.is_valid():
             security_configuration_form.save()
             messages.success(request, _('Your changes were saved successfully.'))
-        else:
-            messages.error(request, _('Error saving the configuration'))
+            # use a new form instance to apply new original values
+            context['security_config_form'] = SecurityConfigForm(instance=security_config)
+            return render(request, 'sysconf/security.html', context=context)
+
+        messages.error(request, _('Error saving the configuration'))
         context['security_config_form'] = security_configuration_form
         return render(request, 'sysconf/security.html', context=context)
 

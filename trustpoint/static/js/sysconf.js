@@ -52,7 +52,7 @@ function prevalidateSecuritySettings() {
     // 0 = dev, 1 = basic, 2 = medium, 3 = high, 4 = highest
     if (sl < 0 || sl > 4) return; // invalid security level
     document.querySelector('#hidden_input_note').style.display = 'none';
-    for (el of document.querySelectorAll('#security_configuration input')) {
+    for (el of document.querySelectorAll('#security_configuration input, select')) {
         // hide settings that are not available for the selected security level
         if (el.dataset?.hideAtSl) {
             arr = JSON.parse(el.dataset.hideAtSl);

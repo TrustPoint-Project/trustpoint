@@ -5,7 +5,7 @@ import threading
 
 from pki.models import DomainModel, IssuingCaModel, RootCaModel, ReasonCode
 from pki.initializer.issuing_ca.key_gen import UnprotectedKeyGenLocalRootCaInitializer, UnprotectedKeyGenLocalIssuingCaInitializer
-from pki.util.keys import KeyAlgorithm
+from pki.util.keys import KeyAlgorithm, AutoGenPkiKeyAlgorithm
 
 from sysconf.security import SecurityFeatures
 from sysconf.security.decorators import security_level
@@ -18,9 +18,9 @@ class AutoGenPki:
 
     @staticmethod
     @security_level(SecurityFeatures.AUTO_GEN_PKI)
-    def enable_auto_gen_pki() -> None:
+    def enable_auto_gen_pki(key_alg: AutoGenPkiKeyAlgorithm) -> None:
         """Starts a thread that enables the auto-generated PKI."""
-        thread = threading.Thread(target=AutoGenPki._enable_auto_gen_pki)
+        thread = threading.Thread(target=AutoGenPki._enable_auto_gen_pki, args=(key_alg,))
         thread.start()
 
     @staticmethod
@@ -31,25 +31,27 @@ class AutoGenPki:
 
     @staticmethod
     @security_level(SecurityFeatures.AUTO_GEN_PKI)
-    def _enable_auto_gen_pki() -> None:
+    def _enable_auto_gen_pki(key_alg: AutoGenPkiKeyAlgorithm) -> None:
         """Enables the auto-generated PKI."""
         AutoGenPki._lock.acquire()
         log.warning('! Enabling auto-generated PKI !')
 
-        key_algorithm = KeyAlgorithm.RSA4096
+        key_algorithm = AutoGenPkiKeyAlgorithm.to_key_algorithm(key_alg)
+        root_ca_name = 'AutoGenPKI_Root_CA_%s' % key_algorithm.value
+        print(root_ca_name)
 
         # check if local root CA exists
         try:
-            _ = RootCaModel.objects.get(unique_name='AutoGenPKI_Root_CA')
+            _ = RootCaModel.objects.get(unique_name=root_ca_name)
             log.info('Using existing local auto-generated PKI Root CA')
         except RootCaModel.DoesNotExist:
             log.info('Creating local auto-generated PKI Root CA')
-            root_ca_initializer = UnprotectedKeyGenLocalRootCaInitializer('AutoGenPKI_Root_CA', key_algorithm, auto_crl=True)
+            root_ca_initializer = UnprotectedKeyGenLocalRootCaInitializer(root_ca_name, key_algorithm, auto_crl=True)
             root_ca_initializer.initialize()
             root_ca_initializer.save()
 
         try:
-            root_ca = RootCaModel.objects.get(unique_name='AutoGenPKI_Root_CA')
+            root_ca = RootCaModel.objects.get(unique_name=root_ca_name)
         except RootCaModel.DoesNotExist:
             log.error('Local auto-generated PKI Root CA is not in database - illegal state')
             raise        
@@ -91,7 +93,8 @@ class AutoGenPki:
             issuing_ca = IssuingCaModel.objects.get(unique_name='AutoGenPKI_Issuing_CA')
         except IssuingCaModel.DoesNotExist:
             log.error('Issuing CA for auto-generated PKI does not exist - auto-generated PKI possibly not fully disabled')
-            raise
+            AutoGenPki._lock.release()
+            return
         
         issuing_ca_instance = issuing_ca.get_issuing_ca()
         issuing_ca_instance.revoke_all_certificates()

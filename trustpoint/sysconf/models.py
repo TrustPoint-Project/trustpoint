@@ -3,6 +3,8 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.core.validators import MaxValueValidator, MinValueValidator
 
+from pki.util.keys import AutoGenPkiKeyAlgorithm
+
 from sysconf.security import SecurityFeatures, SecurityModeChoices
 from sysconf.security.manager import SecurityManager
 
@@ -58,7 +60,11 @@ class SecurityConfig(models.Model):
     """Security Configuration model"""
 
     security_mode = models.CharField(max_length=6, choices=SecurityModeChoices.choices, default=SecurityModeChoices.LOW)
+    
     auto_gen_pki = models.BooleanField(default=False)
+    auto_gen_pki_key_algorithm = models.CharField(max_length=12,
+                                                  choices=AutoGenPkiKeyAlgorithm,
+                                                  default=AutoGenPkiKeyAlgorithm.RSA2048)
 
     _original_values = {}
 
