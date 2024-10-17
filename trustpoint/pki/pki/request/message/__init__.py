@@ -48,32 +48,15 @@ class PkiRequestMessage(abc.ABC):
     _operation: Operation
     _mimetype: None | MimeType = None
     _content_transfer_encoding: None | ContentTransferEncoding = None
-    _domain_unique_name: None | str = None
-    _alias_unique_name: None | str = None
     _domain_model: None | DomainModel = None
     _raw_request: None | bytes = None
     _is_valid: bool = True
     _invalid_response: None | PkiResponseMessage = None
 
-    def __init__(self, protocol: Protocols, operation: Operation, domain_unique_name: str) -> None:
+    def __init__(self, protocol: Protocols, operation: Operation, domain_model: DomainModel) -> None:
         self._protocol = protocol
         self._operation = operation
-        self._domain_unique_name = domain_unique_name
-
-    def _init_domain_model(self, domain_unique_name: str) -> None:
-        try:
-            self._domain_model = DomainModel.objects.get(unique_name=domain_unique_name)
-        except DomainModel.DoesNotExist:
-            self._build_domain_does_not_exist()
-            self._is_valid = False
-            raise ValueError
-        
-    def _build_domain_does_not_exist(self) -> None:
-        error_msg = f'Domain {self._domain_unique_name} does not exist.'
-        self._invalid_response = PkiResponseMessage(
-            raw_response=error_msg,
-            http_status=HttpStatusCode.BAD_REQUEST,
-            mimetype=MimeType.TEXT_PLAIN)
+        self._domain_model = domain_model
 
     @property
     def protocol(self) -> Protocols:
@@ -110,10 +93,6 @@ class PkiRequestMessage(abc.ABC):
     @property
     def invalid_response(self) -> PkiResponseMessage:
         return self._invalid_response
-
-    @property
-    def alias(self) -> str:
-        return self._alias_unique_name
 
 
 class PkiResponseMessage:

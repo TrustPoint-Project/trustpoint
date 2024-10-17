@@ -27,47 +27,53 @@ class CmpOperation(Operation):
     REVOCATION_REQUEST = 'rr'
     GENERAL_MESSAGE = 'genm'
 
-class PkiCmpInitializationRequestMessage(PkiRequestMessage):
-    _cmp: Asn1Type
 
-    def __init__(self,
-                 mimetype: None | str,
-                 content_transfer_encoding: None | str,
-                 domain_unique_name: str,
-                 raw_request: bytes,
-                 alias_unique_name: str):
+class PkiCmpInitializationRequestMessage(PkiRequestMessage):
+    _cmp: rfc4210.PKIMessage
+
+    def __init__(
+            self,
+            mimetype: None | str,
+            content_transfer_encoding: None | str,
+            domain_model: DomainModel,
+            raw_request: bytes):
         super().__init__(
             protocol=Protocols.CMP,
             operation=CmpOperation.INITIALIZATION_REQUEST,
-            domain_unique_name=domain_unique_name)
+            domain_model=domain_model)
 
-        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
-        self.logger.setLevel(logging.DEBUG)
+        self.logger = logging.getLogger('tp').getChild(self.__class__.__name__)
+        self.logger.info(f'Initializing PkiCmpInitializationRequestMessage for domain: {self.domain_model.unique_name}')
 
-        self.logger.info("Initializing PkiCmpInitializationRequestMessage for domain: %s", domain_unique_name)
-
-        self.validator = CmpRequestMessageValidator(self.logger)
-        self._content_transfer_encoding = None
-
-        result = self.validator.validate_initialization_request(mimetype, domain_unique_name, DomainModel, raw_request,
-                                                                rfc4210.PKIMessage())
-        if not result:
-            self._invalid_response = self.validator.invalid_response
-            self._is_valid = False
-            self.logger.error("Validation failed during initialization.")
+        try:
+            self._init_mimetype(mimetype)
+        except ValueError:
             return
 
-        loaded_request, domain_model = result
-        self._cmp = loaded_request
-        self._domain_model = domain_model
-        self._alias_unique_name = alias_unique_name
+        # self.validator = CmpRequestMessageValidator(self.logger)
+        self._content_transfer_encoding = None
 
-        self._is_valid = self.validator.is_valid
-        self.logger.info("PkiCmpInitializationRequestMessage initialized successfully for domain: %s",
-                         domain_unique_name)
+        # result = self.validator.validate_initialization_request(
+        #     mimetype, domain_unique_name, DomainModel, raw_request, rfc4210.PKIMessage())
+        #
+        # if not result:
+        #     self._invalid_response = self.validator.invalid_response
+        #     self._is_valid = False
+        #     self.logger.error('Validation failed during initialization.')
+        #     return
+        #
+        # loaded_request, domain_model = result
+        # self._cmp = loaded_request
+        # self._domain_model = domain_model
+        #
+        # self._is_valid = self.validator.is_valid
+        # self.logger.info(
+        #     'PkiCmpInitializationRequestMessage initialized successfully for domain: %s', domain_unique_name)
+
     @property
-    def cmp(self) -> Asn1Type:
+    def cmp(self) -> rfc4210.PKIMessage:
         return self._cmp
+
 
 class PkiCmpCertificationRequestMessage(PkiRequestMessage):
     _cmp: Asn1Type
@@ -82,10 +88,10 @@ class PkiCmpCertificationRequestMessage(PkiRequestMessage):
             operation=CmpOperation.CERTIFICATION_REQUEST,
             domain_unique_name=domain_unique_name)
 
-        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger = logging.getLogger('tp').getChild(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
 
-        self.logger.info("Initializing PkiCmpCertificationRequestMessage for domain: %s", domain_unique_name)
+        self.logger.info('Initializing PkiCmpCertificationRequestMessage for domain: %s', domain_unique_name)
 
         self.validator = CmpRequestMessageValidator(self.logger)
         self._content_transfer_encoding = None
@@ -93,12 +99,12 @@ class PkiCmpCertificationRequestMessage(PkiRequestMessage):
         result = self.validator.validate_certification_request(mimetype, domain_unique_name, DomainModel, raw_request,
                                                                 rfc4210.PKIMessage())
 
-        self.logger.info("TEST")
+        self.logger.info('TEST')
 
         if not result:
             self._invalid_response = self.validator.invalid_response
             self._is_valid = False
-            self.logger.error("Validation failed during initialization.")
+            self.logger.error('Validation failed during initialization.')
             return
 
         loaded_request, domain_model = result
@@ -106,7 +112,7 @@ class PkiCmpCertificationRequestMessage(PkiRequestMessage):
         self._domain_model = domain_model
 
         self._is_valid = self.validator.is_valid
-        self.logger.info("PkiCmpCertificationRequestMessage initialized successfully for domain: %s",
+        self.logger.info('PkiCmpCertificationRequestMessage initialized successfully for domain: %s',
                          domain_unique_name)
     @property
     def cmp(self) -> Asn1Type:
@@ -125,10 +131,10 @@ class PkiCmpKeyUpdateRequestMessage(PkiRequestMessage):
             operation=CmpOperation.KEYUPDATE_REQUEST,
             domain_unique_name=domain_unique_name)
 
-        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger = logging.getLogger('tp').getChild(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
 
-        self.logger.info("Initializing PkiCmpKeyUpdateRequestMessage for domain: %s", domain_unique_name)
+        self.logger.info('Initializing PkiCmpKeyUpdateRequestMessage for domain: %s', domain_unique_name)
 
         self.validator = CmpRequestMessageValidator(self.logger)
         self._content_transfer_encoding = None
@@ -138,7 +144,7 @@ class PkiCmpKeyUpdateRequestMessage(PkiRequestMessage):
         if not result:
             self._invalid_response = self.validator.invalid_response
             self._is_valid = False
-            self.logger.error("Validation failed during initialization.")
+            self.logger.error('Validation failed during initialization.')
             return
 
         loaded_request, domain_model = result
@@ -146,7 +152,7 @@ class PkiCmpKeyUpdateRequestMessage(PkiRequestMessage):
         self._domain_model = domain_model
 
         self._is_valid = self.validator.is_valid
-        self.logger.info("PkiCmpKeyUpdateRequestMessage initialized successfully for domain: %s",
+        self.logger.info('PkiCmpKeyUpdateRequestMessage initialized successfully for domain: %s',
                          domain_unique_name)
     @property
     def cmp(self) -> Asn1Type:
@@ -165,10 +171,10 @@ class PkiCmpRevocationRequestMessage(PkiRequestMessage):
             operation=CmpOperation.REVOCATION_REQUEST,
             domain_unique_name=domain_unique_name)
 
-        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger = logging.getLogger('tp').getChild(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
 
-        self.logger.info("Initializing %s for domain: %s", self.__class__.__name__, domain_unique_name)
+        self.logger.info('Initializing %s for domain: %s', self.__class__.__name__, domain_unique_name)
 
         self.validator = CmpRequestMessageValidator(self.logger)
         self._content_transfer_encoding = None
@@ -178,7 +184,7 @@ class PkiCmpRevocationRequestMessage(PkiRequestMessage):
         if not result:
             self._invalid_response = self.validator.invalid_response
             self._is_valid = False
-            self.logger.error("Validation failed during initialization.")
+            self.logger.error('Validation failed during initialization.')
             return
 
         loaded_request, domain_model = result
@@ -186,7 +192,7 @@ class PkiCmpRevocationRequestMessage(PkiRequestMessage):
         self._domain_model = domain_model
 
         self._is_valid = self.validator.is_valid
-        self.logger.info("%s initialized successfully for domain: %s", self.__class__.__name__,
+        self.logger.info('%s initialized successfully for domain: %s', self.__class__.__name__,
                          domain_unique_name)
 
     @property
@@ -206,10 +212,10 @@ class PkiCmpGetRootUpdateRequestMessage(PkiRequestMessage):
             operation=CmpOperation.GENERAL_MESSAGE,
             domain_unique_name=domain_unique_name)
 
-        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger = logging.getLogger('tp').getChild(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
 
-        self.logger.info("Initializing %s for domain: %s", self.__class__.__name__, domain_unique_name)
+        self.logger.info('Initializing %s for domain: %s', self.__class__.__name__, domain_unique_name)
 
         self.validator = CmpRequestMessageValidator(self.logger)
         self._content_transfer_encoding = None
@@ -219,7 +225,7 @@ class PkiCmpGetRootUpdateRequestMessage(PkiRequestMessage):
         if not result:
             self._invalid_response = self.validator.invalid_response
             self._is_valid = False
-            self.logger.error("Validation failed during initialization.")
+            self.logger.error('Validation failed during initialization.')
             return
 
         loaded_request, domain_model = result
@@ -227,7 +233,7 @@ class PkiCmpGetRootUpdateRequestMessage(PkiRequestMessage):
         self._domain_model = domain_model
 
         self._is_valid = self.validator.is_valid
-        self.logger.info("%s initialized successfully for domain: %s", self.__class__.__name__,
+        self.logger.info('%s initialized successfully for domain: %s', self.__class__.__name__,
                          domain_unique_name)
 
     @property
@@ -247,10 +253,10 @@ class PkiCmpGetCrlsRequestMessage(PkiRequestMessage):
             operation=CmpOperation.GENERAL_MESSAGE,
             domain_unique_name=domain_unique_name)
 
-        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger = logging.getLogger('tp').getChild(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
 
-        self.logger.info("Initializing %s for domain: %s", self.__class__.__name__, domain_unique_name)
+        self.logger.info('Initializing %s for domain: %s', self.__class__.__name__, domain_unique_name)
 
         self.validator = CmpRequestMessageValidator(self.logger)
         self._content_transfer_encoding = None
@@ -260,7 +266,7 @@ class PkiCmpGetCrlsRequestMessage(PkiRequestMessage):
         if not result:
             self._invalid_response = self.validator.invalid_response
             self._is_valid = False
-            self.logger.error("Validation failed during initialization.")
+            self.logger.error('Validation failed during initialization.')
             return
 
         loaded_request, domain_model = result
@@ -268,7 +274,7 @@ class PkiCmpGetCrlsRequestMessage(PkiRequestMessage):
         self._domain_model = domain_model
 
         self._is_valid = self.validator.is_valid
-        self.logger.info("%s initialized successfully for domain: %s", self.__class__.__name__,
+        self.logger.info('%s initialized successfully for domain: %s', self.__class__.__name__,
                          domain_unique_name)
 
     @property
@@ -288,10 +294,10 @@ class PkiCmpGetCertReqTemplateRequestMessage(PkiRequestMessage):
             operation=CmpOperation.GENERAL_MESSAGE,
             domain_unique_name=domain_unique_name)
 
-        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger = logging.getLogger('tp').getChild(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
 
-        self.logger.info("Initializing %s for domain: %s", self.__class__.__name__, domain_unique_name)
+        self.logger.info('Initializing %s for domain: %s', self.__class__.__name__, domain_unique_name)
 
         self.validator = CmpRequestMessageValidator(self.logger)
         self._content_transfer_encoding = None
@@ -301,7 +307,7 @@ class PkiCmpGetCertReqTemplateRequestMessage(PkiRequestMessage):
         if not result:
             self._invalid_response = self.validator.invalid_response
             self._is_valid = False
-            self.logger.error("Validation failed during initialization.")
+            self.logger.error('Validation failed during initialization.')
             return
 
         loaded_request, domain_model = result
@@ -309,7 +315,7 @@ class PkiCmpGetCertReqTemplateRequestMessage(PkiRequestMessage):
         self._domain_model = domain_model
 
         self._is_valid = self.validator.is_valid
-        self.logger.info("%s initialized successfully for domain: %s", self.__class__.__name__,
+        self.logger.info('%s initialized successfully for domain: %s', self.__class__.__name__,
                          domain_unique_name)
 
     @property
@@ -329,10 +335,10 @@ class PkiCmpGetCaCertsRequestMessage(PkiRequestMessage):
             operation=CmpOperation.GENERAL_MESSAGE,
             domain_unique_name=domain_unique_name)
 
-        self.logger = logging.getLogger("tp").getChild(self.__class__.__name__)
+        self.logger = logging.getLogger('tp').getChild(self.__class__.__name__)
         self.logger.setLevel(logging.DEBUG)
 
-        self.logger.info("Initializing %s for domain: %s", self.__class__.__name__, domain_unique_name)
+        self.logger.info('Initializing %s for domain: %s', self.__class__.__name__, domain_unique_name)
 
         self.validator = CmpRequestMessageValidator(self.logger)
         self._content_transfer_encoding = None
@@ -342,7 +348,7 @@ class PkiCmpGetCaCertsRequestMessage(PkiRequestMessage):
         if not result:
             self._invalid_response = self.validator.invalid_response
             self._is_valid = False
-            self.logger.error("Validation failed during initialization.")
+            self.logger.error('Validation failed during initialization.')
             return
 
         loaded_request, domain_model = result
@@ -350,7 +356,7 @@ class PkiCmpGetCaCertsRequestMessage(PkiRequestMessage):
         self._domain_model = domain_model
 
         self._is_valid = self.validator.is_valid
-        self.logger.info("%s initialized successfully for domain: %s", self.__class__.__name__,
+        self.logger.info('%s initialized successfully for domain: %s', self.__class__.__name__,
                          domain_unique_name)
 
     @property
