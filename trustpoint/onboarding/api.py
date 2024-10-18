@@ -33,7 +33,8 @@ from onboarding.schema import (
     AokiFinalizationMessageSchema,
     AokiFinalizationResponseSchema
 )
-from pki.models import CertificateModel, TrustStoreModel, DomainModel, ReasonCode
+from pki import ReasonCode
+from pki.models import CertificateModel, TrustStoreModel, DomainModel
 
 log = logging.getLogger('tp.onboarding')
 
