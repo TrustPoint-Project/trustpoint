@@ -8,6 +8,7 @@ from pki.pki.request.message import PkiResponseMessage, HttpStatusCode, MimeType
 
 class PkiProtocol(enum.Enum):
 
+    NONE = 'no_protocol'
     CMP = 'cmp_protocol'
     EST = 'est_protocol'
     SCEP = 'scep_protocol'
@@ -32,6 +33,13 @@ class DomainHandler:
         if self._domain_model is None:
             self._set_does_not_exist_response()
             return
+
+        if pki_protocol == PkiProtocol.NONE:
+            self._is_valid = True
+            return
+
+        # print(pki_protocol.value)
+        # print(dir(self.domain_model))
 
         pki_protocol_model = getattr(self.domain_model, self.pki_protocol.value, None)
         if pki_protocol_model is None:

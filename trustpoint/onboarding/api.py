@@ -11,7 +11,6 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from devices.models import Device
-from django.db.utils import IntegrityError
 from django.http import HttpRequest, HttpResponse
 from ninja import Router, Schema
 from ninja.responses import Response, codes_4xx

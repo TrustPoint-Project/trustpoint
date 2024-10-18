@@ -16,8 +16,6 @@ from cryptography.x509.extensions import ExtensionNotFound
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
-from pki.pki.request import Protocols
-
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
 from .serializer import CertificateCollectionSerializer, CertificateSerializer, PublicKeySerializer
@@ -1581,6 +1579,14 @@ class DomainModel(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+        # TODO: this is not save -> error handling still required. -> undo everything if something fails below
+        cmp_path = '/.well-known/cmp/p/' + self.get_url_path_segment()
+        CMPModel.objects.get_or_create(domain=self, url_path=cmp_path)
+
+        est_path = '/.well-known/est/' + self.get_url_path_segment()
+        ESTModel.objects.get_or_create(domain=self, url_path=est_path)
+
+
     def get_url_path_segment(self):
         """@BytesWelder: I don't know what we need this for. @Alex mentioned this in his doc.
 
@@ -1591,7 +1597,7 @@ class DomainModel(models.Model):
         return self.unique_name.lower().replace(' ', '-')
 
     def get_protocol_object(self, protocol):
-        """Get correspondig CMP object"""
+        """Get corresponding CMP object"""
         if protocol == 'cmp':
             return self.cmp_protocol
         if protocol == 'est':

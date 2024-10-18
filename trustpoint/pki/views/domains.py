@@ -1,20 +1,29 @@
 from __future__ import annotations
 
+import enum
+
 from devices.models import Device
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, FormView, UpdateView
+from django.views.generic.edit import CreateView, UpdateView
 from django_tables2 import RequestConfig, SingleTableView
 
 from pki.forms import CMPForm, DomainCreateForm, DomainUpdateForm, ESTForm
-from pki.models import CMPModel, DomainModel, ESTModel, TrustStoreModel
-from pki.pki.request import Protocols
-from pki.tables import DomainTable, ProtocolConfigTable, TrustStoreConfigFromDomainTable
+from pki.models import DomainModel, TrustStoreModel
+from pki.tables import DomainTable, TrustStoreConfigFromDomainTable
 from trustpoint.views.base import BulkDeleteView, ContextDataMixin, TpLoginRequiredMixin
+
+
+class PkiProtocol(enum.Enum):
+
+    EST = 'est'
+    CMP = 'cmp'
+    REST = 'rest'
+    SCEP = 'scep'
+    ACME = 'acme'
 
 
 class DomainContextMixin(ContextDataMixin):
@@ -99,7 +108,7 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
 
         active_protocols = request.POST.getlist('protocols')
 
-        for protocol in Protocols:
+        for protocol in PkiProtocol:
             protocol_name = protocol.value
             protocol_object = domain.get_protocol_object(protocol_name)
             if protocol_object is not None:

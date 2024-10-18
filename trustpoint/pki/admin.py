@@ -12,7 +12,9 @@ from .models import (
     IssuingCaModel,
     KeyUsageExtension,
     SubjectAlternativeNameExtension,
-    TrustStoreModel
+    TrustStoreModel,
+    ESTModel,
+    CMPModel
 )
 
 
@@ -141,6 +143,12 @@ class DomainModelAdmin(admin.ModelAdmin):
         'issuing_ca'
     )
 
+class EstModelAdmin(admin.ModelAdmin):
+    pass
+
+class CmpModelAdmin(admin.ModelAdmin):
+    pass
+
 
 admin.site.register(TrustStoreModel, TrustStoreAdmin)
 admin.site.register(IssuingCaModel, IssuingCaAdmin)
@@ -153,3 +161,5 @@ admin.site.register(CertificateModel, CertificateAdmin)
 admin.site.register(CertificateChainOrderModel, CertificateChainOrderModelAdmin)
 admin.site.register(CRLStorage, CRLStorageAdmin)
 admin.site.register(DomainModel, DomainModelAdmin)
+admin.site.register(ESTModel, EstModelAdmin)
+admin.site.register(CMPModel, CmpModelAdmin)
