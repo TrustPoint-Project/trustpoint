@@ -89,6 +89,46 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     }%`;
   }
 
+  // Function to update the issuing ca certificate stack chart
+  function updateDeviceDateChart(deviceDateCounts) {
+    var lineChartDeviceEle = document.getElementById("lineChartDevice").getContext("2d");
+    lineChartDevice != undefined ? lineChartDevice.destroy() : "";
+
+    const chartLabels = [...new Set(deviceDateCounts.map((item) => item.issue_date))]; // Unique dates
+    const datasets = {};
+
+    // Group data by 'onboarding_status'
+    deviceDateCounts.forEach((item) => {
+      if (!datasets[item.onboarding_status]) {
+        datasets[item.onboarding_status] = {
+          label: item.onboarding_status,
+          data: Array(chartLabels.length).fill(0), // Initialize count for each date
+          //stack: "stack",
+          //backgroundColor: getRandomColor(), // Random color for each dataset
+        };
+      }
+      const index = chartLabels.indexOf(item.issue_date);
+      datasets[item.onboarding_status].data[index] += item.device_count; // Accumulate counts
+    });
+    // Convert datasets object to array for Chart.js
+    const chartDatasets = Object.values(datasets);
+    //console.log("line chart", chartDatasets, chartLabels);
+    lineChartDevice = new Chart(lineChartDeviceEle, {
+      type: "line",
+      data: {
+        labels: chartLabels,
+        datasets: chartDatasets,
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: "true",
+          },
+        },
+      },
+    });
+  }
+
   function updateDeviceDomainChart(deviceDomainCounts) {
     var donutChartDeviceEle = document.getElementById("donutChartDevice").getContext("2d");
     donutChartDevice != undefined ? donutChartDevice.destroy() : "";
@@ -182,7 +222,7 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
   // Function to update the issuing ca certificate stack chart
   function updateCertsByDateStackChart(certDateCounts) {
     var barChartCAEle = document.getElementById("barChartCA").getContext("2d");
-    barChartCA != undefined ? barChartCAEle.destroy() : "";
+    barChartCA != undefined ? barChartCA.destroy() : "";
 
     const chartLabels = [...new Set(certDateCounts.map((item) => item.issue_date))]; // Unique dates
     const datasets = {};
@@ -260,6 +300,9 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
       if ("iussuing_ca_counts" in dashboardData) {
         updateIssuingCACounts(dashboardData.iussuing_ca_counts);
       }
+      if ("device_counts_by_date_and_os" in dashboardData) {
+        updateDeviceDateChart(dashboardData.device_counts_by_date_and_os);
+      }
       if ("device_counts_by_op" in dashboardData) {
         updateDeviceOPChart(dashboardData.device_counts_by_op);
       }
@@ -318,13 +361,11 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     function updateChartContent(chartTabId) {
       //console.log("chartTabId", chartTabId);
       if (chartTabId == "deviceChartTab") {
-        var lineChartDeviceEle = document.getElementById("lineChartDevice").getContext("2d");
-        if (!lineChartDevice) lineChartDevice = new Chart(lineChartDeviceEle, stackChartConfig);
-
+        //var lineChartDeviceEle = document.getElementById("lineChartDevice").getContext("2d");
+        //((if (!lineChartDevice) lineChartDevice = new Chart(lineChartDeviceEle, stackChartConfig);
         //var donutChartDeviceEle = document.getElementById("donutChartDevice").getContext("2d");
         //if (!donutChartDevice)
         //  donutChartDevice = new Chart(donutChartDeviceEle, donutChartDeviceConfig);
-
         //var barChartDeviceEle = document.getElementById("barChartDevice").getContext("2d");
         //if (!barChartDevice) barChartDevice = new Chart(barChartDeviceEle, barChartDeviceConfig);
       } else if (chartTabId == "certChartTab") {

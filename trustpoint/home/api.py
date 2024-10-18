@@ -85,6 +85,23 @@ def get_issuing_ca_counts():
 
   return issuing_ca_counts
 
+def get_device_counts_by_date_and_status():
+  """Get device count by date and onboarding status from database"""
+  device_counts_by_date_and_os = {}
+  try:
+    device_date_os_qr = Device.objects \
+    .annotate(issue_date=TruncDate('created_at')) \
+    .values('issue_date', onboarding_status=F('device_onboarding_status')) \
+    .annotate(device_count=Count('id')) \
+    .order_by('issue_date', 'device_onboarding_status')
+  except Exception as e:
+    print(f"Error occurred in device count by domain query: {e}")
+  
+  # Convert the queryset to a list
+  device_counts_by_date_and_os = list(device_date_os_qr)
+  print("device_counts_by_date_and_os", device_counts_by_date_and_os)
+  return device_counts_by_date_and_os
+
 def get_device_count_by_onboarding_protocol():
   """Get device count by onboarding protocol from database"""
   device_op_counts = {}
@@ -198,6 +215,10 @@ def dashboard_data(request: HttpRequest):
     #print("issuing_CA", issuing_ca_counts)
     if issuing_ca_counts:
       dashboard_data["issuing_ca_counts"] = issuing_ca_counts
+
+    device_counts_by_date_and_os = get_device_counts_by_date_and_status()
+    if device_counts_by_date_and_os:
+      dashboard_data["device_counts_by_date_and_os"] = device_counts_by_date_and_os
     
     ###### Get device count by onboarding protocol ######
     device_counts_by_op = get_device_count_by_onboarding_protocol()
