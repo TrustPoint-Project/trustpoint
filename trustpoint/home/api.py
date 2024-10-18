@@ -99,23 +99,24 @@ def get_device_counts_by_date_and_status():
   
   # Convert the queryset to a list
   device_counts_by_date_and_os = list(device_date_os_qr)
-  print("device_counts_by_date_and_os", device_counts_by_date_and_os)
+  #print("device_counts_by_date_and_os", device_counts_by_date_and_os)
   return device_counts_by_date_and_os
 
 def get_device_count_by_onboarding_protocol():
   """Get device count by onboarding protocol from database"""
-  device_op_counts = {}
+  device_op_counts = {str(status): 0 for _, status in Device.OnboardingProtocol.choices}
   try:
     device_op_qr = Device.objects.values('onboarding_protocol').annotate(
       count=Count('onboarding_protocol')
     )
   except Exception as e:
     print(f"Error occurred in device count by onboarding protocol query: {e}")
-  device_op_counts = {item['onboarding_protocol']: item['count'] for item in device_op_qr}
-
-  # Set default value of 0 if status is not present
-  for status, _ in Device.OnboardingProtocol.choices:
-    device_op_counts.setdefault(status, 0)
+  # Mapping from short code to human-readable name
+  protocol_mapping = {key: str(value) for key, value in Device.OnboardingProtocol.choices}
+  device_op_counts = {
+    protocol_mapping[item['onboarding_protocol']]: item['count']
+    for item in device_op_qr
+  }
 
   #device_op_counts['total'] = sum(device_op_counts.values())
   return device_op_counts
@@ -222,7 +223,7 @@ def dashboard_data(request: HttpRequest):
     
     ###### Get device count by onboarding protocol ######
     device_counts_by_op = get_device_count_by_onboarding_protocol()
-    #print("device count by onboarding protocol", device_counts_by_op)
+    print("device count by onboarding protocol", device_counts_by_op)
     if device_counts_by_op:
       dashboard_data["device_counts_by_op"] = device_counts_by_op
 
