@@ -252,17 +252,17 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 
 .tp-main {
     grid-area: main;
-    padding: 3rem;
+    padding: 2.34rem;
     overflow-y: auto;
 }
 
 .card-header, .card-footer {
-    min-height: 2rem;
+    min-height: 2.5rem;
     padding: 0.5rem;
+    flex-shrink: 0;
 }
 
 .tp-card-centered {
-
     margin: 0 auto;
 }
 
@@ -292,7 +292,21 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     position: sticky;
     bottom: 0;
     min-height: 55px;
+    z-index: 5;
 }
+/* .tp-sticky-footer::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: -2px;
+    right: -2px;
+    height: 55px;
+    background: #f00;
+    background-size: cover;
+    z-index: -1;
+    background-color: var(--bs-body-bg);
+    overflow: hidden;
+  } */
 
 .tp-main-users {
     width: max-content;
@@ -305,6 +319,18 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 .tp-card-users {
     width: 90vw;
     max-width: 25rem;
+}
+
+hr.hu {
+    margin: 0.5rem -0.125rem 0 -0.125rem;
+}
+
+hr.hu-mb {
+    margin: 0.5rem -0.125rem 0.75rem -0.125rem;
+}
+
+hr.hu-my {
+    margin: 0.75rem -0.125rem 0.75rem -0.125rem;
 }
 
 /* ----- Input and elements ----- */
@@ -383,9 +409,9 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 
 /* ----- Tables ----- */
 
-.table-container {
+/* .table-container {
     overflow-x: auto;
-}
+} */
 
 table .tp-table-btn {
     padding: 0.2rem 0.8rem;
@@ -561,12 +587,6 @@ svg.theme-icon {
   transform: scale(1.025);
 }
 
-
-.form-error { /* unused class */
-    font-size: 0.8rem;
-    min-height: 1.2rem;
-    line-height: 1.2rem;
-}
 
 /* ----- Media queries for responsive design ----- */
 

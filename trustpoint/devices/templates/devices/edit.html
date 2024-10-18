@@ -6,17 +6,15 @@
         <div class="card-header d-flex">
             <h1>Edit Device</h1>
         </div>
-        <div class="card-body tp-main-centered pt-3 pb-4">
-
-            <h2>Edit Device</h2>
-            <hr>
+        <div class="card-body tp-main-centered py-3">
 
             <form method="POST" class="tp-main-form text-start" id="edit-device-form">
                 {% csrf_token %}
                 {{ form|crispy }}
-                <div class="tp-form-btn-group tp-form-btn-group mt-5">
-                    <button type="button" value="Back" class="btn btn-secondary tp-table-select-btn" onClick="history.back()">{% trans 'Back' %}</button>
-                    <button class="btn btn-primary w-100 mt-1" type="submit" name="edit-device">Apply Changes</button>
+                <hr>
+                <div class="tp-form-btn-group">
+                    <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                    <input type="submit" class="btn btn-primary" value="{% trans 'Apply Changes' %}">
                 </div>
             </form>
         </div>

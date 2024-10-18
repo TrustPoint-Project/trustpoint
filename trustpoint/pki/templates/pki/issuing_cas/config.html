@@ -4,87 +4,77 @@
 {% block content %}
     <div class="card tp-card-centered">
         <div class="card-header">
-            <h2>{{ issuing_ca.unique_name }} {% trans "Configuration" %}</h2>
+            <h1>{{ issuing_ca.unique_name }} {% trans "Configuration" %}</h1>
         </div>
 
-        <form method="POST" autocomplete="on" enctype="multipart/form-data">
-            {% csrf_token %}
-            <div class="card tp-card-centered">
-                <div class="card-body">
-                    <div class="tp-card-centered-content">           
-                        <div class="card-body">
-                            <h3>{{ issuing_ca.unique_name }} {% trans "Domains" %}</h3>
-                            <hr>
-                            {% if issuing_ca.domain.all %}
-                                {% for domain in issuing_ca.domain.all %}
-                                    <li class="tp-card-split">
-                                        {{ domain.unique_name }}
-                                        <a href="{% url 'pki:domains-detail' domain.id %}" class="primary">
-                                            {% trans "Details" %}
-                                        </a>
-                                    </li>
-                                {% endfor %}
-                            {% else %}
-                                <li class="list-group-item text-muted">
-                                    {% trans "No associated domains" %}
+        <div class="card-body">
+            <div class="tp-card-centered-content">
+                <form method="POST" autocomplete="on" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="card-body">
+                        <h2>{{ issuing_ca.unique_name }} {% trans "Domains" %}</h2>
+                        <hr class="hu-mb">
+                        {% if issuing_ca.domain.all %}
+                            {% for domain in issuing_ca.domain.all %}
+                                <li class="tp-card-split">
+                                    {{ domain.unique_name }}
+                                    <a href="{% url 'pki:domains-detail' domain.id %}" class="primary">
+                                        {% trans "Details" %}
+                                    </a>
                                 </li>
-                            {% endif %}
+                            {% endfor %}
+                        {% else %}
+                            <li class="list-group-item text-muted">
+                                {% trans "No associated domains" %}
+                            </li>
+                        {% endif %}
 
+                    </div>
+
+                    <div class="card-body">
+                        <h2>{% trans 'General' %}</h2>
+                        <hr class="hu-mb">
+                        <div class="tp-card-split">
+                            <div>{% trans 'Type' %}</div>
+                            <div>UnprotectedLocalIssuingCa</div>
+                        </div>
+                        <div class="tp-card-split">
+                            <div>{% trans 'Created at:' %}</div>
+                            <div>{{ issuing_ca.get_issuing_ca_certificate.added_at }}</div> <!-- Danger! not to mix up with time of cert creation. -->
+                        </div>
+                        <div class="tp-card-split">
+                            <div>{% trans 'Expires in' %}</div>
+                            <div> {{ issuing_ca.get_issuing_ca_certificate.not_valid_after }}</div>
+                        </div>
+                        <div class="tp-card-split">
+                            <div>{% trans 'Issuing CA Rollover' %}</div>
+                            <div> NYI
+                                <!-- <a href="{% url 'pki:certificate-detail' pk=issuing_ca.root_ca_certificate.id %}">
+                                    {% if issuing_ca.root_ca_certificate.common_name %}
+                                        CN: {{ issuing_ca.root_ca_certificate.common_name }}
+                                    {% else %}
+                                        {% trans 'Root CA Certificate' %}
+                                    {% endif %}
+                                </a> -->
+                            </div>
+                        </div>
+                        <div class="tp-card-split">
+                            <div>{% trans 'Certificates Issued:' %}</div>
+                            <div>{{ issuing_ca.issued_certificates_count }}</div>
                         </div>
                     </div>
 
-                    <div class="tp-card-centered-content">
-                        <div class="card-body">
-                            <h3>{% trans 'General' %}</h3>
-                            <hr>
-                            <div class="tp-card-split">
-                                <div>{% trans 'Type' %}</div>
-                                <div>UnprotectedLocalIssuingCa</div>
-                            </div>
-                            <div class="tp-card-split">
-                                <div>{% trans 'Created at:' %}</div>
-                                <div>{{ issuing_ca.get_issuing_ca_certificate.added_at }}</div> <!-- Danger! not to mix up with time of cert creation. -->
-                            </div>
-                            <div class="tp-card-split">
-                                <div>{% trans 'Expires in' %}</div>
-                                <div> {{ issuing_ca.get_issuing_ca_certificate.not_valid_after }}</div>
-                            </div>
-                            <div class="tp-card-split">
-                                <div>{% trans 'Issuing CA Rollover' %}</div>
-                                <div> NYI
-                                    <!-- <a href="{% url 'pki:certificate-detail' pk=issuing_ca.root_ca_certificate.id %}">
-                                        {% if issuing_ca.root_ca_certificate.common_name %}
-                                            CN: {{ issuing_ca.root_ca_certificate.common_name }}
-                                        {% else %}
-                                            {% trans 'Root CA Certificate' %}
-                                        {% endif %}
-                                    </a> -->
-                                </div>
-                            </div>
-                            <div class="tp-card-split">
-                                <div>{% trans 'Certificates Issued:' %}</div>
-                                <div>{{ issuing_ca.issued_certificates_count }}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="tp-card-centered-content">
-                        <div class="card-body">
-                            <h3>{% trans 'CRL' %}</h3>
-                            <hr>
+                    <div class="card-body">
+                        <h2>{% trans 'CRL' %}</h2>
+                        <hr class="hu-mb">
                         <div class="tp-card-split">
                             <div>{% trans 'CRL' %}</div>
                             <div>
                                 <a href="{% url 'pki:download-ca-crl' ca_id=issuing_ca.pk %}" class="btn btn-sm btn-primary">
                                     {% trans "Download CRL" %}
                                 </a>
-                            </div>
-                        </div>
-                        <div class="tp-card-split">
-                            <div>{% trans 'Generate CRL' %}</div>
-                            <div>
                                 <a href="{% url 'pki:generate-ca-crl' ca_id=issuing_ca.pk %}" class="btn btn-sm btn-primary">
-                                    {% trans "generate CRL" %}
+                                    {% trans "Generate CRL" %}
                                 </a>
                             </div>
                         </div>
@@ -107,16 +97,15 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card-footer">
-                        <div class="tp-card-btn-footer">
-                            <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
-                            <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
-                            <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
-                        </div>
+                    <hr>
+                    <div class="tp-form-btn-group">
+                        <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                        <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                        <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
                     </div>
-                </div>
+                </form>
             </div>
-        </form>
+        </div>
     </div>
 
 {% endblock content %}

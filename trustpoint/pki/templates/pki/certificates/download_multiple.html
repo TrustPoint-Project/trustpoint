@@ -21,7 +21,7 @@
                     <hr>
                     <br>
 
-                    <h2>Download Selected Certificates Only</h2>
+                    <h2>{% trans "Download Selected Certificates Only" %}</h2>
                     <div class="pt-2 pb-2">
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pem' file_content='cert_only' archive_format='zip' %}">Download as PEM (ZIP)</a>
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='der' file_content='cert_only' archive_format='zip' %}">Download as DER (ZIP)</a>
@@ -36,7 +36,7 @@
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pkcs7_der' file_content='cert_only' archive_format='tar_gz' %}">Download as PKCS#7-DER (TAR.GZ)</a>
                     </div>
 
-                    <h2>Download Certificates Including Certificate Chain</h2>
+                    <h2>{% trans "Download Certificates Including Certificate Chain" %}</h2>
                     <div class="pt-2 pb-2">
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pem' file_content='cert_and_chain' archive_format='zip' %}">Download as PEM (ZIP)</a>
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pkcs7_pem' file_content='cert_and_chain' archive_format='zip' %}">Download as PKCS#7-PEM (ZIP)</a>
@@ -48,7 +48,7 @@
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pkcs7_der' file_content='cert_and_chain' archive_format='tar_gz' %}">Download as PKCS#7-DER (TAR.GZ)</a>
                     </div>
 
-                    <h2>Download Certificate Chains Only</h2>
+                    <h2>{% trans "Download Certificate Chains Only" %}</h2>
                     <div class="pt-2 pb-2">
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pem' file_content='chain_only' archive_format='zip' %}">Download as PEM (ZIP)</a>
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pkcs7_pem' file_content='chain_only' archive_format='zip' %}">Download as PKCS#7-PEM (ZIP)</a>
@@ -61,9 +61,8 @@
                     </div>
 
                     <br>
-                    <h2>Certificate Details</h2>
+                    <h2>{% trans "Certificate Details" %}</h2>
                     <hr>
-                    <br>
 
                     {% for cert in certs %}
                         <div class="tp-card-split mb-2">
@@ -87,9 +86,7 @@
                         </div>
 
                         {% if not forloop.last %}
-                            <br>
                             <hr>
-                            <br>
                         {% endif %}
 
                     {% endfor %}
