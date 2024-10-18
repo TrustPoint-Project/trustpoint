@@ -14,8 +14,8 @@ from pki.pki.request.handler import CaRequestHandler
 from pki.models import CertificateModel
 from pki.serializer.certificate import CertificateSerializer
 from pki.serializer.credential import CredentialSerializer
-
-from util.x509.enrollment import Enrollment
+from pki.util.keys import KeyAlgorithm, KeyGenerator
+from pki.util.x509 import OidUtil
 
 from typing import TYPE_CHECKING
 
@@ -70,7 +70,7 @@ class LocalCaRestCsrRequestHandler(CaRequestHandler):
         cert_builder = cert_builder.public_key(csr.public_key())
         for extension in csr.extensions:
             cert_builder = cert_builder.add_extension(extension.value, critical=extension.critical)
-        if not Enrollment.get_extension_for_oid_or_none(csr.extensions, x509.ExtensionOID.BASIC_CONSTRAINTS):
+        if not OidUtil.get_extension_for_oid_or_none(csr.extensions, x509.ExtensionOID.BASIC_CONSTRAINTS):
             cert_builder = cert_builder.add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
         return cert_builder
     
@@ -80,7 +80,8 @@ class LocalCaRestPkcs12RequestHandler(CaRequestHandler):
     _issuing_ca: UnprotectedLocalIssuingCa
 
     def process_request(self) -> PkiResponseMessage:
-        private_key = Enrollment.generate_key('SECP256R1')
+        # TODO (Air): Automatically use the same key algorithm as the issuing CA
+        private_key = KeyGenerator(KeyAlgorithm.SECP256R1).generate_key()
         public_key = private_key.public_key()
 
         cert_builder = x509.CertificateBuilder()

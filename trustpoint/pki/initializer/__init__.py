@@ -1,11 +1,9 @@
-from .base import Initializer
-from .base import InitializerError
+"""Initializer module for PKI elements."""
 
-from . import issuing_ca
+from .base import Initializer, InitializerError
+from . import issuing_ca, trust_store
 from .issuing_ca import *
-from . import trust_store
 from .trust_store import *
-
 
 __all__ = []
 __all__.extend(issuing_ca.__all__)

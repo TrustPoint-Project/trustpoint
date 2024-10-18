@@ -1,23 +1,19 @@
+"""Initializer for Trust Store objects."""
+
 from __future__ import annotations
-
-from sys import exc_info
-
-from cryptography.hazmat.primitives import hashes
-from django.db import transaction
-from cryptography import x509
-
-
-from pki.models import (
-    CertificateModel,
-    TrustStoreModel,
-    TrustStoreOrderModel)
-
 
 from typing import TYPE_CHECKING
 
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes
+from django.db import transaction
+
+from pki.models import CertificateModel, TrustStoreModel, TrustStoreOrderModel
+
 if TYPE_CHECKING:
     from typing import Union
-    from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
+
+    from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
@@ -42,8 +38,8 @@ class TrustStoreInitializer:
         self._trust_store = trust_store
 
     @transaction.atomic
-    def save(self):
-
+    def save(self) -> None:
+        """Saves the trust store to database."""
         saved_certs = []
 
         for certificate in self._trust_store:

@@ -462,6 +462,11 @@ table .tp-onboarding-btn {
     grid-template-columns: 1fr;
 }
 
+.tp-msg-icon-margin {
+    margin-top: 0.1rem;
+    margin-right: 0.5rem;
+}
+
 /* ----- Theme ----- */
 
 html[data-bs-theme="light"] {
