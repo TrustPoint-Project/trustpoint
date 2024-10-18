@@ -263,7 +263,6 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 }
 
 .tp-card-centered {
-
     margin: 0 auto;
 }
 
@@ -320,6 +319,18 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 .tp-card-users {
     width: 90vw;
     max-width: 25rem;
+}
+
+hr.hu {
+    margin: 0.5rem -0.125rem 0 -0.125rem;
+}
+
+hr.hu-mb {
+    margin: 0.5rem -0.125rem 0.75rem -0.125rem;
+}
+
+hr.hu-my {
+    margin: 0.75rem -0.125rem 0.75rem -0.125rem;
 }
 
 /* ----- Input and elements ----- */
@@ -576,12 +587,6 @@ svg.theme-icon {
   transform: scale(1.025);
 }
 
-
-.form-error { /* unused class */
-    font-size: 0.8rem;
-    min-height: 1.2rem;
-    line-height: 1.2rem;
-}
 
 /* ----- Media queries for responsive design ----- */
 

@@ -16,7 +16,7 @@
                 <div class="tp-card-centered-content">
                     {% for truststore in truststores %}
                         <h2>({{ forloop.counter }}) {% trans 'Truststore' %}: {{ truststore.unique_name }}</h2>
-                        <hr>
+                        <hr class="hu-my">
                         <div class="tp-card-split">
                             <div>Unique Name</div>
                             <div>{{ truststore.unique_name }}</div>
@@ -32,7 +32,7 @@
                                 N/A {# TODO #}
                         </div>
                             {% if not forloop.last %}
-                                <br><br>
+                                <br>
                             {% endif %}
 
                     {% endfor %}
@@ -44,7 +44,7 @@
                 <div class="tp-card-btn-footer">
                     <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
                     <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
-                    <button type="submit" class="btn btn-primary">{% trans "Delete selected Truststores" %}</button>
+                    <button type="submit" class="btn btn-danger">{% trans "Delete selected Truststores" %}</button>
                 </div>
             </div>
         </div>

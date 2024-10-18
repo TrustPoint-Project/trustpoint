@@ -17,7 +17,7 @@
                     <div class="tp-card-centered-content">
                         <div class="card-body">
                             <h3>General</h3>
-                            <hr>
+                            <hr class="hu-mb">
                             <div class="tp-card-split">
                                 <div>{% trans 'Unique Name' %}</div>
                                 <div> {{ domain.unique_name }} </div>
@@ -25,7 +25,7 @@
                             <div class="tp-card-split">
                                 <div>{% trans 'URL Path Segment' %}</div>
                                 <div> {{ domain.get_url_path_segment }} </div>
-                            </div>
+                            </div><br>
                             <h5>{% trans 'Devices in Domain' %}</h5>
                             <div class="tp-card-split">
                                 <div>{% trans 'Pending devices' %}</div>
@@ -50,7 +50,7 @@
                         </div>
                         <div class="card-body">
                             <h3>Issuing CA</h3>
-                            <hr>
+                            <hr class="hu-mb">
                             <div class="tp-card-split">
                                 <div>{% trans 'Expires in' %}</div>
                                 <div> {{ domain.issuing_ca.get_issuing_ca_certificate.not_valid_after }} </div>
@@ -66,7 +66,7 @@
                         </div>
                         <div class="card-body">
                             <h3>OCSP Resonder</h3>
-                            <hr>
+                            <hr class="hu-mb">
                             <div class="tp-card-split">
                                 <div>OCSP Responder</div>
                                 <div>NYI</div>
@@ -74,7 +74,7 @@
                         </div>
                         <div class="card-body">
                             <h3>PKI Protocol Configuration</h3>
-                            <hr>
+                            <hr class="hu-mb">
                             <table class="table">
                                 <thead>
                                     <tr>
@@ -89,16 +89,16 @@
                                 <tbody>
                                     {% for protocol_name, protocol in protocols.items %}
                                         {% if protocol %}
-                                            <tr>
+                                            <tr class="v-middle">
                                                 <td>{{ protocol_name }}</td>
                                                 <td>
                                                     <input type="checkbox" name="protocols" value="{{ protocol_name }}" {% if protocol.status %}checked{% endif %}>
                                                 </td>
                                                 <td>{{ protocol.get_operation_list|length }}/{{ protocol.Operations|length }}</td>
                                                 <td>{{ protocol.url_path }}</td>
-                                                <td><a href="{% url 'pki:domains' %}" class="btn btn-primary">{% trans 'Details' %}</a></td>
+                                                <td><a href="{% url 'pki:domains' %}" class="btn btn-primary tp-table-btn">{% trans 'Details' %}</a></td>
                                                 <td>
-                                                    <button type="button" class="btn btn-primary config-button" data-url="{% url 'pki:protocol-config' protocol_name=protocol_name domain_id=domain.pk%}" data-bs-toggle="modal" data-bs-target="#configModal">
+                                                    <button type="button" class="btn btn-primary tp-table-btn config-button" data-url="{% url 'pki:protocol-config' protocol_name=protocol_name domain_id=domain.pk%}" data-bs-toggle="modal" data-bs-target="#configModal">
                                                         {% trans 'Config' %}
                                                     </button>
                                                 </td>
@@ -123,16 +123,15 @@
                         </div>
                         <div class="card-body">
                             <h3>PKI Truststore Configuration</h3>
-                            <hr>
+                            <hr class="hu-mb">
                             {% render_table trust_store_table   %}
                         </div>
                     </div>
-                    <div class="card-footer">
-                        <div class="tp-card-btn-footer">
-                            <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
-                            <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
-                            <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
-                        </div>
+                    <hr>
+                    <div class="tp-form-btn-group">
+                        <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                        <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                        <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
                     </div>
                 </div>
             </div>
