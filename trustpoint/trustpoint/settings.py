@@ -31,6 +31,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+# mDNS service discovery advertisement
+ADVERTISED_HOST = '127.0.0.1'
+ADVERTISED_PORT = 443
 
 # Application definition
 
