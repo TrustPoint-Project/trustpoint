@@ -137,7 +137,7 @@ class CMPMessageHandler:
             response = self._handle_request()
             self.logger.info("Request processed successfully.")
 
-        except (PKIFailure) as e:
+        except PKIFailure as e:
             self.logger.error(traceback.format_exc())
             response = self._handle_error(e, e.code)
             #http_status_code = HttpStatusCode.BAD_REQUEST

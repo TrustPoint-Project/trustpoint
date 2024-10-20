@@ -36,6 +36,7 @@ class CmpInitializationRequestView(View):
         if not domain_handler.is_valid():
             return domain_handler.error_response.to_django_http_response()
 
+
         pki_request = PkiCmpInitializationRequestMessage(
             domain_model=domain_handler.domain_model,
             raw_content=request.read(),

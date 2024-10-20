@@ -9,6 +9,8 @@ from pki.pki.request.message import PkiRequestMessage, MimeType, ContentTransfer
 from typing import TYPE_CHECKING
 
 from pki.pki.request.message.cmp_validator import CmpRequestMessageValidator
+from pyasn1.codec.der import decoder
+from pyasn1_modules.rfc4210 import PKIMessage
 
 if TYPE_CHECKING:
     from typing import Union
@@ -37,8 +39,9 @@ class PkiCmpInitializationRequestMessage(PkiRequestMessage):
         self.logger = logging.getLogger('tp').getChild(self.__class__.__name__)
         self.logger.info(f'Initializing PkiCmpInitializationRequestMessage for domain: {self.domain_model.unique_name}')
 
-    def _validate_raw_request(self) -> None:
-        pass
+    def _parse_content(self) -> None:
+        parsed_content, _ = decoder.decode(self.raw_content, asn1Spec=PKIMessage())
+        self._parsed_content = parsed_content
 
         # self.validator = CmpRequestMessageValidator(self.logger)
 

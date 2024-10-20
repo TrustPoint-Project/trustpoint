@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
     from annotated_types import Ge
+    from typing import Any
 
 
 class PkiMessageValidationError(Exception):
@@ -47,6 +48,7 @@ class HttpStatusCode(enum.Enum):
 class PkiRequestMessage(abc.ABC):
     _domain_model: DomainModel
     _raw_content: None | bytes
+    _parsed_content: Any
 
     _mimetype: None | MimeType = None
     _content_transfer_encoding: None | ContentTransferEncoding = None
@@ -69,10 +71,18 @@ class PkiRequestMessage(abc.ABC):
             self._validate_mimetype(received_mimetype)
             self._validate_content_transfer_encoding(received_content_transfer_encoding)
             self._validate_content_length_max()
-            self._validate_raw_request()
-            self._is_valid = True
         except PkiMessageValidationError:
+            return
+
+        # noinspection PyBroadException
+        try:
+            self._parse_content()
+            self._is_valid = True
+            # TODO(AlexHx8472): Consider using a decorator to catch
+            # TODO(AlexHx8472): any errors on _parse_content and raise PkiMessageValidationError
+        except Exception:
             self._is_valid = False
+            self._build_parsing_message_content_failed()
 
     @property
     def mimetype(self) -> MimeType:
@@ -96,6 +106,10 @@ class PkiRequestMessage(abc.ABC):
     @property
     def raw_content(self) -> None | bytes:
         return self._raw_content
+
+    @property
+    def parsed_content(self) -> Any:
+        return self._parsed_content
 
     @property
     def is_valid(self) -> bool:
@@ -171,8 +185,13 @@ class PkiRequestMessage(abc.ABC):
         self._error_response = PkiPlainTextHttpErrorResponseMessage(error_msg)
 
     @abc.abstractmethod
-    def _validate_raw_request(self) -> None:
+    def _parse_content(self) -> None:
         pass
+
+    def _build_parsing_message_content_failed(self) -> None:
+        error_msg = 'Failed to parse message. Seems to be corrupted.'
+        self._error_response = PkiPlainTextHttpErrorResponseMessage(error_msg)
+
 
 
 class PkiResponseMessage:

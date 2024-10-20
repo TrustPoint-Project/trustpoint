@@ -38,9 +38,6 @@ class DomainHandler:
             self._is_valid = True
             return
 
-        # print(pki_protocol.value)
-        # print(dir(self.domain_model))
-
         pki_protocol_model = getattr(self.domain_model, self.pki_protocol.value, None)
         if pki_protocol_model is None:
             self._set_protocol_unknown_response()

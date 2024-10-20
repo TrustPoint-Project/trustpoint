@@ -47,27 +47,17 @@ class LocalCmpInitializationRequestHandler(CaCmpRequestHandler):
     def process_request(self) -> PkiResponseMessage:
         domain_model = self._request_message.domain_model
 
-        # cert = domain_model.issuing_ca.issuing_ca_certificate.issued_certificate_references.first().get_certificate_serializer().as_crypto()
-        # print(domain_model.issuing_ca.issuing_ca_certificate.issued_certificate_references)
-        # authorized_clients = [cert]
+        issuing_ca_cert_model = domain_model.issuing_ca.issuing_ca_certificate.issued_certificate_references.first()
+        crypto_issuing_ca_cert = issuing_ca_cert_model.get_certificate_serializer().as_crypto()
+        authorized_clients = [crypto_issuing_ca_cert]
         # shared_secret = b'foo123'
 
         # try:
 
-        try:
-            loaded_cmp_msg, _ = decoder.decode(self._request_message.raw_content, asn1Spec=PKIMessage())
-        except Exception as exception:
-            # TODO: differentiate parsing errors
-            # TODO: return proper CMP Error Message
-            return PkiResponseMessage(
-                raw_response='Parsing the CMP Message failed.',
-                http_status=HttpStatusCode.BAD_REQUEST,
-                mimetype=MimeType.TEXT_PLAIN
-            )
-        cmp_message = CMPMessageHandler(pki_message=loaded_cmp_msg, operation='ir')
+        cmp_message = CMPMessageHandler(pki_message=self._request_message.parsed_content, operation='ir')
         cmp_message.set_issuing_ca(issuing_ca_object=self._issuing_ca)
         # if authorized_clients:
-        #     cmp_message.set_signature_based_protection(authorized_clients=[])
+        cmp_message.set_signature_based_protection(authorized_clients=authorized_clients)
         #if shared_secret:
         #    cmp_message.set_pbm_based_protection(shared_secret=shared_secret)
         encoded_response, http_status_code = cmp_message.process_request()
