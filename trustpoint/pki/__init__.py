@@ -20,3 +20,11 @@ class CertificateStatus(models.TextChoices):
     REVOKED = 'R', _('Revoked')
     # EXPIRED = 'E', _('Expired')
     # NOT_YET_VALID = 'N', _('Not Yet Valid')
+
+class CaLocalization(models.TextChoices):
+    """The localization of the CA.
+
+    Auto-Gen PKI is a special case of the local CA, where the root CA is self-signed by the system."""
+    LOCAL = "L", _('Local')
+    REMOTE = "R", _('Remote')
+    AUTO_GEN_PKI = "A", _('AutoGenPKI')

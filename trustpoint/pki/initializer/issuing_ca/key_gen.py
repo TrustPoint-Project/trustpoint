@@ -3,6 +3,7 @@ from __future__ import annotations
 import abc
 import datetime
 
+from pki import CaLocalization
 from pki.issuing_ca import UnprotectedLocalIssuingCa
 from pki.models import RootCaModel
 from pki.serializer import CertificateCollectionSerializer
@@ -19,6 +20,7 @@ class KeyGenLocalIssuingCaInitializer(LocalIssuingCaInitializer, abc.ABC):
 class UnprotectedKeyGenLocalCaInitializer(KeyGenLocalIssuingCaInitializer):
     """Base class for unprotected local CA initializers."""
     _key_algorithm: KeyAlgorithm
+    _ca_localization: CaLocalization = CaLocalization.AUTO_GEN_PKI
 
     def __init__(self, unique_name: str, key_algorithm: KeyAlgorithm, auto_crl: bool = True) -> None:
         self._unique_name = unique_name

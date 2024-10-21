@@ -18,7 +18,7 @@ from django.utils.translation import gettext_lazy as _
 
 from pki.pki.request import Protocols
 
-from . import ReasonCode, CertificateStatus
+from . import ReasonCode, CertificateStatus, CaLocalization
 
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
@@ -1282,6 +1282,8 @@ class BaseCaModel(models.Model):
         unique=True,
         editable=False
     )
+
+    ca_localization = models.CharField(max_length=2, choices=CaLocalization, default=CaLocalization.LOCAL)
 
     root_ca_certificate = models.ForeignKey(
         to=CertificateModel,

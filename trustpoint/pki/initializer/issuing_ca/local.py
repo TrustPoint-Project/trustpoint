@@ -101,6 +101,9 @@ class LocalIssuingCaInitializer(IssuingCaInitializer, abc.ABC):
                 private_key_pem=self._credential_serializer.credential_private_key.as_pkcs1_pem(None).decode('utf-8')
             )
 
+            if hasattr(self, '_ca_localization'):
+                issuing_ca_model.ca_localization = self._ca_localization
+
             issuing_ca_model.issuing_ca_certificate = saved_certs[0]
             issuing_ca_model.root_ca_certificate = saved_certs[-1]
             issuing_ca_model.save()

@@ -4,6 +4,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
@@ -146,6 +147,7 @@ class LoggingConfigView(TpLoginRequiredMixin, FormView):
         return self.render_to_response(self.get_context_data(form=form))
 
 
+@login_required
 def network(request: HttpRequest) -> HttpResponse:
     """Handle network Configuration
 
@@ -174,6 +176,7 @@ def network(request: HttpRequest) -> HttpResponse:
     return render(request, 'sysconf/network.html', context=context)
 
 
+@login_required
 def ntp(request: HttpRequest) -> HttpResponse:
     """Handle ntp Configuration
 
@@ -201,6 +204,7 @@ def ntp(request: HttpRequest) -> HttpResponse:
     return render(request, 'sysconf/ntp.html', context=context)
 
 
+@login_required
 def ssh(request: HttpRequest) -> HttpResponse:
     """Handle ssh Configuration
 
@@ -210,6 +214,7 @@ def ssh(request: HttpRequest) -> HttpResponse:
     return render(request, 'sysconf/ssh.html', context=context)
 
 
+@login_required
 def security(request: HttpRequest) -> HttpResponse:
     """Handle Security Configuration
 
