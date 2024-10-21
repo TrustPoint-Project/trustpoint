@@ -31,10 +31,10 @@ function getOnboardingState(urlExt, iconUrl) {
 }
 
 function setOnboardingStateUIElement(el, iconUrl, type, message, icon, extraClasses='') {
-  el.className = `alert alert-${type} d-flex align-items-center mt-3 ${extraClasses}`;
+  el.className = `alert alert-${type} d-flex mt-3 ${extraClasses}`;
 
   el.innerHTML =
-    `<svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="${iconUrl}#icon-${icon}"/></svg>
+    `<svg class="bi flex-shrink-0 tp-msg-icon-margin" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="${iconUrl}#icon-${icon}"/></svg>
     <div>${message}</div>`;
 }
 
