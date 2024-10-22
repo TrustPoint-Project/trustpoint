@@ -15,66 +15,72 @@
             <div class="card tp-card-centered">
                 <div class="card-body">
                     <div class="tp-card-centered-content">
-                        <div class="card-body">
-                            <h3>General</h3>
-                            <hr class="hu-mb">
-                            <div class="tp-card-split">
+                        <h2>General</h2>
+                        <hr class="hr-m">
+                        <div class="tp-kvp-list">
+                            <div>
                                 <div>{% trans 'Unique Name' %}</div>
                                 <div> {{ domain.unique_name }} </div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'URL Path Segment' %}</div>
                                 <div> {{ domain.get_url_path_segment }} </div>
-                            </div><br>
-                            <h5>{% trans 'Devices in Domain' %}</h5>
-                            <div class="tp-card-split">
+                            </div>
+                        </div>
+                            <!-- <div class="tp-row-br">
+                                <h3>{% trans 'Devices in Domain' %}</h3>
+                                <div></div>
+                            </div> -->
+                        <h5 class="mb-2 ms-2">{% trans 'Devices in Domain' %}</h5>
+                        <div class="tp-kvp-list">
+                            <div>
                                 <div>{% trans 'Pending devices' %}</div>
                                 <div> {{ devices_count.P|default:0 }} </div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'Running devices' %}</div>
                                 <div> {{ devices_count.R|default:0 }} </div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'Onboarded devices' %}</div>
                                 <div> {{ devices_count.O|default:0 }} </div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'Failed devices' %}</div>
                                 <div> {{ devices_count.F|default:0 }} </div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'Revoked devices' %}</div>
                                 <div> {{ devices_count.D|default:0 }} </div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <h3>Issuing CA</h3>
-                            <hr class="hu-mb">
-                            <div class="tp-card-split">
+                        <h2>Issuing CA</h2>
+                        <hr class="hr-m">
+                        <div class="tp-kvp-list">
+                            <div>
                                 <div>{% trans 'Expires in' %}</div>
                                 <div> {{ domain.issuing_ca.get_issuing_ca_certificate.not_valid_after }} </div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'Issuing CA Rollover' %}</div>
                                 <div>NYI</div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'Certificates Issued:' %}</div>
                                 <div>{{ domain.issuing_ca.issued_certificates_count }}</div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <h3>OCSP Resonder</h3>
-                            <hr class="hu-mb">
-                            <div class="tp-card-split">
+                        <h2>OCSP Resonder</h2>
+                        <hr class="hr-m">
+                        <div class="tp-kvp-list">
+                            <div>
                                 <div>OCSP Responder</div>
                                 <div>NYI</div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <h3>PKI Protocol Configuration</h3>
-                            <hr class="hu-mb">
+                        <h2>{% trans 'PKI Protocol Configuration' %}</h2>
+                        <hr class="hr-m">
+                        <div class="tp-indent">
                             <table class="table">
                                 <thead>
                                     <tr>
@@ -121,9 +127,9 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <h3>PKI Truststore Configuration</h3>
-                            <hr class="hu-mb">
+                        <h2>{% trans 'PKI Truststore Configuration' %}</h2>
+                        <hr class="hr-m">
+                        <div class="tp-indent pb-0">
                             {% render_table trust_store_table   %}
                         </div>
                     </div>

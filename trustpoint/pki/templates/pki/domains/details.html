@@ -14,37 +14,47 @@
                 <div class="card-body">
                     <div class="tp-card-centered-content">
                         <h2>{% trans 'Domain' %}: {{ domain.unique_name }}</h2>
-                        <hr>
-                        <div class="tp-card-split">
-                            <div>{% trans 'Unique Name' %}</div>
-                            <div>{{ domain.unique_name }}</div>
-                        </div>
-
-                        <h2 class="mt-5">Issuing CA</h2>
-                        <hr>
-                    {% if domain.issuing_ca %}
-                        <div class="tp-card-split">
-                            <div>{% trans 'Issuing CA - Unique Name' %}</div>
+                        <hr class="hr-m">
+                        <div class="tp-kvp-list">
                             <div>
-                                    <a href="{% url 'pki:issuing_cas-detail' pk=domain.issuing_ca.id %}">
-                                        {{ domain.unique_name }}
-                                    </a>
+                                <div>{% trans 'Unique Name' %}</div>
+                                <div>{{ domain.unique_name }}</div>
                             </div>
                         </div>
-                        <div class="tp-card-split">
-                            <div>{% trans 'Issuing CA Certificate' %}</div>
+
+                        <h2>Issuing CA</h2>
+                        <hr class="hr-m">
+                    {% if domain.issuing_ca %}
+                        <div class="tp-kvp-list mb-0">
                             <div>
-                                <a href="{% url 'pki:certificate-detail' pk=domain.issuing_ca.issuing_ca_certificate.id %}">
-                                    {% if domain.issuing_ca.issuing_ca_certificate.common_name %}
-                                        CN: {{ domain.issuing_ca.issuing_ca_certificate.common_name }}
-                                    {% else %}
-                                        {% trans 'Issuing CA Certificate' %}
-                                    {% endif %}
-                                </a>
+                                <div>{% trans 'Issuing CA - Unique Name' %}</div>
+                                <div>
+                                        <a href="{% url 'pki:issuing_cas-detail' pk=domain.issuing_ca.id %}">
+                                            {{ domain.unique_name }}
+                                        </a>
+                                </div>
+                            
+                            </div>
+                            <div>
+                                <div>{% trans 'Issuing CA Certificate' %}</div>
+                                <div>
+                                    <a href="{% url 'pki:certificate-detail' pk=domain.issuing_ca.issuing_ca_certificate.id %}">
+                                        {% if domain.issuing_ca.issuing_ca_certificate.common_name %}
+                                            CN: {{ domain.issuing_ca.issuing_ca_certificate.common_name }}
+                                        {% else %}
+                                            {% trans 'Issuing CA Certificate' %}
+                                        {% endif %}
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     {% else %}
-                        <h2 class="mb-3">No Issuing CA Configured</h2>
+                        <div class="tp-kvp-list mb-0">
+                            <div>
+                                <div>{% trans 'No Issuing CA configured' %}</div>
+                                <div></div>
+                            </div>
+                        </div>
                     {% endif %}
                     </div>
                 </div>

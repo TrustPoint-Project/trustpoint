@@ -17,30 +17,29 @@
                 <div class="tp-card-centered-content">
                     {% for issuing_ca in issuing_cas %}
                         <h2>({{ forloop.counter }}) {% trans 'Issuing CA' %}: {{ issuing_ca.issuing_ca_certificate.common_name }}</h2>
-                        <hr class="hu-my">
-                        <div class="tp-card-split">
-                            <div>{% trans 'Issuing CA Certificate' %}</div>
+                        <hr class="hr-m">
+                        <div class="tp-kvp-list">
                             <div>
-                                <a href="{% url 'pki:certificate-detail' pk=issuing_ca.issuing_ca_certificate.id %}">
-                                    {% if issuing_ca.issuing_ca_certificate.common_name %}
-                                        CN: {{ issuing_ca.issuing_ca_certificate.common_name }}
-                                    {% else %}
-                                        {% trans 'Issuing CA Certificate' %}
-                                    {% endif %}
-                                </a>
+                                <div>{% trans 'Issuing CA Certificate' %}</div>
+                                <div>
+                                    <a href="{% url 'pki:certificate-detail' pk=issuing_ca.issuing_ca_certificate.id %}">
+                                        {% if issuing_ca.issuing_ca_certificate.common_name %}
+                                            CN: {{ issuing_ca.issuing_ca_certificate.common_name }}
+                                        {% else %}
+                                            {% trans 'Issuing CA Certificate' %}
+                                        {% endif %}
+                                    </a>
+                                </div>
+                            </div>
+                            <div>
+                                <div>{% trans 'Serial Number' %}</div>
+                                <div>{{ issuing_ca.issuing_ca_certificate.serial_number }}</div>
+                            </div>
+                            <div>
+                                <div>Fingerprint (SHA256)</div>
+                                <div>{{ issuing_ca.issuing_ca_certificate.sha256_fingerprint }}</div>
                             </div>
                         </div>
-                        <div class="tp-card-split">
-                            <div>{% trans 'Serial Number' %}</div>
-                            <div>{{ issuing_ca.issuing_ca_certificate.serial_number }}</div>
-                        </div>
-                        <div class="tp-card-split">
-                            <div>Fingerprint (SHA256)</div>
-                            <div>{{ issuing_ca.issuing_ca_certificate.sha256_fingerprint }}</div>
-                        </div>
-                        {% if not forloop.last %}
-                            <br>
-                        {% endif %}
                     {% endfor %}
                 </div>
                 <div class="alert alert-warning d-flex align-items-center mt-4 mb-1" role="alert">  

@@ -270,7 +270,7 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     display: flex;
 }
 
-.tp-card-split {
+.tp-card-split { /* unused class */
     display: grid;
     grid-template-columns: repeat(2, 1fr);
 }
@@ -286,6 +286,52 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 
 .tp-card-btn-footer > *:last-child {
     margin-right: 0;
+}
+
+.tp-kvp-list {
+    display: grid;
+    column-gap: 0.5rem;
+    row-gap: 0.3rem;
+    grid-template-columns: minmax(100px, 1fr) minmax(200px, 2fr);
+    max-width: 65rem;
+    margin: 0 1rem 1.2rem 1rem;
+    padding-left: 0;
+}
+
+.tp-kvp-list > div {
+    /* Treat children of this div as direct grid items */
+    display: contents;
+}
+  
+.tp-kvp-list > div > div:nth-child(1),
+.tp-kvp-list > li > div:nth-child(1) {
+    font-weight: bold; /* Style for keys */
+}
+
+.tp-kvp-list > li {
+    display: contents;
+    list-style-type: none;
+    text-align: left;
+}
+
+.tp-kvp-list hr {
+    grid-column: 1 / -1; /* Make the <hr> span across both columns */
+    margin: 0.25rem 0;
+  }
+  
+/*.tp-kvp-list > div > div:nth-child(2) {
+    text-align: left; /* Style for values 
+} */
+
+.tp-row-br::before {
+    content: "";
+    grid-column: 1 / -1;
+    margin-top: 1rem;
+    /* border:1px solid #f90; */
+}
+
+.tp-indent {
+    padding: 0 1rem 1.2rem 1rem;
 }
 
 .tp-sticky-footer {
@@ -321,16 +367,8 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     max-width: 25rem;
 }
 
-hr.hu {
-    margin: 0.5rem -0.125rem 0 -0.125rem;
-}
-
-hr.hu-mb {
-    margin: 0.5rem -0.125rem 0.75rem -0.125rem;
-}
-
-hr.hu-my {
-    margin: 0.75rem -0.125rem 0.75rem -0.125rem;
+hr.hr-m {
+    margin: 0.6rem -0.125rem 0.6rem -0.125rem;
 }
 
 /* ----- Input and elements ----- */

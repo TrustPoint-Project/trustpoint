@@ -11,42 +11,43 @@
             <div class="tp-card-centered-content">
                 <form method="POST" autocomplete="on" enctype="multipart/form-data">
                     {% csrf_token %}
-                    <div class="card-body">
-                        <h2>{{ issuing_ca.unique_name }} {% trans "Domains" %}</h2>
-                        <hr class="hu-mb">
+                    <h2>{{ issuing_ca.unique_name }} {% trans "Domains" %}</h2>
+                    <hr class="hr-m">
+                    <div class="tp-kvp-list">
                         {% if issuing_ca.domain.all %}
                             {% for domain in issuing_ca.domain.all %}
-                                <li class="tp-card-split">
-                                    {{ domain.unique_name }}
-                                    <a href="{% url 'pki:domains-detail' domain.id %}" class="primary">
+                            <div>
+                                <div>{{ domain.unique_name }}</div>
+                                <div><a href="{% url 'pki:domains-detail' domain.id %}" class="primary">
                                         {% trans "Details" %}
                                     </a>
-                                </li>
+                                </div>
+                            </div>
                             {% endfor %}
                         {% else %}
-                            <li class="list-group-item text-muted">
-                                {% trans "No associated domains" %}
-                            </li>
+                            <div>
+                                <div>{% trans "No associated domains" %}</div>
+                                <div></div>
+                            </div>
                         {% endif %}
 
                     </div>
-
-                    <div class="card-body">
-                        <h2>{% trans 'General' %}</h2>
-                        <hr class="hu-mb">
-                        <div class="tp-card-split">
+                    <h2>{% trans 'General' %}</h2>
+                    <hr class="hr-m">
+                    <div class="tp-kvp-list">
+                        <div>
                             <div>{% trans 'Type' %}</div>
                             <div>UnprotectedLocalIssuingCa</div>
                         </div>
-                        <div class="tp-card-split">
-                            <div>{% trans 'Created at:' %}</div>
+                        <div>
+                            <div>{% trans 'Created at' %}</div>
                             <div>{{ issuing_ca.get_issuing_ca_certificate.added_at }}</div> <!-- Danger! not to mix up with time of cert creation. -->
                         </div>
-                        <div class="tp-card-split">
+                        <div>
                             <div>{% trans 'Expires in' %}</div>
                             <div> {{ issuing_ca.get_issuing_ca_certificate.not_valid_after }}</div>
                         </div>
-                        <div class="tp-card-split">
+                        <div>
                             <div>{% trans 'Issuing CA Rollover' %}</div>
                             <div> NYI
                                 <!-- <a href="{% url 'pki:certificate-detail' pk=issuing_ca.root_ca_certificate.id %}">
@@ -58,17 +59,17 @@
                                 </a> -->
                             </div>
                         </div>
-                        <div class="tp-card-split">
-                            <div>{% trans 'Certificates Issued:' %}</div>
+                        <div>
+                            <div>{% trans 'Certificates Issued' %}</div>
                             <div>{{ issuing_ca.issued_certificates_count }}</div>
                         </div>
                     </div>
 
-                    <div class="card-body">
-                        <h2>{% trans 'CRL' %}</h2>
-                        <hr class="hu-mb">
-                        <div class="tp-card-split">
-                            <div>{% trans 'CRL' %}</div>
+                    <h2>{% trans 'CRL' %}</h2>
+                    <hr class="hr-m">
+                    <div class="tp-kvp-list">
+                        <div>
+                            <div>{% trans 'CRL actions' %}</div>
                             <div>
                                 <a href="{% url 'pki:download-ca-crl' ca_id=issuing_ca.pk %}" class="btn btn-sm btn-primary">
                                     {% trans "Download CRL" %}
@@ -78,19 +79,19 @@
                                 </a>
                             </div>
                         </div>
-                        <div class="tp-card-split">
+                        <div>
                             <div>{% trans 'Last CRL generated' %}</div>
                             <div>
                                 {{ crl.created_at }}
                             </div>
                         </div>
-                        <div class="tp-card-split">
+                        <div>
                             <div>{% trans 'Next CRL Generation Time (minutes)' %}</div>
                             <div>
                                 {{ form|crispy }}
                             </div>
                         </div>
-                        <div class="tp-card-split">
+                        <div>
                             <div>{% trans 'Auto CRL' %}</div>
                             <div>
                                 {{ form_auto_crl|crispy }}

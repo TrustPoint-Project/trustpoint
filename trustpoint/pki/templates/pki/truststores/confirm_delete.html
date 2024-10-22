@@ -16,27 +16,13 @@
                 <div class="tp-card-centered-content">
                     {% for truststore in truststores %}
                         <h2>({{ forloop.counter }}) {% trans 'Truststore' %}: {{ truststore.unique_name }}</h2>
-                        <hr class="hu-my">
-                        <div class="tp-card-split">
-                            <div>Unique Name</div>
-                            <div>{{ truststore.unique_name }}</div>
+                        <hr class="hr-m">
+                        <div class="tp-kvp-list">
+                        
+                            {% include 'pki/truststores/sub_details.html' %}
+    
                         </div>
-
-                        <div class="tp-card-split">
-                            <div>Number of certificates</div>
-                                {{ truststore.certificates.count }}
-                        </div>
-
-                        <div class="tp-card-split">
-                            <div>Distributed by Domains</div>
-                                N/A {# TODO #}
-                        </div>
-                            {% if not forloop.last %}
-                                <br>
-                            {% endif %}
-
                     {% endfor %}
-
 
                 </div>
             </div>
