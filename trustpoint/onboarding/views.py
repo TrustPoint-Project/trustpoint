@@ -35,6 +35,9 @@ if TYPE_CHECKING:
 class OnboardingUtilMixin:
     """Mixin for checking onboarding prerequisits."""
 
+    kwargs: dict
+    device: Device
+
     def get_device(self, request: HttpRequest) -> bool:
         """Adds the device attribute to self, adds an error message if it does not exist."""
         try:

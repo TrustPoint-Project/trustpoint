@@ -36,7 +36,6 @@ class CmpInitializationRequestView(View):
         if not domain_handler.is_valid():
             return domain_handler.error_response.to_django_http_response()
 
-
         pki_request = PkiCmpInitializationRequestMessage(
             domain_model=domain_handler.domain_model,
             raw_content=request.read(),
@@ -47,15 +46,8 @@ class CmpInitializationRequestView(View):
         if not pki_request.is_valid:
             return pki_request.error_response.to_django_http_response()
 
-        try:
-            request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
-            resp = request_handler.process_request().to_django_http_response()
-        except Exception as exc:
-            print('what')
-            print(exc)
-            print(traceback.format_exc())
-
-        return resp
+        request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
+        return request_handler.process_request().to_django_http_response()
 #
 # @method_decorator(csrf_exempt, name='dispatch')
 # class CmpCertificationRequestView(View):

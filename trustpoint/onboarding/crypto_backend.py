@@ -173,11 +173,11 @@ class CryptoBackend:
         one_day = datetime.timedelta(1, 0, 0)
 
         cert_builder = x509.CertificateBuilder()
-        attributes = []
-        for attribute in csr.subject:
-            if attribute.oid != x509.NameOID.SERIAL_NUMBER:
-                attributes.append(attribute)
-        attributes.append(x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.device_serial_number))
+        attributes = [
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'Trustpoint LDevID'),
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.device_serial_number),
+            x509.NameAttribute(x509.NameOID.DN_QUALIFIER, f'trustpoint.local.{device.domain.unique_name}')
+        ]
         cert_builder = cert_builder.subject_name(x509.Name(attributes))
         cert_builder = cert_builder.not_valid_before(datetime.datetime.today() - one_day)
         cert_builder = cert_builder.not_valid_after(datetime.datetime.today() + one_day * 365)
@@ -253,7 +253,8 @@ class CryptoBackend:
         log.debug('Issuing LDevID for device %s', device.device_name)
 
         subject = x509.Name([
-            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'ldevid.trustpoint.local'),
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'Trustpoint LDevID'),
+            x509.NameAttribute(x509.NameOID.DN_QUALIFIER, f'ldevid.trustpoint.local.{device.domain.unique_name}'),
             x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, serial_no)
         ])
 
