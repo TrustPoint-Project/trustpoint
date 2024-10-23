@@ -3,6 +3,7 @@ from django import forms
 from taggit.models import Tag
 
 from .models import Device
+from pki.models import DomainModel
 
 
 class DeviceFilter(django_filters.FilterSet):
@@ -16,6 +17,22 @@ class DeviceFilter(django_filters.FilterSet):
         widget=forms.CheckboxSelectMultiple(),
         label=''
     )
+
+    device_onboarding_status = django_filters.ChoiceFilter(
+        choices=Device.DeviceOnboardingStatus,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    onboarding_protocol = django_filters.ChoiceFilter(
+        choices=Device.OnboardingProtocol,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    domain = django_filters.ModelChoiceFilter(
+        queryset=DomainModel.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
 
     class Meta:
         model = Device

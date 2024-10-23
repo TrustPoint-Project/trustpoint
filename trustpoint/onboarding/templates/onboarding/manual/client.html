@@ -9,11 +9,11 @@
     <script src="{% static 'js/onboarding.js' %}"></script>
 {% endblock head %}
 {% block content %}
-    <div class="card card-main text-center">
+    <div class="card text-center">
         <div class="card-header d-flex">
             <h1>{% blocktranslate %}Onboarding device {{ device_name }} with Trustpoint Client{% endblocktranslate %}</h1>
         </div>
-        <div class="card-body tp-main-centered pt-3 pb-4">
+        <div class="card-body pt-3 pb-4">
             <h2>{% trans "Trustpoint Client Download" %}</h2>
             <hr>
             <h2>{% trans "Trustpoint Client Provisioning command" %}</h2>

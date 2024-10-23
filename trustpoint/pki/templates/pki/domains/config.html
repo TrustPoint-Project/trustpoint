@@ -5,14 +5,14 @@
 {% block content %}
 {% load static %}
     <script src="{% static 'js/domains.js' %}"></script>
-    <div class="card tp-card-centered">
+    <div class="card">
         <div class="card-header">
             <h1>{{ domain.unique_name }} {% trans "Configuration" %}</h1>
         </div>
 
         <form method="POST" autocomplete="on" enctype="multipart/form-data">
             {% csrf_token %}
-            <div class="card tp-card-centered">
+            <div class="card">
                 <div class="card-body">
                     <div class="tp-card-centered-content">
                         <h2>General</h2>

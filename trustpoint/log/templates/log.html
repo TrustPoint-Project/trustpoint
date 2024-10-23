@@ -6,7 +6,7 @@
 {% block content %}
     <form method="POST" action="{% url 'log:log-download-multiple' %}">
         {% csrf_token %}
-        <div class="card card-main" style="max-height: 100%; display: flex; flex-direction: column;">
+        <div class="card" style="max-height: 100%; display: flex; flex-direction: column;">
             <div class="card-header">
                 <h1>{% trans "Logs" %}</h1>
             </div>

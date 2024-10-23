@@ -2,19 +2,20 @@
 {% load crispy_forms_filters %}
 {% load i18n %}
 {% block content %}
-    <div class="card card-main text-center">
+    <div class="card">
         <div class="card-header d-flex">
             <h1>Edit Device</h1>
         </div>
-        <div class="card-body tp-main-centered py-3">
-
-            <form method="POST" class="tp-main-form text-start" id="edit-device-form">
+        <div class="card-body py-3">
+            <form method="POST" id="edit-device-form">
                 {% csrf_token %}
                 {{ form|crispy }}
                 <hr>
                 <div class="tp-form-btn-group">
                     <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
-                    <input type="submit" class="btn btn-primary" value="{% trans 'Apply Changes' %}">
+                    <button type="submit" class="btn btn-primary">
+                        {% trans 'Apply Changes' %}
+                    </button>
                 </div>
             </form>
         </div>
