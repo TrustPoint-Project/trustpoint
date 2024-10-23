@@ -7,6 +7,18 @@
             <div>{{ device.device_serial_number }}</div>
         </li>
         <li>
+            <div>Domain</div>
+            <div>
+                {% if device.domain %}
+                    <a href="{% url 'pki:domains-detail' pk=device.domain.id %}">
+                        {{ device.domain.unique_name }}
+                    </a>
+                {% else %}
+                    This device is not part of any domain.
+                {% endif %}
+            </div>
+        </li>
+        <li>
             <div>Certificate serial number</div>
             <div>
                 {% if device.ldevid %}
