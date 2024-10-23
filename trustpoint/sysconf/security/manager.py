@@ -4,6 +4,12 @@ from . import SecurityFeatures, SecurityModeChoices
 
 
 class SecurityManager:
+    """Manages the security level setting of the Trustpoint.
+    
+    Define below the features allowed in each level. At development level, all features are allowed.
+    Please note that when making changes, for features that have user-side preferences (e.g. auto-generated PKI),
+    you also need to adjust 'data-sl-defaults' and 'data-hide-at-sl' in the SecurityConfigForm.
+    """
 
     highest_features = (SecurityFeatures.LOG_ACCESS, )
     high_features = (*highest_features, )
@@ -13,10 +19,7 @@ class SecurityManager:
 
     @classmethod
     def is_feature_allowed(cls, feature_name: SecurityFeatures, target_level: SecurityModeChoices = None):
-        # print(f'highest_features:  {cls.highest_features}')
-        # print(f'high_features:  {cls.high_features}')
-        # print(f'medium_features:  {cls.medium_features}')
-        # print(f'low_features:  {cls.low_features}')
+        """Checks if the specified feature is allowed in the currently set security level."""
 
         if (target_level is None):
             sec_level = cls.get_security_level()

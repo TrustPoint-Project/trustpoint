@@ -52,14 +52,18 @@ function prevalidateSecuritySettings() {
     // 0 = dev, 1 = basic, 2 = medium, 3 = high, 4 = highest
     if (sl < 0 || sl > 4) return; // invalid security level
     document.querySelector('#hidden_input_note').style.display = 'none';
+    document.querySelector('#hidden_input_list').innerHTML = '';
     for (el of document.querySelectorAll('#security_configuration input, select')) {
         // hide settings that are not available for the selected security level
         if (el.dataset?.hideAtSl) {
             arr = JSON.parse(el.dataset.hideAtSl);
             if (arr[sl] === true) {
                 document.querySelector('#hidden_input_note').style.display = 'block';
+                let hiddenInput = document.createElement('li');
+                labeltext = document.querySelector('label[for="' + el.id + '"]')?.innerText;
+                hiddenInput.textContent = labeltext;
+                document.querySelector('#hidden_input_list').appendChild(hiddenInput);
             }
-            //el.parentElement.style.display = 'none';
             el.parentElement.style.display = (arr[sl] === true) ? 'none':'block';
         }
         if (!el.dataset?.slDefaults) continue;
@@ -73,10 +77,8 @@ function prevalidateSecuritySettings() {
             value < slDefault && el.dataset.moreSecure === 'true') {
             el.classList.add('mismatch');
             el.dataset.target = slDefault;
-            //el.parentElement.style.display = 'none'; // TODO: consider separate dataset for visibility of disallowed settings
         } else {
             el.classList.remove('mismatch');
-            //el.parentElement.style.display = 'block'; // TODO: consider separate dataset for visibility of disallowed settings
         }
     }
     renderMismatchWarning();
@@ -138,18 +140,5 @@ for (el of document.querySelectorAll('#security_configuration input')) {
         initialValues[el.name] = el.value;
     }
 }
-//console.log(initialValues)
-
-// function changeMismatchedSettings() {
-//     let mismatches = document.querySelectorAll('#security_configuration .mismatch');
-//     for (el of mismatches) {
-//         if (el.type === 'checkbox') {
-//             el.checked = el.dataset.target == 1;
-//         } else {
-//             el.value = el.dataset.target
-//         }
-//     }
-//     prevalidateSecuritySettings();
-// }
 
 prevalidateSecuritySettings();

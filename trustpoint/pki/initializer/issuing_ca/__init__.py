@@ -1,6 +1,6 @@
 """Initialization module for different types of issuing CAs."""
 
-from .. import Initializer, InitializerError
+from pki.initializer import Initializer, InitializerError
 from .base import IssuingCaInitializer, IssuingCaInitializerError
 from .file_import import (
     FileImportLocalIssuingCaInitializer,

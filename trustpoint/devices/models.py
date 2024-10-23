@@ -6,18 +6,18 @@ from __future__ import annotations
 import logging
 import re
 
-from django.db import models
+from django.db import models, transaction
 from django.db.models import Count
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from pki.models import CertificateModel, DomainModel, RevokedCertificate
+from pki.models import CertificateModel, DomainModel
 from taggit.managers import TaggableManager
 
 from .exceptions import UnknownOnboardingStatusError
 
-from pki.validator.field import UniqueNameValidator, UniqueNameLowerCaseValidator
+from pki.validator.field import UniqueNameValidator
 
 log = logging.getLogger('tp.devices')
 
@@ -86,15 +86,16 @@ class Device(models.Model):
         if not self.ldevid:
             return False
 
-        revocation_success = self.ldevid.revoke(revocation_reason)
-        self.ldevid = None
-        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
-            if revocation_success:
-                self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
-            else:
-                # TODO(Air): Check if this makes sense to express the state "cannot revoke since CA is gone"
-                self.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_FAILED
-        self.save()
+        with transaction.atomic():
+            revocation_success = self.ldevid.revoke(revocation_reason)
+            self.ldevid = None
+            if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+                if revocation_success:
+                    self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
+                else:
+                    # TODO(Air): Check if this makes sense to express the state "cannot revoke since CA is gone"
+                    self.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_FAILED
+            self.save()
 
         if not revocation_success:
             log.error('Failed to revoke LDevID for device %s', self.device_name)

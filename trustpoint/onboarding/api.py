@@ -361,6 +361,7 @@ def stop(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpRespons
              exclude_none=True)
 def revoke(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
     """Revokes the LDevID certificate for a device."""
+    # TODO (Air): The API should include the possibility to specify the revocation reason
     device = Device.get_by_id(device_id)
     if not device:
         return 404, {'error': 'Device not found.'}
