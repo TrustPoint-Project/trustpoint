@@ -1,17 +1,17 @@
 {% extends 'users/base.html' %}
 {% load i18n %}
 {% block content %}
-    <div class="card card-main tp-card-users text-center">
+    <div class="card tp-card-users text-center">
         <div class="card-header">
             <h1>{% trans "Trustpoint - Logout" %}</h1>
         </div>
-        <div class="card-body tp-main-centered pt-4">
+        <div class="card-body pt-4">
 
             <p>{% trans "You have been logged out." %}</p>
             {# <p><a href="{% url 'users:login' %}" >{% trans "Login again." %}</a></p> #}
 
         </div>
-        <div class="card-footer tp-main-centered tp-form-btn-group tp-form-btn-group">
+        <div class="card-footer tp-form-btn-group tp-form-btn-group">
             {# TODO: Back button as soon as we have a landing page. #}
             {# <a href="#" class="btn btn-secondary">{% trans "Back to Home" %}</a> #}
             <a href="{% url 'users:login' %}" class="btn btn-primary">{% trans "Login again" %}</a>

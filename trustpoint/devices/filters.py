@@ -3,11 +3,13 @@ from django import forms
 from taggit.models import Tag
 
 from .models import Device
+from pki.models import DomainModel
 
 
 class DeviceFilter(django_filters.FilterSet):
     device_name = django_filters.CharFilter(
-        field_name='device_name', lookup_expr='icontains', label='Device Name'
+        field_name='device_name', lookup_expr='icontains', label='Device Name',
+        widget=forms.TextInput(attrs={'class': 'textinput form-control'})
     )
 
     tags = django_filters.ModelMultipleChoiceFilter(
@@ -15,6 +17,22 @@ class DeviceFilter(django_filters.FilterSet):
         widget=forms.CheckboxSelectMultiple(),
         label=''
     )
+
+    device_onboarding_status = django_filters.ChoiceFilter(
+        choices=Device.DeviceOnboardingStatus,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    onboarding_protocol = django_filters.ChoiceFilter(
+        choices=Device.OnboardingProtocol,
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
+    domain = django_filters.ModelChoiceFilter(
+        queryset=DomainModel.objects.all(),
+        widget=forms.Select(attrs={'class': 'form-select'})
+    )
+
 
     class Meta:
         model = Device

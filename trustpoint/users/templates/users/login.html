@@ -26,13 +26,13 @@
         </div>
     {% endif %}
 
-    <div class="card card-main tp-card-users text-center">
+    <div class="card tp-card-users text-center">
         <div class="card-header">
             <h1>{% trans "Trustpoint - Login" %}</h1>
         </div>
-        <div class="card-body tp-main-centered pt-3 pb-4">
+        <div class="card-body pt-3 pb-4">
 
-            <form method="POST" class="tp-main-form text-start">
+            <form method="POST" class="text-start">
                 {% csrf_token %}
                 <fieldset class="form-group tp-form-group">
                     {{form|crispy }}

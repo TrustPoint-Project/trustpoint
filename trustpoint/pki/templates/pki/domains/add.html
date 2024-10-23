@@ -7,7 +7,7 @@
     <form method="POST" autocomplete="off">
         {% csrf_token %}
 
-        <div class="card tp-card-centered">
+        <div class="card">
             <div class="card-header">
                 <div>
                     <h1>{% trans 'Add new Domain' %}</h1>
@@ -16,7 +16,7 @@
             <div class="card-body">
                 <div class="tp-card-centered-content">
                     <h2>{% trans 'New Domain' %}</h2>
-                    <hr>
+                    <hr class="hr-m">
 
                     {{ form|crispy }}
                 </div>

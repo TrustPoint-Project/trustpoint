@@ -1,17 +1,18 @@
 {% block issuer_alternative_name_extension %}
     {% if cert.issuer_alternative_name_extension %}
-        <br><br><h2>Issuer Alternative Name (IAN) Extension</h2><hr>
-        <div class="tp-card-split">
-            <div>Extension OID</div>
-            <div>{{ cert.issuer_alternative_name_extension.extension_oid }}</div>
-        </div>
-        <div class="tp-card-split">
-            <div>Critical</div>
-            <div>{{ cert.issuer_alternative_name_extension.critical }}</div>
-        </div>
-        <hr>
+        <h2>Issuer Alternative Name (IAN) Extension</h2><hr class="hr-m">
+        <div class="tp-kvp-list">
+            <div>
+                <div>Extension OID</div>
+                <div>{{ cert.issuer_alternative_name_extension.extension_oid }}</div>
+            </div>
+            <div>
+                <div>Critical</div>
+                <div>{{ cert.issuer_alternative_name_extension.critical }}</div>
+            </div>
+            <hr>
         {% if cert.issuer_alternative_name_extension.rfc822_names and cert.issuer_alternative_name_extension.rfc822_names.all %}
-            <div class="tp-card-split">
+            <div>
                 <div>RFC822 Names (IAN)</div>
                 <div>
                     {% for entry in cert.issuer_alternative_name_extension.rfc822_names.all %}
@@ -22,7 +23,7 @@
         {% endif %}
 
         {% if cert.issuer_alternative_name_extension.dns_names and  cert.issuer_alternative_name_extension.dns_names.all %}
-            <div class="tp-card-split">
+            <div>
                 <div>DNS Names (IAN)</div>
                 <div>
                     {% for entry in cert.issuer_alternative_name_extension.dns_names.all %}
@@ -33,7 +34,7 @@
         {% endif %}
 
         {% if cert.issuer_alternative_name_extension.directory_names and  cert.issuer_alternative_name_extension.directory_names.all %}
-            <div class="tp-card-split">
+            <div>
                 <div>Directory Names (IAN)</div>
                 <div>
                     {% for entry in cert.issuer_alternative_name_extension.directory_names.all %}
@@ -44,7 +45,7 @@
         {% endif %}
 
         {% if cert.issuer_alternative_name_extension.uniform_resource_identifiers and  cert.issuer_alternative_name_extension.uniform_resource_identifiers.all %}
-            <div class="tp-card-split">
+            <div>
                 <div>Uniform Resource Identifiers (IAN)</div>
                 <div>
                     {% for entry in cert.issuer_alternative_name_extension.uniform_resource_identifiers.all %}
@@ -55,7 +56,7 @@
         {% endif %}
 
         {% if cert.issuer_alternative_name_extension.ip_addresses and  cert.issuer_alternative_name_extension.ip_addresses.all %}
-            <div class="tp-card-split">
+            <div>
                 <div>Uniform Resource Identifiers (IAN)</div>
                 <div>
                     {% for entry in cert.issuer_alternative_name_extension.ip_addresses.all %}
@@ -66,7 +67,7 @@
         {% endif %}
 
         {% if cert.issuer_alternative_name_extension.registered_ids and  cert.issuer_alternative_name_extension.registered_ids.all %}
-            <div class="tp-card-split">
+            <div>
                 <div>Uniform Resource Identifiers (IAN)</div>
                 <div>
                     {% for entry in cert.issuer_alternative_name_extension.registered_ids.all %}
@@ -77,7 +78,7 @@
         {% endif %}
 
         {% if cert.issuer_alternative_name_extension.other_names and  cert.issuer_alternative_name_extension.other_names.all %}
-            <div class="tp-card-split">
+            <div>
                 <div>Other Names (IAN)</div>
                 <div>
                     {% for entry in cert.issuer_alternative_name_extension.other_names.all %}
@@ -86,5 +87,6 @@
                 </div>
             </div>
         {% endif %}
+        </div>
     {% endif %}
 {% endblock issuer_alternative_name_extension %}

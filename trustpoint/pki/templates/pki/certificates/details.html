@@ -4,11 +4,11 @@
 
 {% block content %}
 
-        <div class="card tp-card-centered">
+        <div class="card">
 
                 <div class="card-header">
                     <div class="">
-                        <h2>{% trans "Certificate Details" %}</h2>
+                        <h1>{% trans "Certificate Details" %}</h1>
                     </div>
                 </div>
                 <div class="card-body">
@@ -35,7 +35,6 @@
                         {% include 'pki/certificates/components/extensions/basic_constraints_extension.html' %}
 
                         {% include 'pki/certificates/components/extensions/key_usage_extension.html' %}
-
 
                     </div>
                 </div>

@@ -3,11 +3,11 @@
 {% block content %}
     <form method="POST">
         {% csrf_token %}
-        <div class="card card-main text-center">
+        <div class="card">
             <div class="card-header d-flex">
                 <h1>Confirm - Certificate revocation</h1>
             </div>
-            <div class="card-body tp-main-centered pt-3 pb-4">
+            <div class="card-body pt-3 pb-3">
 
                 {% include 'devices/sub_details.html' %}
 
@@ -15,20 +15,22 @@
 
                 <div class="form-group">
                     <label for="id_revocation_reason">Revocation Reason</label>
-                    <select id="id_revocation_reason" name="revocation_reason" class="form-control">
+                    <select id="id_revocation_reason" name="revocation_reason" class="form-control form-select">
                         {% for value, name in form.revocation_reason.field.choices %}
                             <option value="{{ value }}" {% if form.revocation_reason.value == value %}selected{% endif %}>{{ name }}</option>
                         {% endfor %}
                     </select>
                 </div>
 
-                <div class="tp-form-btn-group tp-form-btn-group pt-5">
+                <div class="tp-form-btn-group tp-form-btn-group pt-4">
                     <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Cancel</a>
-                    <input type="submit" class="btn btn-danger" value="Revoke certificate"
+                    <button type="submit" class="btn btn-danger"
                     {% if not onboarded %}
                         disabled
                     {% endif %}
                     >
+                        Revoke certificate
+                    </button>
                 </div>
 
             </div>

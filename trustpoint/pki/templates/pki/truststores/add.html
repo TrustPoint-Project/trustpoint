@@ -5,7 +5,7 @@
 {% block content %}
     <form method="POST" autocomplete="off" enctype="multipart/form-data">
         {% csrf_token %}
-        <div class="card tp-card-centered">
+        <div class="card">
             <div class="card-header">
                 <div>
                     <h1>{% trans 'Add New Trust Store' %}</h1>
@@ -14,7 +14,7 @@
             <div class="card-body">
                 <div class="tp-card-centered-content">
                     <h2>{% trans 'Trust Store File Import' %}</h2>
-                    <hr>
+                    <hr class="hr-m">
 
                     {{ form|crispy }}
                 </div>

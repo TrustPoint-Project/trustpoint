@@ -1,44 +1,45 @@
 {% load i18n %}
 
 {% block signature %}
-    <br><br><h2>{% trans 'Signature' %}</h2>
-    <hr>
-
-    <div class="tp-card-split">
-        <div>Signature Algorithm OID</div>
-        <div>{{ cert.signature_algorithm_oid }}</div>
-    </div>
-
-    <div class="tp-card-split">
-        <div>Signature Algorithm</div>
-        <div>{{ cert.signature_algorithm }}</div>
-    </div>
-
-    {% if cert.signature_algorithm_padding_scheme != 'None' %}
-        <div class="tp-card-split">
-            <div>Signature Algorithm Padding Scheme</div>
-            <div>{{ cert.signature_algorithm_padding_scheme }}</div>
-        </div>
-    {% endif %}
-
-    {% if cert.issuer and cert.issuer.spki_ec_curve_oid %}
-        <div class="tp-card-split">
-            <div>Signature Curve OID</div>
-            <div>{{ cert.issuer.spki_ec_curve_oid }}</div>
-        </div>
-    {% endif %}
-
-    {% if cert.issuer and cert.issuer.spki_ec_curve %}
-        <div class="tp-card-split">
-            <div>Signature Curve</div>
-            <div>{{ cert.issuer.spki_ec_curve }}</div>
-        </div>
-    {% endif %}
-
-    <div class="tp-card-split">
-        <div>Signature Algorithm Key Size</div>
+    <h2>{% trans 'Signature' %}</h2>
+    <hr class="hr-m">
+    <div class="tp-kvp-list">
         <div>
-            {{ cert.issuer_references.first.spki_key_size }} Bits
+            <div>Signature Algorithm OID</div>
+            <div>{{ cert.signature_algorithm_oid }}</div>
+        </div>
+
+        <div>
+            <div>Signature Algorithm</div>
+            <div>{{ cert.signature_algorithm }}</div>
+        </div>
+
+        {% if cert.signature_algorithm_padding_scheme != 'None' %}
+            <div>
+                <div>Signature Algorithm Padding Scheme</div>
+                <div>{{ cert.signature_algorithm_padding_scheme }}</div>
+            </div>
+        {% endif %}
+
+        {% if cert.issuer and cert.issuer.spki_ec_curve_oid %}
+            <div>
+                <div>Signature Curve OID</div>
+                <div>{{ cert.issuer.spki_ec_curve_oid }}</div>
+            </div>
+        {% endif %}
+
+        {% if cert.issuer and cert.issuer.spki_ec_curve %}
+            <div>
+                <div>Signature Curve</div>
+                <div>{{ cert.issuer.spki_ec_curve }}</div>
+            </div>
+        {% endif %}
+
+        <div>
+            <div>Signature Algorithm Key Size</div>
+            <div>
+                {{ cert.issuer_references.first.spki_key_size }} Bits
+            </div>
         </div>
     </div>
 {% endblock signature %}

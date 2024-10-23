@@ -1,20 +1,22 @@
 {% load i18n %}
 {% block subject_and_names %}
     <h2>Certificate Subject and Names</h2>
-    <hr>
+    <hr class="hr-m">
 
-    <div class="tp-card-split">
-        <div>Subject</div>
+    <div class="tp-kvp-list">
         <div>
-            {% for entry in cert.subject.all %}
-                {{ entry }}<br>
-            {% endfor %}
+            <div>Subject</div>
+            <div>
+                {% for entry in cert.subject.all %}
+                    {{ entry }}<br>
+                {% endfor %}
+            </div>
         </div>
-    </div>
 
-    <div class="tp-card-split">
-        <div>Common Name</div>
-        <div>{{ cert.common_name }}</div>
+        <div>
+            <div>Common Name</div>
+            <div>{{ cert.common_name }}</div>
+        </div>
     </div>
 
 {% endblock subject_and_names %}

@@ -4,41 +4,31 @@
 
 {% block content %}
 
-        <div class="card tp-card-centered">
+        <div class="card">
 
-                <div class="card-header">
-                    <div class="">
-                        <h2>{% trans "Truststore Details" %}</h2>
-                    </div>
+            <div class="card-header">
+                <div class="">
+                    <h1>{% trans "Truststore Details" %}</h1>
                 </div>
+            </div>
 
-                <div class="card-body">
-                    <div class="tp-card-centered-content py-3">
+            <div class="card-body py-3">
+                <div class="tp-card-centered-content">
 
-                        <h2>General</h2>
-                        <hr>
+                    <h2>General</h2>
+                    <hr class="hr-m">
+                    <div class="tp-kvp-list">
+                        
+                        {% include 'pki/truststores/sub_details.html' %}
 
-                        <div class="tp-card-split">
-                            <div>Unique Name</div>
-                            <div>{{ truststore.unique_name }}</div>
-                        </div>
+                    </div>
 
-                        <div class="tp-card-split">
-                            <div>Number of certificates</div>
-                                {{ truststore.certificates.count }}
-                        </div>
-
-                        <div class="tp-card-split">
-                            <div>Distributed by Domains</div>
-                                N/A {# TODO #}
-                        </div>
-                       
-
-                        <br><br><h2>Certificates</h2>
-                        <hr>
-                        {% for certificate in truststore.certificates.all %}
-
-                            <div class="tp-card-split">
+                    <h2>Certificates</h2>
+                    <hr class="hr-m">
+                    {% for certificate in truststore.certificates.all %}
+                        <h2 class="mb-2 ms-2">Certificate {{ forloop.counter }}</h2>
+                        <div class="tp-kvp-list">
+                            <div>
                                 <div>Subject</div>
                                 <div>
                                     {% for entry in certificate.subject.all %}
@@ -48,7 +38,7 @@
                                 </div>
                             </div>
 
-                            <div class="tp-card-split">
+                            <div>
                                 <div>Issuer</div>
                                 <div>
                                     {% for entry in certificate.issuer.all %}
@@ -57,7 +47,7 @@
                                 </div>
                             </div>
 
-                            <div class="tp-card-split">
+                            <div>
                                 <div>Common Name</div>
                                 {% if certificate.common_name %}
                                     <div>{{ certificate.common_name }}</div>
@@ -65,28 +55,26 @@
                                     <div>N/A</div>
                                 {% endif %}
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'Serial Number' %}</div>
                                 <div>{{ certificate.serial_number }}</div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>Fingerprint (SHA256)</div>
                                 <div>{{ certificate.sha256_fingerprint }}</div>
                             </div>
-                            {% if not forloop.last %}
-                                <br><br>
-                            {% endif %}
-                        {% endfor %}
+                        </div>
+                    {% endfor %}
 
-                    </div>
                 </div>
-                <div class="card-footer">
-                    <div class="tp-card-btn-footer">
-                        <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
-                        <a href="{% url 'pki:truststores' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
-                        <a href="{% url 'pki:truststore-download' pk=truststore.id %}" class="btn btn-primary">{% trans 'Download' %}</a>
-                    </div>
+            </div>
+            <div class="card-footer">
+                <div class="tp-card-btn-footer">
+                    <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                    <a href="{% url 'pki:truststores' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
+                    <a href="{% url 'pki:truststore-download' pk=truststore.id %}" class="btn btn-primary">{% trans 'Download' %}</a>
                 </div>
+            </div>
         </div>
 
 {% endblock content %}

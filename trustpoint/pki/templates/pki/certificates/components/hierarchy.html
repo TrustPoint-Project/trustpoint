@@ -1,60 +1,46 @@
 {% load i18n %}
 
 {% block certificate_hierarchy %}
-    <br><br><h2>Certificate Hierarchy</h2>
-    <hr>
+    <h2>Certificate Hierarchy</h2>
+    <hr class="hr-m">
 
-    <div class="tp-card-split">
-        <div>Issuer</div>
+    <div class="tp-kvp-list">
         <div>
-            {% for entry in cert.issuer.all %}
-                {{ entry }}<br>
-            {% endfor %}
-        </div>
-    </div>
-
-    <div class="tp-card-split">
-        <div>End-Entity Certificate</div>
-        <div>
+            <div>Issuer</div>
             <div>
-            {{ cert.is_end_entity }}
+                {% for entry in cert.issuer.all %}
+                    {{ entry }}<br>
+                {% endfor %}
+            </div>
         </div>
-        </div>
-    </div>
 
-    <div class="tp-card-split">
-        <div>Certificate Authority (CA)</div>
         <div>
-            <div>
-            {{ cert.is_ca }}
+            <div>End-Entity Certificate</div>
+            <div>{{ cert.is_end_entity }}</div>
         </div>
-        </div>
-    </div>
 
-    <div class="tp-card-split">
-        <div>Root Certificate Authority (CA)</div>
         <div>
-            <div>
-            {{ cert.is_root_ca }}
+            <div>Certificate Authority (CA)</div>
+            <div>{{ cert.is_ca }}</div>
         </div>
-        </div>
-    </div>
 
-    <div class="tp-card-split">
-        <div>Self-Signed</div>
         <div>
-            {{ cert.is_self_signed }}
+            <div>Root Certificate Authority (CA)</div>
+            <div>{{ cert.is_root_ca }}</div>
         </div>
-    </div>
 
-    <div class="tp-card-split">
-        <div>Cross-Signed</div>
-        <div>{{ cert.is_cross_signed }}</div>
-    </div>
+        <div>
+            <div>Self-Signed</div>
+            <div>{{ cert.is_self_signed }}</div>
+        </div>
+
+        <div>
+            <div>Cross-Signed</div>
+            <div>{{ cert.is_cross_signed }}</div>
+        </div>
 
     {% for certificate_chain in cert.get_certificate_chains %}
-        <br>
-        <div class="tp-card-split">
+        <div class="tp-row-br">
             <div>Certificate Chain {{ forloop.counter }}</div>
             <div>
                 {% for certificate in certificate_chain %}
@@ -72,7 +58,7 @@
     {% endfor %}
 
     {% if cert.issued_certificate_references.all %}
-        <div class="tp-card-split">
+        <div>
             <div>Number of Issued Certificates</div>
             <div>
                 {{ cert.issued_certificate_references.count }}
@@ -81,5 +67,6 @@
             </div>
         </div>
     {% endif %}
+    </div>
 
 {% endblock certificate_hierarchy %}

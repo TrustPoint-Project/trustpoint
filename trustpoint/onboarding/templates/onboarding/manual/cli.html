@@ -9,11 +9,11 @@
     <script src="{% static 'js/onboarding.js' %}"></script>
 {% endblock head %}
 {% block content %}
-    <div class="card card-main text-center">
+    <div class="card text-center">
         <div class="card-header d-flex">
             <h1>{% blocktranslate %}Onboarding device {{ device_name }} manually via CLI{% endblocktranslate %}</h1>
         </div>
-        <div class="card-body tp-main-centered pt-3 pb-4">
+        <div class="card-body pt-3 pb-4">
             <h2>{% trans "Overall onboarding progress" %}</h2>
             <div id="onboarding-state" class="alert alert-info d-flex align-items-center mt-3 breathing-anim" role="alert">  
                 <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
