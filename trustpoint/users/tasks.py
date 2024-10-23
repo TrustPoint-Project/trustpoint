@@ -2,7 +2,7 @@ import datetime
 from django.utils import timezone
 
 from devices.models import Device
-from pki.models import CertificateModel, IssuingCaModel, DomainModel
+from pki.models import CertificateModel, BaseCaModel, DomainModel
 from home.models import NotificationModel, NotificationMessage, NotificationStatus
 import logging
 
@@ -164,12 +164,12 @@ def check_issuing_ca_validity():
     current_time = timezone.now()
     expiring_threshold = current_time + datetime.timedelta(days=60)
 
-    expiring_issuing_cas = IssuingCaModel.objects.filter(
+    expiring_issuing_cas = BaseCaModel.objects.filter(
         issuing_ca_certificate__not_valid_after__lte=expiring_threshold,
         issuing_ca_certificate__not_valid_after__gt=current_time  # Still valid, not expired
     )
 
-    expired_issuing_cas = IssuingCaModel.objects.filter(
+    expired_issuing_cas = BaseCaModel.objects.filter(
         issuing_ca_certificate__not_valid_after__lte=current_time
     )
 

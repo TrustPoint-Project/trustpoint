@@ -1,11 +1,10 @@
 """Django Views"""
 from __future__ import annotations
 
-from functools import wraps
 from typing import TYPE_CHECKING
 
 from django.contrib import messages
-from django.core.cache import cache
+from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
@@ -14,9 +13,6 @@ from django.views.generic.base import RedirectView
 from django.views.generic.edit import FormView
 
 from trustpoint.views.base import (
-    BulkDeleteView,
-    ContextDataMixin,
-    PrimaryKeyFromUrlToQuerysetMixin,
     TpLoginRequiredMixin,
 )
 
@@ -151,6 +147,7 @@ class LoggingConfigView(TpLoginRequiredMixin, FormView):
         return self.render_to_response(self.get_context_data(form=form))
 
 
+@login_required
 def network(request: HttpRequest) -> HttpResponse:
     """Handle network Configuration
 
@@ -175,12 +172,11 @@ def network(request: HttpRequest) -> HttpResponse:
         context['network_config_form'] = network_configuration_form
         return render(request, 'sysconf/network.html', context=context)
 
-    else:
-        context['network_config_form'] = NetworkConfigForm(instance=network_config)
-
-        return render(request, 'sysconf/network.html', context=context)
+    context['network_config_form'] = NetworkConfigForm(instance=network_config)
+    return render(request, 'sysconf/network.html', context=context)
 
 
+@login_required
 def ntp(request: HttpRequest) -> HttpResponse:
     """Handle ntp Configuration
 
@@ -204,12 +200,11 @@ def ntp(request: HttpRequest) -> HttpResponse:
         context['ntp_config_form'] = ntp_configuration_form
         return render(request, 'sysconf/ntp.html', context=context)
 
-    else:
-        context['ntp_config_form'] = NTPConfigForm(instance=ntp_config)
-
-        return render(request, 'sysconf/ntp.html', context=context)
+    context['ntp_config_form'] = NTPConfigForm(instance=ntp_config)
+    return render(request, 'sysconf/ntp.html', context=context)
 
 
+@login_required
 def ssh(request: HttpRequest) -> HttpResponse:
     """Handle ssh Configuration
 
@@ -218,8 +213,10 @@ def ssh(request: HttpRequest) -> HttpResponse:
     context = {'page_category': 'sysconf', 'page_name': 'ssh'}
     return render(request, 'sysconf/ssh.html', context=context)
 
+
+@login_required
 def security(request: HttpRequest) -> HttpResponse:
-    """Handle ssh Configuration
+    """Handle Security Configuration
 
     Returns: HTTPResponse
     """
@@ -237,12 +234,13 @@ def security(request: HttpRequest) -> HttpResponse:
         if security_configuration_form.is_valid():
             security_configuration_form.save()
             messages.success(request, _('Your changes were saved successfully.'))
-        else:
-            messages.error(request, _('Error saving the configuration'))
+            # use a new form instance to apply new original values
+            context['security_config_form'] = SecurityConfigForm(instance=security_config)
+            return render(request, 'sysconf/security.html', context=context)
+
+        messages.error(request, _('Error saving the configuration'))
         context['security_config_form'] = security_configuration_form
         return render(request, 'sysconf/security.html', context=context)
 
-    else:
-        context['security_config_form'] = SecurityConfigForm(instance=security_config)
-        return render(request, 'sysconf/security.html', context=context)
-
+    context['security_config_form'] = SecurityConfigForm(instance=security_config)
+    return render(request, 'sysconf/security.html', context=context)

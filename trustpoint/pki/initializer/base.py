@@ -13,7 +13,6 @@ class Initializer(abc.ABC):
     @abc.abstractmethod
     def initialize(self):
         """Initializes the required objects and performs validations."""
-        pass
 
     @abc.abstractmethod
     def save(self):
@@ -22,4 +21,3 @@ class Initializer(abc.ABC):
         Raises:
             InitializationException
         """
-        pass

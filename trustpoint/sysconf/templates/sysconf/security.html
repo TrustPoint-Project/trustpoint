@@ -18,9 +18,20 @@
                     {% crispy security_config_form %}
                 </fieldset>
             </form>
-            <div id="mismatch_warning" class="alert alert-warning tp-d-none align-items-center mt-3" role="alert">  
-                <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-warning"/></svg>
-                <div id="mismatch_warning_text" class="flex-grow-1 text-start"></div>                
+            <div id="hidden_input_note" class="tp-d-none text-start">
+                <i>Some settings are hidden as they are unavailable for the selected security level.</i>
+                <ul id="hidden_input_list">
+                </ul>
+            </div>
+            <div id="auto_gen_pki_disable_warning" class="alert alert-danger tp-d-none mt-3" role="alert">
+                <svg class="bi flex-shrink-0 tp-msg-icon-margin" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-warning"/></svg>
+                <div class="flex-grow-1 text-start"><strong>WARNING!</strong> By saving, you will disable the local auto-generated PKI. This revokes all certificates issued by the local auto-generated PKI and deletes the auto-generated Issuing CA.
+                <strong>This action is irreversible.</strong>
+                </div>
+            </div>
+            <div id="mismatch_warning" class="alert alert-warning tp-d-none mt-3" role="alert">  
+                <svg class="bi flex-shrink-0 tp-msg-icon-margin" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-warning"/></svg>
+                <div id="mismatch_warning_text" class="flex-grow-1 text-start"></div>
             </div>
         </div>
         <div class="card-footer text-body-secondary">
