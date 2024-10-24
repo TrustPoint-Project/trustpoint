@@ -74,7 +74,7 @@ class CMPMessageHandler:
                     ValueError(f"Each item in authorized_clients must be an instance of x509.Certificate")
 
     def _configure_alias(self):
-        self.logger.debug("Configureing alias.")
+        self.logger.debug("Configuring alias.")
 
         if self.alias:
             if self.alias in cert_templates:
@@ -137,7 +137,7 @@ class CMPMessageHandler:
             response = self._handle_request()
             self.logger.info("Request processed successfully.")
 
-        except (PKIFailure) as e:
+        except PKIFailure as e:
             self.logger.error(traceback.format_exc())
             response = self._handle_error(e, e.code)
             #http_status_code = HttpStatusCode.BAD_REQUEST

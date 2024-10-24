@@ -18,8 +18,6 @@ class CliCommandBuilder:
 
         Returns (str): The provisioning CLI command.
         """
-        cmd = 'python -m trustpoint_client provision'
-
         def _flag(key: str, short_flag: str = '') -> str:
             val = ctx.get(key,'')
             if not val:

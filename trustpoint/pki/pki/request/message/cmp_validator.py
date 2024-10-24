@@ -52,6 +52,8 @@ class CmpRequestMessageValidator:
             mimetype=MimeType.APPLICATION_PKIXCMP)
 
     def validate_domain_model(self, domain_unique_name: str, DomainModel) -> bool:
+        # TODO: DomainModel is the class -> do not pass it -> import it!
+        # TODO: rename in domain_exists
         try:
             domain_model = DomainModel.objects.get(unique_name=domain_unique_name)
             return domain_model
@@ -195,8 +197,6 @@ class CmpRequestMessageValidator:
         result = self._validate_generic_part(mimetype, domain_unique_name, DomainModel, raw_request, asn1_spec)
         if not result:
             return False
-
-
         loaded_request, domain_model = result
 
         if not self.validate_initialization_body(loaded_request):

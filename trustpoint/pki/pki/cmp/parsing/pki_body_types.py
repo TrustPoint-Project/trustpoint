@@ -103,6 +103,8 @@ class PKIBodyTypes:
         else:
             short_name = input_name
 
+        print('hello')
+        print(request_info)
         self._request_class, self._request_friendly_name, self._supported = request_info
         self._response_short_name = self.response_relation_map.get(short_name,
                                                                    "No predefined response")

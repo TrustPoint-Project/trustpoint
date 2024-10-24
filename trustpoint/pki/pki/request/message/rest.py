@@ -11,10 +11,8 @@ from pki.models import DomainModel
 from pki.pki.request.message import (
     PkiRequestMessage,
     PkiResponseMessage,
-    Protocols,
     MimeType,
-    HttpStatusCode,
-    Operation)
+    HttpStatusCode)
 
 from typing import TYPE_CHECKING
 
@@ -24,27 +22,33 @@ if TYPE_CHECKING:
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
-class RestOperation(Operation):
-    ISSUE_CERT_CSR = 'issue_cert_csr'
-    ISSUE_CERT_PKCS12 = 'issue_cert_pkcs12'
+# class RestOperation(Operation):
+#     ISSUE_CERT_CSR = 'issue_cert_csr'
+#     ISSUE_CERT_PKCS12 = 'issue_cert_pkcs12'
 
-class PkiRestCsrRequestMessage(PkiRequestMessage):
+
+class PkiRestRequestMessage(PkiRequestMessage):
+    _mimetype: MimeType = MimeType.TEXT_PLAIN
+    _content_transfer_encoding = None
+    _content_length_max = 65.536
+
+    def _parse_content():
+        pass
+
+
+class PkiRestCsrRequestMessage(PkiRestRequestMessage):
     _csr = x509.CertificateSigningRequest
     _serial_number = str
 
     def __init__(self,
-                 domain_unique_name: str,
+                 domain_model: DomainModel,
                  csr: x509.CertificateSigningRequest,
                  serial_number: str):
         super().__init__(
-            protocol=Protocols.REST,
-            operation=RestOperation.ISSUE_CERT_CSR,
-            domain_unique_name=domain_unique_name)
-
-        try:
-            self._init_domain_model(domain_unique_name)
-        except ValueError:
-            return
+            domain_model=domain_model,
+            raw_content=None,
+            received_mimetype=None,
+            received_content_transfer_encoding=None)
 
         try:
             self._init_csr(csr)
@@ -57,7 +61,6 @@ class PkiRestCsrRequestMessage(PkiRequestMessage):
             return
 
         # TODO: check domain configurations, if protocol and operation are enabled
-
 
     
 
@@ -92,40 +95,23 @@ class PkiRestCsrRequestMessage(PkiRequestMessage):
         return self._serial_number
 
 
-class PkiRestPkcs12RequestMessage(PkiRequestMessage):
-    _subject = x509.Name
+class PkiRestPkcs12RequestMessage(PkiRestRequestMessage):
+    _serial_number = str
 
     def __init__(self,
-                domain_unique_name: str,
-                subject: x509.Name):
+                 domain_model: DomainModel,
+                 serial_number: str):
         super().__init__(
-            protocol=Protocols.REST,
-            operation=RestOperation.ISSUE_CERT_PKCS12,
-            domain_unique_name=domain_unique_name)
+            domain_model=domain_model,
+            raw_content=None,
+            received_mimetype=None,
+            received_content_transfer_encoding=None)
         
         try:
-            self._init_domain_model(domain_unique_name)
+            self._serial_number = serial_number
         except ValueError:
             return
         
-        try:
-            self._init_subject(subject)
-        except ValueError:
-            return
-
-    def _init_subject(self, subject: x509.Name) -> None:
-        try:
-            self._subject = subject
-            if not subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER):
-                raise ValueError
-        except ValueError:
-            self._build_malformed_subject_response()
-            self._is_valid = False
-            raise ValueError
-        
-    def _build_malformed_subject_response(self) -> None:
-        error_msg = f'Subject not an x509.Name or does not contain required attribute OIDs.'
-        self._invalid_response = PkiResponseMessage(
-            raw_response=error_msg,
-            http_status=HttpStatusCode.BAD_REQUEST,
-            mimetype=MimeType.TEXT_PLAIN)
+    @property
+    def serial_number(self) -> str:
+        return self._serial_number
