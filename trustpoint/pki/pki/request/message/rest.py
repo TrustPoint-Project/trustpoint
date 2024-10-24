@@ -96,11 +96,11 @@ class PkiRestCsrRequestMessage(PkiRestRequestMessage):
 
 
 class PkiRestPkcs12RequestMessage(PkiRestRequestMessage):
-    _subject = x509.Name
+    _serial_number = str
 
     def __init__(self,
                  domain_model: DomainModel,
-                 subject: x509.Name):
+                 serial_number: str):
         super().__init__(
             domain_model=domain_model,
             raw_content=None,
@@ -108,23 +108,10 @@ class PkiRestPkcs12RequestMessage(PkiRestRequestMessage):
             received_content_transfer_encoding=None)
         
         try:
-            self._init_subject(subject)
+            self._serial_number = serial_number
         except ValueError:
             return
-
-    def _init_subject(self, subject: x509.Name) -> None:
-        try:
-            self._subject = subject
-            if not subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER):
-                raise ValueError
-        except ValueError:
-            self._build_malformed_subject_response()
-            self._is_valid = False
-            raise ValueError
         
-    def _build_malformed_subject_response(self) -> None:
-        error_msg = f'Subject not an x509.Name or does not contain required attribute OIDs.'
-        self._invalid_response = PkiResponseMessage(
-            raw_response=error_msg,
-            http_status=HttpStatusCode.BAD_REQUEST,
-            mimetype=MimeType.TEXT_PLAIN)
+    @property
+    def serial_number(self) -> str:
+        return self._serial_number

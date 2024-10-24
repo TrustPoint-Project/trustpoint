@@ -229,14 +229,8 @@ class CryptoBackend:
 
         log.debug('Issuing LDevID for device %s', device.device_name)
 
-        subject = x509.Name([
-            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'Trustpoint LDevID'),
-            x509.NameAttribute(x509.NameOID.DN_QUALIFIER, f'trustpoint.local.{device.domain.unique_name}'),
-            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, serial_no)
-        ])
-
         pki_request = PkiRestPkcs12RequestMessage(
-            domain_model=device.domain, subject=subject
+            domain_model=device.domain, serial_number=serial_no
         )
         request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
         pki_response = request_handler.process_request()
