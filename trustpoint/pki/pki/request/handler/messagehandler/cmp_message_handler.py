@@ -74,7 +74,7 @@ class CMPMessageHandler:
                     ValueError(f"Each item in authorized_clients must be an instance of x509.Certificate")
 
     def _configure_alias(self):
-        self.logger.debug("Configureing alias.")
+        self.logger.debug("Configuring alias.")
 
         if self.alias:
             if self.alias in cert_templates:

@@ -54,13 +54,13 @@ class LocalCmpInitializationRequestHandler(CaCmpRequestHandler):
 
         # try:
 
-        cmp_message = CMPMessageHandler(pki_message=self._request_message.parsed_content, operation='ir')
-        cmp_message.set_issuing_ca(issuing_ca_object=self._issuing_ca)
+        cmp_message_handler = CMPMessageHandler(pki_message=self._request_message.parsed_content, operation='ir')
+        cmp_message_handler.set_issuing_ca(issuing_ca_object=self._issuing_ca)
         # if authorized_clients:
-        cmp_message.set_signature_based_protection(authorized_clients=authorized_clients)
+        cmp_message_handler.set_signature_based_protection(authorized_clients=authorized_clients)
         #if shared_secret:
         #    cmp_message.set_pbm_based_protection(shared_secret=shared_secret)
-        encoded_response, http_status_code = cmp_message.process_request()
+        encoded_response, http_status_code = cmp_message_handler.process_request()
 
         return PkiResponseMessage(
             raw_response=encoded_response,

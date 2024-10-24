@@ -31,7 +31,6 @@ class CmpInitializationRequestView(View):
     http_method_names = ['post']
 
     def post(self, request, *args, **kwargs) -> HttpResponse:
-
         domain_handler = DomainHandler(self.kwargs.get('domain'), PkiProtocol.CMP)
         if not domain_handler.is_valid():
             return domain_handler.error_response.to_django_http_response()
