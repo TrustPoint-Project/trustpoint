@@ -5,6 +5,8 @@ from pki.issuing_ca import UnprotectedLocalIssuingCa
 
 from pki.pki.request.message.cmp import PkiCmpInitializationRequestMessage
 
+from pki.pki.request.message.rest import PkiRestCsrRequestMessage, PkiRestPkcs12RequestMessage
+
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -44,6 +46,12 @@ class CaRequestHandlerFactory:
             #
             # if isinstance(request, PkiCmpGetCrlsRequestMessage):
             #     return cmp.LocalCmpGetCrlsHandler(request)
+
+            if isinstance(request, PkiRestCsrRequestMessage):
+                return rest.LocalCaRestCsrRequestHandler(request)
+
+            if isinstance(request, PkiRestPkcs12RequestMessage):
+                return rest.LocalCaRestPkcs12RequestHandler(request)
 
 
         exc_msg = f'No suitable handler available for PKI request {request}'

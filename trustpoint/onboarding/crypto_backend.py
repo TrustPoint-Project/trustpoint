@@ -8,7 +8,6 @@ import hashlib
 import hmac
 import logging
 import secrets
-import datetime
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -17,10 +16,9 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from pki.models import CertificateModel
+from pki.pki.request.handler.factory import CaRequestHandlerFactory
+from pki.pki.request.message.rest import PkiRestCsrRequestMessage, PkiRestPkcs12RequestMessage
 from util.strings import StringValidator
-from util.x509.enrollment import Enrollment
-from pki.serializer.certificate import CertificateSerializer
-from pki.serializer.credential import CredentialSerializer
 
 if TYPE_CHECKING:
     from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
@@ -170,33 +168,12 @@ class CryptoBackend:
 
         log.debug('Issuing LDevID for device %s', device.device_name)
 
-        one_day = datetime.timedelta(1, 0, 0)
-
-        cert_builder = x509.CertificateBuilder()
-        attributes = [
-            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'Trustpoint LDevID'),
-            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.device_serial_number),
-            x509.NameAttribute(x509.NameOID.DN_QUALIFIER, f'trustpoint.local.{device.domain.unique_name}')
-        ]
-        cert_builder = cert_builder.subject_name(x509.Name(attributes))
-        cert_builder = cert_builder.not_valid_before(datetime.datetime.today() - one_day)
-        cert_builder = cert_builder.not_valid_after(datetime.datetime.today() + one_day * 365)
-        cert_builder = cert_builder.serial_number(x509.random_serial_number())
-        cert_builder = cert_builder.public_key(csr.public_key())
-        for extension in csr.extensions:
-            cert_builder = cert_builder.add_extension(extension.value, critical=extension.critical)
-        if not Enrollment.get_extension_for_oid_or_none(csr.extensions, x509.ExtensionOID.BASIC_CONSTRAINTS):
-            cert_builder = cert_builder.add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
-
-        issuing_ca = device.domain.issuing_ca.get_issuing_ca()
-        cert_builder = cert_builder.issuer_name(issuing_ca.subject_name)
-        cert = cert_builder.sign(
-            private_key=issuing_ca.private_key,
-            algorithm=csr.signature_hash_algorithm)
-
-        cert_model = CertificateModel.save_certificate(certificate=cert)
-
-        serializer = CertificateSerializer(cert)
+        pki_request = PkiRestCsrRequestMessage(
+            domain_model=device.domain, csr=csr, serial_number=serial_no
+        )
+        request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
+        pki_response = request_handler.process_request()
+        cert_model = pki_response.cert_model
 
         if not isinstance(cert_model, CertificateModel):
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
@@ -206,7 +183,7 @@ class CryptoBackend:
         device.save()
         log.info('Issued and stored LDevID for device %s', device.device_name)
 
-        return serializer.as_pem()
+        return pki_response.raw_response
 
     @staticmethod
     def get_cert_chain(device: Device) -> bytes:
@@ -254,30 +231,16 @@ class CryptoBackend:
 
         subject = x509.Name([
             x509.NameAttribute(x509.NameOID.COMMON_NAME, 'Trustpoint LDevID'),
-            x509.NameAttribute(x509.NameOID.DN_QUALIFIER, f'ldevid.trustpoint.local.{device.domain.unique_name}'),
+            x509.NameAttribute(x509.NameOID.DN_QUALIFIER, f'trustpoint.local.{device.domain.unique_name}'),
             x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, serial_no)
         ])
 
-        private_key = Enrollment.generate_key('SECP256R1')
-        public_key = private_key.public_key()
-
-        one_day = datetime.timedelta(1, 0, 0)
-
-        issuing_ca = device.domain.issuing_ca.get_issuing_ca()
-        cert_builder = x509.CertificateBuilder()
-        cert_builder = cert_builder.subject_name(subject)
-        cert_builder = cert_builder.issuer_name(issuing_ca.subject_name)
-        cert_builder = cert_builder.not_valid_before(datetime.datetime.today() - one_day)
-        cert_builder = cert_builder.not_valid_after(datetime.datetime.today() + one_day * 365)
-        cert_builder = cert_builder.serial_number(x509.random_serial_number())
-        cert_builder = cert_builder.public_key(public_key)
-        cert_builder = cert_builder.add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
-        cert = cert_builder.sign(
-            private_key=issuing_ca.private_key,
-            algorithm=hashes.SHA256())
-
-        cert_model = CertificateModel.save_certificate(certificate=cert)
-        serializer = CredentialSerializer((private_key, cert, cert_model.get_certificate_chain_serializers(False)[0]))
+        pki_request = PkiRestPkcs12RequestMessage(
+            domain_model=device.domain, subject=subject
+        )
+        request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
+        pki_response = request_handler.process_request()
+        cert_model = pki_response.cert_model
 
         if not isinstance(cert_model, CertificateModel):
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
@@ -286,7 +249,7 @@ class CryptoBackend:
         device.ldevid = cert_model
         device.save()
         log.info('Issued and stored LDevID for device %s', device.device_name)
-        return serializer.as_pkcs12()
+        return pki_response.raw_response
     
     @staticmethod
     def get_nonce(nbytes: int = 16) -> str:

@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Annotated
 
 from django.http import HttpResponse
 
-from pki.models import DomainModel
+from pki.models import CertificateModel, DomainModel
 
 if TYPE_CHECKING:
     from typing import Union
@@ -198,15 +198,18 @@ class PkiResponseMessage:
     _raw_response: str | bytes
     _http_status: HttpStatusCode
     _mimetype: MimeType
+    _cert_model: None | CertificateModel = None
 
     def __init__(
             self,
             raw_response: str | bytes,
             http_status: HttpStatusCode,
-            mimetype: MimeType) -> None:
+            mimetype: MimeType,
+            cert_model: None | CertificateModel = None) -> None:
         self._raw_response = raw_response
         self._http_status = http_status
         self._mimetype = mimetype
+        self._cert_model = cert_model
 
     @property
     def raw_response(self) -> bytes:
@@ -219,6 +222,10 @@ class PkiResponseMessage:
     @property
     def mimetype(self) -> MimeType:
         return self._mimetype
+    
+    @property
+    def cert_model(self) -> CertificateModel:
+        return self._cert_model
 
     def to_django_http_response(self) -> HttpResponse:
         return HttpResponse(
