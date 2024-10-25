@@ -60,9 +60,8 @@ class PkiRestCsrRequestMessage(PkiRestRequestMessage):
         except ValueError:
             return
 
-        # TODO: check domain configurations, if protocol and operation are enabled
+    # TODO: check domain configurations, if protocol and operation are enabled
 
-    
 
     # TODO(AlexHx8472): This does not make sense I think, there can't be any exception here, the raw bytes
     # TODO(AlexHx8472): The raw bytes should be passed and the csr should be parsed here.
