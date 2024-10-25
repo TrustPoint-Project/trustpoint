@@ -32,7 +32,7 @@ class PkiRestRequestMessage(PkiRequestMessage):
     _content_transfer_encoding = None
     _content_length_max = 65.536
 
-    def _parse_content():
+    def _parse_content(self):
         pass
 
 
@@ -64,6 +64,9 @@ class PkiRestCsrRequestMessage(PkiRestRequestMessage):
 
     
 
+    # TODO(AlexHx8472): This does not make sense I think, there can't be any exception here, the raw bytes
+    # TODO(AlexHx8472): The raw bytes should be passed and the csr should be parsed here.
+    # TODO(AlexHx8472): The serial number should not be an attribute -> access parsed data directly
     def _init_csr(self, csr: x509.CertificateSigningRequest) -> None:
         try:
             self._csr = csr

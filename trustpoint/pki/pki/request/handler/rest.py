@@ -47,8 +47,10 @@ class CaRestRequestHandler(CaRequestHandler, abc.ABC):
 
         return x509.Name(attributes)
 
-    def _ldevid_add_common_cert_components(self, cb: x509.CertificateBuilder,
-                                           pk: CertificatePublicKeyTypes) -> x509.CertificateBuilder:
+    def _ldevid_add_common_cert_components(
+            self,
+            cb: x509.CertificateBuilder,
+            pk: CertificatePublicKeyTypes) -> x509.CertificateBuilder:
         cb = cb.public_key(pk)
         cb = cb.not_valid_before(datetime.datetime.today() - ONE_DAY)
         cb = cb.not_valid_after(datetime.datetime.today() + ONE_DAY * 365)
