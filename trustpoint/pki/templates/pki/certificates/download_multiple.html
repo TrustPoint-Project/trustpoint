@@ -7,7 +7,7 @@
     <form method="GET">
         {% csrf_token %}
 
-        <div class="card tp-card-centered">
+        <div class="card">
 
             <div class="card-header">
                 <div>
@@ -17,11 +17,10 @@
 
             <div class="card-body">
                 <div class="tp-card-centered-content">
-                    <h2>{{ certs.count }} Certificates Selected</h2>
+                    <h2>{{ certs.count }} Certificates selected</h2>
                     <hr>
-                    <br>
 
-                    <h2>Download Selected Certificates Only</h2>
+                    <h2>{% trans "Download Selected Certificates Only" %}</h2>
                     <div class="pt-2 pb-2">
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pem' file_content='cert_only' archive_format='zip' %}">Download as PEM (ZIP)</a>
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='der' file_content='cert_only' archive_format='zip' %}">Download as DER (ZIP)</a>
@@ -36,7 +35,7 @@
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pkcs7_der' file_content='cert_only' archive_format='tar_gz' %}">Download as PKCS#7-DER (TAR.GZ)</a>
                     </div>
 
-                    <h2>Download Certificates Including Certificate Chain</h2>
+                    <h2>{% trans "Download Certificates Including Certificate Chain" %}</h2>
                     <div class="pt-2 pb-2">
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pem' file_content='cert_and_chain' archive_format='zip' %}">Download as PEM (ZIP)</a>
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pkcs7_pem' file_content='cert_and_chain' archive_format='zip' %}">Download as PKCS#7-PEM (ZIP)</a>
@@ -48,7 +47,7 @@
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pkcs7_der' file_content='cert_and_chain' archive_format='tar_gz' %}">Download as PKCS#7-DER (TAR.GZ)</a>
                     </div>
 
-                    <h2>Download Certificate Chains Only</h2>
+                    <h2>{% trans "Download Certificate Chains Only" %}</h2>
                     <div class="pt-2 pb-2">
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pem' file_content='chain_only' archive_format='zip' %}">Download as PEM (ZIP)</a>
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pkcs7_pem' file_content='chain_only' archive_format='zip' %}">Download as PKCS#7-PEM (ZIP)</a>
@@ -60,36 +59,29 @@
                     <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pkcs7_der' file_content='chain_only' archive_format='tar_gz' %}">Download as PKCS#7-DER (TAR.GZ)</a>
                     </div>
 
-                    <br>
-                    <h2>Certificate Details</h2>
-                    <hr>
-                    <br>
+                    <h2>{% trans "Certificate Details" %}</h2>
+                    <hr class="hr-m">
 
                     {% for cert in certs %}
-                        <div class="tp-card-split mb-2">
-                            <h2>Certificate {{ forloop.counter }}</h2>
-                            <div></div>
-                        </div>
-
-                        <div class="tp-card-split">
-                            <div>Subject</div>
+                        <h2 class="mb-2 ms-2">Certificate {{ forloop.counter }}</h2>
+                        <div class="tp-kvp-list mb-0">
                             <div>
-                                {% for entry in cert.subject.all %}
-                                    <a href="{% url 'pki:certificate-detail' pk=cert.id %}">{{ entry }}</a>
-                                    <br>
-                                {% endfor %}
+                                <div>Subject</div>
+                                <div>
+                                    {% for entry in cert.subject.all %}
+                                        <a href="{% url 'pki:certificate-detail' pk=cert.id %}">{{ entry }}</a>
+                                        <br>
+                                    {% endfor %}
+                                </div>
+                            </div>
+    
+                            <div>
+                                <div>Serial Number</div>
+                                <div>{{ cert.serial_number }}</div>
                             </div>
                         </div>
-
-                        <div class="tp-card-split">
-                            <div>Serial Number</div>
-                            <div>{{ cert.serial_number }}</div>
-                        </div>
-
                         {% if not forloop.last %}
-                            <br>
                             <hr>
-                            <br>
                         {% endif %}
 
                     {% endfor %}

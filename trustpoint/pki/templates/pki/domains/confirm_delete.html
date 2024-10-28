@@ -6,7 +6,7 @@
     <form method="POST" autocomplete="off">
         {% csrf_token %}
 
-        <div class="card tp-card-centered">
+        <div class="card">
             <div class="card-header">
                 <div>
                     <h1>{% trans 'Confirm Domain Deletion' %}</h1>
@@ -16,33 +16,35 @@
                 <div class="tp-card-centered-content">
                     {% for domain in domains %}
                         <h2>({{ forloop.counter }}) {% trans 'Domain' %}: {{ domain.unique_name }}</h2>
-                        <hr>
-                        <div class="tp-card-split">
-                            <div>{% trans 'Unique Name' %}</div>
-                            <div>{{ domain.unique_name }}</div>
-                        </div>
-                        <div class="tp-card-split">
-                            <div>{% trans 'Issuing CA - Unique Name' %}</div>
+                        <hr class="hr-m">
+                        <div class="tp-kvp-list">
                             <div>
-                            <a href="{% url 'pki:issuing_cas-detail' pk=domain.issuing_ca.id %}">
-                                    {{ domain.unique_name }}
-                                </a>
+                                <div>{% trans 'Unique Name' %}</div>
+                                <div>{{ domain.unique_name }}</div>
                             </div>
-                        </div>
-                        <div class="tp-card-split">
-                            <div>{% trans 'Issuing CA Certificate' %}</div>
                             <div>
-                                <a href="{% url 'pki:certificate-detail' pk=domain.issuing_ca.issuing_ca_certificate.id %}">
-                                    {% if domain.issuing_ca.issuing_ca_certificate.common_name %}
-                                        CN: {{ domain.issuing_ca.issuing_ca_certificate.common_name }}
-                                    {% else %}
-                                        {% trans 'Issuing CA Certificate' %}
-                                    {% endif %}
-                                </a>
+                                <div>{% trans 'Issuing CA - Unique Name' %}</div>
+                                <div>
+                                <a href="{% url 'pki:issuing_cas-detail' pk=domain.issuing_ca.id %}">
+                                        {{ domain.unique_name }}
+                                    </a>
+                                </div>
+                            </div>
+                            <div>
+                                <div>{% trans 'Issuing CA Certificate' %}</div>
+                                <div>
+                                    <a href="{% url 'pki:certificate-detail' pk=domain.issuing_ca.issuing_ca_certificate.id %}">
+                                        {% if domain.issuing_ca.issuing_ca_certificate.common_name %}
+                                            CN: {{ domain.issuing_ca.issuing_ca_certificate.common_name }}
+                                        {% else %}
+                                            {% trans 'Issuing CA Certificate' %}
+                                        {% endif %}
+                                    </a>
+                                </div>
                             </div>
                         </div>
                         {% if not forloop.last %}
-                            <br><br>
+
                         {% endif %}
                     {% endfor %}
 
@@ -53,7 +55,7 @@
                 <div class="tp-card-btn-footer">
                     <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
                     <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
-                    <button type="submit" class="btn btn-primary">{% trans "Delete selected Domains" %}</button>
+                    <button type="submit" class="btn btn-danger">{% trans "Delete selected Domains" %}</button>
                 </div>
             </div>
         </div>

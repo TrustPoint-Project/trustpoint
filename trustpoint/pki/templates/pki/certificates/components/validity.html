@@ -1,15 +1,16 @@
 {% load i18n %}
 
 {% block validity %}
-    <br><br><h2>{% trans 'Validity' %}</h2>
-    <hr>
-
-    <div class="tp-card-split">
-        <div>{% trans 'Not valid before' %}</div>
-        <div>{{ cert.not_valid_before }}</div>
-    </div>
-    <div class="tp-card-split">
-        <div>{% trans 'Not valid after' %}</div>
-        <div>{{ cert.not_valid_after }}</div>
+    <h2>{% trans 'Validity' %}</h2>
+    <hr class="hr-m">
+    <div class="tp-kvp-list">
+        <div>
+            <div>{% trans 'Not valid before' %}</div>
+            <div>{{ cert.not_valid_before }}</div>
+        </div>
+        <div>
+            <div>{% trans 'Not valid after' %}</div>
+            <div>{{ cert.not_valid_after }}</div>
+        </div>
     </div>
 {% endblock validity %}
