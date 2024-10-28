@@ -19,25 +19,19 @@ def update_security_level(sender, instance, **kwargs):
         security_level = instance.security_mode
         cache.set('security_level', security_level)
 
-        if instance.security_mode != instance._original_values['security_mode']:
+        previous_security_mode = instance.get_original_value('security_mode')
+        if instance.security_mode != previous_security_mode:
             log.warning('! Security level changed from %s to %s !',
-                        SecurityModeChoices(instance._original_values['security_mode']).label,
+                        SecurityModeChoices(previous_security_mode).label,
                         SecurityModeChoices(instance.security_mode).label)
 
-        if instance.auto_gen_pki and instance._original_values['auto_gen_pki'] is False:
+        previous_auto_gen_pki = instance.get_original_value('auto_gen_pki')
+        if instance.auto_gen_pki and previous_auto_gen_pki is False:
             AutoGenPki.enable_auto_gen_pki(instance.auto_gen_pki_key_algorithm)
-        elif not instance.auto_gen_pki and instance._original_values['auto_gen_pki'] is True:
+        elif not instance.auto_gen_pki and previous_auto_gen_pki is True:
             AutoGenPki.disable_auto_gen_pki()
 
         # save newly saved values as new original values
-        save_original_values(sender, instance, **kwargs)
+        instance.update_original_values()
     else:
         cache.delete('security_level')
-
-
-
-@receiver(post_init, sender=SecurityConfig)
-def save_original_values(sender, instance, **kwargs):
-    if instance:
-        instance._original_values['security_mode'] = instance.security_mode
-        instance._original_values['auto_gen_pki'] = instance.auto_gen_pki

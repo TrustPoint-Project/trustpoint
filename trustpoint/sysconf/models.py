@@ -1,4 +1,5 @@
 """Model definitions"""
+from typing import Any
 from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -64,8 +65,23 @@ class SecurityConfig(models.Model):
     auto_gen_pki_key_algorithm = models.CharField(max_length=12,
                                                   choices=AutoGenPkiKeyAlgorithm,
                                                   default=AutoGenPkiKeyAlgorithm.RSA2048)
+    
+    def update_original_values(self):
+        """Set the original values, which are used to detect changes"""
+        self._original_values['security_mode'] = self.security_mode
+        self._original_values['auto_gen_pki'] = self.auto_gen_pki
 
-    _original_values = {}
+    def get_original_value(self, key: str) -> Any:
+        """Get the original value for a given setting"""
+        try:
+            return self._original_values[key]
+        except KeyError:
+            return None
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        self._original_values = {}
+        super().__init__(*args, **kwargs)
+        self.update_original_values()
 
     def __str__(self) -> str:
         """Output as string"""
@@ -77,6 +93,3 @@ class SecurityConfig(models.Model):
             self.auto_gen_pki = False
 
         super().save(*args, **kwargs)
-
-
-# -------------
