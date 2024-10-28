@@ -10,7 +10,7 @@ from typing import TYPE_CHECKING
 
 from devices.models import Device
 from django.db import models
-from pki.models import ReasonCode
+from pki import ReasonCode
 from pki.serializer import CredentialSerializer
 
 from onboarding.crypto_backend import CryptoBackend as Crypt

@@ -7,5 +7,6 @@ class SysconfConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'sysconf'
 
-    def ready(self):
-        import sysconf.signals  # Ensure security level update signals are imported
+    def ready(self) -> None:
+        """Ensure security level update signals are imported"""
+        import sysconf.signals  # noqa: F401

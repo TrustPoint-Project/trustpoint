@@ -6,7 +6,7 @@ from django.shortcuts import redirect
 from django.utils.translation import gettext as _
 from django.views import View
 
-from pki.models import IssuingCaModel
+from pki.models import BaseCaModel
 
 
 class CRLDownloadView(View):
@@ -15,8 +15,8 @@ class CRLDownloadView(View):
     @staticmethod
     def download_ca_crl(self: CRLDownloadView, ca_id):
         try:
-            issuing_ca = IssuingCaModel.objects.get(pk=ca_id).get_issuing_ca()
-        except IssuingCaModel.DoesNotExist:
+            issuing_ca = BaseCaModel.objects.get(pk=ca_id).get_issuing_ca()
+        except BaseCaModel.DoesNotExist:
             messages.error(self, _('Issuing CA not found.'))
             return redirect('pki:issuing_cas')
 
@@ -31,8 +31,8 @@ class CRLDownloadView(View):
     @staticmethod
     def generate_ca_crl(self: CRLDownloadView, ca_id):
         try:
-            issuing_ca = IssuingCaModel.objects.get(pk=ca_id).get_issuing_ca()
-        except IssuingCaModel.DoesNotExist:
+            issuing_ca = BaseCaModel.objects.get(pk=ca_id).get_issuing_ca()
+        except BaseCaModel.DoesNotExist:
             messages.error(self, _('Issuing CA not found.'))
             return redirect('pki:issuing_cas')
 
