@@ -66,7 +66,7 @@ class SecurityConfig(models.Model):
                                                   choices=AutoGenPkiKeyAlgorithm,
                                                   default=AutoGenPkiKeyAlgorithm.RSA2048)
 
-    _original_value: None | dict = None
+    _original_values: None | dict = None
 
     def update_original_values(self):
         """Set the original values, which are used to detect changes"""
@@ -74,7 +74,7 @@ class SecurityConfig(models.Model):
         self._original_values['auto_gen_pki'] = self.auto_gen_pki
 
     @property
-    def original_value(self) -> Any:
+    def original_values(self) -> Any:
         """Get the original value for a given setting"""
         return self._original_values
 
