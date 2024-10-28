@@ -425,8 +425,14 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
         form = RevokeCertificateForm(request.POST)
         if form.is_valid():
             revocation_reason = form.cleaned_data['revocation_reason']
-            if device.revoke_ldevid(revocation_reason):
-                messages.success(request, _('LDevID certificate for device %s revoked.') % device.device_name)
+            
+            if device.ldevid:
+                if device.revoke_ldevid(revocation_reason):
+                    messages.success(request, _('LDevID certificate for device %s revoked.') % device.device_name)
+                else:
+                    messages.error(request,
+                        _('Failed to revoke LDevID certificate for device %s. This may be due to a deleted CA.')
+                         % device.device_name)
             else:
                 messages.warning(request, _('Device %s has no LDevID certificate to revoke.') % device.device_name)
             return redirect(self.redirection_view)

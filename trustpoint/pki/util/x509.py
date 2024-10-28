@@ -15,7 +15,6 @@ from pki.serializer import (
     CredentialSerializer, CertificateSerializer)
 
 
-
 class CredentialExtractorError(ValidationError):
     """Base class for Errors raised by the CredentialExtractor class."""
     pass
@@ -235,4 +234,3 @@ class CredentialExtractor:
         if len(issuers) > 1:
             raise MultipleCertificateChainsFoundError
         return issuers[0]
-

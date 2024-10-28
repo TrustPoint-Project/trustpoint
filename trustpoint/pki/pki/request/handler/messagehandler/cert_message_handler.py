@@ -5,7 +5,6 @@ from cryptography.x509 import ObjectIdentifier
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.x509 import Certificate
-from django.templatetags.static import static
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type import univ
 from pyasn1_modules import rfc2459, rfc5280
@@ -313,7 +312,8 @@ class CertMessageHandler:
 
         return subject_name
 
-    def _prepare_san(self, extensions):
+    @staticmethod
+    def _prepare_san(extensions):
         san_list = []
 
         for extension in extensions:
@@ -334,7 +334,8 @@ class CertMessageHandler:
 
         return san_list
 
-    def _prepare_public_key(self, cert_req_msg):
+    @staticmethod
+    def _prepare_public_key(cert_req_msg):
         """
         Prepares the public key for the certificate.
 
@@ -350,7 +351,8 @@ class CertMessageHandler:
 
         return public_key
 
-    def _generate_signed_certificate(self, subject_name, san_list, public_key, ca_cert, ca_key):
+    @staticmethod
+    def _generate_signed_certificate(subject_name, san_list, public_key, ca_cert, ca_key):
         """
         Generates a signed certificate.
 
@@ -389,7 +391,8 @@ class CertMessageHandler:
 
         return cert
 
-    def _serialize_client_cert(self, client_cert: Certificate) -> bytes:
+    @staticmethod
+    def _serialize_client_cert(client_cert: Certificate) -> bytes:
         """
         Returns the serialized client certificate in DER format.
 

@@ -13,8 +13,11 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 from cryptography.x509.extensions import ExtensionNotFound
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
+
+from . import ReasonCode, CertificateStatus, CaLocalization
 
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
@@ -717,19 +720,6 @@ class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExten
 # class MsCertificateTemplateExtension(CertificateExtension, models.Model):
 #     pass
 
-class ReasonCode(models.TextChoices):
-    """Revocation reasons per RFC 5280"""
-    UNSPECIFIED = 'unspecified', _('Unspecified')
-    KEY_COMPROMISE = 'keyCompromise', _('Key Compromise')
-    CA_COMPROMISE = 'cACompromise', _('CA Compromise')
-    AFFILIATION_CHANGED = 'affiliationChanged', _('Affiliation Changed')
-    SUPERSEDED = 'superseded', _('Superseded')
-    CESSATION = 'cessationOfOperation', _('Cessation of Operation')
-    CERTIFICATE_HOLD = 'certificateHold', _('Certificate Hold')
-    PRIVILEGE_WITHDRAWN = 'privilegeWithdrawn', _('Privilege Withdrawn')
-    AA_COMPROMISE = 'aACompromise', _('AA Compromise')
-    REMOVE_FROM_CRL = 'removeFromCRL', _('Remove from CRL')
-
 
 class CertificateModel(models.Model):
     """X509 Certificate Model.
@@ -742,12 +732,6 @@ class CertificateModel(models.Model):
     # TODO
 
     # ------------------------------------------------- Django Choices -------------------------------------------------
-
-    class CertificateStatus(models.TextChoices):
-        OK = 'O', _('OK')
-        REVOKED = 'R', _('Revoked')
-        # EXPIRED = 'E', _('Expired')
-        # NOT_YET_VALID = 'N', _('Not Yet Valid')
 
     class Version(models.IntegerChoices):
         """X509 RFC 5280 - Certificate Version."""
@@ -1248,20 +1232,33 @@ class CertificateModel(models.Model):
         return cls._save_certificate(certificate=certificate, exist_ok=exist_ok)
 
     @transaction.atomic
-    def revoke(self, revocation_reason: ReasonCode) -> None:
-        """Revokes the certificate."""
-        self.certificate_status = self.CertificateStatus.REVOKED
+    def revoke(self, revocation_reason: ReasonCode) -> bool:
+        """Revokes the certificate.
+
+        Returns: True if the certificate was successfully scheduled to be added to at least one CRL."""
+        if self.certificate_status == CertificateStatus.REVOKED:
+            return True # already revoked, prevent duplicate addition to CRL
+
         self.revocation_reason = revocation_reason
+        added_to_crl = False
         qs = self.issuer_references.all()
         if qs:
             for entry in qs:
-                issuing_ca = entry.issuing_ca_model
-                rc = RevokedCertificate(cert=self)
-                rc.issuing_ca = issuing_ca
-                rc.save()
+                try:
+                    issuing_ca = entry.issuing_ca_model
+                    rc = RevokedCertificate(cert=self)
+                    rc.issuing_ca = issuing_ca
+                    rc.save()
+                    added_to_crl = True
+                    if issuing_ca.auto_crl:
+                        issuing_ca.get_issuing_ca().generate_crl()
+                except ObjectDoesNotExist:
+                    pass
+        if added_to_crl:
+            self.certificate_status = CertificateStatus.REVOKED
             self._save()
-            if issuing_ca.auto_crl:
-                issuing_ca.get_issuing_ca().generate_crl()
+            return True
+        return False
 
     def remove_private_key(self):
         self.private_key = None
@@ -1269,8 +1266,13 @@ class CertificateModel(models.Model):
 
 # ------------------------------------------------- Issuing CA Models --------------------------------------------------
 
-class IssuingCaModel(models.Model):
-    """Issuing CA model."""
+class ProxyManager(models.Manager):
+    def get_queryset(self):
+        return super().get_queryset().filter(proxy_name=self.model.__name__)
+
+class BaseCaModel(models.Model):
+    """Base CA model for both Issuing and local Root CAs."""
+    proxy_name = models.CharField(max_length=20) # to distinguish between Issuing and Root CA classes
 
     unique_name = models.CharField(
         verbose_name=f'Unique Name',
@@ -1279,6 +1281,8 @@ class IssuingCaModel(models.Model):
         unique=True,
         editable=False
     )
+
+    ca_localization = models.CharField(max_length=2, choices=CaLocalization, default=CaLocalization.LOCAL)
 
     root_ca_certificate = models.ForeignKey(
         to=CertificateModel,
@@ -1356,9 +1360,27 @@ class IssuingCaModel(models.Model):
         self.save(update_fields=['issued_certificates_count'])
 
     def save(self, *args, **kwargs):
+        self.proxy_name = type(self).__name__
         self.full_clean()
         super().save(*args, **kwargs)
 
+
+class RootCaModel(BaseCaModel):
+    """Root CA model.
+
+    Functionally equivalent to IssuingCaModel, but not part of issuing CA list and cannot be edited externally.
+    """
+    class Meta:
+        proxy = True
+
+    objects = ProxyManager()
+
+class IssuingCaModel(BaseCaModel):
+    """Issuing CA model."""
+    class Meta:
+        proxy = True
+
+    objects = ProxyManager()
 
 class CertificateChainOrderModel(models.Model):
 
@@ -1371,13 +1393,7 @@ class CertificateChainOrderModel(models.Model):
         on_delete=models.CASCADE,
         editable=False,
         related_name='issuing_ca_cert_chains')
-    issuing_ca = models.ForeignKey(IssuingCaModel, on_delete=models.CASCADE, editable=False)
-
-    def get_issuing_ca(
-            self,
-            unprotected_local_issuing_ca_class: type(UnprotectedLocalIssuingCa) = UnprotectedLocalIssuingCa
-    ) -> IssuingCaModel:
-        return unprotected_local_issuing_ca_class(self)
+    issuing_ca = models.ForeignKey(BaseCaModel, on_delete=models.CASCADE, editable=False)
 
     def __str__(self):
         return f'CertificateChainOrderModel({self.certificate.common_name})'
@@ -1388,7 +1404,7 @@ class RevokedCertificate(models.Model):
     cert = models.ForeignKey(CertificateModel, on_delete=models.PROTECT)
     revocation_datetime = models.DateTimeField(auto_now_add=True, help_text='Timestamp when certificate was revoked.')
     issuing_ca = models.ForeignKey(
-        IssuingCaModel, on_delete=models.PROTECT, related_name='revoked_certificates', help_text='Name of Issuing CA.')
+        BaseCaModel, on_delete=models.PROTECT, related_name='revoked_certificates', help_text='Name of Issuing CA.')
 
     def __str__(self) -> str:
         """Human-readable string when Certificate got revoked
@@ -1405,7 +1421,7 @@ class CRLStorage(models.Model):
     # crl = models.CharField(max_length=4294967296)
     crl = models.TextField(editable=False)
     created_at = models.DateTimeField(editable=False)
-    ca = models.ForeignKey(IssuingCaModel, on_delete=models.CASCADE)
+    ca = models.ForeignKey(BaseCaModel, on_delete=models.CASCADE)
 
     def __str__(self) -> str:
         """PEM representation of CRL
@@ -1416,7 +1432,7 @@ class CRLStorage(models.Model):
         """
         return f'CrlStorage(IssuingCa({self.ca.unique_name}))'
 
-    def save_crl_in_db(self, crl: str, ca: IssuingCaModel):
+    def save_crl_in_db(self, crl: str, ca: BaseCaModel):
         """Saving crl in Database
 
         Returns:
@@ -1428,14 +1444,14 @@ class CRLStorage(models.Model):
         self.save()
 
     @staticmethod
-    def get_crl(ca: IssuingCaModel) -> None | str:
+    def get_crl(ca: BaseCaModel) -> None | str:
         result = CRLStorage.get_crl_object(ca)
         if result:
             return result.crl
         return None
 
     @staticmethod
-    def get_crl_object(ca: IssuingCaModel) -> None | CRLStorage:
+    def get_crl_object(ca: BaseCaModel) -> None | CRLStorage:
         try:
             return CRLStorage.objects.filter(ca=ca).latest('created_at')
         except CRLStorage.DoesNotExist:

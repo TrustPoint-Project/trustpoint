@@ -1,21 +1,17 @@
 from __future__ import annotations
 
 import datetime
-import base64
 import abc
 
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.serialization import pkcs7, pkcs12, Encoding, NoEncryption
-from cryptography.x509.oid import NameOID
 
 from pki.pki.request.message import PkiResponseMessage, HttpStatusCode, MimeType
 from pki.pki.request.handler import CaRequestHandler
 from pki.models import CertificateModel
 from pki.serializer.certificate import CertificateSerializer
 from pki.serializer.credential import CredentialSerializer
-
-from util.x509.enrollment import Enrollment
+from pki.util.keys import KeyAlgorithm, KeyGenerator
 
 from typing import TYPE_CHECKING
 
@@ -59,10 +55,10 @@ class CaRestRequestHandler(CaRequestHandler, abc.ABC):
             cb = cb.add_extension(x509.BasicConstraints(ca=False, path_length=None), critical=True)
         except ValueError: # BasicConstraints already set
             pass
-        
+
         cb = cb.issuer_name(self._issuing_ca.subject_name)
         return cb
-        
+
 
 class LocalCaRestCsrRequestHandler(CaRestRequestHandler):
     _request_message: PkiRestCsrRequestMessage
@@ -73,6 +69,7 @@ class LocalCaRestCsrRequestHandler(CaRestRequestHandler):
     # TODO: Store issued certificate in DB
     def process_request(self) -> PkiResponseMessage:
         cert_builder = self._get_certificate_builder_from_csr()
+        cert_builder = cert_builder.issuer_name(self._issuing_ca.subject_name)
         cert = cert_builder.sign(
             private_key=self._issuing_ca.private_key,
             algorithm=self._request_message.csr.signature_hash_algorithm)
@@ -107,8 +104,8 @@ class LocalCaRestPkcs12RequestHandler(CaRestRequestHandler):
     _issuing_ca: UnprotectedLocalIssuingCa
 
     def process_request(self) -> PkiResponseMessage:
-        # TODO: The same algorithm shall be used as for the issuing CA
-        private_key = Enrollment.generate_key('SECP256R1')
+        # TODO (Air): Automatically use the same key algorithm as the issuing CA
+        private_key = KeyGenerator(KeyAlgorithm.SECP256R1).generate_key()
         public_key = private_key.public_key()
 
         cert_builder = x509.CertificateBuilder()

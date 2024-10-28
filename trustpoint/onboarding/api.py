@@ -36,6 +36,7 @@ from onboarding.schema import (
     AokiFinalizationMessageSchema,
     AokiFinalizationResponseSchema
 )
+from pki import ReasonCode
 from pki.models import CertificateModel, TrustStoreModel, DomainModel
 
 class SignatureSuite(Enum):
@@ -387,10 +388,13 @@ def stop(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpRespons
              exclude_none=True)
 def revoke(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpResponse:
     """Revokes the LDevID certificate for a device."""
+    # TODO (Air): The API should include the possibility to specify the revocation reason
     device = Device.get_by_id(device_id)
     if not device:
         return 404, {'error': 'Device not found.'}
 
-    if device.revoke_ldevid():
-        return 200, {'success': True}
+    if device.ldevid:
+        if device.revoke_ldevid(ReasonCode.CESSATION):
+            return 200, {'success': True}
+        return 422, {'error': 'Error during certificate revocation.'}
     return 422, {'error': 'Device has no LDevID certificate to revoke.'}
