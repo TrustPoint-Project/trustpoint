@@ -141,7 +141,7 @@ class P12:
         self._p12 = p12
 
     @classmethod
-    def from_bytes(cls: type(P12), data: bytes, password: bytes | None = None) -> P12:
+    def from_bytes(cls: type[P12], data: bytes, password: bytes | None = None) -> P12:
         """Creates a P12 object from a binary representation of a PKCS#12 file.
 
         Args:

@@ -16,8 +16,8 @@
                     {% include 'devices/sub_details.html' with device=object %}
                 {% endfor %}
 
-                <div class="alert alert-info d-flex align-items-center" role="alert">  
-                    <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-info"/></svg>
+                <div class="alert alert-info d-flex" role="alert">  
+                    <svg class="bi flex-shrink-0 tp-msg-icon-margin" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-info"/></svg>
                     <div>{% trans "Deletion will revoke any certificates issued to devices with reason code 'Cessation of Operation'" %}</div>
                 </div>
 
