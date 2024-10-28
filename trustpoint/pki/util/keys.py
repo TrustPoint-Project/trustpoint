@@ -19,7 +19,7 @@ class AutoGenPkiKeyAlgorithm(models.TextChoices):
     # omitting the rest of the choices as an example that Auto Gen PKI doesn't have to support all key algorithms
 
     def to_key_algorithm(self) -> KeyAlgorithm:
-        return KeyAlgorithm(self.value)
+        return KeyAlgorithm(str(self))
 
 class KeyGenerator:
     def __init__(self, algorithm: KeyAlgorithm):
