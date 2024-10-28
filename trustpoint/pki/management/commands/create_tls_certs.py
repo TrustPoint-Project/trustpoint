@@ -31,7 +31,9 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs) -> None:
         one_day = datetime.timedelta(1, 0, 0)
         ipv4_addresses = subprocess.check_output('hostname -I', shell=True).decode().strip()
+        #ipv4_addresses = '10.10.0.5 10.10.4.89'
         ipv4_addresses = ipv4_addresses.split(' ')
+        ipv4_addresses.append('127.0.0.1')
         basic_constraints_extension = x509.BasicConstraints(ca=False, path_length=None)
         key_usage_extension = x509.KeyUsage(
             digital_signature=True,
