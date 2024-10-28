@@ -65,18 +65,18 @@ class SecurityConfig(models.Model):
     auto_gen_pki_key_algorithm = models.CharField(max_length=12,
                                                   choices=AutoGenPkiKeyAlgorithm,
                                                   default=AutoGenPkiKeyAlgorithm.RSA2048)
-    
+
+    _original_value: None | dict = None
+
     def update_original_values(self):
         """Set the original values, which are used to detect changes"""
         self._original_values['security_mode'] = self.security_mode
         self._original_values['auto_gen_pki'] = self.auto_gen_pki
 
-    def get_original_value(self, key: str) -> Any:
+    @property
+    def original_value(self) -> Any:
         """Get the original value for a given setting"""
-        try:
-            return self._original_values[key]
-        except KeyError:
-            return None
+        return self._original_values
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self._original_values = {}
@@ -89,7 +89,9 @@ class SecurityConfig(models.Model):
 
     def save(self, *args, **kwargs):
         """Override the save method to enforce allowed security levels"""
-        if not SecurityManager.is_feature_allowed(SecurityFeatures.AUTO_GEN_PKI, self.security_mode):
+        if not SecurityManager.is_feature_allowed(
+                SecurityFeatures.AUTO_GEN_PKI,
+                SecurityModeChoices(self.security_mode)):
             self.auto_gen_pki = False
 
         super().save(*args, **kwargs)

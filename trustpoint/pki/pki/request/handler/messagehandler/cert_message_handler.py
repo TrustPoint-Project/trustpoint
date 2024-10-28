@@ -182,7 +182,7 @@ class CertMessageHandler:
                 template_value = template_attr.getComponentByName('value')
 
                 client_value = None
-                for id, client_rdn in enumerate(client_rdn_sequence):
+                for _, client_rdn in enumerate(client_rdn_sequence):
                     client_attr = client_rdn[0]
                     client_oid = client_attr.getComponentByName('type')
                     if client_oid == template_oid:
@@ -291,12 +291,11 @@ class CertMessageHandler:
 
         return extensions_final
 
-
-    def _prepare_subject(self, subject):
+    @staticmethod
+    def _prepare_subject(subject):
         """
         Prepares the Subject Alternative Names (SAN) for the certificate.
 
-        :param extensions: The extensions information.
         :return: A list of x509.SubjectAlternativeName objects.
         """
         subject_name = []
@@ -325,7 +324,8 @@ class CertMessageHandler:
 
         return subject_name
 
-    def _prepare_san(self, extensions):
+    @staticmethod
+    def _prepare_san(extensions):
         san_list = []
 
         for extension in extensions:
@@ -346,7 +346,8 @@ class CertMessageHandler:
 
         return san_list
 
-    def _prepare_public_key(self, cert_req_msg):
+    @staticmethod
+    def _prepare_public_key(cert_req_msg):
         """
         Prepares the public key for the certificate.
 
@@ -362,7 +363,8 @@ class CertMessageHandler:
 
         return public_key
 
-    def _generate_signed_certificate(self, subject_name, san_list, public_key, ca_cert, ca_key):
+    @staticmethod
+    def _generate_signed_certificate(subject_name, san_list, public_key, ca_cert, ca_key):
         """
         Generates a signed certificate.
 
@@ -401,7 +403,8 @@ class CertMessageHandler:
 
         return cert
 
-    def _serialize_client_cert(self, client_cert: Certificate) -> bytes:
+    @staticmethod
+    def _serialize_client_cert(client_cert: Certificate) -> bytes:
         """
         Returns the serialized client certificate in DER format.
 

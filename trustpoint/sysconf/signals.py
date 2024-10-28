@@ -3,7 +3,7 @@
 import logging
 
 from django.core.cache import cache
-from django.db.models.signals import post_delete, post_init, post_save
+from django.db.models.signals import post_delete, post_save
 from django.dispatch import receiver
 from pki.auto_gen_pki import AutoGenPki
 
@@ -19,13 +19,13 @@ def update_security_level(sender, instance, **kwargs):
         security_level = instance.security_mode
         cache.set('security_level', security_level)
 
-        previous_security_mode = instance.get_original_value('security_mode')
+        previous_security_mode = instance.original_value.get('security_mode')
         if instance.security_mode != previous_security_mode:
             log.warning('! Security level changed from %s to %s !',
                         SecurityModeChoices(previous_security_mode).label,
                         SecurityModeChoices(instance.security_mode).label)
 
-        previous_auto_gen_pki = instance.get_original_value('auto_gen_pki')
+        previous_auto_gen_pki = instance.original_value.get('auto_gen_pki')
         if instance.auto_gen_pki and previous_auto_gen_pki is False:
             AutoGenPki.enable_auto_gen_pki(instance.auto_gen_pki_key_algorithm)
         elif not instance.auto_gen_pki and previous_auto_gen_pki is True:

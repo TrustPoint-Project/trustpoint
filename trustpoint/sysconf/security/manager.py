@@ -18,7 +18,7 @@ class SecurityManager:
 
 
     @classmethod
-    def is_feature_allowed(cls, feature_name: SecurityFeatures, target_level: SecurityModeChoices = None):
+    def is_feature_allowed(cls, feature_name: SecurityFeatures, target_level: None | SecurityModeChoices = None):
         """Checks if the specified feature is allowed in the currently set security level."""
 
         if (target_level is None):
