@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-28 14:58+0100\n"
-"PO-Revision-Date: 2024-05-17 17:49+0200\n"
+"POT-Creation-Date: 2024-10-29 15:17+0100\n"
+"PO-Revision-Date: 2024-10-29 15:21+0100\n"
 "Last-Translator: Christian Schwinne <christian.schwinne  AT hshl.de>\n"
 "Language-Team: \n"
 "Language: de\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Poedit 3.4.4\n"
+"X-Generator: Poedit 3.5\n"
 
 #: .\sysconf\forms.py:19
 msgid "NTP Server Address"
@@ -65,11 +65,11 @@ msgstr "Erweiterte Sicherheitseinstellungen"
 
 #: .\sysconf\forms.py:80
 msgid "Enable local auto-generated PKI"
-msgstr ""
+msgstr "Lokale automatisch generierte PKI aktivieren"
 
 #: .\sysconf\forms.py:87
 msgid "Key Algorithm for auto-generated PKI"
-msgstr ""
+msgstr "Schlüsselalgorithmus für automatisch generierte PKI"
 
 #: .\sysconf\models.py:24
 msgid "Logging server address"
@@ -93,7 +93,7 @@ msgstr "Statische IP-Adresse"
 
 #: .\sysconf\security\__init__.py:9
 msgid "Testing env"
-msgstr ""
+msgstr "Testumgebung"
 
 #: .\sysconf\security\__init__.py:10
 msgid "Basic"
@@ -109,7 +109,7 @@ msgstr "Hoch"
 
 #: .\sysconf\security\__init__.py:13
 msgid "Highest"
-msgstr ""
+msgstr "Höchstes"
 
 #: .\sysconf\templates\sysconf\language.html:7
 msgid "Language Configuration"
@@ -130,11 +130,11 @@ msgstr "Logging-Einstellungen"
 
 #: .\sysconf\templates\sysconf\logging.html:21
 msgid "Back"
-msgstr ""
+msgstr "Zurück"
 
 #: .\sysconf\templates\sysconf\logging.html:22
 msgid "View logs"
-msgstr ""
+msgstr "Logs aufrufen"
 
 #: .\sysconf\templates\sysconf\network.html:7
 msgid "Network Configuration"
@@ -148,6 +148,32 @@ msgstr "NTP-Einstellungen"
 msgid "Security Configuration"
 msgstr "Sicherheitseinstellungen"
 
+#: .\sysconf\templates\sysconf\security.html:22
+msgid ""
+"Some settings are hidden as they are unavailable for the selected security "
+"level."
+msgstr ""
+"Einige Einstellungen sind für das aktuelle Sicherheitslevel nicht "
+"verfügbar und daher ausgeblendet."
+
+#: .\sysconf\templates\sysconf\security.html:28
+msgid "WARNING!"
+msgstr "ACHTUNG!"
+
+#: .\sysconf\templates\sysconf\security.html:28
+msgid ""
+"By saving, you will disable the local auto-generated PKI. This revokes all "
+"certificates issued by the local auto-generated PKI and deletes the auto-"
+"generated Issuing CA."
+msgstr ""
+"Beim Speichern wird die lokale automatisch generierte PKI deaktiviert. "
+"Dies widerruft alle von der automatisch generierten PKI ausgestellten "
+"Zertifikate und entfernt die automatisch generierte Issuing CA."
+
+#: .\sysconf\templates\sysconf\security.html:29
+msgid "This action is irreversible."
+msgstr "Diese Aktion ist unwiderruflich."
+
 #: .\sysconf\templates\sysconf\ssh.html:6
 msgid "SSH"
 msgstr "SSH"
@@ -155,11 +181,11 @@ msgstr "SSH"
 #: .\sysconf\views.py:93
 #, python-format
 msgid "Your security setting %s does not allow the feature: %s"
-msgstr ""
+msgstr "Ihre Sicherheitseinstellung %s erlaubt die Funktion nicht: %s"
 
 #: .\sysconf\views.py:146
 msgid "Error saving the configuration."
-msgstr ""
+msgstr "Beim Speichern der Einstellungen ist ein Fehler aufgetreten."
 
 #: .\sysconf\views.py:168 .\sysconf\views.py:197 .\sysconf\views.py:236
 msgid "Your changes were saved successfully."
@@ -167,7 +193,7 @@ msgstr "Ihre Änderungen wurden erfolgreich gespeichert."
 
 #: .\sysconf\views.py:170 .\sysconf\views.py:199 .\sysconf\views.py:241
 msgid "Error saving the configuration"
-msgstr "Beim Speichern der Einstellungen ist ein Fehler aufgetreten."
+msgstr "Beim Speichern der Einstellungen ist ein Fehler aufgetreten"
 
 #~ msgid "Enable Local Root CA"
 #~ msgstr "Lokale Root CA erlauben"

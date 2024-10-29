@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-28 14:58+0100\n"
-"PO-Revision-Date: 2024-10-29 09:28+0100\n"
+"POT-Creation-Date: 2024-10-29 15:50+0100\n"
+"PO-Revision-Date: 2024-10-29 15:53+0100\n"
 "Last-Translator: Christian Schwinne <christian.schwinne  AT hshl.de>\n"
 "Language-Team: \n"
 "Language: de\n"
@@ -81,7 +81,7 @@ msgstr "AutoGenPKI"
 
 #: .\pki\forms.py:18
 msgid "Select Certificate Container Type"
-msgstr "Zertifikatscontainertyp auswählen\t"
+msgstr "Zertifikatscontainertyp auswählen"
 
 #: .\pki\forms.py:20 .\pki\forms.py:313
 msgid "Single File"
@@ -883,191 +883,191 @@ msgstr "Objektkennzeichner"
 
 #: .\pki\oid.py:140
 msgid "Main State Registration Number of juridical entities (OGRN)"
-msgstr ""
+msgstr "Staatliche Hauptregistrierungsnummer jurisitischer Personen (OGRN)"
 
 #: .\pki\oid.py:141
 msgid "Individual Insurance Account Number (SNILS)"
-msgstr ""
+msgstr "Individuelle Versicherungskontonummer (SNILS)"
 
 #: .\pki\oid.py:142
 msgid "Individual Taxpayer Number (ITN) of the legal entity"
-msgstr ""
+msgstr "Individuelle Steuerzahlernummer (ITN) der juristischen Person"
 
 #: .\pki\oid.py:143
 msgid "Main State Registration Number of individual entrepreneurs"
-msgstr ""
+msgstr "Staatliche Hauptregistrierungsnummer Selbstständiger"
 
 #: .\pki\oid.py:144
 msgid "Identification Kind"
-msgstr ""
+msgstr "Identifikationsart"
 
 #: .\pki\oid.py:145
 msgid "Individual Taxpayer Number (ITN, INN)"
-msgstr ""
+msgstr "Individuelle Steuerzahlernummer (ITN, INN)"
 
 #: .\pki\oid.py:149
 msgid "Email Address (Deprecated)"
-msgstr ""
+msgstr "E-Mail-Adresse (Veraltet)"
 
 #: .\pki\oid.py:150
 msgid "Unstructured Name (FQDN)"
-msgstr ""
+msgstr "Unstrukturierter Name (FQDN)"
 
 #: .\pki\oid.py:151
 msgid "Content Type"
-msgstr ""
+msgstr "Inhaltstyp"
 
 #: .\pki\oid.py:152
 msgid "Unstructured Address"
-msgstr ""
+msgstr "Unstrukturierte Adresse"
 
 #: .\pki\oid.py:155
 msgid "User ID (UID)"
-msgstr ""
+msgstr "Nutzer-ID (UID)"
 
 #: .\pki\oid.py:156
 msgid "Domain Component"
-msgstr ""
+msgstr "Domain-Komponente"
 
 #: .\pki\oid.py:162
 msgid "Jurisdiction Of Incorporation Locality Name"
-msgstr ""
+msgstr "Ortsname der rechtlichen Niederlassung"
 
 #: .\pki\oid.py:168
 msgid "Jurisdiction Of Incorporation State Or Province Name"
-msgstr ""
+msgstr "Bundesland oder Provinz der rechtlichen Niederlassung"
 
 #: .\pki\oid.py:174
 msgid "Jurisdiction Of Incorporation Country Name"
-msgstr ""
+msgstr "Land der rechtlichen Niederlassung"
 
 #: .\pki\oid.py:178
 msgid "DNI - National identity document (Spain)"
-msgstr ""
+msgstr "DNI - Nationales Identitätsdokument (Spanien)"
 
 #: .\pki\oid.py:179
 msgid "NSS - Social Security Number (Spain)"
-msgstr ""
+msgstr "NSS - Sozialversicherungsnummer (Spanien)"
 
 #: .\pki\oid.py:181
 msgid "Circulation Permit Number (SPAIN)"
-msgstr ""
+msgstr "Circulation Permit Number (Spanien)"
 
 #: .\pki\oid.py:182
 msgid "CIF - Tax Identification Code (Spain)"
-msgstr ""
+msgstr "CIF - Steueridentifikationscode (Spanien)"
 
 #: .\pki\oid.py:183
 msgid "NIF - Number of fiscal identification (Spain)"
-msgstr ""
+msgstr "NIF - Number of fiscal identification (Spanien)"
 
 #: .\pki\oid.py:203
 msgid "Subject Directory Attributes"
-msgstr ""
+msgstr "Subjekt-Verzeichnisattribute"
 
 #: .\pki\oid.py:204
 msgid "Subject Key Identifier"
-msgstr ""
+msgstr "Subjekt-Schlüsselkennzeichner"
 
 #: .\pki\oid.py:205
 msgid "Key Usage"
-msgstr ""
+msgstr "Schlüsselverwendung"
 
 #: .\pki\oid.py:206
 msgid "Subject Alternative Name"
-msgstr ""
+msgstr "Subjekt Alternativname (SAN)"
 
 #: .\pki\oid.py:207
 msgid "Issuer Alternative Name"
-msgstr ""
+msgstr "Aussteller Alternativname (IAN)"
 
 #: .\pki\oid.py:208
 msgid "Basic Constraints"
-msgstr ""
+msgstr "Basis-Beschränkungen"
 
 #: .\pki\oid.py:209
 msgid "Name Constraints"
-msgstr ""
+msgstr "Namensbeschränkungen"
 
 #: .\pki\oid.py:210
 msgid "Crl Distribution Points"
-msgstr ""
+msgstr "CRL-Verteilungspunkte"
 
 #: .\pki\oid.py:211
 msgid "Certificate Policies"
-msgstr ""
+msgstr "Zertifikatsrichtlinien"
 
 #: .\pki\oid.py:212
 msgid "Policy Mappings"
-msgstr ""
+msgstr "Policy-Mappings"
 
 #: .\pki\oid.py:213
 msgid "Authority Key Identifier"
-msgstr ""
+msgstr "Autoritätsschlüsselkennzeichner"
 
 #: .\pki\oid.py:214
 msgid "Policy Constraints"
-msgstr ""
+msgstr "Richtlinien-Beschränkungen"
 
 #: .\pki\oid.py:215
 msgid "Extended Key Usage"
-msgstr ""
+msgstr "Erweiterte Schlüsselnutzung"
 
 #: .\pki\oid.py:216
 msgid "Freshest CRL"
-msgstr ""
+msgstr "Neueste CRL"
 
 #: .\pki\oid.py:217
 msgid "Inhibit Any Policy"
-msgstr ""
+msgstr "Beliebige Richtlinie verhindern"
 
 #: .\pki\oid.py:218
 msgid "Issuing Distribution Point"
-msgstr ""
+msgstr "Ausgebender Verteilungspunkt"
 
 #: .\pki\oid.py:219
 msgid "Authority Information Access"
-msgstr ""
+msgstr "Autoritätsinformationszugang"
 
 #: .\pki\oid.py:220
 msgid "Subject Information Access"
-msgstr ""
+msgstr "Subjektinformationszugang"
 
 #: .\pki\oid.py:221
 msgid "OCSP No Check"
-msgstr ""
+msgstr "OSCP nicht überprüfen"
 
 #: .\pki\oid.py:222
 msgid "TLS Feature"
-msgstr ""
+msgstr "TLS-Funktion"
 
 #: .\pki\oid.py:223
 msgid "CRL Number"
-msgstr ""
+msgstr "CRL-Nummer"
 
 #: .\pki\oid.py:224
 msgid "Delta CRL Indicator"
-msgstr ""
+msgstr "Delta-CRL Kennzeichner"
 
 #: .\pki\oid.py:225
 msgid "Precert Signed Certificate Timestamps"
-msgstr ""
+msgstr "Precert-Signierte Zertifikats-Timestamps"
 
 #: .\pki\oid.py:226
 msgid "Precert Poison"
-msgstr ""
+msgstr "Precert-Poison"
 
 #: .\pki\oid.py:227
 msgid "Signed Certificate Timestamps"
-msgstr ""
+msgstr "Signierte Zertifikats-Timestamps"
 
 #: .\pki\oid.py:228
 msgid "Microsoft Certificate Template"
-msgstr ""
+msgstr "Microsoft Zertifikats-Template"
 
 #: .\pki\oid.py:232
 msgid "Extension OID"
-msgstr ""
+msgstr "Erweiterungs-OID"
 
 #: .\pki\oid.py:247
 msgid "SECP192R1"
@@ -1171,79 +1171,79 @@ msgstr "RSA mit SHA1"
 
 #: .\pki\oid.py:309
 msgid "RSA with SHA224"
-msgstr ""
+msgstr "RSA mit SHA224"
 
 #: .\pki\oid.py:310
 msgid "RSA with SHA256"
-msgstr ""
+msgstr "RSA mit SHA256"
 
 #: .\pki\oid.py:311
 msgid "RSA with SHA384"
-msgstr ""
+msgstr "RSA mit SHA384"
 
 #: .\pki\oid.py:312
 msgid "RSA with SHA512"
-msgstr ""
+msgstr "RSA mit SHA512"
 
 #: .\pki\oid.py:314
 msgid "RSA with SHA3-224"
-msgstr ""
+msgstr "RSA mit SHA3-224"
 
 #: .\pki\oid.py:316
 msgid "RSA with SHA3-256"
-msgstr ""
+msgstr "RSA mit SHA3-256"
 
 #: .\pki\oid.py:318
 msgid "RSA with SHA3-384"
-msgstr ""
+msgstr "RSA mit SHA3-384"
 
 #: .\pki\oid.py:320
 msgid "RSA with SHA3-512"
-msgstr ""
+msgstr "RSA mit SHA3-512"
 
 #: .\pki\oid.py:323
 msgid "RSA (RSASSA-PSS), Padding: PSS"
-msgstr ""
+msgstr "RSA (RSASSA-PSS), Padding: PSS"
 
 #: .\pki\oid.py:325
 msgid "ECDSA with SHA1"
-msgstr ""
+msgstr "ECDSA mit SHA1"
 
 #: .\pki\oid.py:326
 msgid "ECDSA with SHA224"
-msgstr ""
+msgstr "ECDSA mit SHA224"
 
 #: .\pki\oid.py:327
 msgid "ECDSA with SHA256"
-msgstr ""
+msgstr "ECDSA mit SHA256"
 
 #: .\pki\oid.py:328
 msgid "ECDSA with SHA384"
-msgstr ""
+msgstr "ECDSA mit SHA384"
 
 #: .\pki\oid.py:329
 msgid "ECDSA with SHA512"
-msgstr ""
+msgstr "ECDSA mit SHA512"
 
 #: .\pki\oid.py:331
 msgid "ECDSA with SHA3-224"
-msgstr ""
+msgstr "ECDSA mit SHA3-224"
 
 #: .\pki\oid.py:333
 msgid "ECDSA with SHA3-256"
-msgstr ""
+msgstr "ECDSA mit SHA3-256"
 
 #: .\pki\oid.py:335
 msgid "ECDSA with SHA3-384"
-msgstr ""
+msgstr "ECDSA mit SHA3-384"
 
 #: .\pki\oid.py:337
 msgid "ECDSA with SHA3-512"
-msgstr ""
+msgstr "ECDSA mit SHA3-512"
 
 #: .\pki\tables.py:31
 msgid "There are no Certificates available."
-msgstr ""
+msgstr "Es sind keine Zertifikate hinterlegt."
 
 #: .\pki\tables.py:50 .\pki\tables.py:64 .\pki\tables.py:119
 #: .\pki\tables.py:134 .\pki\tables.py:190 .\pki\tables.py:205
@@ -1295,7 +1295,7 @@ msgstr "Es wurden noch keine Truststores hinzugefügt."
 
 #: .\pki\templates\pki\certificates\certificates.html:10
 msgid "Certificates issued by the CA: "
-msgstr "Von der CA ausgestellte Zertifikate:"
+msgstr "Von der CA ausgestellte Zertifikate: "
 
 #: .\pki\templates\pki\certificates\certificates.html:12
 msgid "Certificates"
@@ -1376,6 +1376,27 @@ msgstr "Abbrechen"
 #: .\pki\templates\pki\certificates\download_multiple.html:14
 msgid "Download Certificates"
 msgstr "Zertifikate herunterladen"
+
+#: .\pki\templates\pki\certificates\download.html:20
+msgid "1 Certificate selected"
+msgstr "1 Zertifikat ausgewählt"
+
+#: .\pki\templates\pki\certificates\download.html:23
+msgid "Download Certificate"
+msgstr "Zertifikat herunterladen"
+
+#: .\pki\templates\pki\certificates\download.html:31
+msgid "Download Certificate Including Certificate Chain"
+msgstr "Zertifikat inkl. Zertifikatskette herunterladen"
+
+#: .\pki\templates\pki\certificates\download.html:38
+msgid "Download Certificate Chain Only"
+msgstr "Nur Zertifikatskette herunterladen"
+
+#: .\pki\templates\pki\certificates\download_multiple.html:20
+#, python-format
+msgid "%(certs.count)s Certificates selected"
+msgstr "%(certs.count)s Zertifikate ausgewählt"
 
 #: .\pki\templates\pki\certificates\download_multiple.html:23
 msgid "Download Selected Certificates Only"
@@ -1540,41 +1561,40 @@ msgstr "Ein Schlüsselpaar erzeugen und das Issuing Ca-Zertifikat anfordern"
 
 #: .\pki\templates\pki\issuing_cas\add\method_select.html:25
 msgid "Request Issuing CA Certificate Using EST"
-msgstr ""
+msgstr "Issuing CA-Zertifikat über EST anfordern"
 
 #: .\pki\templates\pki\issuing_cas\add\method_select.html:27
 msgid "Request Issuing CA Certificate Using CMP"
-msgstr ""
+msgstr "Issuing CA-Zertifikat über CMP anfordern"
 
 #: .\pki\templates\pki\issuing_cas\add\method_select.html:29
 msgid "Request Issuing CA Certificate Using SCEP"
-msgstr ""
+msgstr "Issuing CA-Zertifikat über SCEP anfordern"
 
 #: .\pki\templates\pki\issuing_cas\add\method_select.html:31
-#, fuzzy
 msgid "Configure A Remote Issuing CA"
 msgstr "Eine externe Issuing CA konfigurieren"
 
 #: .\pki\templates\pki\issuing_cas\add\method_select.html:33
 msgid "Configure A Remote Issuing CA Using EST"
-msgstr ""
+msgstr "Eine externe Issuing CA über EST konfigurieren"
 
 #: .\pki\templates\pki\issuing_cas\add\method_select.html:35
 msgid "Configure A Remote Issuing CA Using CMP"
-msgstr ""
+msgstr "Eine externe Issuing CA über CMP konfigurieren"
 
 #: .\pki\templates\pki\issuing_cas\add\method_select.html:37
 msgid "Configure A Remote Issuing CA Using SCEP"
-msgstr ""
+msgstr "Eine externe Issuing CA über SCEP konfigurieren"
 
 #: .\pki\templates\pki\issuing_cas\config.html:29
 msgid "No associated domains"
-msgstr ""
+msgstr "Keine Domains konfiguriert"
 
 #: .\pki\templates\pki\issuing_cas\config.html:35
 #: .\pki\templates\pki\issuing_cas\details.html:16
 msgid "General"
-msgstr ""
+msgstr "Allgemein"
 
 #: .\pki\templates\pki\issuing_cas\config.html:39
 msgid "Type"
@@ -1598,59 +1618,61 @@ msgstr "CRL-Aktionen"
 
 #: .\pki\templates\pki\issuing_cas\config.html:75
 msgid "Download CRL"
-msgstr ""
+msgstr "CRL herunterladen"
 
 #: .\pki\templates\pki\issuing_cas\config.html:78
 msgid "Generate CRL"
-msgstr ""
+msgstr "CRL erstellen"
 
 #: .\pki\templates\pki\issuing_cas\config.html:83
 msgid "Last CRL generated"
-msgstr ""
+msgstr "Letzte CRL generatiert"
 
 #: .\pki\templates\pki\issuing_cas\config.html:89
 msgid "Next CRL Generation Time (minutes)"
-msgstr ""
+msgstr "Nächste CRL-Generation (Minuten)"
 
 #: .\pki\templates\pki\issuing_cas\config.html:95
 msgid "Auto CRL"
-msgstr ""
+msgstr "Auto CRL"
 
 #: .\pki\templates\pki\issuing_cas\confirm_delete.html:13
 msgid "Confirm Issuing CA Deletion"
-msgstr ""
+msgstr "Issuing CA-Entfernung bestätigen"
 
 #: .\pki\templates\pki\issuing_cas\confirm_delete.html:47
 msgid ""
 "Deletion will revoke all certificates issued to devices by this CA with "
 "reason code 'Cessation of Operation'"
 msgstr ""
+"Das Entfernen widerruft alle von dieser CA an Geräte ausgestellte "
+"Zertifikate mit dem Grund 'Cessation of Operation'"
 
 #: .\pki\templates\pki\issuing_cas\confirm_delete.html:54
 msgid "Delete selected Issuing CAs"
-msgstr ""
+msgstr "Ausgewählte Issuing CAs entfernen"
 
 #: .\pki\templates\pki\issuing_cas\details.html:11
 msgid "Issuing CA Details"
-msgstr ""
+msgstr "Issuing CA-Details"
 
 #: .\pki\templates\pki\issuing_cas\issuing_cas.html:9
 msgid "Issuing CAs"
-msgstr ""
+msgstr "Issuing CAs"
 
 #: .\pki\templates\pki\truststores\add.html:11
 #: .\pki\templates\pki\truststores\add.html:26
 #: .\pki\templates\pki\truststores\truststores.html:19
 msgid "Add New Trust Store"
-msgstr ""
+msgstr "Truststore hinzufügen"
 
 #: .\pki\templates\pki\truststores\add.html:16
 msgid "Trust Store File Import"
-msgstr ""
+msgstr "Truststore aus Datei importieren"
 
 #: .\pki\templates\pki\truststores\confirm_delete.html:12
 msgid "Confirm Truststore Deletion"
-msgstr ""
+msgstr "Truststore-Entfernung bestätigen"
 
 #: .\pki\templates\pki\truststores\confirm_delete.html:18
 msgid "Truststore"
@@ -1658,35 +1680,39 @@ msgstr "Truststore"
 
 #: .\pki\templates\pki\truststores\confirm_delete.html:33
 msgid "Delete selected Truststores"
-msgstr ""
+msgstr "Ausgewählte Truststores entfernen"
 
 #: .\pki\templates\pki\truststores\details.html:11
 #: .\pki\templates\pki\truststores\download.html:30
 #: .\pki\templates\pki\truststores\download_multiple.html:35
 msgid "Truststore Details"
-msgstr ""
+msgstr "Truststore Details"
 
 #: .\pki\templates\pki\truststores\download.html:14
 #: .\pki\templates\pki\truststores\download_multiple.html:23
 msgid "Download Truststores"
-msgstr ""
+msgstr "Truststores herunterladen"
 
 #: .\pki\templates\pki\truststores\download.html:23
 #: .\pki\templates\pki\truststores\download_multiple.html:14
 msgid "Download Truststore"
-msgstr ""
+msgstr "Truststore herunterladen"
 
 #: .\pki\util\x509.py:32
 msgid ""
 "Unexpected error occurred. Please see the logs or contact the Trustpoint "
 "support."
 msgstr ""
+"Ein unerwarteter Fehler ist aufgetreten. Bitte die Logs überprüfen oder den "
+"Trustpoint-Support kontaktieren."
 
 #: .\pki\util\x509.py:39
 msgid ""
 "No Issuing CA Certificate found matching the uploaded private key. Please "
 "check your credential file(s)."
 msgstr ""
+"Es wurde kein Issuing CA-Zertifikat gefunden, das mit dem hochgeladenen "
+"privaten Schlüssel übereinstimmt. Bitte die Credential-Datei(en) überprüfen."
 
 #: .\pki\util\x509.py:48
 msgid ""
@@ -1694,12 +1720,19 @@ msgid ""
 "make sure that the full certificate chain is included. The Issuing CA "
 "certificate up to the Root CA certificate is required."
 msgstr ""
+"Es konnte keine vollständige Zertifikatskette aus den hochgeladenen "
+"Datei(en) erstellt werden. Bitte stellen Sie sicher, dass die vollständige "
+"Zertifikatskette enthalten ist. Das Zertifikat der Issuing CA bis zum Root-"
+"CA-Zertifikat ist erforderlich."
 
 #: .\pki\util\x509.py:58
 msgid ""
 "The uploaded file(s) contain multiple possible Issuing CA certificates."
 "Please make sure that only one single valid chain is included."
 msgstr ""
+"Die hochgeladene(n) Datei(en) enthält/enthalten mehrere mögliche Issuing CA-"
+"Zertifikate; bitte stellen Sie sicher, dass nur eine einzige gültige Kette "
+"enthalten ist."
 
 #: .\pki\util\x509.py:67
 msgid ""
@@ -1707,164 +1740,193 @@ msgid ""
 "certificates). Please make sure to only include a single certificate chain "
 "for the Issuing CA."
 msgstr ""
+"Die hochgeladene(n) Datei(en) enthält/enthalten mehrere Zertifikatsketten "
+"(kreuzsignierte Zertifikate). Bitte stellen Sie sicher, dass nur eine "
+"einzige Zertifikatskette für die Issuing CA enthalten ist."
 
 #: .\pki\util\x509.py:76
 msgid ""
 "The uploaded file(s) contain a inconsistent certificate chain which contains "
 "a cycle (graph). (E.g. Certificate A singed B, B signed C and C singed A.)"
 msgstr ""
+"Die hochgeladene(n) Datei(en) enthalten eine inkonsistente Zertifikatskette, "
+"die einen Zyklus (Graph) enthält. (z. B. Zertifikat A signiert B, B signiert "
+"C und C signiert A.)"
 
 #: .\pki\validator\field.py:8
 msgid ""
 "(Must start with a letter. Can only contain letters, digits, underscores and "
 "hyphens)"
 msgstr ""
+"(nur Buchstaben, Ziffern, Unterstrich und Bindestrich, muss mit einem "
+"Buchstaben beginnen)"
 
 #: .\pki\validator\field.py:14 .\pki\validator\field.py:28
 #, python-brace-format
 msgid "Enter a valid unique name. {self.form_label}."
-msgstr ""
+msgstr "Einen gültigen eindeutigen Namen angeben. {self.form_label}."
 
 #: .\pki\validator\field.py:22
 msgid ""
 "(Must start with a letter. Can only contain lower case letters, digits, "
 "underscores and hyphens)"
 msgstr ""
+"(nur Kleinbuchstaben, Ziffern, Unterstrich und Bindestrich, muss mit einem "
+"Buchstaben beginnen)"
 
 #: .\pki\validator\validator.py:11
 msgid "BSI Technical Guideline TR-02103"
-msgstr ""
+msgstr "BSI Technische Richtlinie TR-02103"
 
 #: .\pki\validator\validator.py:12
 msgid "RFC5280"
-msgstr ""
+msgstr "RFC5280"
 
 #: .\pki\validator\validator.py:13
 msgid "Trustpoint specified constraint."
-msgstr ""
+msgstr "Im Trustpoint vorgegebene Beschränkung."
 
 #: .\pki\validator\validator.py:19
 msgid "Certificate version is not v3."
-msgstr ""
+msgstr "Die Version des Zertifikats ist nicht v3."
 
 #: .\pki\validator\validator.py:20
 msgid "Certificate serial number is 0."
-msgstr ""
+msgstr "Die Zertifikatsseriennummer ist 0."
 
 #: .\pki\validator\validator.py:22
 msgid "Certificate serial number is negative."
-msgstr ""
+msgstr "Die Zertifikatsseriennummer ist negativ."
 
 #: .\pki\validator\validator.py:25
 msgid "Certificate serial number is shorter than 20 bytes."
-msgstr ""
+msgstr "Die Zertifikatsseriennummer ist kürzer als 20 Bytes."
 
 #: .\pki\validator\validator.py:27
 msgid ""
 "The Issuer Alternative Name extension of the CA certificate is marked as "
 "critical."
-msgstr ""
+msgstr "Die Issuer Alternative Name-Erweiterung ist als kritisch markiert."
 
 #: .\pki\validator\validator.py:30
 msgid "CA certificate does not contain the Key Usage extension."
-msgstr ""
+msgstr "Das CA-Zertifikat enthält keine Key Usage-Erweiterung."
 
 #: .\pki\validator\validator.py:32
 msgid ""
 "The Key Usage extension of the CA certificate is marked as non-critical."
 msgstr ""
+"Die Key Usage-Erweiterung des CA-Zertifikats ist als nicht kritisch markiert."
 
 #: .\pki\validator\validator.py:36
 msgid ""
 "The Policy Mappings extension of the CA certificate is marked as non-"
 "critical."
 msgstr ""
+"Die Policy Mapping-Erweiterung des CA-Zertifikats ist als nicht kritisch "
+"markiert."
 
 #: .\pki\validator\validator.py:40
 msgid ""
 "The Subject Alternative Name (SAN) extension of the CA certificate is marked "
 "as critical, while the subject is not emtpy."
 msgstr ""
+"Die Subject Alternative Name (SAN)-Erweiterung des CA-Zertifikats ist als "
+"kritisch markiert und das Subject ist nicht leer."
 
 #: .\pki\validator\validator.py:45
 msgid "Certificate does not contain the Authority Key Identifier extension."
-msgstr ""
+msgstr "Das Zertifikat enthält nicht die Authority Key Identifier-Erweiterung."
 
 #: .\pki\validator\validator.py:48
 msgid "The Authority Key Identifier extension is marked as critical."
-msgstr ""
+msgstr "Die Authority Key Identifier-Erweiterung ist als kritisch markiert."
 
 #: .\pki\validator\validator.py:51
 msgid "The Subject Key Identifier extension is marked as critical."
-msgstr ""
+msgstr "Die Subject Key Identifier-Erweiterung ist als kritisch markiert."
 
 #: .\pki\validator\validator.py:54
 msgid "CA certificate does not have a Basic Constraints extension."
-msgstr ""
+msgstr "Das CA-Zertifikat enthält keine Basic Constraints-Erweiterung."
 
 #: .\pki\validator\validator.py:57
 msgid ""
 "The Basic Constraints extension of the CA certificate is marked as non-"
 "critical."
 msgstr ""
+"Die Basic Constraints-Erweiterung des CA-Zertifikats ist als nicht kritisch "
+"markiert."
 
 #: .\pki\validator\validator.py:61
 msgid ""
 "CA certificate has a Basic Constraints extension stating that the "
 "certificate is not a CA."
 msgstr ""
+"CA-Zertifikat hat eine Basic Constraints-Erweiterung, die besagt, dass das "
+"Zertifikat keine CA ist."
 
 #: .\pki\validator\validator.py:65
 msgid ""
 "The Key Usage extension of the CA certificate missing one or more "
 "appropriate key usages (keyCertSign, cRLSign, digitalSignature)."
 msgstr ""
+"In der Key Usage-Erweiterung des CA-Zertifikats fehlen eine oder mehrere "
+"geeignete Schlüsselverwendungen (keyCertSign, cRLSign, digitalSignature)."
 
 #: .\pki\validator\validator.py:70
 msgid "Certificate does not contain the Subject Key Identifier extension."
-msgstr ""
+msgstr "Das CA-Zertifikat enthält keine Subject Key Identifier-Erweiterung."
 
 #: .\pki\validator\validator.py:74
 msgid ""
 "The Policy Constraints extension of the CA certificate is marked as non-"
 "critical."
 msgstr ""
+"Die Policy Constraints-Erweiterung des CA-Zertifikats ist als nicht kritisch "
+"markiert."
 
 #: .\pki\validator\validator.py:78
 msgid ""
 "The Inhibit Any Policy extension of the CA certificate is marked as non-"
 "critical."
 msgstr ""
+"Die Inhibit Any Policy-Erweiterung des CA-Zertifikats ist als nicht kritisch "
+"markiert."
 
 #: .\pki\validator\validator.py:82
 msgid ""
 "The Subject Alternative Name extension of the CA certificate is marked as "
 "non-critical, while the subject is emtpy"
 msgstr ""
+"Die Subject Alternative Name (SAN)-Erweiterung des CA-Zertifikats ist als "
+"nicht kritisch markiert und das Subject ist leer"
 
 #: .\pki\validator\validator.py:87
 msgid ""
 "The Authority Key Identifier Extension of the CA certificate does not "
 "contain the Key Identifier field."
 msgstr ""
+"Die Authority Key Identifier-Erweiterung des CA-Zertifikats enthält nicht "
+"das Key Identifier-Feld."
 
 #: .\pki\views\crls.py:20 .\pki\views\crls.py:36
 msgid "Issuing CA not found."
-msgstr ""
+msgstr "Die Issuing CA wurde nicht gefunden."
 
 #: .\pki\views\crls.py:25
 #, python-format
 msgid "No CRL available for issuing CA %s."
-msgstr ""
+msgstr "Für die Issuing CA %s ist keine CRL verfügbar."
 
 #: .\pki\views\crls.py:40
 msgid "CRL generated"
-msgstr ""
+msgstr "CRL wurde erstellt"
 
 #: .\pki\views\crls.py:42
 msgid "CRL could not be generated"
-msgstr ""
+msgstr "CRL konnte nicht erstellt werden"
 
 #: .\pki\views\issuing_cas.py:120
 msgid "Settings updated successfully."
-msgstr ""
+msgstr "Die Einstellungen wurden erfolgreich angewendet."

@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-28 14:57+0100\n"
-"PO-Revision-Date: 2024-10-28 15:36+0100\n"
+"POT-Creation-Date: 2024-10-29 15:47+0100\n"
+"PO-Revision-Date: 2024-10-29 15:37+0100\n"
 "Last-Translator: Christian Schwinne <christian.schwinne  AT hshl.de>\n"
 "Language-Team: \n"
 "Language: de\n"
@@ -64,39 +64,56 @@ msgstr "BRSKI"
 msgid "AOKI"
 msgstr "AOKI"
 
-#: .\devices\models.py:134
+#: .\devices\models.py:64
+msgid "Device name"
+msgstr "Gerätename"
+
+#: .\devices\models.py:66
+msgid "Serial number"
+msgstr "Seriennummer"
+
+#: .\devices\models.py:69
+msgid "Onboarding protocol"
+msgstr "Onboarding-Protokoll"
+
+#: .\devices\models.py:74 .\devices\tables.py:59
+#: .\devices\templates\devices\sub_details.html:11
+msgid "Domain"
+msgstr "Domain"
+
+#: .\devices\models.py:136
 msgid "Onboarding: Please select a valid onboarding protocol."
 msgstr "Onboarding: Bitte ein gültiges Onboarding-Protokoll wählen."
 
-#: .\devices\models.py:154 .\devices\tables.py:171
+#: .\devices\models.py:156 .\devices\tables.py:171
 msgid "Revoke Certificate"
 msgstr "Zertifikat widerrufen"
 
-#: .\devices\models.py:166 .\devices\tables.py:177
+#: .\devices\models.py:168 .\devices\tables.py:177
 msgid "Cancel Onboarding"
 msgstr "Onboarding abbrechen"
 
-#: .\devices\models.py:193 .\devices\tables.py:193
+#: .\devices\models.py:195 .\devices\tables.py:193
 msgid "Unknown onboarding protocol!"
-msgstr "Unbekanntes Onboarding-Protokoll"
+msgstr "Unbekanntes Onboarding-Protokoll!"
 
-#: .\devices\models.py:213 .\devices\models.py:258 .\devices\tables.py:119
+#: .\devices\models.py:215 .\devices\models.py:260 .\devices\tables.py:119
 msgid "Onboard again"
 msgstr "Erneut einbinden"
 
-#: .\devices\models.py:218 .\devices\tables.py:142
+#: .\devices\models.py:220 .\devices\tables.py:142
 msgid "Zero-Touch Pending"
 msgstr "Zero-Touch bereit"
 
-#: .\devices\models.py:223 .\devices\tables.py:147
+#: .\devices\models.py:225 .\devices\tables.py:147
 msgid "Reset Context"
 msgstr "Kontext zurücksetzen"
 
-#: .\devices\models.py:246 .\devices\tables.py:107
+#: .\devices\models.py:248 .\devices\tables.py:107
 msgid "Start Onboarding"
 msgstr "Onboarding starten"
 
-#: .\devices\models.py:252 .\devices\tables.py:113
+#: .\devices\models.py:254 .\devices\tables.py:113
 msgid "Retry Onboarding"
 msgstr "Neu versuchen"
 
@@ -108,7 +125,7 @@ msgstr "Es sind keine Geräte verfügbar."
 msgid "Device Name"
 msgstr "Gerätename"
 
-#: .\devices\tables.py:52
+#: .\devices\tables.py:52 .\devices\templates\devices\sub_details.html:7
 msgid "Serial Number"
 msgstr "Seriennummer"
 
@@ -120,10 +137,6 @@ msgstr "Onboarding-Protokoll"
 msgid "Onboarding Status"
 msgstr "Onboarding-Status"
 
-#: .\devices\tables.py:59
-msgid "Domain"
-msgstr "Domain"
-
 #: .\devices\tables.py:61
 msgid "Onboarding Action"
 msgstr "Onboarding-Aktion"
@@ -133,6 +146,7 @@ msgid "Details"
 msgstr "Details"
 
 #: .\devices\tables.py:63 .\devices\tables.py:218
+#: .\devices\templates\devices\details.html:17
 msgid "Edit"
 msgstr "Bearbeiten"
 
@@ -148,25 +162,35 @@ msgstr "Tags"
 msgid "Select Domain"
 msgstr "Domain auswählen"
 
+#: .\devices\templates\devices\add.html:7
 #: .\devices\templates\devices\add.html:17
 msgid "Add Device"
 msgstr "Gerät hinzufügen"
 
+#: .\devices\templates\devices\add.html:15
+#: .\devices\templates\devices\confirm_delete.html:26
+msgid "Cancel"
+msgstr "Abbrechen"
+
 #: .\devices\templates\devices\confirm_delete.html:11
 msgid "Confirm Device Deletion"
-msgstr "Löschen bestätigen"
+msgstr "Geräteentfernung bestätigen"
 
 #: .\devices\templates\devices\confirm_delete.html:21
 msgid ""
 "Deletion will revoke any certificates issued to devices with reason code "
 "'Cessation of Operation'"
 msgstr ""
-"Durch das Löschen werden alle an betreffende Geräte ausgestellte "
+"Durch das Entfernen werden alle an betreffende Geräte ausgestellte "
 "Zertifikate mit dem Grund 'Cessation of Operation' widerrufen."
 
 #: .\devices\templates\devices\confirm_delete.html:28
 msgid "Confirm Delete"
-msgstr "Löschen bestätigen"
+msgstr "Entfernen bestätigen"
+
+#: .\devices\templates\devices\details.html:9
+msgid "Details - Device"
+msgstr "Gerätedetails"
 
 #: .\devices\templates\devices\details.html:16
 #: .\devices\templates\devices\edit.html:15
@@ -181,6 +205,10 @@ msgstr "Geräte"
 msgid "Filter"
 msgstr "Filtern"
 
+#: .\devices\templates\devices\devices.html:45
+msgid "Filter by Tags"
+msgstr "Nach Tags filtern"
+
 #: .\devices\templates\devices\devices.html:60
 msgid "Delete selected"
 msgstr "Ausgewählte entfernen"
@@ -189,9 +217,29 @@ msgstr "Ausgewählte entfernen"
 msgid "Add new Device"
 msgstr "Neues Gerät hinzufügen"
 
+#: .\devices\templates\devices\edit.html:7
+msgid "Edit Device"
+msgstr "Gerät bearbeiten"
+
 #: .\devices\templates\devices\edit.html:17
 msgid "Apply Changes"
 msgstr "Änderungen anwenden"
+
+#: .\devices\templates\devices\sub_details.html:18
+msgid "This device is not part of any domain."
+msgstr "Dieses Gerät ist nicht Teil einer Domain."
+
+#: .\devices\templates\devices\sub_details.html:23
+msgid "Certificate serial number"
+msgstr "Zertifikats-Seriennummer"
+
+#: .\devices\templates\devices\sub_details.html:30
+msgid "No certificate associated with this device."
+msgstr "Dieses Gerät hat kein zugehöriges Zertifikat."
+
+#: .\devices\templates\devices\sub_details.html:35
+msgid "Device onboarding status"
+msgstr "Onboarding-Status des Geräts"
 
 #~ msgid "OK"
 #~ msgstr "OK"

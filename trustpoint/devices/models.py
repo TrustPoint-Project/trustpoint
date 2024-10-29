@@ -60,16 +60,18 @@ class Device(models.Model):
         BRSKI = 'BR', _('BRSKI')
         AOKI = 'AO', _('AOKI')
 
-    device_name = models.CharField(max_length=100, unique=True, default='test', validators=[UniqueNameValidator()])
-    device_serial_number = models.CharField(max_length=100, blank=True)
+    device_name = models.CharField(
+        _('Device name'), max_length=100, unique=True, default='test', validators=[UniqueNameValidator()]
+    )
+    device_serial_number = models.CharField(_('Serial number'), max_length=100, blank=True)
     ldevid = models.ForeignKey(CertificateModel, on_delete=models.SET_NULL, blank=True, null=True)
     onboarding_protocol = models.CharField(
-        max_length=2, choices=OnboardingProtocol, default=OnboardingProtocol.MANUAL, blank=True
+        _('Onboarding protocol'), max_length=2, choices=OnboardingProtocol, default=OnboardingProtocol.MANUAL, blank=True
     )
     device_onboarding_status = models.CharField(
         max_length=1, choices=DeviceOnboardingStatus, default=DeviceOnboardingStatus.NOT_ONBOARDED, blank=True
     )
-    domain = models.ForeignKey(DomainModel, on_delete=models.SET_NULL, blank=True, null=True)
+    domain = models.ForeignKey(DomainModel, verbose_name=_('Domain'), on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
     tags = TaggableManager(blank=True)
 

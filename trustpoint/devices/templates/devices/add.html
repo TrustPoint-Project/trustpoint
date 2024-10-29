@@ -4,7 +4,7 @@
 {% block content %}
     <div class="card">
         <div class="card-header d-flex">
-            <h1>Add Device</h1>
+            <h1>{% trans 'Add Device' %}</h1>
         </div>
         <div class="card-body py-3">
             <form method="POST" id="add-device-form">
@@ -12,7 +12,7 @@
                 {{ form|crispy }}
                 <hr>
                 <div class="tp-form-btn-group">
-                    <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Cancel</a>
+                    <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
                     <button type="submit" class="btn btn-primary">
                         {% trans 'Add Device' %}
                     </button>
