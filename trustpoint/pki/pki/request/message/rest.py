@@ -1,11 +1,8 @@
 """Simple CSR and subject + private key singing request messages for REST/internal use."""
-
+# TODO(AlexHx8472): rework this entire module including the rest message!
 from __future__ import annotations
 
-
-import base64
 from cryptography import x509
-from cryptography.hazmat.primitives.asymmetric.types import CertificatePublicKeyTypes
 
 from pki.models import DomainModel
 from pki.pki.request.message import (
@@ -22,11 +19,6 @@ if TYPE_CHECKING:
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
-# class RestOperation(Operation):
-#     ISSUE_CERT_CSR = 'issue_cert_csr'
-#     ISSUE_CERT_PKCS12 = 'issue_cert_pkcs12'
-
-
 class PkiRestRequestMessage(PkiRequestMessage):
     _mimetype: MimeType = MimeType.TEXT_PLAIN
     _content_transfer_encoding = None
@@ -39,33 +31,23 @@ class PkiRestRequestMessage(PkiRequestMessage):
 class PkiRestCsrRequestMessage(PkiRestRequestMessage):
     _csr = x509.CertificateSigningRequest
     _serial_number = str
+    _device_name = str
 
     def __init__(self,
                  domain_model: DomainModel,
                  csr: x509.CertificateSigningRequest,
-                 serial_number: str):
+                 serial_number: str,
+                 device_name: str):
         super().__init__(
             domain_model=domain_model,
             raw_content=None,
             received_mimetype=None,
             received_content_transfer_encoding=None)
 
-        try:
-            self._init_csr(csr)
-        except ValueError:
-            return
+        self._init_csr(csr)
+        self._serial_number = serial_number
+        self._device_name = device_name
 
-        try:
-            self._serial_number = serial_number
-        except ValueError:
-            return
-
-    # TODO: check domain configurations, if protocol and operation are enabled
-
-
-    # TODO(AlexHx8472): This does not make sense I think, there can't be any exception here, the raw bytes
-    # TODO(AlexHx8472): The raw bytes should be passed and the csr should be parsed here.
-    # TODO(AlexHx8472): The serial number should not be an attribute -> access parsed data directly
     def _init_csr(self, csr: x509.CertificateSigningRequest) -> None:
         try:
             self._csr = csr
@@ -96,24 +78,32 @@ class PkiRestCsrRequestMessage(PkiRestRequestMessage):
     def serial_number(self) -> str:
         return self._serial_number
 
+    @property
+    def device_name(self) -> str:
+        return self._device_name
+
 
 class PkiRestPkcs12RequestMessage(PkiRestRequestMessage):
     _serial_number = str
+    _device_name = str
 
     def __init__(self,
                  domain_model: DomainModel,
-                 serial_number: str):
+                 serial_number: str,
+                 device_name: str):
         super().__init__(
             domain_model=domain_model,
             raw_content=None,
             received_mimetype=None,
             received_content_transfer_encoding=None)
-        
-        try:
-            self._serial_number = serial_number
-        except ValueError:
-            return
+
+        self._serial_number = serial_number
+        self._device_name = device_name
         
     @property
     def serial_number(self) -> str:
         return self._serial_number
+
+    @property
+    def device_name(self) -> str:
+        return self._device_name

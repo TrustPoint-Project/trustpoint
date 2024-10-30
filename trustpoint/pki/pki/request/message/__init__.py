@@ -42,6 +42,7 @@ class ContentTransferEncoding(enum.Enum):
 class HttpStatusCode(enum.Enum):
     OK = 200
     BAD_REQUEST = 400
+    FORBIDDEN = 403
     UNSUPPORTED_MEDIA_TYPE = 415
 
 

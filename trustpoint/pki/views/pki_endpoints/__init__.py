@@ -86,5 +86,5 @@ class DomainHandler:
         err_msg = f'Domain {self.unique_name} does not allow any requests using the {self.pki_protocol.name} exist.'
         self._error_response = PkiResponseMessage(
             raw_response=err_msg,
-            http_status=HttpStatusCode.BAD_REQUEST,
+            http_status=HttpStatusCode.FORBIDDEN,
             mimetype=MimeType.TEXT_PLAIN)

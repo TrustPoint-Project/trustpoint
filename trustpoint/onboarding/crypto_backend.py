@@ -169,7 +169,7 @@ class CryptoBackend:
         log.debug('Issuing LDevID for device %s', device.device_name)
 
         pki_request = PkiRestCsrRequestMessage(
-            domain_model=device.domain, csr=csr, serial_number=serial_no
+            domain_model=device.domain, csr=csr, serial_number=serial_no, device_name=device.device_name
         )
         request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
         pki_response = request_handler.process_request()
@@ -230,7 +230,7 @@ class CryptoBackend:
         log.debug('Issuing LDevID for device %s', device.device_name)
 
         pki_request = PkiRestPkcs12RequestMessage(
-            domain_model=device.domain, serial_number=serial_no
+            domain_model=device.domain, serial_number=serial_no, device_name=device.device_name
         )
         request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
         pki_response = request_handler.process_request()

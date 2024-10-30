@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import secrets
 from typing import TYPE_CHECKING
-import re
+
 
 from devices.models import Device
 from django.contrib import messages

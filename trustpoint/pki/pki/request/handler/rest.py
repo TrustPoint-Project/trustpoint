@@ -31,15 +31,18 @@ class CaRestRequestHandler(CaRequestHandler, abc.ABC):
         # Build new subject x509.Name, adding serial number
         domain_name = self._request_message.domain_model.unique_name
         serial_number = self._request_message.serial_number
+        device_name = self._request_message.device_name
         attributes = [
             x509.NameAttribute(x509.NameOID.COMMON_NAME, 'Trustpoint LDevID'),
+            x509.NameAttribute(x509.NameOID.PSEUDONYM, device_name),
             x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, serial_number),
             x509.NameAttribute(x509.NameOID.DN_QUALIFIER, f'trustpoint.local.{domain_name}')
         ]
-        if csr:
-            for attribute in csr.subject:
-                if attribute.oid != x509.NameOID.SERIAL_NUMBER:
-                    attributes.append(attribute)
+        # Do not include anything else for LDevID certs. At least for now!
+        # if csr:
+        #     for attribute in csr.subject:
+        #         if attribute.oid != x509.NameOID.SERIAL_NUMBER or attribute.oid != x509.NameOID.COMMON_NAME:
+        #             attributes.append(attribute)
 
         return x509.Name(attributes)
 
@@ -69,7 +72,7 @@ class LocalCaRestCsrRequestHandler(CaRestRequestHandler):
     # TODO: Store issued certificate in DB
     def process_request(self) -> PkiResponseMessage:
         cert_builder = self._get_certificate_builder_from_csr()
-        cert_builder = cert_builder.issuer_name(self._issuing_ca.subject_name)
+        # cert_builder = cert_builder.issuer_name(self._issuing_ca.subject_name)
         cert = cert_builder.sign(
             private_key=self._issuing_ca.private_key,
             algorithm=self._request_message.csr.signature_hash_algorithm)
