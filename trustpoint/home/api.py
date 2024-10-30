@@ -5,7 +5,8 @@ from ninja import Router, Schema
 from django.http import HttpRequest
 from ninja.responses import Response, codes_4xx
 from devices.models import Device
-from pki.models import CertificateModel, IssuingCaModel, DomainModel
+from pki.models import CertificateModel, IssuingCaModel, DomainModel, BaseCaModel
+from pki import CaLocalization
 from trustpoint.schema import ErrorSchema, SuccessSchema
 from django.db.models import Count,F, Q,  Case, When, Value, IntegerField
 from django.db.models.functions import TruncDate
@@ -90,10 +91,10 @@ def get_device_counts_by_date_and_status():
   device_counts_by_date_and_os = {}
   try:
     device_date_os_qr = Device.objects \
-    .annotate(issue_date=TruncDate('created_at')) \
-    .values('issue_date', onboarding_status=F('device_onboarding_status')) \
-    .annotate(device_count=Count('id')) \
-    .order_by('issue_date', 'device_onboarding_status')
+      .annotate(issue_date=TruncDate('created_at')) \
+      .values('issue_date', onboarding_status=F('device_onboarding_status')) \
+      .annotate(device_count=Count('id')) \
+      .order_by('issue_date', 'device_onboarding_status')
   except Exception as e:
     print(f"Error occurred in device count by domain query: {e}")
   
@@ -143,9 +144,9 @@ def get_cert_counts_by_issuing_ca():
   cert_counts_by_issuing_ca = {}
   try:
     cert_issuing_ca_qr = CertificateModel.objects \
-    .annotate(cert_count=Count('issued_certificate_references')) \
-    .filter(issuing_ca_model__isnull=False) \
-    .values('cert_count', ca_name=F('issuing_ca_model__unique_name'))
+      .annotate(cert_count=Count('issued_certificate_references')) \
+      .filter(issuing_ca_model__isnull=False) \
+      .values('cert_count', ca_name=F('issuing_ca_model__unique_name'))
 
      # Convert the queryset to a list
     cert_counts_by_issuing_ca = list(cert_issuing_ca_qr)
@@ -159,16 +160,16 @@ def get_cert_counts_by_issuing_ca_and_date():
   cert_counts_by_issuing_ca_and_date = {}
   try:
     cert_issuing_ca_and_date_qr = CertificateModel.objects \
-    .filter(issuer_references__issuing_ca_model__isnull=False) \
-    .annotate(issue_date=TruncDate('added_at')) \
-    .values('issue_date', name=F('issuing_ca_model__unique_name')) \
-    .annotate(cert_count=Count('issued_certificate_references')) \
-    .filter(name__isnull=False) \
-    .order_by('added_at', 'name')
+      .filter(issuer_references__issuing_ca_model__isnull=False) \
+      .annotate(issue_date=TruncDate('added_at')) \
+      .values('issue_date', name=F('issuing_ca_model__unique_name')) \
+      .annotate(cert_count=Count('issued_certificate_references')) \
+      .filter(name__isnull=False) \
+      .order_by('added_at', 'name')
 
      # Convert the queryset to a list
     cert_counts_by_issuing_ca_and_date = list(cert_issuing_ca_and_date_qr)
-    #print("date", cert_counts_by_issuing_ca_and_date)
+    print("date", cert_counts_by_issuing_ca_and_date)
   except Exception as e:
     print(f"Error occurred in certificate count by issuing ca query: {e}")
 
@@ -179,9 +180,9 @@ def get_cert_counts_by_domain():
   cert_counts_by_domain = {}
   try:
     cert_domain_qr = DomainModel.objects \
-    .filter(issuing_ca__issuing_ca_certificate__isnull=False) \
-    .annotate(cert_count=Count('issuing_ca__issuing_ca_certificate__issued_certificate_references')) \
-    .values('unique_name', 'cert_count') 
+      .filter(issuing_ca__issuing_ca_certificate__isnull=False) \
+      .annotate(cert_count=Count('issuing_ca__issuing_ca_certificate__issued_certificate_references')) \
+      .values('unique_name', 'cert_count') 
     
      # Convert the queryset to a list
     cert_counts_by_domain = list(cert_domain_qr)
@@ -190,6 +191,25 @@ def get_cert_counts_by_domain():
     print(f"Error occurred in certificate count by issuing ca query: {e}")
 
   return cert_counts_by_domain
+
+def get_issuing_ca_counts_by_type():
+  """Get issuing ca counts by type from database"""
+  issuing_ca_type_counts = {str(type): 0 for _, type in CaLocalization.choices}
+  try:
+    ca_type_qr = BaseCaModel.objects.values('ca_localization').annotate(
+      count=Count('ca_localization')
+    )
+  except Exception as e:
+    print(f"Error occurred in ca counts by type query: {e}")
+  # Mapping from short code to human-readable name
+  protocol_mapping = {key: str(value) for key, value in CaLocalization.choices}
+  issuing_ca_type_counts = {
+    protocol_mapping[item['ca_localization']]: item['count']
+    for item in ca_type_qr
+  }
+
+  #device_op_counts['total'] = sum(device_op_counts.values())
+  return issuing_ca_type_counts
 
 
 # --- PUBLIC HOME API ENDPOINTS ---
@@ -243,5 +263,9 @@ def dashboard_data(request: HttpRequest):
     cert_counts_by_domain = get_cert_counts_by_domain()
     if cert_counts_by_domain:
       dashboard_data["cert_counts_by_domain"] = cert_counts_by_domain
+    issuing_ca_counts_by_type = get_issuing_ca_counts_by_type()
+    print("issuing ca count by type", issuing_ca_counts_by_type)
+    if issuing_ca_counts_by_type:
+      dashboard_data["ca_counts_by_type"] = issuing_ca_counts_by_type
     return Response(dashboard_data)
 

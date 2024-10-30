@@ -1,10 +1,13 @@
-{% extends 'trustpoint/base.html' %} {% block content %} {% include 'home/counts-panel.html' %} {%
-include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
+{% extends 'trustpoint/base.html' %}
+{% block content %}
+{% include 'home/counts-panel.html' %} 
+{% include 'home/notifications-tab.html' %}
+{% include 'home/charts-tab.html' %}
 
 <script>
   var lineChartDevice, donutChartDevice, barChartDevice;
   var lineChartCert, donutChartCert, barChartCert;
-  var lineChart, barChartCA, donutChartCA, certsByIssuingCaDonutChart;
+  var lineChart, certsByDateStackChart, donutChartCA, certsByIssuingCaDonutChart;
   async function fetchDasbhboardData() {
     try {
       const response = await fetch("/api/home/dashboard_data");
@@ -190,6 +193,35 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     });
   }
 
+  // Function to update the certificates by domain donut chart
+  function updateCertDomainChart(certDomainCounts) {
+    var certsByDomainPieChartEle = document
+      .getElementById("certsByDomainPieChart")
+      .getContext("2d");
+    donutChartCert != undefined ? donutChartCert.destroy() : "";
+    var chartLabels = [];
+    var chartData = [];
+    certDomainCounts.forEach((item) => {
+      chartLabels.push(item.unique_name);
+      chartData.push(item.cert_count);
+    });
+    //console.log("certDomainCounts donut", chartData, chartLabels);
+    donutChartCert = new Chart(certsByDomainPieChartEle, {
+      type: "doughnut",
+      data: {
+        labels: chartLabels,
+        datasets: [
+          {
+            data: chartData,
+            borderWidth: 1,
+            //backgroundColor: ["#0d6efd", "#ffc107", "#d10c15"],
+            hoverOffset: 4,
+          },
+        ],
+      },
+    });
+  }
+
   // Function to update the issuing ca counts
   function updateCertsByIssuingCAChart(certIssuingCACounts) {
     var certsByIssuingCaDonutChartEle = document
@@ -221,8 +253,10 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
   // Function to update the issuing ca certificate stack chart
   function updateCertsByDateStackChart(certDateCounts) {
-    var barChartCAEle = document.getElementById("barChartCA").getContext("2d");
-    barChartCA != undefined ? barChartCA.destroy() : "";
+    var certsByDateStackChartEle = document
+      .getElementById("certsByDateStackChart")
+      .getContext("2d");
+    certsByDateStackChart != undefined ? certsByDateStackChart.destroy() : "";
 
     const chartLabels = [...new Set(certDateCounts.map((item) => item.issue_date))]; // Unique dates
     const datasets = {};
@@ -243,7 +277,7 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     // Convert datasets object to array for Chart.js
     const chartDatasets = Object.values(datasets);
     //console.log("stacked chart", chartDatasets);
-    barChartCA = new Chart(barChartCAEle, {
+    certsByDateStackChart = new Chart(certsByDateStackChartEle, {
       type: "bar",
       data: {
         labels: chartLabels,
@@ -259,19 +293,21 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     });
   }
 
-  // Function to update the cert domain donut chart
-  function updateCertDomainChart(certDomainCounts) {
-    var donutChartCertEle = document.getElementById("donutChartCert").getContext("2d");
-    donutChartCert != undefined ? donutChartCert.destroy() : "";
+  // Function to update the issuing ca pie chart
+  function updateIssuingCaTypeChart(issuingCaTypeCounts) {
+    var issuingCaByTypePieChartEle = document
+      .getElementById("issuingCaByTypePieChart")
+      .getContext("2d");
+    donutChartCA != undefined ? donutChartCA.destroy() : "";
     var chartLabels = [];
     var chartData = [];
-    certDomainCounts.forEach((item) => {
-      chartLabels.push(item.unique_name);
-      chartData.push(item.cert_count);
+    Object.entries(issuingCaTypeCounts).forEach(([key, value]) => {
+      chartLabels.push(key);
+      chartData.push(value);
     });
-    //console.log("certDomainCounts donut", chartData, chartLabels);
-    donutChartCert = new Chart(donutChartCertEle, {
-      type: "doughnut",
+    console.log("issuingCaTypeCounts", chartData, chartLabels);
+    donutChartDevice = new Chart(issuingCaByTypePieChartEle, {
+      type: "pie",
       data: {
         labels: chartLabels,
         datasets: [
@@ -317,6 +353,9 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
       }
       if ("cert_counts_by_domain" in dashboardData) {
         updateCertDomainChart(dashboardData.cert_counts_by_domain);
+      }
+      if ("ca_counts_by_type" in dashboardData) {
+        updateIssuingCaTypeChart(dashboardData.ca_counts_by_type);
       }
     }
   }
@@ -381,12 +420,10 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
         // var lineChartEle = document.getElementById("lineChart").getContext("2d");
         // if(!lineChart)
         //   lineChart = new Chart(lineChartEle, lineChartConfig);
-
         //var barChartCAEle = document.getElementById("barChartCA").getContext("2d");
         //if (!barChartCA) barChartCA = new Chart(barChartCAEle, barChartCAConfig);
-
-        var donutChartCAEle = document.getElementById("donutChartCA").getContext("2d");
-        if (!donutChartCA) donutChartCA = new Chart(donutChartCAEle, donutChartCAConfig);
+        //var donutChartCAEle = document.getElementById("donutChartCA").getContext("2d");
+        //if (!donutChartCA) donutChartCA = new Chart(donutChartCAEle, donutChartCAConfig);
       }
     }
   });
