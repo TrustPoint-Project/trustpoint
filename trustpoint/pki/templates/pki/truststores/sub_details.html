@@ -1,0 +1,24 @@
+{% block sub_details %}
+    <div>
+        <div>Unique Name</div>
+        <div>
+            <a href="{% url 'pki:truststore_details' pk=truststore.id %}"> {{ truststore.unique_name }} </a>
+        </div>
+    </div>
+
+    <div>
+        <div>Number of certificates</div>
+            {{ truststore.certificates.count }}
+    </div>
+
+    <div>
+        <div>Distributed by Domains</div>
+        <div>
+            {% for domain in truststore.domain_truststores.all %}
+            <a href="{% url 'pki:domains-detail' pk=domain.pk %}"> {{ domain.unique_name }}</a><br/>
+            {% empty %}
+                <span>No domains assigned.</span>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock sub_details %}

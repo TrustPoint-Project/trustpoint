@@ -252,30 +252,42 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 
 .tp-main {
     grid-area: main;
-    padding: 3rem;
+    padding: 2.34rem;
     overflow-y: auto;
 }
 
 .card-header, .card-footer {
-    min-height: 2rem;
+    min-height: 2.5rem;
     padding: 0.5rem;
+    flex-shrink: 0;
 }
 
-.tp-card-centered {
-
+.tp-card-centered-content {
+    /*
+        This class is part of detail/KVP list/download etc. views.
+        TODO: Currently, we are using the full width.
+        Depending on screen size, it may look better to limit the width of the content
+        and / or to center it.
+    */
     margin: 0 auto;
+    /* max-width: 67rem; */
 }
 
 .tp-card-btn-footer {
     display: flex;
 }
 
-.tp-card-split {
+.tp-card-split { /* unused class */
     display: grid;
     grid-template-columns: repeat(2, 1fr);
 }
 
 .tp-card-btn-footer > * {
+    /*
+        TODO: Flex grow buttons look really good on small screens
+        On wide screens, they look out of place.
+        Perhaps consider keeping secondary buttons to the left and one primary action to the right
+    */
     flex-grow: 1;
     margin: 0 0.5rem;
 }
@@ -288,11 +300,71 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     margin-right: 0;
 }
 
+.tp-kvp-list {
+    display: grid;
+    column-gap: 0.5rem;
+    row-gap: 0.3rem;
+    grid-template-columns: minmax(100px, 1fr) minmax(200px, 2fr);
+    max-width: 65rem;
+    margin: 0 1rem 1.2rem 1rem;
+    padding-left: 0;
+}
+
+.tp-kvp-list > div {
+    /* Treat children of this div as direct grid items */
+    display: contents;
+}
+  
+.tp-kvp-list > div > div:nth-child(1),
+.tp-kvp-list > li > div:nth-child(1) {
+    font-weight: bold; /* Style for keys */
+}
+
+.tp-kvp-list > li {
+    display: contents;
+    list-style-type: none;
+    text-align: left;
+}
+
+.tp-kvp-list hr {
+    grid-column: 1 / -1; /* Make the <hr> span across both columns */
+    margin: 0.25rem 0;
+  }
+  
+/*.tp-kvp-list > div > div:nth-child(2) {
+    text-align: left; /* Style for values 
+} */
+
+.tp-row-br::before {
+    content: "";
+    grid-column: 1 / -1;
+    margin-top: 1rem;
+    /* border:1px solid #f90; */
+}
+
+.tp-indent {
+    padding: 0 1rem 1.2rem 1rem;
+}
+
 .tp-sticky-footer {
     position: sticky;
     bottom: 0;
     min-height: 55px;
+    z-index: 5;
 }
+/* .tp-sticky-footer::before {
+    content: "";
+    position: absolute;
+    bottom: 0;
+    left: -2px;
+    right: -2px;
+    height: 55px;
+    background: #f00;
+    background-size: cover;
+    z-index: -1;
+    background-color: var(--bs-body-bg);
+    overflow: hidden;
+  } */
 
 .tp-main-users {
     width: max-content;
@@ -305,6 +377,10 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
 .tp-card-users {
     width: 90vw;
     max-width: 25rem;
+}
+
+hr.hr-m {
+    margin: 0.6rem -0.125rem 0.6rem -0.125rem;
 }
 
 /* ----- Input and elements ----- */
@@ -376,16 +452,15 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     grid-template-columns: 1fr 2fr;
 }
 
-.tp-form-grid-4 > li { /* unused class */
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
+input, select {
+    max-width: 42rem;
 }
 
 /* ----- Tables ----- */
 
-.table-container {
+/* .table-container {
     overflow-x: auto;
-}
+} */
 
 table .tp-table-btn {
     padding: 0.2rem 0.8rem;
@@ -450,7 +525,7 @@ table .tp-onboarding-btn {
 /* ----- Messages ----- */
 
 .tp-messages {
-    margin-top: -1.5rem;
+    margin-top: -1.0rem;
     margin-bottom: 1.5rem;
 }
 
@@ -460,6 +535,11 @@ table .tp-onboarding-btn {
     border-radius: 0.3rem;
     display: grid;
     grid-template-columns: 1fr;
+}
+
+.tp-msg-icon-margin {
+    margin-top: 0.1rem;
+    margin-right: 0.5rem;
 }
 
 /* ----- Theme ----- */
@@ -561,12 +641,6 @@ svg.theme-icon {
   transform: scale(1.025);
 }
 
-
-.form-error { /* unused class */
-    font-size: 0.8rem;
-    min-height: 1.2rem;
-    line-height: 1.2rem;
-}
 
 /* ----- Media queries for responsive design ----- */
 
@@ -730,29 +804,6 @@ code {
     font-weight: 500;
     padding-top: 0.25rem;
   }
-
-#id_device_onboarding_status, #id_onboarding_protocol, #id_domain{
-  --bs-form-select-bg-img: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='m2 5 6 6 6-6'/%3e%3c/svg%3e");
-  display: block;
-  width: 100%;
-  padding: 0.375rem 2.25rem 0.375rem 0.75rem;
-  font-size: 1rem;
-  font-weight: 400;
-  line-height: 1.5;
-  color: var(--bs-body-color);
-  -webkit-appearance: none;
-  -moz-appearance: none;
-  appearance: none;
-  background-color: var(--bs-body-bg);
-  background-image: var(--bs-form-select-bg-img),
-    var(--bs-form-select-bg-icon, none);
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 16px 12px;
-  border: var(--bs-border-width) solid var(--bs-border-color);
-  border-radius: var(--bs-border-radius);
-  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
-}
 
 .filter-btn {
     margin-top: 10px;

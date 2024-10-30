@@ -1,8 +1,8 @@
 ---
 name: Epic
-about: Create a new epic.
-title: ''
-labels: 'epic'
+about: Create a new epic. (Maintainers Only)
+title: "[EPIC]"
+labels: epic
 assignees: ''
 
 ---
@@ -11,5 +11,5 @@ assignees: ''
 
 
 **Acceptance Criteria**
-- [ ] A
-- [ ] B
+- [ ] Job Story #x : [ description ]
+- [ ] Job Story #x : [ description ]

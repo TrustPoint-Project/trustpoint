@@ -7,7 +7,7 @@ from heapq import heapify, heappop, heappush
 from django.conf import settings
 from django.utils import timezone
 
-from .models import IssuingCaModel
+from .models import BaseCaModel
 
 crl_schedule = []
 
@@ -16,7 +16,7 @@ log = logging.getLogger('tp.pki')
 
 def initialize_crl_schedule() -> None:
     """Initialize the CRL schedule for all IssuingCas."""
-    for entry in IssuingCaModel.objects.all():
+    for entry in BaseCaModel.objects.all():
         crl = entry.get_issuing_ca().get_crl_as_x509()
         if crl:
             next_crl_time = crl.next_update_utc
@@ -28,7 +28,7 @@ def initialize_crl_schedule() -> None:
 
 def add_crl_to_schedule(instance) -> bool:
     """Adds new CRL instance to scheduler"""
-    if isinstance(instance, IssuingCaModel):
+    if isinstance(instance, BaseCaModel):
         schedule_next_crl(instance)
         log.debug('%s added to CRL schedule.', instance)
         return True
@@ -38,7 +38,7 @@ def add_crl_to_schedule(instance) -> bool:
 def remove_crl_from_schedule(instance) -> bool:
     """Removes CRL instance from scheduler after instance got deleted"""
     global crl_schedule
-    if isinstance(instance, IssuingCaModel):
+    if isinstance(instance, BaseCaModel):
         original_length = len(crl_schedule)
         crl_schedule = [(time, inst) for time, inst in crl_schedule if inst != instance]
         heapify(crl_schedule)
@@ -48,7 +48,7 @@ def remove_crl_from_schedule(instance) -> bool:
     raise TypeError
 
 
-def schedule_next_crl(issuing_ca: IssuingCaModel) -> None:
+def schedule_next_crl(issuing_ca: BaseCaModel) -> None:
     """Schedule the next CRL generation for the given issuing instance.
 
     Args:
@@ -65,7 +65,7 @@ def generate_crl(issuing_instance) -> None:
     Args:
         issuing_instance (IssuingCa or DomainProfile): The issuing instance for which to generate a CRL.
     """
-    if isinstance(issuing_instance, IssuingCaModel):
+    if isinstance(issuing_instance, BaseCaModel):
         issuing_instance.get_issuing_ca().generate_crl()
     schedule_next_crl(issuing_instance)
 

@@ -9,11 +9,11 @@
     <script src="{% static 'js/onboarding.js' %}"></script>
 {% endblock head %}
 {% block content %}
-    <div class="card card-main text-center">
+    <div class="card text-center">
         <div class="card-header d-flex">
             <h1>{% blocktranslate %}Onboarding device {{ device_name }} with Trustpoint Client{% endblocktranslate %}</h1>
         </div>
-        <div class="card-body tp-main-centered pt-3 pb-4">
+        <div class="card-body pt-3 pb-4">
             <h2>{% trans "Trustpoint Client Download" %}</h2>
             <hr>
             <h2>{% trans "Trustpoint Client Provisioning command" %}</h2>
@@ -21,8 +21,8 @@
             <div class="text-end"><button class="btn btn-primary" onclick="copyToClipboard(this,'#code-provisioning-0')">{% trans "Copy to clipboard" %}</button></div>
             <hr>
             <h2>{% trans "Onboarding progress" %}</h2>
-            <div id="onboarding-state" class="alert alert-info d-flex align-items-center mt-3 breathing-anim" role="alert">  
-                <svg class="bi flex-shrink-0 me-2" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
+            <div id="onboarding-state" class="alert alert-info d-flex mt-3 breathing-anim" role="alert">  
+                <svg class="bi flex-shrink-0 tp-msg-icon-margin" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
                 <div>{% trans "Fetching state from server..." %}</div>                
             </div>
         </div>

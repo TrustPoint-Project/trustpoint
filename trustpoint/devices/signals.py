@@ -1,5 +1,5 @@
 from devices.models import Device
-from pki.models import ReasonCode
+from pki import ReasonCode
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 

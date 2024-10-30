@@ -7,7 +7,7 @@
     <form method="GET">
         {% csrf_token %}
 
-        <div class="card tp-card-centered">
+        <div class="card">
 
             <div class="card-header">
                 <div>
@@ -17,11 +17,10 @@
 
             <div class="card-body">
                 <div class="tp-card-centered-content">
-                    <h2>{{ truststores.count }} Truststores Selected</h2>
-                    <hr>
-                    <br>
+                    <h2>{{ truststores.count }} Truststores selected</h2>
+                    <hr class="hr-m">
 
-                    <h2>Download Trust-Stores</h2>
+                    <h2>{% trans "Download Truststores" %}</h2>
                     <div class="pt-2 pb-2">
                         <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:truststores-file-download' pks=pks_url_path file_format='pem'  archive_format='zip' %}">Download as PEM (ZIP)</a>
                         <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:truststores-file-download' pks=pks_url_path file_format='pkcs7_der'  archive_format='zip' %}">Download as PKCS#7-DER (ZIP)</a>
@@ -33,39 +32,20 @@
                         <a class="btn btn-primary min-width-20 me-1" href="{% url 'pki:truststores-file-download' pks=pks_url_path file_format='pkcs7_pem'  archive_format='tar_gz' %}">Download as PKCS#7-PEM (TAR.GZ)</a>
                     </div>
 
-                    <br>
-                    <h2>Truststore Details</h2>
+                    <h2>{% trans "Truststore Details" %}</h2>
                     <hr>
-                    <br>
 
                     {% for truststore in truststores %}
 
-                        <div class="tp-card-split mb-2">
-                            <h2>Truststore {{ forloop.counter }}</h2>
-                            <div></div>
-                        </div>
-
-                         <div class="tp-card-split">
-                            <div>Unique Name</div>
-                            <div>
-                                <a href="{% url 'pki:truststore_details' pk=truststore.id %}"> {{ truststore.unique_name }} </a>
-                            </div>
-                        </div>
-
-                        <div class="tp-card-split">
-                            <div>Number of certificates</div>
-                                {{ truststore.certificates.count }}
-                        </div>
-
-                        <div class="tp-card-split">
-                            <div>Distributed by Domains</div>
-                                N/A {# TODO #}
+                        <h2 class="mb-2 ms-2">Truststore {{ forloop.counter }}</h2>
+                        <div class="tp-kvp-list mb-0">
+                        
+                            {% include 'pki/truststores/sub_details.html' %}
+    
                         </div>
 
                         {% if not forloop.last %}
-                            <br>
                             <hr>
-                            <br>
                         {% endif %}
 
                     {% endfor %}

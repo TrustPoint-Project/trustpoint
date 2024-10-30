@@ -256,7 +256,7 @@ class TrustStoreConfigFromDomainTable(tables.Table):
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
 
     details = tables.TemplateColumn(
-        '<a href="{% url "pki:truststore_details" pk=record.pk %}" class="btn btn-secondary">Details</a>',
+        '<a href="{% url "pki:truststore_details" pk=record.pk %}" class="btn btn-secondary tp-table-btn">Details</a>',
         orderable=False
     )
 
@@ -264,7 +264,6 @@ class TrustStoreConfigFromDomainTable(tables.Table):
         model = TrustStoreModel
         template_name = 'django_tables2/bootstrap5.html'
         fields = ('row_checkbox', 'unique_name', 'url_path')
-        attrs = {'class': 'table'}
 
     def render_row_checkbox(self, record: TrustStoreModel):
         """Render the checkbox reflecting whether the trust store is assigned to the domain."""
@@ -288,7 +287,7 @@ class TrustStoreTable(tables.Table):
         template_name = 'django_tables2/bootstrap5.html'
         # order_by = '-created_at'
         empty_values = ()
-        _msg = _('There are no Certificates available.')
+        _msg = _('No Truststores have been added yet.')
         empty_text = format_html_lazy('<div class="text-center">{}</div>', _msg)
 
         fields = (

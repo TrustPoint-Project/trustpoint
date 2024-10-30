@@ -5,6 +5,8 @@ import logging
 import socket
 from time import sleep
 
+from django.conf import settings
+
 from zeroconf import IPVersion, ServiceInfo, Zeroconf
 from util.network import get_local_ip
 
@@ -20,12 +22,10 @@ class TrustpointMDNSResponder:
         self.info = ServiceInfo(
             "_http._tcp.local.",
             "trustpoint._http._tcp.local.",
-            # TODO(Air): Do not hardcode IP + port
             # get_local_ip() works, but only for IPv4 without NAT
-            addresses=[socket.inet_aton("127.0.0.1"),
-                       #socket.inet_aton(get_local_ip())
+            addresses=[socket.inet_aton(settings.ADVERTISED_HOST),
                       ],
-            port=443, # TODO: Do not hardcode port
+            port=settings.ADVERTISED_PORT,
             #properties=desc,
             server="tp.local.",
         )
