@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import traceback
 
 from django.utils.decorators import method_decorator
@@ -25,6 +26,8 @@ from typing import TYPE_CHECKING
 if TYPE_CHECKING:
     from django.http import HttpResponse
 
+log = logging.getLogger('tp.pki.views')
+
 @method_decorator(csrf_exempt, name='dispatch')
 class CmpInitializationRequestView(View):
 
@@ -34,6 +37,7 @@ class CmpInitializationRequestView(View):
         domain_handler = DomainHandler(self.kwargs.get('domain'), PkiProtocol.CMP)
         if not domain_handler.is_valid():
             print(domain_handler.error_response.raw_response)
+            log.debug(f'CMP IR DH failed with response: {domain_handler.error_response.raw_response}')
             return domain_handler.error_response.to_django_http_response()
 
 
@@ -45,6 +49,7 @@ class CmpInitializationRequestView(View):
         )
 
         if not pki_request.is_valid:
+            log.debug(f'CMP IR PKI req failed with response: {pki_request.error_response.raw_response}')
             return pki_request.error_response.to_django_http_response()
 
         request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)

@@ -45,21 +45,13 @@ class LocalCmpInitializationRequestHandler(CaCmpRequestHandler):
     # TODO: Validation if Certificate is allowed to be issued
     # TODO: check if certificate was already issued etc.
     def process_request(self) -> PkiResponseMessage:
-        domain_model = self._request_message.domain_model
-
-        issuing_ca_cert_model = domain_model.issuing_ca.issuing_ca_certificate.issued_certificate_references.first()
-        crypto_issuing_ca_cert = issuing_ca_cert_model.get_certificate_serializer().as_crypto()
-        authorized_clients = [crypto_issuing_ca_cert]
-        # shared_secret = b'foo123'
-
         # try:
 
         cmp_message_handler = CMPMessageHandler(pki_message=self._request_message.parsed_content, operation='ir')
         cmp_message_handler.set_issuing_ca(issuing_ca_object=self._issuing_ca)
-        # if authorized_clients:
-        cmp_message_handler.set_signature_based_protection(authorized_clients=authorized_clients)
-        #if shared_secret:
-        #    cmp_message.set_pbm_based_protection(shared_secret=shared_secret)
+
+        cmp_message_handler.set_signature_based_protection()
+
         encoded_response, http_status_code = cmp_message_handler.process_request()
 
         return PkiResponseMessage(
