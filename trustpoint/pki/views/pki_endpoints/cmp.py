@@ -36,7 +36,7 @@ class CmpInitializationRequestView(View):
     def post(self, request, *args, **kwargs) -> HttpResponse:
         domain_handler = DomainHandler(self.kwargs.get('domain'), PkiProtocol.CMP)
         if not domain_handler.is_valid():
-            print(domain_handler.error_response.raw_response)
+            # print(domain_handler.error_response.raw_response)
             log.debug(f'CMP IR DH failed with response: {domain_handler.error_response.raw_response}')
             return domain_handler.error_response.to_django_http_response()
 

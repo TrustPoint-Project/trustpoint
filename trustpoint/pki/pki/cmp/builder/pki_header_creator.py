@@ -185,7 +185,6 @@ class PKIHeaderCreator:
         Sets the recipient key identifier in the PKIHeader.
         """
         sender_kid = self.incoming_header.getComponentByName('senderKID')
-        print("SENDER KID")
         if sender_kid.hasValue():
             recip_kid = rfc2459.KeyIdentifier(sender_kid._value).subtype(
             explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 3))
