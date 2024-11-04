@@ -13,15 +13,21 @@
                 <div class="card-body">
                     <div class="tp-card-centered-content">           
                         <div class="card-body">
-                            <h3>{{ issuing_ca.unique_name }} {% trans "Domains" %}</h3>
+                            <h3>{% trans "Domains" %}</h3>
                             <hr>
                             {% if issuing_ca.domain.all %}
                                 {% for domain in issuing_ca.domain.all %}
                                     <li class="tp-card-split">
                                         {{ domain.unique_name }}
-                                        <a href="{% url 'pki:domains-detail' domain.id %}" class="primary">
-                                            {% trans "Details" %}
-                                        </a>
+                                        <div>
+                                            <a href="{% url 'pki:domains-detail' domain.id %}" class="primary">
+                                                {% trans "Details" %}
+                                            </a>
+                                            |
+                                            <a href="{% url 'pki:domains-config' domain.id %}" class="primary">
+                                                {% trans "Config" %}
+                                            </a>
+                                        </div>
                                     </li>
                                 {% endfor %}
                             {% else %}
@@ -84,7 +90,7 @@
                             <div>{% trans 'Generate CRL' %}</div>
                             <div>
                                 <a href="{% url 'pki:generate-ca-crl' ca_id=issuing_ca.pk %}" class="btn btn-sm btn-primary">
-                                    {% trans "generate CRL" %}
+                                    {% trans "Generate CRL" %}
                                 </a>
                             </div>
                         </div>
