@@ -34,8 +34,8 @@ class Command(CertificateCreationCommandMixin, BaseCommand):
             encipher_only=False
         )
 
-        root_1, root_1_key = self.create_root_ca('Root CA')
-        issuing_1, issuing_1_key = self.create_issuing_ca(root_1_key, 'Root CA', 'Issuing CA', validity_days=50)
+        root_1, root_1_key = self.create_root_ca('root_ca')
+        issuing_1, issuing_1_key = self.create_issuing_ca(root_1_key, 'root_ca', 'issuing_ca', validity_days=50)
 
         self.store_issuing_ca(issuing_1, [root_1], issuing_1_key, 'issuing_ca.p12')
         self.save_issuing_ca(issuing_1, root_1, [], issuing_1_key)
@@ -48,7 +48,7 @@ class Command(CertificateCreationCommandMixin, BaseCommand):
             validity_days = random_integer * sign
             ee, key = self.create_ee(
                 issuer_private_key=issuing_1_key,
-                issuer_cn='Issuing CA',
+                issuer_cn='issuing_ca',
                 subject_cn=f'EE {i}',
                 key_usage_extension=key_usage_extension,
                 validity_days=validity_days
