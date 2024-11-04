@@ -128,7 +128,7 @@ class CertificateCreationCommandMixin:
             intermediate_ca_certs.append(CertificateModel.save_certificate(cert))
 
         issuing_ca_model = IssuingCaModel()
-        issuing_ca_model.unique_name = 'Issuing CA'
+        issuing_ca_model.unique_name = 'issuing_ca'
         issuing_ca_model.issuing_ca_certificate = issuing_ca_cert_model
         issuing_ca_model.root_ca_certificate = root_ca_cert_model
         issuing_ca_model.private_key_pem = private_key.private_bytes(
