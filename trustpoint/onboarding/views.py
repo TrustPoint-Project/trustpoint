@@ -408,6 +408,19 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
         device = self.get_object()
         context['onboarded'] = device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED
         context['form'] = RevokeCertificateForm()
+
+        certs_by_domain = {}
+        #TODO: Iterate through domains, if we have multiple domains associate with one device
+        if device.domain:
+            domain_certs = device.get_all_active_certs_by_domain(device.domain)
+            if domain_certs:
+                certs_by_domain[device.domain] = {
+                    'ldevid': domain_certs['ldevid'],
+                    'other': domain_certs['other'],
+                }
+
+        context['certs_by_domain'] = certs_by_domain
+
         return context
 
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
@@ -422,8 +435,8 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
         form = RevokeCertificateForm(request.POST)
         if form.is_valid():
             revocation_reason = form.cleaned_data['revocation_reason']
-            
-            if device.ldevid:
+
+            if device.get_current_ldevid_by_domain(domain=device.domain):
                 if device.revoke_ldevid(revocation_reason):
                     messages.success(request, _('LDevID certificate for device %s revoked.') % device.device_name)
                 else:

@@ -18,7 +18,9 @@ from django.utils.translation import gettext_lazy as _
 
 from pki.pki.request import Protocols
 
-from . import ReasonCode, CertificateStatus, CaLocalization
+from devices.models import Device
+
+from . import CertificateTypes, ReasonCode, CertificateStatus, CaLocalization, TemplateName
 
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
@@ -722,6 +724,21 @@ class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExten
 #     pass
 
 
+class IssuedDeviceCertificateModel(models.Model):
+    device = models.ForeignKey(Device, on_delete=models.CASCADE, editable=False, null=True, blank=True, related_name='issued_device_certificates')
+    certificate_type = models.CharField(max_length=256, choices=CertificateTypes.choices)
+    domain = models.ForeignKey('DomainModel', on_delete=models.CASCADE)
+    template_name = models.CharField(max_length=256, choices=TemplateName.choices, null=True, blank=True)
+    protocol = models.CharField(max_length=256, default=None, null=True, blank=True)
+    certificate = models.ForeignKey(
+        'CertificateModel', on_delete=models.CASCADE, related_name='issued_device_certificate', null=True, blank=True)
+
+
+    def get_certificate_type(self) -> str:
+        """Returns type of certificate"""
+        return self.certificate_type
+
+
 class CertificateModel(models.Model):
     """X509 Certificate Model.
 
@@ -1096,6 +1113,7 @@ class CertificateModel(models.Model):
 
         # ----------------------------------------- Certificate Model Instance -----------------------------------------
 
+
         cert_model = CertificateModel(
             sha256_fingerprint=sha256_fingerprint,
             signature_algorithm_oid=signature_algorithm_oid,
@@ -1264,6 +1282,7 @@ class CertificateModel(models.Model):
     def remove_private_key(self):
         self.private_key = None
         self._save()
+
 
 # ------------------------------------------------- Issuing CA Models --------------------------------------------------
 

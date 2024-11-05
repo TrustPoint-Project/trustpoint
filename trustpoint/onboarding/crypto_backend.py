@@ -13,9 +13,10 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
+from django.db import transaction
+from pki import CertificateTypes, TemplateName
 from pki.models import CertificateModel
 from pki.pki.request.handler.factory import CaRequestHandlerFactory
 from pki.pki.request.message.rest import PkiRestCsrRequestMessage, PkiRestPkcs12RequestMessage
@@ -44,7 +45,7 @@ class OnboardingError(Exception):
 
 class VerificationError(Exception):
     """Exception raised for errors in signature verification."""
-    
+
     def __init__(self, message: str = 'An error occurred during signature verification.') -> None:
         """Initializes a new VerificationError with a given message."""
         self.message = message
@@ -69,7 +70,7 @@ class CryptoBackend:
         pkey = hashlib.pbkdf2_hmac('sha256', hexpass.encode(), hexsalt.encode(), iterations, dklen)
         h = hmac.new(pkey, message, hashlib.sha256)
         return h.hexdigest()
-    
+
     @staticmethod
     def get_server_tls_cert() -> str:
         """Returns the TLS certificate used by the Trustpoint server.
@@ -133,6 +134,7 @@ class CryptoBackend:
         return signing_ca.issuing_ca_certificate
 
     @staticmethod
+    @transaction.atomic
     def sign_ldevid_from_csr(csr_pem: bytes, device: Device) -> bytes:
         """Signs a certificate signing request (CSR) with the onboarding CA.
 
@@ -180,7 +182,13 @@ class CryptoBackend:
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
             raise OnboardingError(exc_msg)
 
-        device.ldevid = cert_model
+        device.issued_device_certificates.create(
+            certificate=cert_model,
+            domain=device.domain,
+            certificate_type=CertificateTypes.LDEVID,
+            template_name=TemplateName.GENERIC,
+            protocol=device.onboarding_protocol
+        )
         device.save()
         log.info('Issued and stored LDevID for device %s', device.device_name)
         return pki_response.raw_response
@@ -212,6 +220,7 @@ class CryptoBackend:
         return private_key
 
     @staticmethod
+    @transaction.atomic
     def gen_keypair_and_ldevid(device: Device) -> bytes:
         """Generates a keypair and LDevID certificate for the device.
 
@@ -244,11 +253,17 @@ class CryptoBackend:
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
             raise OnboardingError(exc_msg)
 
-        device.ldevid = cert_model
+        device.issued_device_certificates.create(
+            certificate=cert_model,
+            domain=device.domain,
+            certificate_type=CertificateTypes.LDEVID,
+            template_name=TemplateName.GENERIC,
+            protocol=device.onboarding_protocol
+        )
         device.save()
         log.info('Issued and stored LDevID for device %s', device.device_name)
         return pki_response.raw_response
-    
+
     @staticmethod
     def get_nonce(nbytes: int = 16) -> str:
         """Generates a new nonce for use in the onboarding process."""
