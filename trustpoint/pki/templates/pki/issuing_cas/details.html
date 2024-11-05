@@ -197,6 +197,7 @@
                 <div class="card-footer">
                     <div class="tp-card-btn-footer">
                         <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                        <a href="{% url 'pki:issuing_cas-config' pk=issuing_ca.pk%}" class="btn btn-secondary">{% trans 'Config' %}</a>
                         <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
                     </div>
                 </div>

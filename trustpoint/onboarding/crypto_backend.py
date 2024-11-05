@@ -8,7 +8,6 @@ import hashlib
 import hmac
 import logging
 import secrets
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -23,8 +22,7 @@ from pki.pki.request.message.rest import PkiRestCsrRequestMessage, PkiRestPkcs12
 from util.strings import StringValidator
 
 if TYPE_CHECKING:
-    from cryptography.hazmat.primitives.asymmetric.types import CertificatePublicKeyTypes, PrivateKeyTypes
-    from cryptography.x509 import Certificate as X509Certificate
+    from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
     from devices.models import Device
 
 PBKDF2_ITERATIONS = 1000000
@@ -173,12 +171,13 @@ class CryptoBackend:
         log.debug('Issuing LDevID for device %s', device.device_name)
 
         pki_request = PkiRestCsrRequestMessage(
-            domain_unique_name=device.domain.unique_name, csr=csr, serial_number=serial_no
+            domain_model=device.domain, csr=csr, serial_number=serial_no, device_name=device.device_name
         )
         request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
         pki_response = request_handler.process_request()
         cert_model = pki_response.cert_model
-        if (not isinstance(cert_model, CertificateModel)):
+
+        if not isinstance(cert_model, CertificateModel):
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
             raise OnboardingError(exc_msg)
 
@@ -191,6 +190,7 @@ class CryptoBackend:
         )
         device.save()
         log.info('Issued and stored LDevID for device %s', device.device_name)
+
         return pki_response.raw_response
 
     @staticmethod
@@ -238,18 +238,14 @@ class CryptoBackend:
 
         log.debug('Issuing LDevID for device %s', device.device_name)
 
-        subject = x509.Name([
-            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'ldevid.trustpoint.local'),
-            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, serial_no)
-        ])
-
         pki_request = PkiRestPkcs12RequestMessage(
-            domain_unique_name=device.domain.unique_name, subject=subject
+            domain_model=device.domain, serial_number=serial_no, device_name=device.device_name
         )
         request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
         pki_response = request_handler.process_request()
         cert_model = pki_response.cert_model
-        if (not isinstance(cert_model, CertificateModel)):
+
+        if not isinstance(cert_model, CertificateModel):
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
             raise OnboardingError(exc_msg)
 
@@ -279,9 +275,9 @@ class CryptoBackend:
         """
 
         log.debug('Verifying (client) signature...')
-        hash = hashes.Hash(hashes.SHA256())
-        hash.update(message)
-        log.debug(f'SHA-256 hash of message: {hash.finalize().hex()}')
+        hash_ = hashes.Hash(hashes.SHA256())
+        hash_.update(message)
+        log.debug(f'SHA-256 hash of message: {hash_.finalize().hex()}')
 
         try:
             cert = x509.load_pem_x509_certificate(cert)

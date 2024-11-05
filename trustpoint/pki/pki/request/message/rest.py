@@ -1,20 +1,15 @@
 """Simple CSR and subject + private key singing request messages for REST/internal use."""
-
+# TODO(AlexHx8472): rework this entire module including the rest message!
 from __future__ import annotations
 
-
-import base64
 from cryptography import x509
-from cryptography.hazmat.primitives.asymmetric.types import CertificatePublicKeyTypes
 
 from pki.models import DomainModel
 from pki.pki.request.message import (
     PkiRequestMessage,
     PkiResponseMessage,
-    Protocols,
     MimeType,
-    HttpStatusCode,
-    Operation)
+    HttpStatusCode)
 
 from typing import TYPE_CHECKING
 
@@ -24,42 +19,34 @@ if TYPE_CHECKING:
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
-class RestOperation(Operation):
-    ISSUE_CERT_CSR = 'issue_cert_csr'
-    ISSUE_CERT_PKCS12 = 'issue_cert_pkcs12'
+class PkiRestRequestMessage(PkiRequestMessage):
+    _mimetype: MimeType = MimeType.TEXT_PLAIN
+    _content_transfer_encoding = None
+    _content_length_max = 65.536
 
-class PkiRestCsrRequestMessage(PkiRequestMessage):
+    def _parse_content(self):
+        pass
+
+
+class PkiRestCsrRequestMessage(PkiRestRequestMessage):
     _csr = x509.CertificateSigningRequest
     _serial_number = str
+    _device_name = str
 
     def __init__(self,
-                 domain_unique_name: str,
+                 domain_model: DomainModel,
                  csr: x509.CertificateSigningRequest,
-                 serial_number: str):
+                 serial_number: str,
+                 device_name: str):
         super().__init__(
-            protocol=Protocols.REST,
-            operation=RestOperation.ISSUE_CERT_CSR,
-            domain_unique_name=domain_unique_name)
+            domain_model=domain_model,
+            raw_content=None,
+            received_mimetype=None,
+            received_content_transfer_encoding=None)
 
-        try:
-            self._init_domain_model(domain_unique_name)
-        except ValueError:
-            return
-
-        try:
-            self._init_csr(csr)
-        except ValueError:
-            return
-
-        try:
-            self._serial_number = serial_number
-        except ValueError:
-            return
-
-        # TODO: check domain configurations, if protocol and operation are enabled
-
-
-    
+        self._init_csr(csr)
+        self._serial_number = serial_number
+        self._device_name = device_name
 
     def _init_csr(self, csr: x509.CertificateSigningRequest) -> None:
         try:
@@ -91,41 +78,32 @@ class PkiRestCsrRequestMessage(PkiRequestMessage):
     def serial_number(self) -> str:
         return self._serial_number
 
+    @property
+    def device_name(self) -> str:
+        return self._device_name
 
-class PkiRestPkcs12RequestMessage(PkiRequestMessage):
-    _subject = x509.Name
+
+class PkiRestPkcs12RequestMessage(PkiRestRequestMessage):
+    _serial_number = str
+    _device_name = str
 
     def __init__(self,
-                domain_unique_name: str,
-                subject: x509.Name):
+                 domain_model: DomainModel,
+                 serial_number: str,
+                 device_name: str):
         super().__init__(
-            protocol=Protocols.REST,
-            operation=RestOperation.ISSUE_CERT_PKCS12,
-            domain_unique_name=domain_unique_name)
-        
-        try:
-            self._init_domain_model(domain_unique_name)
-        except ValueError:
-            return
-        
-        try:
-            self._init_subject(subject)
-        except ValueError:
-            return
+            domain_model=domain_model,
+            raw_content=None,
+            received_mimetype=None,
+            received_content_transfer_encoding=None)
 
-    def _init_subject(self, subject: x509.Name) -> None:
-        try:
-            self._subject = subject
-            if not subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER):
-                raise ValueError
-        except ValueError:
-            self._build_malformed_subject_response()
-            self._is_valid = False
-            raise ValueError
+        self._serial_number = serial_number
+        self._device_name = device_name
         
-    def _build_malformed_subject_response(self) -> None:
-        error_msg = f'Subject not an x509.Name or does not contain required attribute OIDs.'
-        self._invalid_response = PkiResponseMessage(
-            raw_response=error_msg,
-            http_status=HttpStatusCode.BAD_REQUEST,
-            mimetype=MimeType.TEXT_PLAIN)
+    @property
+    def serial_number(self) -> str:
+        return self._serial_number
+
+    @property
+    def device_name(self) -> str:
+        return self._device_name

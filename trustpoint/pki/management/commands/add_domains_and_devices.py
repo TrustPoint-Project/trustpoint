@@ -85,7 +85,8 @@ class Command(BaseCommand):
             ]
         }
 
-        onboarding_protocols = [protocol.value for protocol in Device.OnboardingProtocol]
+        # onboarding_protocols = [protocol.value for protocol in Device.OnboardingProtocol]
+        onboarding_protocols = [Device.OnboardingProtocol.TP_CLIENT.value, Device.OnboardingProtocol.MANUAL.value]
 
         print("Starting the process of adding domains and devices...\n")
 

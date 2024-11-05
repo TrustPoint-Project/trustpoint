@@ -1,7 +1,7 @@
 import ipaddress
 from cryptography import x509
-from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives.serialization import Encoding, load_der_public_key
+from cryptography.x509 import ObjectIdentifier
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.x509 import Certificate
@@ -291,8 +291,9 @@ class CertMessageHandler:
 
         return extensions_final
 
+
     @staticmethod
-    def _prepare_subject(subject):
+    def _prepare_subject(subject) -> list[x509.NameAttribute]:
         """
         Prepares the Subject Alternative Names (SAN) for the certificate.
 
@@ -303,24 +304,11 @@ class CertMessageHandler:
         for rdn in subject[0]:
             for atv in rdn:
 
-                oid = atv.getComponentByName('type')
+                oid = str(atv.getComponentByName('type'))
                 value = atv.getComponentByName('value')
 
                 value, _ = decoder.decode(bytes(value))
-
-                # print(f"OID: {oid} ({len(oid)}), Value: >{str(value)}< ({len(str(value))})")
-                if oid == rfc2459.id_at_commonName:
-                    subject_name.append(x509.NameAttribute(NameOID.COMMON_NAME, str(value)))
-                elif oid == rfc2459.id_at_countryName:
-                    subject_name.append(x509.NameAttribute(NameOID.COUNTRY_NAME, str(value)))
-                elif oid == rfc2459.id_at_stateOrProvinceName:
-                    subject_name.append(x509.NameAttribute(NameOID.STATE_OR_PROVINCE_NAME, str(value)))
-                elif oid == rfc2459.id_at_localityName:
-                    subject_name.append(x509.NameAttribute(NameOID.LOCALITY_NAME, str(value)))
-                elif oid == rfc2459.id_at_organizationName:
-                    subject_name.append(x509.NameAttribute(NameOID.ORGANIZATION_NAME, str(value)))
-                elif oid == rfc2459.id_at_organizationalUnitName:
-                    subject_name.append(x509.NameAttribute(NameOID.ORGANIZATIONAL_UNIT_NAME, str(value)))
+                subject_name.append(x509.NameAttribute(ObjectIdentifier(oid), str(value)))
 
         return subject_name
 

@@ -13,10 +13,9 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 from cryptography.x509.extensions import ExtensionNotFound
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
-
-from pki.pki.request import Protocols
 
 from devices.models import Device
 
@@ -1253,11 +1252,11 @@ class CertificateModel(models.Model):
     @transaction.atomic
     def revoke(self, revocation_reason: ReasonCode) -> bool:
         """Revokes the certificate.
-        
+
         Returns: True if the certificate was successfully scheduled to be added to at least one CRL."""
         if self.certificate_status == CertificateStatus.REVOKED:
             return True # already revoked, prevent duplicate addition to CRL
-        
+
         self.revocation_reason = revocation_reason
         added_to_crl = False
         qs = self.issuer_references.all()
@@ -1271,7 +1270,7 @@ class CertificateModel(models.Model):
                     added_to_crl = True
                     if issuing_ca.auto_crl:
                         issuing_ca.get_issuing_ca().generate_crl()
-                except CertificateModel.issuing_ca_model.RelatedObjectDoesNotExist:
+                except ObjectDoesNotExist:
                     pass
         if added_to_crl:
             self.certificate_status = CertificateStatus.REVOKED
@@ -1387,7 +1386,7 @@ class BaseCaModel(models.Model):
 
 class RootCaModel(BaseCaModel):
     """Root CA model.
-    
+
     Functionally equivalent to IssuingCaModel, but not part of issuing CA list and cannot be edited externally.
     """
     class Meta:
@@ -1414,12 +1413,6 @@ class CertificateChainOrderModel(models.Model):
         editable=False,
         related_name='issuing_ca_cert_chains')
     issuing_ca = models.ForeignKey(BaseCaModel, on_delete=models.CASCADE, editable=False)
-
-    def get_issuing_ca(
-            self,
-            unprotected_local_issuing_ca_class: type[UnprotectedLocalIssuingCa] = UnprotectedLocalIssuingCa
-    ) -> BaseCaModel:
-        return unprotected_local_issuing_ca_class(self)
 
     def __str__(self):
         return f'CertificateChainOrderModel({self.certificate.common_name})'
@@ -1621,6 +1614,14 @@ class DomainModel(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+        # TODO: this is not save -> error handling still required. -> undo everything if something fails below
+        cmp_path = '/.well-known/cmp/p/' + self.get_url_path_segment()
+        CMPModel.objects.get_or_create(domain=self, url_path=cmp_path)
+
+        est_path = '/.well-known/est/' + self.get_url_path_segment()
+        ESTModel.objects.get_or_create(domain=self, url_path=est_path)
+
+
     def get_url_path_segment(self):
         """@BytesWelder: I don't know what we need this for. @Alex mentioned this in his doc.
 
@@ -1631,7 +1632,7 @@ class DomainModel(models.Model):
         return self.unique_name.lower().replace(' ', '-')
 
     def get_protocol_object(self, protocol):
-        """Get correspondig CMP object"""
+        """Get corresponding CMP object"""
         if protocol == 'cmp':
             return self.cmp_protocol
         if protocol == 'est':

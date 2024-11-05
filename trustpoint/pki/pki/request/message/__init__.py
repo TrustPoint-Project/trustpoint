@@ -2,20 +2,22 @@ from __future__ import annotations
 
 import abc
 import enum
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Annotated
 
 from django.http import HttpResponse
 
 from pki.models import CertificateModel, DomainModel
-from pki.pki.request import Protocols
 
 if TYPE_CHECKING:
     from typing import Union
     from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
+    from annotated_types import Ge
+    from typing import Any
 
 
-class Operation(enum.Enum):
+class PkiMessageValidationError(Exception):
+    """Raised when a PKI message validation fails."""
     pass
 
 
@@ -40,48 +42,48 @@ class ContentTransferEncoding(enum.Enum):
 class HttpStatusCode(enum.Enum):
     OK = 200
     BAD_REQUEST = 400
+    FORBIDDEN = 403
     UNSUPPORTED_MEDIA_TYPE = 415
 
 
 class PkiRequestMessage(abc.ABC):
-    _protocol: Protocols
-    _operation: Operation
+    _domain_model: DomainModel
+    _raw_content: None | bytes
+    _parsed_content: Any
+
     _mimetype: None | MimeType = None
     _content_transfer_encoding: None | ContentTransferEncoding = None
-    _domain_unique_name: None | str = None
-    _alias_unique_name: None | str = None
-    _domain_model: None | DomainModel = None
-    _raw_request: None | bytes = None
-    _is_valid: bool = True
-    _invalid_response: None | PkiResponseMessage = None
+    _content_length_max: None | Annotated[int, Ge(0)] = None
 
-    def __init__(self, protocol: Protocols, operation: Operation, domain_unique_name: str) -> None:
-        self._protocol = protocol
-        self._operation = operation
-        self._domain_unique_name = domain_unique_name
+    _is_valid: bool = False
+    _error_response: None | PkiResponseMessage = None
 
-    def _init_domain_model(self, domain_unique_name: str) -> None:
+    def __init__(
+            self,
+            domain_model: DomainModel,
+            raw_content: None | bytes,
+            received_mimetype: None | str | MimeType = None,
+            received_content_transfer_encoding: None | str | ContentTransferEncoding = None) -> None:
+
+        self._domain_model = domain_model
+        self._raw_content = raw_content
+
         try:
-            self._domain_model = DomainModel.objects.get(unique_name=domain_unique_name)
-        except DomainModel.DoesNotExist:
-            self._build_domain_does_not_exist()
+            self._validate_mimetype(received_mimetype)
+            self._validate_content_transfer_encoding(received_content_transfer_encoding)
+            self._validate_content_length_max()
+        except PkiMessageValidationError:
+            return
+
+        # noinspection PyBroadException
+        try:
+            self._parse_content()
+            self._is_valid = True
+            # TODO(AlexHx8472): Consider using a decorator to catch
+            # TODO(AlexHx8472): any errors on _parse_content and raise PkiMessageValidationError
+        except Exception:
             self._is_valid = False
-            raise ValueError
-        
-    def _build_domain_does_not_exist(self) -> None:
-        error_msg = f'Domain {self._domain_unique_name} does not exist.'
-        self._invalid_response = PkiResponseMessage(
-            raw_response=error_msg,
-            http_status=HttpStatusCode.BAD_REQUEST,
-            mimetype=MimeType.TEXT_PLAIN)
-
-    @property
-    def protocol(self) -> Protocols:
-        return self._protocol
-
-    @property
-    def operation(self) -> Operation:
-        return self._operation
+            self._build_parsing_message_content_failed()
 
     @property
     def mimetype(self) -> MimeType:
@@ -92,28 +94,105 @@ class PkiRequestMessage(abc.ABC):
         return self._content_transfer_encoding
 
     @property
+    def content_length(self) -> Annotated[int, Ge(0)]:
+        if self.raw_content is None:
+            return 0
+        else:
+            return len(self.raw_content)
+
+    @property
     def domain_model(self) -> DomainModel:
         return self._domain_model
 
     @property
-    def raw_request(self) -> bytes:
-        return self._raw_request
+    def raw_content(self) -> None | bytes:
+        return self._raw_content
+
+    @property
+    def parsed_content(self) -> Any:
+        return self._parsed_content
 
     @property
     def is_valid(self) -> bool:
         return self._is_valid
 
     @property
-    def is_invalid(self) -> bool:
-        return not self.is_valid
+    def error_response(self) -> PkiResponseMessage:
+        return self._error_response
 
-    @property
-    def invalid_response(self) -> PkiResponseMessage:
-        return self._invalid_response
+    def _validate_mimetype(self, received_mimetype: None | MimeType) -> None:
+        if self.mimetype is None:
+            return
 
-    @property
-    def alias(self) -> str:
-        return self._alias_unique_name
+        try:
+            received_mimetype = MimeType(received_mimetype)
+        except ValueError:
+            self._build_wrong_mimetype_response(received_mimetype)
+            raise PkiMessageValidationError
+
+        if MimeType(received_mimetype) != self.mimetype:
+            self._build_wrong_mimetype_response(received_mimetype)
+            raise PkiMessageValidationError
+
+    def _build_wrong_mimetype_response(self, received_mimetype: None | MimeType = None) -> None:
+        if received_mimetype is None:
+            error_msg = (
+                f'Request is missing a MimeType (ContentType). '
+                f'Expected MimeType {MimeType.APPLICATION_PKCS10.value}.')
+        else:
+            error_msg = (
+                f'Expected MimeType {self.mimetype.value}, but received {received_mimetype.value}.')
+        self._error_response = PkiPlainTextHttpErrorResponseMessage(error_msg)
+
+    def _validate_content_transfer_encoding(self, received_content_transfer_encoding: None | ContentTransferEncoding) -> None:
+        if self.content_transfer_encoding is None:
+            return
+
+        try:
+            received_content_transfer_encoding = ContentTransferEncoding(received_content_transfer_encoding)
+        except ValueError:
+            self._build_unsupported_content_transfer_encoding_response(received_content_transfer_encoding)
+            raise PkiMessageValidationError
+
+        if received_content_transfer_encoding != self.content_transfer_encoding:
+            self._build_unsupported_content_transfer_encoding_response(received_content_transfer_encoding)
+            raise PkiMessageValidationError
+
+    def _build_unsupported_content_transfer_encoding_response(
+            self,
+            received_content_transfer_encoding: None | ContentTransferEncoding = None) -> None:
+        if received_content_transfer_encoding is None:
+            error_msg = (
+                f'Request is missing the Content-Transfer-Encoding header. '
+                f'Expected {ContentTransferEncoding.BASE64.value}.')
+        else:
+            error_msg = (
+                f'Expected base64 Content-Transfer-Encoding header, '
+                f'but received {received_content_transfer_encoding.value}.')
+        self._error_response = PkiPlainTextHttpErrorResponseMessage(error_msg)
+
+    def _validate_content_length_max(self) -> None:
+        content_length = self.content_length
+        if content_length is None:
+            return
+        if content_length < self._content_length_max:
+            self._build_message_content_too_large(content_length)
+            raise PkiMessageValidationError
+
+    def _build_message_content_too_large(self, content_length: Annotated[int, Ge(0)]) -> None:
+        error_msg = (
+            f'Received message contains {content_length} bytes, '
+            f'but only messages up to {self._content_length_max} bytes are allowed to be processed.')
+        self._error_response = PkiPlainTextHttpErrorResponseMessage(error_msg)
+
+    @abc.abstractmethod
+    def _parse_content(self) -> None:
+        pass
+
+    def _build_parsing_message_content_failed(self) -> None:
+        error_msg = 'Failed to parse message. Seems to be corrupted.'
+        self._error_response = PkiPlainTextHttpErrorResponseMessage(error_msg)
+
 
 
 class PkiResponseMessage:
@@ -122,10 +201,12 @@ class PkiResponseMessage:
     _mimetype: MimeType
     _cert_model: None | CertificateModel = None
 
-    def __init__(self, raw_response: str | bytes,
-                 http_status: HttpStatusCode,
-                 mimetype: MimeType,
-                 cert_model: None | CertificateModel = None) -> None:
+    def __init__(
+            self,
+            raw_response: str | bytes,
+            http_status: HttpStatusCode,
+            mimetype: MimeType,
+            cert_model: None | CertificateModel = None) -> None:
         self._raw_response = raw_response
         self._http_status = http_status
         self._mimetype = mimetype
@@ -152,3 +233,15 @@ class PkiResponseMessage:
             content=self.raw_response,
             status=self.http_status.value,
             content_type=self.mimetype.value)
+
+
+class PkiPlainTextHttpErrorResponseMessage(PkiResponseMessage):
+    _raw_response: str
+    _http_status: HttpStatusCode = HttpStatusCode.BAD_REQUEST
+    _mimetype: MimeType = MimeType.TEXT_PLAIN
+
+    def __init__(self, raw_response: str) -> None:
+        super().__init__(
+            raw_response=raw_response,
+            http_status=HttpStatusCode.BAD_REQUEST,
+            mimetype=MimeType.TEXT_PLAIN)

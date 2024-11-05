@@ -13,7 +13,9 @@ from .models import (
     IssuingCaModel,
     KeyUsageExtension,
     SubjectAlternativeNameExtension,
-    TrustStoreModel
+    TrustStoreModel,
+    ESTModel,
+    CMPModel
 )
 
 
@@ -143,6 +145,12 @@ class DomainModelAdmin(admin.ModelAdmin):
         'issuing_ca'
     )
 
+class EstModelAdmin(admin.ModelAdmin):
+    pass
+
+class CmpModelAdmin(admin.ModelAdmin):
+    pass
+
 
 class IssuedDeviceCertificateAdmin(admin.ModelAdmin):
     readonly_fields = (
@@ -163,3 +171,5 @@ admin.site.register(CertificateChainOrderModel, CertificateChainOrderModelAdmin)
 admin.site.register(CRLStorage, CRLStorageAdmin)
 admin.site.register(DomainModel, DomainModelAdmin)
 admin.site.register(IssuedDeviceCertificateModel, IssuedDeviceCertificateAdmin)
+admin.site.register(ESTModel, EstModelAdmin)
+admin.site.register(CMPModel, CmpModelAdmin)
