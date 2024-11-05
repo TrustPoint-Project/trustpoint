@@ -340,7 +340,8 @@ class CertMessageHandler:
         extensions = cert_req_msg.getComponentByName('certTemplate').getComponentByName('extensions')
         supported_oids = {
             rfc2459.id_ce_basicConstraints: self._get_basic_constraints,
-            rfc2459.id_ce_keyUsage: self._get_key_usage
+            rfc2459.id_ce_keyUsage: self._get_key_usage,
+            rfc2459.id_ce_extKeyUsage: self._get_extended_key_usage
         }
         result = {}
         for extension in extensions:
@@ -413,6 +414,29 @@ class CertMessageHandler:
         return {
             CertificateExtensionOid.KEY_USAGE: (critical, key_usage_extension)
         }
+
+    @classmethod
+    def _get_extended_key_usage(cls, extension) -> dict[CertificateExtensionOid, tuple[bool, x509.ExtensionType]]:
+        value = extension.getComponentByName('extnValue')
+        critical = extension.getComponentByName('critical')
+
+        if critical:
+            critical = True
+        else:
+            critical = False
+
+        eku_content, _ = decoder.decode(value.asOctets(), asn1Spec=rfc2459.ExtKeyUsageSyntax())
+        option_dotted_strings = []
+        for entry in eku_content:
+            option_dotted_strings.append(str(entry))
+        option_dotted_strings = list(dict.fromkeys(option_dotted_strings))
+        option_oids = [x509.ObjectIdentifier(value) for value in option_dotted_strings]
+
+        extended_key_usage_extension = x509.ExtendedKeyUsage(option_oids)
+        return {
+            CertificateExtensionOid.EXTENDED_KEY_USAGE: (critical, extended_key_usage_extension)
+        }
+
 
     @staticmethod
     def _prepare_san(extensions):
