@@ -3,9 +3,11 @@ from __future__ import annotations
 import enum
 
 from devices.models import Device
+from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
 from django.views import View
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
@@ -115,6 +117,7 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
                 protocol_object.status = protocol_name in active_protocols
                 protocol_object.save()
 
+        messages.success(request, _("Settings updated successfully."))
         return self.get(request, *args, **kwargs)
 
     def get_protocol_form(self, protocol_name):
