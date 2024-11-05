@@ -1,5 +1,7 @@
-import ipaddress
+from __future__ import annotations
 
+import ipaddress
+import enum
 from cryptography import x509
 from cryptography.hazmat.primitives.serialization import Encoding, load_der_public_key
 from cryptography.x509 import ObjectIdentifier
@@ -13,7 +15,6 @@ import datetime
 import logging
 from pyasn1.error import PyAsn1Error
 
-from pki.models import CertificateModel
 from pki.pki.cmp.builder import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts
 from pki.pki.cmp.validator import ExtraCertsValidator, InitializationReqValidator
 from pki.oid import CertificateExtensionOid
@@ -338,7 +339,8 @@ class CertMessageHandler:
     def _get_extensions(self, cert_req_msg):
         extensions = cert_req_msg.getComponentByName('certTemplate').getComponentByName('extensions')
         supported_oids = {
-            rfc2459.id_ce_basicConstraints: self._get_basic_constraints
+            rfc2459.id_ce_basicConstraints: self._get_basic_constraints,
+            rfc2459.id_ce_keyUsage: self._get_key_usage
         }
         result = {}
         for extension in extensions:
@@ -350,7 +352,7 @@ class CertMessageHandler:
         return result
 
     @staticmethod
-    def _get_basic_constraints(extension):
+    def _get_basic_constraints(extension) -> dict[CertificateExtensionOid, tuple[bool, x509.ExtensionType]]:
         value = extension.getComponentByName('extnValue')
         critical = extension.getComponentByName('critical')
 
@@ -378,6 +380,39 @@ class CertMessageHandler:
             CertificateExtensionOid.BASIC_CONSTRAINTS: (critical, crypto_bc_extension)
         }
 
+    @staticmethod
+    def _get_crypto_extension_by_bit_str(bit_str: str) -> x509.KeyUsage:
+        bit_str = bit_str.ljust(9, '0')
+        options = {
+            'digital_signature': True if bit_str[0] == '1' else False,
+            'content_commitment': True if bit_str[1] == '1' else False,
+            'key_encipherment': True if bit_str[2] == '1' else False,
+            'data_encipherment': True if bit_str[3] == '1' else False,
+            'key_agreement': True if bit_str[4] == '1' else False,
+            'key_cert_sign': True if bit_str[5] == '1' else False,
+            'crl_sign': True if bit_str[6] == '1' else False,
+            'encipher_only': True if bit_str[7] == '1' else False,
+            'decipher_only': True if bit_str[8] == '1' else False,
+        }
+        return x509.KeyUsage(**options)
+
+    @classmethod
+    def _get_key_usage(cls, extension) -> dict[CertificateExtensionOid, tuple[bool, x509.ExtensionType]]:
+        value = extension.getComponentByName('extnValue')
+        critical = extension.getComponentByName('critical')
+        if critical:
+            critical = True
+        else:
+            critical = False
+
+        ku_content, _ = decoder.decode(value.asOctets(), asn1Spec=rfc2459.KeyUsage())
+        binary_value = ku_content.asBinary()
+
+        key_usage_extension = cls._get_crypto_extension_by_bit_str(binary_value)
+
+        return {
+            CertificateExtensionOid.KEY_USAGE: (critical, key_usage_extension)
+        }
 
     @staticmethod
     def _prepare_san(extensions):
