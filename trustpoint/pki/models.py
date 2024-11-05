@@ -1535,7 +1535,7 @@ class CMPModel(models.Model):
         KUR = 'kur', 'Key Update Request'
 
     domain = models.OneToOneField('DomainModel', on_delete=models.CASCADE, related_name='cmp_protocol')
-    status = models.BooleanField(default=False)
+    status = models.BooleanField(default=True)
     url_path = models.URLField(max_length=1024, verbose_name='CMP URL Path')
     operation_modes = models.TextField(blank=True, verbose_name="Selected Operations")
 
