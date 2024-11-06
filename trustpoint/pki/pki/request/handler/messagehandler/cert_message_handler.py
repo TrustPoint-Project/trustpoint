@@ -1,11 +1,9 @@
 from __future__ import annotations
 
 import ipaddress
-import enum
 from cryptography import x509
 from cryptography.hazmat.primitives.serialization import Encoding, load_der_public_key
 from cryptography.x509 import ObjectIdentifier
-from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.x509 import Certificate
 from pyasn1.codec.der import decoder, encoder
@@ -14,6 +12,7 @@ from pyasn1_modules import rfc2459, rfc5280
 import datetime
 import logging
 from pyasn1.error import PyAsn1Error
+from pyasn1_modules.rfc5751 import SubjectKeyIdentifier
 
 from pki.pki.cmp.builder import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts
 from pki.pki.cmp.validator import ExtraCertsValidator, InitializationReqValidator
@@ -111,12 +110,12 @@ class CertMessageHandler:
         :param cert_req_msg: The certificate request message.
         :return: Tuple containing the subject name, SAN list, and public key.
         """
+        public_key = self._prepare_public_key(cert_req_msg)
         subject_update = self._update_subject(cert_req_msg)
         extensions = self._get_extensions(cert_req_msg)
 
         self.logger.debug("Preparing subject and SAN for the certificate.")
         subject_name = self._prepare_subject(subject_update)
-        public_key = self._prepare_public_key(cert_req_msg)
 
         return subject_name, public_key, extensions
 
@@ -341,14 +340,20 @@ class CertMessageHandler:
         supported_oids = {
             rfc2459.id_ce_basicConstraints: self._get_basic_constraints,
             rfc2459.id_ce_keyUsage: self._get_key_usage,
-            rfc2459.id_ce_extKeyUsage: self._get_extended_key_usage
+            rfc2459.id_ce_extKeyUsage: self._get_extended_key_usage,
+            rfc2459.id_ce_authorityKeyIdentifier: self._get_authority_key_identifier,
+            rfc2459.id_ce_subjectKeyIdentifier: self._get_subject_key_identifier
         }
         result = {}
+        extension_oids = [extension.getComponentByName('extnID') for extension in extensions]
         for extension in extensions:
             oid_value = extension.getComponentByName('extnID')
             if oid_value not in supported_oids:
                 raise ValueError('Extension not supported.')
             result |= supported_oids[oid_value](extension)
+
+        if rfc2459.id_ce_subjectKeyIdentifier not in extension_oids:
+            result |= self._set_subject_key_identifier()
 
         return result
 
@@ -399,13 +404,13 @@ class CertMessageHandler:
 
     @classmethod
     def _get_key_usage(cls, extension) -> dict[CertificateExtensionOid, tuple[bool, x509.ExtensionType]]:
-        value = extension.getComponentByName('extnValue')
         critical = extension.getComponentByName('critical')
         if critical:
             critical = True
         else:
             critical = False
 
+        value = extension.getComponentByName('extnValue')
         ku_content, _ = decoder.decode(value.asOctets(), asn1Spec=rfc2459.KeyUsage())
         binary_value = ku_content.asBinary()
 
@@ -417,14 +422,13 @@ class CertMessageHandler:
 
     @classmethod
     def _get_extended_key_usage(cls, extension) -> dict[CertificateExtensionOid, tuple[bool, x509.ExtensionType]]:
-        value = extension.getComponentByName('extnValue')
         critical = extension.getComponentByName('critical')
-
         if critical:
             critical = True
         else:
             critical = False
 
+        value = extension.getComponentByName('extnValue')
         eku_content, _ = decoder.decode(value.asOctets(), asn1Spec=rfc2459.ExtKeyUsageSyntax())
         option_dotted_strings = []
         for entry in eku_content:
@@ -437,6 +441,70 @@ class CertMessageHandler:
             CertificateExtensionOid.EXTENDED_KEY_USAGE: (critical, extended_key_usage_extension)
         }
 
+    def _get_authority_key_identifier(self, extension) -> dict[CertificateExtensionOid, tuple[bool, x509.ExtensionType]]:
+        critical = extension.getComponentByName('critical')
+        if critical:
+            raise ValueError('The subject key identifier must not be critical.')
+        else:
+            critical = False
+
+        print(extension)
+        value = extension.getComponentByName('extnValue')
+        aki_content, _ = decoder.decode(value.asOctets(), asn1Spec=rfc2459.AuthorityKeyIdentifier())
+        value_is_set = False
+        if aki_content['keyIdentifier'].isValue:
+            # TODO(AlexHx8472): handle keyIdentifier Value
+            value_is_set = True
+        if aki_content['authorityCertIssuer'].isValue:
+            # TODO(AlexHx8472): handle authorityCertIssuer Value
+            value_is_set = True
+        if aki_content['authorityCertSerialNumber'].isValue:
+            # TODO(AlexHx8472): handle authorityCertSerialNumber Value
+            value_is_set = True
+
+        if value_is_set is False:
+            return {}
+        else:
+            # TODO(AlexHx8472): Consider if we should add authorityCertIssuer and authorityCertSerialNumber
+            # authority_key_identifier = x509.AuthorityKeyIdentifier(
+            #     key_identifier=authority_key_identifier.key_identifier,
+            #     authority_cert_issuer=[x509.DirectoryName(self.ca_cert.issuer)],
+            #     authority_cert_serial_number=self.ca_cert.serial_number
+            # )
+            return {
+                CertificateExtensionOid.AUTHORITY_KEY_IDENTIFIER:
+                    (critical, x509.AuthorityKeyIdentifier.from_issuer_public_key(self.ca_key.public_key())),
+            }
+
+    def _set_authority_key_identifier(self) -> dict[CertificateExtensionOid, tuple[bool, x509.ExtensionType]]:
+        return {
+            CertificateExtensionOid.AUTHORITY_KEY_IDENTIFIER:
+                (False, x509.AuthorityKeyIdentifier.from_issuer_public_key(self.ca_key.public_key())),
+        }
+
+    @staticmethod
+    def _get_subject_key_identifier(extension) -> dict[CertificateExtensionOid, tuple[bool, x509.ExtensionType]]:
+        critical = extension.getComponentByName('critical')
+        if critical:
+            raise ValueError('The subject key identifier must not be critical.')
+        else:
+            critical = False
+
+        value = extension.getComponentByName('extnValue')
+        ski_content, _ = decoder.decode(value.asOctets(), asn1Spec=rfc2459.SubjectKeyIdentifier())
+        if ski_content.asOctets() == b'':
+            return {}
+        else:
+            return {
+                CertificateExtensionOid.SUBJECT_KEY_IDENTIFIER:
+                    (critical, x509.SubjectKeyIdentifier(ski_content.asOctets()))
+            }
+
+    def _set_subject_key_identifier(self) -> dict[CertificateExtensionOid, tuple[bool, x509.ExtensionType]]:
+        return {
+            CertificateExtensionOid.SUBJECT_KEY_IDENTIFIER:
+                (False, x509.SubjectKeyIdentifier.from_public_key(self._public_key))
+        }
 
     @staticmethod
     def _prepare_san(extensions):
@@ -460,8 +528,7 @@ class CertMessageHandler:
 
         return san_list
 
-    @staticmethod
-    def _prepare_public_key(cert_req_msg):
+    def _prepare_public_key(self, cert_req_msg):
         """
         Prepares the public key for the certificate.
 
@@ -473,7 +540,9 @@ class CertMessageHandler:
         public_key_info = cert_template.getComponentByName('publicKey')
 
         public_key_der = public_key_info.getComponentByName('subjectPublicKey').asOctets()
-        public_key = load_der_public_key(public_key_der, backend=default_backend())
+        public_key = load_der_public_key(public_key_der)
+
+        self._public_key = public_key
 
         return public_key
 

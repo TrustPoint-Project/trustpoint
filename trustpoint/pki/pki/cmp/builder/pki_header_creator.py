@@ -1,5 +1,6 @@
 from pyasn1_modules import rfc2459, rfc4210
 from pyasn1.type import univ, char, useful, tag, constraint
+from pyasn1.codec.der import decoder
 import datetime
 import os
 from cryptography import x509
@@ -122,40 +123,10 @@ class PKIHeaderCreator:
         """
         Sets the sender in the PKIHeader.
         """
+        subject_bytes = self.ca_cert.subject.public_bytes()
+        name, _ = decoder.decode(subject_bytes, asn1spec=rfc2459.Name())
         sender = rfc2459.GeneralName()
-
-        directory_name = rfc2459.Name().subtype(implicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 4))
-        rdn_sequence = rfc2459.RDNSequence()
-
-
-        for i, attribute in enumerate(self.ca_cert.subject):
-            rdn = rfc2459.RelativeDistinguishedName()
-
-            rfc_oid = None
-            if attribute.oid == NameOID.COUNTRY_NAME:
-                rfc_oid = rfc2459.id_at_countryName
-            elif attribute.oid == NameOID.STATE_OR_PROVINCE_NAME:
-                rfc_oid = rfc2459.id_at_stateOrProvinceName
-            elif attribute.oid == NameOID.LOCALITY_NAME:
-                rfc_oid = rfc2459.id_at_localityName
-            elif attribute.oid == NameOID.ORGANIZATION_NAME:
-                rfc_oid = rfc2459.id_at_organizationName
-            elif attribute.oid == NameOID.ORGANIZATIONAL_UNIT_NAME:
-                rfc_oid = rfc2459.id_at_organizationalUnitName
-            elif attribute.oid == NameOID.COMMON_NAME:
-                rfc_oid = rfc2459.id_at_commonName
-            else:
-                raise ValueError("OID of subject issuer is not supported")
-
-            if rfc_oid:
-                atv = rfc2459.AttributeTypeAndValue().setComponentByName('type', rfc_oid)
-                atv.setComponentByName('value', char.PrintableString(attribute.value))
-                rdn.setComponentByPosition(0, atv)
-                rdn_sequence.setComponentByPosition(i, rdn)
-
-        directory_name.setComponentByPosition(0, rdn_sequence)
-
-        sender.setComponentByName('directoryName', directory_name)
+        sender['directoryName'].setComponentByPosition(0, name)
 
         self.pki_header.setComponentByName('sender', sender)
 
