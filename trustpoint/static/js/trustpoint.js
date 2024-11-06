@@ -228,6 +228,7 @@ function togglePemSelectDisable() {
 
 // ----------------------------------------------- Global Popper Enable ------------------------------------------------
 
-$(function () {
-  $('[data-toggle="popover"]').popover()
-})
+// Air: disabled as we are not currently using popovers and this requires jQuery 
+// $(function () {
+//   $('[data-toggle="popover"]').popover()
+// })

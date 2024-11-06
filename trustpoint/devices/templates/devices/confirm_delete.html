@@ -6,27 +6,28 @@
 
     <form method="POST">
         {% csrf_token %}
-        <div class="card card-main text-center">
+        <div class="card">
             <div class="card-header d-flex">
-                <h1>Confirm Delete - Devices</h1>
+                <h1>{% trans "Confirm Device Deletion" %}</h1>
             </div>
-            <div class="card-body tp-main-centered pt-3 pb-4">
+            <div class="card-body py-3">
 
                 {% for object in objects %}
                     {% include 'devices/sub_details.html' with device=object %}
                 {% endfor %}
 
-                <div class="alert alert-info d-flex mt-3" role="alert">  
+                <div class="alert alert-info d-flex" role="alert">  
                     <svg class="bi flex-shrink-0 tp-msg-icon-margin" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-info"/></svg>
                     <div>{% trans "Deletion will revoke any certificates issued to devices with reason code 'Cessation of Operation'" %}</div>
                 </div>
 
                 <hr>
-                <div class="tp-form-btn-group tp-form-btn-group pt-2">
+                <div class="tp-form-btn-group tp-form-btn-group">
                     <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Cancel</a>
-                    <input type="submit" class="btn btn-danger" value="Confirm Delete">
+                    <button type="submit" class="btn btn-danger">
+                        {% trans "Confirm Delete" %}
+                    </button>
                 </div>
-
             </div>
         </div>
     </form>

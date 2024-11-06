@@ -5,76 +5,82 @@
 {% block content %}
 {% load static %}
     <script src="{% static 'js/domains.js' %}"></script>
-    <div class="card tp-card-centered">
+    <div class="card">
         <div class="card-header">
-            <h2>{{ domain.unique_name }} {% trans "Configuration" %}</h2>
+            <h1>{{ domain.unique_name }} {% trans "Configuration" %}</h1>
         </div>
 
         <form method="POST" autocomplete="on" enctype="multipart/form-data">
             {% csrf_token %}
-            <div class="card tp-card-centered">
+            <div class="card">
                 <div class="card-body">
                     <div class="tp-card-centered-content">
-                        <div class="card-body">
-                            <h3>General</h3>
-                            <hr>
-                            <div class="tp-card-split">
+                        <h2>General</h2>
+                        <hr class="hr-m">
+                        <div class="tp-kvp-list">
+                            <div>
                                 <div>{% trans 'Unique Name' %}</div>
                                 <div> {{ domain.unique_name }} </div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'URL Path Segment' %}</div>
                                 <div> {{ domain.get_url_path_segment }} </div>
                             </div>
-                            <h5>{% trans 'Devices in Domain' %}</h5>
-                            <div class="tp-card-split">
+                        </div>
+                            <!-- <div class="tp-row-br">
+                                <h3>{% trans 'Devices in Domain' %}</h3>
+                                <div></div>
+                            </div> -->
+                        <h5 class="mb-2 ms-2">{% trans 'Devices in Domain' %}</h5>
+                        <div class="tp-kvp-list">
+                            <div>
                                 <div>{% trans 'Pending devices' %}</div>
                                 <div> {{ devices_count.P|default:0 }} </div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'Running devices' %}</div>
                                 <div> {{ devices_count.R|default:0 }} </div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'Onboarded devices' %}</div>
                                 <div> {{ devices_count.O|default:0 }} </div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'Failed devices' %}</div>
                                 <div> {{ devices_count.F|default:0 }} </div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'Revoked devices' %}</div>
                                 <div> {{ devices_count.D|default:0 }} </div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <h3>Issuing CA</h3>
-                            <hr>
-                            <div class="tp-card-split">
+                        <h2>Issuing CA</h2>
+                        <hr class="hr-m">
+                        <div class="tp-kvp-list">
+                            <div>
                                 <div>{% trans 'Expires in' %}</div>
                                 <div> {{ domain.issuing_ca.get_issuing_ca_certificate.not_valid_after }} </div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'Issuing CA Rollover' %}</div>
                                 <div>NYI</div>
                             </div>
-                            <div class="tp-card-split">
+                            <div>
                                 <div>{% trans 'Certificates Issued:' %}</div>
                                 <div>{{ domain.issuing_ca.issued_certificates_count }}</div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <h3>OCSP Resonder</h3>
-                            <hr>
-                            <div class="tp-card-split">
+                        <h2>OCSP Resonder</h2>
+                        <hr class="hr-m">
+                        <div class="tp-kvp-list">
+                            <div>
                                 <div>OCSP Responder</div>
                                 <div>NYI</div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <h3>PKI Protocol Configuration</h3>
-                            <hr>
+                        <h2>{% trans 'PKI Protocol Configuration' %}</h2>
+                        <hr class="hr-m">
+                        <div class="tp-indent">
                             <table class="table">
                                 <thead>
                                     <tr>
@@ -89,16 +95,16 @@
                                 <tbody>
                                     {% for protocol_name, protocol in protocols.items %}
                                         {% if protocol %}
-                                            <tr>
+                                            <tr class="v-middle">
                                                 <td>{{ protocol_name }}</td>
                                                 <td>
                                                     <input type="checkbox" name="protocols" value="{{ protocol_name }}" {% if protocol.status %}checked{% endif %}>
                                                 </td>
                                                 <td>{{ protocol.get_operation_list|length }}/{{ protocol.Operations|length }}</td>
                                                 <td>{{ protocol.url_path }}</td>
-                                                <td><a href="{% url 'pki:domains' %}" class="btn btn-primary">{% trans 'Details' %}</a></td>
+                                                <td><a href="{% url 'pki:domains' %}" class="btn btn-primary tp-table-btn">{% trans 'Details' %}</a></td>
                                                 <td>
-                                                    <button type="button" class="btn btn-primary config-button" data-url="{% url 'pki:protocol-config' protocol_name=protocol_name domain_id=domain.pk%}" data-bs-toggle="modal" data-bs-target="#configModal">
+                                                    <button type="button" class="btn btn-primary tp-table-btn config-button" data-url="{% url 'pki:protocol-config' protocol_name=protocol_name domain_id=domain.pk%}" data-bs-toggle="modal" data-bs-target="#configModal">
                                                         {% trans 'Config' %}
                                                     </button>
                                                 </td>
@@ -121,18 +127,17 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="card-body">
-                            <h3>PKI Truststore Configuration</h3>
-                            <hr>
+                        <h2>{% trans 'PKI Truststore Configuration' %}</h2>
+                        <hr class="hr-m">
+                        <div class="tp-indent pb-0">
                             {% render_table trust_store_table   %}
                         </div>
                     </div>
-                    <div class="card-footer">
-                        <div class="tp-card-btn-footer">
-                            <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
-                            <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
-                            <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
-                        </div>
+                    <hr>
+                    <div class="tp-form-btn-group">
+                        <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                        <a href="{% url 'pki:domains' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                        <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
                     </div>
                 </div>
             </div>

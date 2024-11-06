@@ -2,12 +2,12 @@
 {% load i18n %}
 {% load crispy_forms_filters %}
 {% block content %}
-<div class="card card-main">
-    <div class="card-header tp-card-header">
+<div class="card">
+    <div class="card-header">
         <h1>{% trans "Network Configuration" %}</h1>
     </div>
-    <div class="card-body tp-main-centered pt-4 pb-4">
-        <form method="POST" class="tp-main-form text-start" enctype="multipart/form-data" id="network_configuration">
+    <div class="card-body pt-4 pb-4">
+        <form method="POST" class="text-start" enctype="multipart/form-data" id="network_configuration">
             {% csrf_token %}
             <fieldset class="form-group tp-form-group">
                 {{ network_config_form|crispy }}

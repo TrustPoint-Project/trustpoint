@@ -4,15 +4,15 @@
 
     <form method="POST">
         {% csrf_token %}
-        <div class="card card-main text-center">
+        <div class="card">
             <div class="card-header d-flex">
-                <h1>Details - Device</h1>
+                <h1>Details - Device {{ device.device_name }}</h1>
             </div>
-            <div class="card-body tp-main-centered pt-3 pb-4">
+            <div class="card-body py-3">
 
                 {% include 'devices/sub_details.html' %}
 
-                <div class="tp-form-btn-group tp-form-btn-group mt-5">
+                <div class="tp-form-btn-group tp-form-btn-group mt-3">
                     <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
                     <a href="{% url 'devices:devices-edit' device.pk %}" class="btn btn-primary tp-table-btn">Edit</a>
                     {{ onboarding_button|safe }}
