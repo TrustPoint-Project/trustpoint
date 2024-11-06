@@ -342,7 +342,8 @@ class CertMessageHandler:
             rfc2459.id_ce_keyUsage: self._get_key_usage,
             rfc2459.id_ce_extKeyUsage: self._get_extended_key_usage,
             rfc2459.id_ce_authorityKeyIdentifier: self._get_authority_key_identifier,
-            rfc2459.id_ce_subjectKeyIdentifier: self._get_subject_key_identifier
+            rfc2459.id_ce_subjectKeyIdentifier: self._get_subject_key_identifier,
+            rfc2459.id_ce_subjectAltName: self._get_subject_alternative_name
         }
         result = {}
         extension_oids = [extension.getComponentByName('extnID') for extension in extensions]
@@ -355,14 +356,9 @@ class CertMessageHandler:
         if rfc2459.id_ce_subjectKeyIdentifier not in extension_oids:
             result |= self._set_subject_key_identifier()
 
-        print(extension_oids)
-        print(rfc2459.id_ce_authorityKeyIdentifier)
-        print(rfc2459.id_ce_subjectKeyIdentifier)
         if rfc2459.id_ce_authorityKeyIdentifier not in extension_oids:
-            print('adding')
             result |= self._set_authority_key_identifier()
 
-        print(result)
         return result
 
     @staticmethod
@@ -456,7 +452,6 @@ class CertMessageHandler:
         else:
             critical = False
 
-        print(extension)
         value = extension.getComponentByName('extnValue')
         aki_content, _ = decoder.decode(value.asOctets(), asn1Spec=rfc2459.AuthorityKeyIdentifier())
         value_is_set = False
@@ -508,6 +503,50 @@ class CertMessageHandler:
             CertificateExtensionOid.SUBJECT_KEY_IDENTIFIER:
                 (False, x509.SubjectKeyIdentifier.from_public_key(self._public_key))
         }
+
+    @staticmethod
+    def _get_subject_alternative_name(extension) -> dict[CertificateExtensionOid, tuple[bool, x509.ExtensionType]]:
+        critical = extension.getComponentByName('critical')
+        if critical:
+            critical = True
+        else:
+            critical = False
+
+        value = extension.getComponentByName('extnValue')
+        san_content, _ = decoder.decode(value.asOctets(), asn1Spec=rfc2459.SubjectAltName())
+
+        san_crypto_entries = []
+        for entry in san_content:
+            if entry.getName() == 'rfc822Name':
+                email = entry.getComponent().asOctets().decode()
+                san_crypto_entries.append(x509.RFC822Name(email))
+            if entry.getName() == 'dNSName':
+                dns_name = entry.getComponent().asOctets().decode()
+                san_crypto_entries.append(x509.DNSName(dns_name))
+            if entry.getName() == 'directoryName':
+                print(entry)
+                raise ValueError
+            if entry.getName() == 'uniformResourceIdentifier':
+                uri = entry.getComponent().asOctets().decode()
+                san_crypto_entries.append(x509.UniformResourceIdentifier(uri))
+            if entry.getName() == 'iPAddress':
+                ip_address = ipaddress.ip_address(entry.getComponent().asOctets())
+                san_crypto_entries.append(x509.IPAddress(ip_address))
+            if entry.getName() == 'otherName':
+                other_name = entry.getComponent()
+                oid = x509.ObjectIdentifier(str(other_name['type-id']))
+                value = other_name['value'].asOctets()
+                san_crypto_entries.append(x509.OtherName(oid, value))
+
+
+        if san_crypto_entries:
+            return {
+                CertificateExtensionOid.SUBJECT_ALTERNATIVE_NAME:
+                    (critical, x509.SubjectAlternativeName(san_crypto_entries))
+            }
+        return {}
+
+
 
     @staticmethod
     def _prepare_san(extensions):
