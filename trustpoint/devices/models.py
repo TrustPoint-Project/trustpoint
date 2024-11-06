@@ -33,6 +33,8 @@ log = logging.getLogger('tp.devices')
 class Device(models.Model):
     """Device Model."""
 
+    issued_device_certificates: IssuedDeviceCertificateModel
+
     class DeviceOnboardingStatus(models.TextChoices):
         """Device Onboarding Status."""
 
@@ -103,7 +105,6 @@ class Device(models.Model):
         :return: The active LDevID certificate if found, otherwise None.
         :raises IssuedDeviceCertificateModel.MultipleObjectsReturned: If multiple active LDevID certificates are found.
         """
-        self.issued_device_certificates: IssuedDeviceCertificateModel
         try:
             return self.issued_device_certificates.get(
                 certificate_type=CertificateTypes.LDEVID,
@@ -122,7 +123,6 @@ class Device(models.Model):
             - 'ldevid': The current active LDevID certificate or None if unavailable.
             - 'other': A queryset of other active certificates excluding LDevID certificates.
         """
-        self.issued_device_certificates: IssuedDeviceCertificateModel
         application_certs = self.issued_device_certificates.filter(
             domain=domain,
             certificate__certificate_status=CertificateStatus.OK

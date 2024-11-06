@@ -733,11 +733,6 @@ class IssuedDeviceCertificateModel(models.Model):
         'CertificateModel', on_delete=models.CASCADE, related_name='issued_device_certificate', null=True, blank=True)
 
 
-    def get_certificate_type(self) -> str:
-        """Returns type of certificate"""
-        return self.certificate_type
-
-
 class CertificateModel(models.Model):
     """X509 Certificate Model.
 

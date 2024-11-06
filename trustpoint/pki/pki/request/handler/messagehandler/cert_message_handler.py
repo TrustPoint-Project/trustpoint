@@ -12,8 +12,8 @@ from pyasn1_modules import rfc2459, rfc5280
 import datetime
 import logging
 from pyasn1.error import PyAsn1Error
-from pyasn1_modules.rfc5751 import SubjectKeyIdentifier
 
+from pki.models import CertificateModel
 from pki.pki.cmp.builder import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts
 from pki.pki.cmp.validator import ExtraCertsValidator, InitializationReqValidator
 from pki.oid import CertificateExtensionOid
@@ -591,6 +591,7 @@ class CertMessageHandler:
         # )
 
         cert = cert_builder.sign(ca_key, hashes.SHA256())
+        CertificateModel.save_certificate(cert)
 
         return cert
 
