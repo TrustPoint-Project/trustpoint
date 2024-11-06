@@ -15,7 +15,6 @@ class GetCACertsValidator:
         self.genp_response = genp_response
         self.ca_certs = None
         self.errors = []
-        print("validate ca certs")
 
     def validate(self):
         """

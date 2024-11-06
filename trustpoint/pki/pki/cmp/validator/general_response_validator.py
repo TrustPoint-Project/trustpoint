@@ -47,7 +47,6 @@ class GenpValidator:
 
         if 'infoType' in self.body.getComponentByName('gen')[0]:
             self.oid = self.body.getComponentByName('gen')[0]['infoType']
-            print(f"OID PARAM: {self.oid}")
         else:
             raise BadMessageCheck("OID (infoType) is missing from the genp body.")
 

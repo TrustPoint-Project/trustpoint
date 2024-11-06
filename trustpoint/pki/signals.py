@@ -23,7 +23,6 @@ def handle_post_delete(sender, instance, **kwargs) -> None:
 
 @receiver(pre_delete, sender=BaseCaModel)
 def handle_pre_delete(sender, instance, **kwargs) -> None:
-    print(sender)
     instance.issuing_ca_certificate.remove_private_key()
 
 

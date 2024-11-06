@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import ipaddress
+import enum
 from cryptography import x509
 from cryptography.hazmat.primitives.serialization import Encoding, load_der_public_key
 from cryptography.x509 import ObjectIdentifier
@@ -10,10 +13,11 @@ from pyasn1.type import univ
 from pyasn1_modules import rfc2459, rfc5280
 import datetime
 import logging
+from pyasn1.error import PyAsn1Error
 
-from pki.models import CertificateModel
 from pki.pki.cmp.builder import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts
 from pki.pki.cmp.validator import ExtraCertsValidator, InitializationReqValidator
+from pki.oid import CertificateExtensionOid
 
 
 class CertMessageHandler:
@@ -71,9 +75,15 @@ class CertMessageHandler:
         self._initialize_ca_data(issuing_ca_object)
 
         cert_req_msg = self._get_cert_req_msg()
-        subject_name, san_list, public_key = self._process_cert_request(cert_req_msg)
+        subject_name, public_key, extensions = self._process_cert_request(cert_req_msg)
+        valid_not_before, valid_not_after = self._get_validity(cert_req_msg)
 
-        cert = self._generate_and_store_certificate(subject_name, san_list, public_key)
+        cert = self._generate_and_store_certificate(
+            subject_name,
+            public_key,
+            valid_not_before,
+            valid_not_after,
+            extensions)
 
         pki_message = self._generate_pki_response(cert_req_msg, cert)
 
@@ -102,30 +112,45 @@ class CertMessageHandler:
         :return: Tuple containing the subject name, SAN list, and public key.
         """
         subject_update = self._update_subject(cert_req_msg)
-        extensions_update = self._update_san(cert_req_msg)
+        extensions = self._get_extensions(cert_req_msg)
 
         self.logger.debug("Preparing subject and SAN for the certificate.")
         subject_name = self._prepare_subject(subject_update)
-        san_list = self._prepare_san(extensions_update)
         public_key = self._prepare_public_key(cert_req_msg)
 
-        return subject_name, san_list, public_key
+        return subject_name, public_key, extensions
 
-    def _generate_and_store_certificate(self, subject_name, san_list, public_key):
+
+    @staticmethod
+    def _get_validity(cert_req_msg) -> tuple[datetime.datetime, datetime.datetime]:
+        validity_field = cert_req_msg.getComponentByName('certTemplate')['validity']
+        not_valid_before = validity_field['notBefore'][0].asDateTime
+        not_valid_after = validity_field['notAfter'][0].asDateTime
+        if not_valid_before >= not_valid_after:
+            raise ValueError('Validity fields are corrupted. Found inconsistent times.')
+        return not_valid_before, not_valid_after
+
+
+
+    def _generate_and_store_certificate(self, subject_name, public_key, valid_not_before, valid_not_after, extensions):
         """
         Generates and stores the signed certificate.
 
         :param subject_name: The subject name information.
-        :param san_list: The Subject Alternative Names (SAN) for the certificate.
         :param public_key: The public key for the certificate.
         :return: The generated certificate.
         """
         self.logger.debug("Generating signed certificate.")
-        cert = self._generate_signed_certificate(subject_name, san_list, public_key, self.ca_cert, self.ca_key)
+        cert = self._generate_signed_certificate(
+            subject_name,
+            public_key,
+            self.ca_cert,
+            self.ca_key,
+            valid_not_before,
+            valid_not_after,
+            extensions)
 
         self.logger.debug("Saving the certificate in the database.")
-        CertificateModel.save_certificate(certificate=cert)
-
         return cert
 
     def _generate_pki_response(self, cert_req_msg, cert):
@@ -240,7 +265,6 @@ class CertMessageHandler:
                 client_extn_value = client_extension.getComponentByName('extnValue')
                 if isinstance(client_extn_value, univ.OctetString):
                     client_general_names, _ = decoder.decode(bytes(client_extn_value), asn1Spec=rfc5280.GeneralNames())
-                    print("Client GeneralNames:", client_general_names.prettyPrint())
                 break
 
         for template_extension in template_extensions:
@@ -312,6 +336,108 @@ class CertMessageHandler:
 
         return subject_name
 
+    def _get_extensions(self, cert_req_msg):
+        extensions = cert_req_msg.getComponentByName('certTemplate').getComponentByName('extensions')
+        supported_oids = {
+            rfc2459.id_ce_basicConstraints: self._get_basic_constraints,
+            rfc2459.id_ce_keyUsage: self._get_key_usage,
+            rfc2459.id_ce_extKeyUsage: self._get_extended_key_usage
+        }
+        result = {}
+        for extension in extensions:
+            oid_value = extension.getComponentByName('extnID')
+            if oid_value not in supported_oids:
+                raise ValueError('Extension not supported.')
+            result |= supported_oids[oid_value](extension)
+
+        return result
+
+    @staticmethod
+    def _get_basic_constraints(extension) -> dict[CertificateExtensionOid, tuple[bool, x509.ExtensionType]]:
+        value = extension.getComponentByName('extnValue')
+        critical = extension.getComponentByName('critical')
+
+        if critical:
+            critical = True
+        else:
+            critical = False
+
+        bc_content, _ = decoder.decode(value.asOctets(), asn1Spec=rfc2459.BasicConstraints())
+        try:
+            if bc_content.getComponentByName('cA'):
+                raise ValueError('Issuing CA certificates is not allowed.')
+        except (AttributeError, PyAsn1Error):
+            pass
+
+        try:
+            if bc_content.getComponentByName('pathLenConstraint') != 0:
+                raise ValueError('Path length constraint must be 0 if provided.')
+        except (AttributeError, PyAsn1Error):
+            pass
+
+        crypto_bc_extension = x509.BasicConstraints(ca=False, path_length=None)
+
+        return {
+            CertificateExtensionOid.BASIC_CONSTRAINTS: (critical, crypto_bc_extension)
+        }
+
+    @staticmethod
+    def _get_crypto_extension_by_bit_str(bit_str: str) -> x509.KeyUsage:
+        bit_str = bit_str.ljust(9, '0')
+        options = {
+            'digital_signature': True if bit_str[0] == '1' else False,
+            'content_commitment': True if bit_str[1] == '1' else False,
+            'key_encipherment': True if bit_str[2] == '1' else False,
+            'data_encipherment': True if bit_str[3] == '1' else False,
+            'key_agreement': True if bit_str[4] == '1' else False,
+            'key_cert_sign': True if bit_str[5] == '1' else False,
+            'crl_sign': True if bit_str[6] == '1' else False,
+            'encipher_only': True if bit_str[7] == '1' else False,
+            'decipher_only': True if bit_str[8] == '1' else False,
+        }
+        return x509.KeyUsage(**options)
+
+    @classmethod
+    def _get_key_usage(cls, extension) -> dict[CertificateExtensionOid, tuple[bool, x509.ExtensionType]]:
+        value = extension.getComponentByName('extnValue')
+        critical = extension.getComponentByName('critical')
+        if critical:
+            critical = True
+        else:
+            critical = False
+
+        ku_content, _ = decoder.decode(value.asOctets(), asn1Spec=rfc2459.KeyUsage())
+        binary_value = ku_content.asBinary()
+
+        key_usage_extension = cls._get_crypto_extension_by_bit_str(binary_value)
+
+        return {
+            CertificateExtensionOid.KEY_USAGE: (critical, key_usage_extension)
+        }
+
+    @classmethod
+    def _get_extended_key_usage(cls, extension) -> dict[CertificateExtensionOid, tuple[bool, x509.ExtensionType]]:
+        value = extension.getComponentByName('extnValue')
+        critical = extension.getComponentByName('critical')
+
+        if critical:
+            critical = True
+        else:
+            critical = False
+
+        eku_content, _ = decoder.decode(value.asOctets(), asn1Spec=rfc2459.ExtKeyUsageSyntax())
+        option_dotted_strings = []
+        for entry in eku_content:
+            option_dotted_strings.append(str(entry))
+        option_dotted_strings = list(dict.fromkeys(option_dotted_strings))
+        option_oids = [x509.ObjectIdentifier(value) for value in option_dotted_strings]
+
+        extended_key_usage_extension = x509.ExtendedKeyUsage(option_oids)
+        return {
+            CertificateExtensionOid.EXTENDED_KEY_USAGE: (critical, extended_key_usage_extension)
+        }
+
+
     @staticmethod
     def _prepare_san(extensions):
         san_list = []
@@ -352,12 +478,18 @@ class CertMessageHandler:
         return public_key
 
     @staticmethod
-    def _generate_signed_certificate(subject_name, san_list, public_key, ca_cert, ca_key):
+    def _generate_signed_certificate(
+            subject_name,
+            public_key,
+            ca_cert,
+            ca_key,
+            valid_not_before,
+            valid_not_after,
+            extensions):
         """
         Generates a signed certificate.
 
         :param subject_name: The subject's name information.
-        :param san_list: The Subject Alternative Names (SAN) for the certificate.
         :param public_key: The public key for the certificate.
         :param ca_cert: The CA certificate.
         :param ca_key: The CA's private key.
@@ -371,21 +503,20 @@ class CertMessageHandler:
             .issuer_name(ca_cert.subject)
             .public_key(public_key)
             .serial_number(x509.random_serial_number())
-            .not_valid_before(datetime.datetime.now(datetime.UTC))
-            .not_valid_after(datetime.datetime.now(datetime.UTC) + datetime.timedelta(days=365))
+            .not_valid_before(valid_not_before)
+            .not_valid_after(valid_not_after)
         )
 
-        if san_list:
-            cert_builder = cert_builder.add_extension(
-                x509.SubjectAlternativeName(san_list),
-                critical=False,
-            )
+        for extension_oid, value in extensions.items():
+            critical, extension = value
+            cert_builder = cert_builder.add_extension(extval=extension, critical=critical)
 
-        subject_key_identifier = x509.SubjectKeyIdentifier.from_public_key(public_key)
-        cert_builder = cert_builder.add_extension(
-            subject_key_identifier,
-            critical=False,
-        )
+
+        # subject_key_identifier = x509.SubjectKeyIdentifier.from_public_key(public_key)
+        # cert_builder = cert_builder.add_extension(
+        #     subject_key_identifier,
+        #     critical=False,
+        # )
 
         cert = cert_builder.sign(ca_key, hashes.SHA256())
 
