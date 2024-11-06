@@ -355,6 +355,14 @@ class CertMessageHandler:
         if rfc2459.id_ce_subjectKeyIdentifier not in extension_oids:
             result |= self._set_subject_key_identifier()
 
+        print(extension_oids)
+        print(rfc2459.id_ce_authorityKeyIdentifier)
+        print(rfc2459.id_ce_subjectKeyIdentifier)
+        if rfc2459.id_ce_authorityKeyIdentifier not in extension_oids:
+            print('adding')
+            result |= self._set_authority_key_identifier()
+
+        print(result)
         return result
 
     @staticmethod
@@ -466,11 +474,6 @@ class CertMessageHandler:
             return {}
         else:
             # TODO(AlexHx8472): Consider if we should add authorityCertIssuer and authorityCertSerialNumber
-            # authority_key_identifier = x509.AuthorityKeyIdentifier(
-            #     key_identifier=authority_key_identifier.key_identifier,
-            #     authority_cert_issuer=[x509.DirectoryName(self.ca_cert.issuer)],
-            #     authority_cert_serial_number=self.ca_cert.serial_number
-            # )
             return {
                 CertificateExtensionOid.AUTHORITY_KEY_IDENTIFIER:
                     (critical, x509.AuthorityKeyIdentifier.from_issuer_public_key(self.ca_key.public_key())),
