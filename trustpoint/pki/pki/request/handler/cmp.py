@@ -45,7 +45,6 @@ class LocalCmpInitializationRequestHandler(CaCmpRequestHandler):
     # TODO: Validation if Certificate is allowed to be issued
     # TODO: check if certificate was already issued etc.
     def process_request(self) -> PkiResponseMessage:
-        # try:
 
         cmp_message_handler = CMPMessageHandler(pki_message=self._request_message.parsed_content, operation='ir')
         cmp_message_handler.set_issuing_ca(issuing_ca_object=self._issuing_ca)
