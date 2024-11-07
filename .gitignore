@@ -172,4 +172,4 @@ migrations/
 
 tests/data/issuing_ca/*
 
-docs/
+docs/build/
