@@ -5,6 +5,7 @@ from devices.models import Device
 from pki.models import CertificateModel, BaseCaModel, DomainModel
 from home.models import NotificationModel, NotificationMessage, NotificationStatus
 import logging
+from django.urls import reverse
 
 logger = logging.getLogger('tp.users')
 new_status, created = NotificationStatus.objects.get_or_create(status='NEW')
@@ -16,18 +17,37 @@ def setup_trustpoint_notifications():
     This includes a welcome notification and links to the project's GitHub repository and homepage.
     """
 
-    # Check if the welcome notification has already been created
-    if not NotificationModel.objects.filter(event='WELCOME_TRUSTPOINT').exists():
-        welcome_message = NotificationMessage.objects.create(
-            short_description='Welcome to Trustpoint!',
-            long_description='Thank you for setting up Trustpoint. This system will help you manage your certificates and secure your environment.'
+    if not NotificationModel.objects.filter(event='EXECUTE_COMMAND_EVENT').exists():
+        command_url = '/home/add-domains-and-devices/'
+
+        command_message = NotificationMessage.objects.create(
+            short_description='Populate test data',
+            long_description=f'Click <a href="{command_url}">here</a> to add test issuing CAs, domains and devices.'
         )
+
+        # Create the notification
         notification = NotificationModel.objects.create(
-            event='WELCOME_TRUSTPOINT',
+            event='EXECUTE_COMMAND_EVENT',
             created_at=timezone.now(),
             notification_source=NotificationModel.NotificationSource.SYSTEM,
             notification_type=NotificationModel.NotificationTypes.INFO,
-            message=welcome_message
+            message=command_message
+        )
+
+        notification.statuses.add(new_status)
+
+    if not NotificationModel.objects.filter(event='TRUSTPOINT_DOCUMENTATION').exists():
+        documentation_message = NotificationMessage.objects.create(
+            short_description='Access the Trustpoint Documentation',
+            long_description='You can find the official Trustpoint documentation here: '
+                             '<a href="https://industrial-security.io">Trustpoint Documentation</a>'
+        )
+        notification = NotificationModel.objects.create(
+            event='TRUSTPOINT_DOCUMENTATION',
+            created_at=timezone.now(),
+            notification_source=NotificationModel.NotificationSource.SYSTEM,
+            notification_type=NotificationModel.NotificationTypes.INFO,
+            message=documentation_message
         )
         notification.statuses.add(new_status)
 
@@ -49,18 +69,18 @@ def setup_trustpoint_notifications():
         )
         notification.statuses.add(new_status)
 
-    if not NotificationModel.objects.filter(event='TRUSTPOINT_DOCUMENTATION').exists():
-        documentation_message = NotificationMessage.objects.create(
-            short_description='Access the Trustpoint Documentation',
-            long_description='You can find the official Trustpoint documentation here: '
-                             '<a href="https://docs.industrial-security.io">Trustpoint Documentation</a>'
+    # Check if the welcome notification has already been created
+    if not NotificationModel.objects.filter(event='WELCOME_TRUSTPOINT').exists():
+        welcome_message = NotificationMessage.objects.create(
+            short_description='Welcome to Trustpoint!',
+            long_description='Thank you for setting up Trustpoint. This system will help you manage your certificates and secure your environment.'
         )
         notification = NotificationModel.objects.create(
-            event='TRUSTPOINT_DOCUMENTATION',
+            event='WELCOME_TRUSTPOINT',
             created_at=timezone.now(),
             notification_source=NotificationModel.NotificationSource.SYSTEM,
             notification_type=NotificationModel.NotificationTypes.INFO,
-            message=documentation_message
+            message=welcome_message
         )
         notification.statuses.add(new_status)
 
