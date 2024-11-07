@@ -171,5 +171,8 @@ migrations/
 .python-version
 
 tests/data/issuing_ca/*
+tests/data/issuing_cas/*
+
+*.p12
 
 docs/build/
