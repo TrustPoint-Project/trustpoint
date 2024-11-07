@@ -10,6 +10,7 @@ Welcome to Trustpoint's documentation!
    :maxdepth: 3
    :caption: Contents:
 
+   quickstart
    architecture
    issuing_cas_gui
    domains_gui
