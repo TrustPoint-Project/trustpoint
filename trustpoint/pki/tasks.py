@@ -2,6 +2,7 @@ import logging
 import threading
 import time
 from datetime import datetime, timedelta
+from datetime import timezone as tz
 from heapq import heapify, heappop, heappush
 
 from django.conf import settings
@@ -18,9 +19,10 @@ def initialize_crl_schedule() -> None:
     """Initialize the CRL schedule for all IssuingCas."""
     for entry in BaseCaModel.objects.all():
         crl = entry.get_issuing_ca().get_crl_as_x509()
-        if crl:
+        if crl is not None:
             next_crl_time = crl.next_update_utc
-            heappush(crl_schedule, (next_crl_time, entry))
+            # second tuple element as "tiebreaker" in case of equal next_crl_time
+            heappush(crl_schedule, (next_crl_time, entry.pk, entry))
         else:
             generate_crl(entry)
     log.debug('All CRLs initialized: %s', crl_schedule)
@@ -40,7 +42,7 @@ def remove_crl_from_schedule(instance) -> bool:
     global crl_schedule
     if isinstance(instance, BaseCaModel):
         original_length = len(crl_schedule)
-        crl_schedule = [(time, inst) for time, inst in crl_schedule if inst != instance]
+        crl_schedule = [(time, pk, inst) for time, pk, inst in crl_schedule if inst != instance]
         heapify(crl_schedule)
         if len(crl_schedule) < original_length:
             log.debug('%s removed from CRL schedule.', instance)
@@ -56,7 +58,7 @@ def schedule_next_crl(issuing_ca: BaseCaModel) -> None:
     """
     crl = issuing_ca.get_issuing_ca().get_crl_as_x509()
     next_crl_time = crl.next_update_utc if crl else datetime.now() + timedelta(minutes=issuing_ca.next_crl_generation_time)
-    heappush(crl_schedule, (next_crl_time, issuing_ca))
+    heappush(crl_schedule, (next_crl_time, issuing_ca.pk, issuing_ca))
 
 
 def generate_crl(issuing_instance) -> None:
@@ -75,7 +77,9 @@ def crl_scheduler() -> None:
     log.debug('CRL scheduler started.')
     while True:
         if crl_schedule:
-            next_crl_time, issuing_instance = crl_schedule[0]
+            next_crl_time, _, issuing_instance = crl_schedule[0]
+
+            next_crl_time = next_crl_time.replace(tzinfo=tz.utc) # ensure timezone awareness
             sleep_time = (next_crl_time - timezone.now()).total_seconds()
 
             if sleep_time > 0:
