@@ -729,7 +729,7 @@ class IssuedDeviceCertificateModel(models.Model):
     domain = models.ForeignKey('DomainModel', on_delete=models.CASCADE)
     template_name = models.CharField(max_length=256, choices=TemplateName.choices, null=True, blank=True)
     protocol = models.CharField(max_length=256, default=None, null=True, blank=True)
-    certificate = models.ForeignKey(
+    certificate = models.OneToOneField(
         'CertificateModel', on_delete=models.CASCADE, related_name='issued_device_certificate', null=True, blank=True)
 
 

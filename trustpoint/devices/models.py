@@ -127,13 +127,9 @@ class Device(models.Model):
             certificate__certificate_status=CertificateStatus.OK
         ).exclude(certificate_type=CertificateTypes.LDEVID)
 
-        certs = []
-        for query_set in query_sets:
-            certs.append(query_set.certificate)
-
         return {'domain': domain,
             'ldevid': self.get_current_ldevid_by_domain(domain=domain),
-            'other': certs}
+            'other': query_sets}
 
     def save_certificate(self, certificate, certificate_type, domain, template_name, protocol):
         self.issued_device_certificates.create(

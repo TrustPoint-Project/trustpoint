@@ -32,7 +32,7 @@
                 <div>
                     {% if certs.ldevid %}
                         <a href="{% url 'pki:certificate-detail' pk=certs.ldevid.id %}">
-                            {{ certs.ldevid.serial_number }}
+                            {{ certs.ldevid.common_name }}
                         </a>
                     {% else %}
                         No LDevID certificate associated with this domain.
@@ -44,12 +44,11 @@
                 <div>
                     {% if certs.other %}
                         <ul>
-                            {% for other_cert in certs.other %}
-                                <li>
-                                    <a href="{% url 'pki:certificate-detail' pk=other_cert.certificate.id %}">
-                                        {{ other_cert.certificate.serial_number }}
-                                    </a>
-                                </li>
+                            {% for cert in certs.other %}
+                                <a href="{% url 'pki:certificate-detail' pk=cert.certificate.id %}">
+                                    {{ cert.certificate.common_name }}
+                                </a>
+                                <br>
                             {% endfor %}
                         </ul>
                     {% else %}
