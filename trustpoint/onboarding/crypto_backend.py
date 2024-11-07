@@ -181,10 +181,10 @@ class CryptoBackend:
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
             raise OnboardingError(exc_msg)
 
-        device.issued_device_certificates.create(
+        device.save_certificate(
             certificate=cert_model,
-            domain=device.domain,
             certificate_type=CertificateTypes.LDEVID,
+            domain=device.domain,
             template_name=TemplateName.GENERIC,
             protocol=device.onboarding_protocol
         )
@@ -249,10 +249,10 @@ class CryptoBackend:
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
             raise OnboardingError(exc_msg)
 
-        device.issued_device_certificates.create(
+        device.save_certificate(
             certificate=cert_model,
-            domain=device.domain,
             certificate_type=CertificateTypes.LDEVID,
+            domain=device.domain,
             template_name=TemplateName.GENERIC,
             protocol=device.onboarding_protocol
         )

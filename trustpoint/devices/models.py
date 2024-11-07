@@ -85,25 +85,21 @@ class Device(models.Model):
     def __str__(self: Device) -> str:
         """Returns a Device object in human-readable format.
 
-        :return: A formatted string containing the device name and serial number.
+        Returns: A formatted string containing the device name and serial number.
         """
         return f'Device({self.device_name}, {self.device_serial_number})'
-
-    def get_all_ldevids_by_domain(self, domain):
-        """Retrieves all LDevID certificates for a specified domain.
-
-        :param domain: The domain for which LDevID certificates should be retrieved.
-        :return: The LDevID certificate associated with the domain.
-        :raises IssuedDeviceCertificateModel.DoesNotExist: If no matching LDevID certificate is found.
-        """
-        return self.issued_device_certificates.get(certificate_type=CertificateTypes.LDEVID, domain=domain).certificate
 
     def get_current_ldevid_by_domain(self, domain):
         """Retrieves the current active LDevID certificate for a specified domain.
 
-        :param domain: The domain for which the current active LDevID certificate should be retrieved.
-        :return: The active LDevID certificate if found, otherwise None.
-        :raises IssuedDeviceCertificateModel.MultipleObjectsReturned: If multiple active LDevID certificates are found.
+        Args:
+            domain: The domain for which the current active LDevID certificate should be retrieved.
+
+        Returns:
+            The active LDevID certificate if found, otherwise None.
+
+        Raises:
+            IssuedDeviceCertificateModel.ObjectDoesNotExist: If no active LDevID certificates are found.
         """
         try:
             return self.issued_device_certificates.get(
@@ -117,20 +113,36 @@ class Device(models.Model):
     def get_all_active_certs_by_domain(self, domain):
         """Retrieves all active certificates for a specified domain, grouped by type.
 
-        :param domain: The domain for which active certificates should be retrieved.
-        :return: A dictionary containing:
-            - 'domain': The domain for the certificates.
-            - 'ldevid': The current active LDevID certificate or None if unavailable.
-            - 'other': A queryset of other active certificates excluding LDevID certificates.
+        Args:
+            domain: The domain for which active certificates should be retrieved.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'domain': The domain for the certificates.
+                - 'ldevid': The current active LDevID certificate or None if unavailable.
+                - 'other': A queryset of other active certificates excluding LDevID certificates.
         """
-        application_certs = self.issued_device_certificates.filter(
+        query_sets = self.issued_device_certificates.filter(
             domain=domain,
             certificate__certificate_status=CertificateStatus.OK
         ).exclude(certificate_type=CertificateTypes.LDEVID)
 
+        certs = []
+        for query_set in query_sets:
+            certs.append(query_set.certificate)
+
         return {'domain': domain,
             'ldevid': self.get_current_ldevid_by_domain(domain=domain),
-            'other': application_certs}
+            'other': certs}
+
+    def save_certificate(self, certificate, certificate_type, domain, template_name, protocol):
+        self.issued_device_certificates.create(
+            certificate=certificate,
+            certificate_type=certificate_type,
+            domain=domain,
+            template_name=template_name,
+            protocol=protocol
+        )
 
     def revoke_ldevid(self: Device, revocation_reason) -> bool:
         """Revokes the LDevID.
