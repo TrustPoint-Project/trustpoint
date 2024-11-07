@@ -110,7 +110,6 @@ class PoPVerifier:
                     padding.PKCS1v15(),
                     hashes.SHA256()
                 )
-                print("Signature verification succeeded")
             else:
                 raise BadMessageCheck("Public key is not an RSA public key")
         except InvalidSignature as e:
@@ -141,7 +140,6 @@ class PoPVerifier:
             encoding=serialization.Encoding.PEM,
             format=serialization.PublicFormat.SubjectPublicKeyInfo
         )
-        print(f"Public Key ():\n{pem.decode('utf-8')}")
 
     def get_public_key_from_cert_template(self, cert_req):
         """

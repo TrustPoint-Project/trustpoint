@@ -8,11 +8,14 @@ from .models import (
     CertificateModel,
     CRLStorage,
     DomainModel,
+    IssuedDeviceCertificateModel,
     IssuerAlternativeNameExtension,
     IssuingCaModel,
     KeyUsageExtension,
     SubjectAlternativeNameExtension,
-    TrustStoreModel
+    TrustStoreModel,
+    ESTModel,
+    CMPModel
 )
 
 
@@ -94,6 +97,7 @@ class CertificateAdmin(admin.ModelAdmin):
 
         'sha256_fingerprint',
         'common_name',
+        'certificate_status',
 
         'signature_algorithm_oid',
         'signature_algorithm',
@@ -141,6 +145,19 @@ class DomainModelAdmin(admin.ModelAdmin):
         'issuing_ca'
     )
 
+class EstModelAdmin(admin.ModelAdmin):
+    pass
+
+class CmpModelAdmin(admin.ModelAdmin):
+    pass
+
+
+class IssuedDeviceCertificateAdmin(admin.ModelAdmin):
+    readonly_fields = (
+        'device',
+        'certificate_type'
+    )
+
 
 admin.site.register(TrustStoreModel, TrustStoreAdmin)
 admin.site.register(IssuingCaModel, IssuingCaAdmin)
@@ -153,3 +170,6 @@ admin.site.register(CertificateModel, CertificateAdmin)
 admin.site.register(CertificateChainOrderModel, CertificateChainOrderModelAdmin)
 admin.site.register(CRLStorage, CRLStorageAdmin)
 admin.site.register(DomainModel, DomainModelAdmin)
+admin.site.register(IssuedDeviceCertificateModel, IssuedDeviceCertificateAdmin)
+admin.site.register(ESTModel, EstModelAdmin)
+admin.site.register(CMPModel, CmpModelAdmin)

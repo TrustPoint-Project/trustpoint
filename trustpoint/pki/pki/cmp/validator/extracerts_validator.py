@@ -95,9 +95,6 @@ class ExtraCertsValidator:
         try:
             protection_cert = x509.load_der_x509_certificate(cmp_protection_cert)
 
-            print(protection_cert.signature)
-            print(protection_cert.tbs_certificate_bytes)
-
             protection_cert.public_key().verify(
                 protection_cert.signature,
                 protection_cert.tbs_certificate_bytes,

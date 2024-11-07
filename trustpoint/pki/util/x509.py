@@ -15,7 +15,6 @@ from pki.serializer import (
     CredentialSerializer, CertificateSerializer)
 
 
-
 class CredentialExtractorError(ValidationError):
     """Base class for Errors raised by the CredentialExtractor class."""
     pass
@@ -235,17 +234,3 @@ class CredentialExtractor:
         if len(issuers) > 1:
             raise MultipleCertificateChainsFoundError
         return issuers[0]
-
-
-class OidUtil:
-    @staticmethod
-    def get_extension_for_oid_or_none(extensions: x509.Extensions, oid: x509.NameOID) -> x509.Extension | None:
-        """Determines if the given extensions contain an extension with the given OID.
-        Args:
-            extensions (x509.Extensions): The extensions to search.
-            oid (NameOID): The OID to search for.
-        """
-        try:
-            return extensions.get_extension_for_oid(oid)
-        except x509.ExtensionNotFound:
-            return None
