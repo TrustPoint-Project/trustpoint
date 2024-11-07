@@ -524,8 +524,23 @@ class CertMessageHandler:
                 dns_name = entry.getComponent().asOctets().decode()
                 san_crypto_entries.append(x509.DNSName(dns_name))
             if entry.getName() == 'directoryName':
-                print(entry)
-                raise ValueError
+
+                rdns_sequence = entry.getComponent().getComponent()
+                rdns = []
+                for rdn in rdns_sequence:
+                    rdn_set = []
+                    for attribute_type_and_value in rdn:
+                        oid = str(attribute_type_and_value.getComponentByName('type'))
+                        value = attribute_type_and_value.getComponentByName('value')
+                        decoded_value, _ = decoder.decode(value)
+                        if oid != x509.NameOID.X500_UNIQUE_IDENTIFIER.dotted_string:
+                            decoded_value = str(decoded_value)
+                        name_attr = x509.NameAttribute(x509.ObjectIdentifier(oid), decoded_value)
+                        rdn_set.append(name_attr)
+                    if rdn_set:
+                        rdns.append(x509.RelativeDistinguishedName(rdn_set))
+                san_crypto_entries.append(x509.DirectoryName(x509.Name(rdns)))
+
             if entry.getName() == 'uniformResourceIdentifier':
                 uri = entry.getComponent().asOctets().decode()
                 san_crypto_entries.append(x509.UniformResourceIdentifier(uri))
@@ -630,6 +645,7 @@ class CertMessageHandler:
         # )
 
         cert = cert_builder.sign(ca_key, hashes.SHA256())
+
         CertificateModel.save_certificate(cert)
 
         return cert
