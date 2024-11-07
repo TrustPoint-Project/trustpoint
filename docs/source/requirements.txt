@@ -1,0 +1,10 @@
+sphinx==8.0.2
+sphinxcontrib-plantuml==0.30
+devtools==0.12.2
+django-extensions==3.2.3
+pyopenssl==24.2.1
+werkzeug==3.0.4
+furo==2024.8.6
+ruff==0.6.3
+pillow==10.4.0
+docutils-stubs==0.0.22
