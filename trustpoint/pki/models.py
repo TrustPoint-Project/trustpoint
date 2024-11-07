@@ -30,6 +30,7 @@ if TYPE_CHECKING:
     from typing import Union
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
+    from django.db.models import QuerySet
 
 log = logging.getLogger('tp.pki')
 
@@ -892,6 +893,9 @@ class CertificateModel(models.Model):
 
     # --------------------------------------------- Data Retrieval Methods ---------------------------------------------
 
+    def get_subject_attributes_for_oid(self, oid: NameOid) -> QuerySet[AttributeTypeAndValue]:
+        return self.subject.filter(oid=oid.value)
+    
     def get_certificate_serializer(self) -> CertificateSerializer:
         return CertificateSerializer(self.cert_pem)
 

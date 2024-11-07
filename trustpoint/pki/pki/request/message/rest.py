@@ -11,7 +11,11 @@ from pki.pki.request.message import (
     MimeType,
     HttpStatusCode)
 
+from util.strings import StringValidator
+
 from typing import TYPE_CHECKING
+
+import secrets
 
 if TYPE_CHECKING:
     from typing import Union
@@ -29,32 +33,51 @@ class PkiRestRequestMessage(PkiRequestMessage):
 
 
 class PkiRestCsrRequestMessage(PkiRestRequestMessage):
+    _mimetype: MimeType = MimeType.APPLICATION_PKCS10
     _csr = x509.CertificateSigningRequest
-    _serial_number = str
-    _device_name = str
+    _serial_number: str
+    _device_name: str
 
     def __init__(self,
                  domain_model: DomainModel,
-                 csr: x509.CertificateSigningRequest,
-                 serial_number: str,
-                 device_name: str):
+                 raw_content: bytes,
+                 device_name: str,
+                 serial_number_expected: str | None = None):
+        self._serial_number = serial_number_expected
+        self._device_name = device_name
         super().__init__(
             domain_model=domain_model,
-            raw_content=None,
-            received_mimetype=None,
+            raw_content=raw_content,
+            received_mimetype=MimeType.APPLICATION_PKCS10,
             received_content_transfer_encoding=None)
 
-        self._init_csr(csr)
-        self._serial_number = serial_number
-        self._device_name = device_name
 
-    def _init_csr(self, csr: x509.CertificateSigningRequest) -> None:
+    def _parse_content(self) -> None:
         try:
-            self._csr = csr
+            self._csr = x509.load_pem_x509_csr(self._raw_content)
         except ValueError:
             self._build_malformed_csr_response()
             self._is_valid = False
             raise ValueError
+
+        try:
+            csr_serial = self._csr.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value
+        except (x509.ExtensionNotFound, IndexError):
+            csr_serial = None
+
+        if not self._serial_number and not csr_serial:
+            #log.warning('No serial number provided in CSR for device %s', device.device_name)
+            self._serial_number = 'tp_' + secrets.token_urlsafe(12)
+
+        if csr_serial and not StringValidator.is_urlsafe(csr_serial):
+            exc_msg = 'Invalid serial number in CSR.'
+            raise ValueError(exc_msg)
+
+        if self._serial_number and csr_serial and self._serial_number != csr_serial:
+            exc_msg = 'CSR serial number does not match device serial number.'
+            raise ValueError(exc_msg)
+
+        self._serial_number = self._serial_number or csr_serial
 
     def _build_missing_csr_response(self) -> None:
         error_msg = 'Missing CSR in REST CSR-based certificate issue request.'
@@ -91,14 +114,13 @@ class PkiRestPkcs12RequestMessage(PkiRestRequestMessage):
                  domain_model: DomainModel,
                  serial_number: str,
                  device_name: str):
+        self._serial_number = serial_number
+        self._device_name = device_name
         super().__init__(
             domain_model=domain_model,
             raw_content=None,
             received_mimetype=None,
             received_content_transfer_encoding=None)
-
-        self._serial_number = serial_number
-        self._device_name = device_name
         
     @property
     def serial_number(self) -> str:

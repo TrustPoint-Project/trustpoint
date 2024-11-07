@@ -16,6 +16,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from django.db import transaction
 from pki import CertificateTypes, TemplateName
+from pki.oid import NameOid
 from pki.models import CertificateModel
 from pki.pki.request.handler.factory import CaRequestHandlerFactory
 from pki.pki.request.message.rest import PkiRestCsrRequestMessage, PkiRestPkcs12RequestMessage
@@ -148,30 +149,12 @@ class CryptoBackend:
             OnboardingError: If the onboarding CA is not configured or not available.
         """
         log.debug('Received CSR for device %s', device.device_name)
-        csr = x509.load_pem_x509_csr(csr_pem)
-
-        try:
-            csr_serial = csr.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value
-        except (x509.ExtensionNotFound, IndexError):
-            csr_serial = None
-
-        if not device.device_serial_number and not csr_serial:
-            log.warning('No serial number provided in CSR for device %s', device.device_name)
-            serial = 'tp_' + secrets.token_urlsafe(12)
-            device.device_serial_number = serial
-        if csr_serial and not StringValidator.is_urlsafe(csr_serial):
-            exc_msg = 'Invalid serial number in CSR.'
-            raise OnboardingError(exc_msg)
-        if device.device_serial_number and csr_serial and device.device_serial_number != csr_serial:
-            exc_msg = 'CSR serial number does not match device serial number.'
-            raise OnboardingError(exc_msg)
-        serial_no = device.device_serial_number or csr_serial
-        device.device_serial_number = serial_no
 
         log.debug('Issuing LDevID for device %s', device.device_name)
 
         pki_request = PkiRestCsrRequestMessage(
-            domain_model=device.domain, csr=csr, serial_number=serial_no, device_name=device.device_name
+            domain_model=device.domain, raw_content=csr_pem,
+            serial_number_expected=device.device_serial_number, device_name=device.device_name
         )
         request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
         pki_response = request_handler.process_request()
@@ -180,6 +163,13 @@ class CryptoBackend:
         if not isinstance(cert_model, CertificateModel):
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
             raise OnboardingError(exc_msg)
+        
+        try: # Extract device serial number from LDevID subject
+            sn = cert_model.get_subject_attributes_for_oid(NameOid.SERIAL_NUMBER)[0].value
+            device.device_serial_number = sn
+        except IndexError as e:
+            log.warning(f'Device serial empty for device {device.device_name}.'
+                        ' No serial number found in issued LDevID!')
 
         device.save_certificate(
             certificate=cert_model,
