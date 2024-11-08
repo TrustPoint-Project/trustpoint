@@ -43,7 +43,7 @@ Trustpoint is designed to cater to a wide range of users and scenarios, making i
 1. **Target Users:**
 
    - **Small to Medium Enterprises (SMEs)**: Organizations that need a straightforward, cost-effective way to manage digital certificates without a complex PKI infrastructure.
-   - **Development Teams**: Teams working on software or applications in machinerythat require secure communication and need a testing environment for certificates.
+   - **Development Teams**: Teams working on software or applications in machinery that require secure communication and need a testing environment for certificates.
    - **IT Administrators**: Professionals responsible for managing and securing network infrastructure.
 
 2. **Ideal Scenarios for Using Trustpoint:**

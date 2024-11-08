@@ -62,7 +62,7 @@ Trustpoint can be configured to operate in different modes in relation to the Is
         - Activate "Enable local auto-generated PKI"
         - Click save
     - **Note:** This setup is not recommended for production use.
-    - **Use Case:** Testing Trustpoint and it's features
+    - **Use Case:** Testing Trustpoint and its features
 
 Domains and Issuing CAs
 =======================
@@ -73,6 +73,7 @@ Domain Configuration
 --------------------
 - **Domains in Trustpoint**: A domain in Trustpoint represents a logical grouping of devices, applications, or services that require certificate management. Each domain can have its own policies, configurations, and Issuing CA.
 - **Separate Issuing CAs per Domain**: Trustpoint allows each domain to be associated with a distinct Issuing CA. This configuration ensures that certificate issuance is tailored to the specific needs of each domain, providing greater control and flexibility.
+- **Granular Protocol Selection**: In order to reduce the possible attack surface according to the principle of least privilege, Trustpoint supports selecting which protocols and operations are allowed on a per-domain basis. For instance, the CMP protocol may be enabled to request application certificates via the Trustpoint client.
 
 Use Cases for Domain and Issuing CA Segregation
 -----------------------------------------------
