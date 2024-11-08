@@ -6,7 +6,7 @@ from django.http import HttpRequest
 from ninja.responses import Response, codes_4xx
 from devices.models import Device
 from pki.models import CertificateModel, IssuingCaModel, DomainModel, BaseCaModel, IssuedDeviceCertificateModel
-from pki import CaLocalization
+from pki import CaLocalization, TemplateName
 from trustpoint.schema import ErrorSchema, SuccessSchema
 from django.db.models import Count,F, Q,  Case, When, Value, IntegerField
 from django.db.models.functions import TruncDate
@@ -207,6 +207,24 @@ def get_cert_counts_by_domain():
     print(f"Error occurred in certificate count by issuing ca query: {e}")
   return cert_counts_by_domain
 
+def get_cert_counts_by_template():
+  """Get certificate count by template from database"""
+  cert_counts_by_template = {str(status): 0 for _, status in TemplateName.choices}
+  try:
+    cert_template_qr = IssuedDeviceCertificateModel.objects.values('template_name').annotate(
+      count=Count('template_name')
+    )
+  except Exception as e:
+    print(f"Error occurred in certificate count by template query: {e}")
+  # Mapping from short code to human-readable name
+  template_mapping = {key: str(value) for key, value in TemplateName.choices}
+  cert_counts_by_template = {
+    template_mapping[item['template_name']]: item['count']
+    for item in cert_template_qr
+  }
+
+  return cert_counts_by_template
+
 def get_issuing_ca_counts_by_type():
   """Get issuing ca counts by type from database"""
   issuing_ca_type_counts = {str(type): 0 for _, type in CaLocalization.choices}
@@ -274,6 +292,10 @@ def dashboard_data(request: HttpRequest):
     cert_counts_by_issuing_ca_and_date = get_cert_counts_by_issuing_ca_and_date()
     if cert_counts_by_issuing_ca_and_date:
       dashboard_data["cert_counts_by_issuing_ca_and_date"] = cert_counts_by_issuing_ca_and_date
+    
+    cert_counts_by_template = get_cert_counts_by_template()
+    if cert_counts_by_template:
+      dashboard_data["cert_counts_by_template"] = cert_counts_by_template
     
     cert_counts_by_domain = get_cert_counts_by_domain()
     if cert_counts_by_domain:

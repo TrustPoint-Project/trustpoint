@@ -1,12 +1,9 @@
-{% extends 'trustpoint/base.html' %}
-{% block content %}
-{% include 'home/counts-panel.html' %} 
-{% include 'home/notifications-tab.html' %}
-{% include 'home/charts-tab.html' %}
+{% extends 'trustpoint/base.html' %} {% block content %} {% include 'home/counts-panel.html' %} {%
+include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
 <script>
   var lineChartDevice, donutChartDevice, barChartDevice;
-  var lineChartCert, donutChartCert, barChartCert;
+  var lineChartCert, donutChartCert, certsByTemplateBarChart;
   var lineChart, certsByDateStackChart, donutChartCA, certsByIssuingCaDonutChart;
   async function fetchDasbhboardData() {
     try {
@@ -222,6 +219,43 @@
     });
   }
 
+  function updateCertsByTempateBarChart(certsByTempateCounts) {
+    var certsByTemplateBarChartEle = document
+      .getElementById("certsByTemplateBarChart")
+      .getContext("2d");
+    certsByTemplateBarChart != undefined ? certsByTemplateBarChart.destroy() : "";
+    var chartLabels = [];
+    var chartData = [];
+    Object.entries(certsByTempateCounts).forEach(([key, value]) => {
+      chartLabels.push(key);
+      chartData.push(value);
+    });
+    //console.log(chartData, chartLabels);
+    certsByTemplateBarChart = new Chart(certsByTemplateBarChartEle, {
+      type: "bar",
+      data: {
+        labels: chartLabels,
+        datasets: [
+          {
+            label: "Number of Certificates",
+            data: chartData,
+            borderColor: "#0d6efd",
+            backgroundColor: "#0d6efd",
+            tension: 0.4,
+            fill: "true",
+          },
+        ],
+      },
+      options: {
+        scales: {
+          y: {
+            beginAtZero: "true",
+          },
+        },
+      },
+    });
+  }
+
   // Function to update the issuing ca counts
   function updateCertsByIssuingCAChart(certIssuingCACounts) {
     var certsByIssuingCaDonutChartEle = document
@@ -354,6 +388,9 @@
       if ("cert_counts_by_domain" in dashboardData) {
         updateCertDomainChart(dashboardData.cert_counts_by_domain);
       }
+      if ("cert_counts_by_template" in dashboardData) {
+        updateCertsByTempateBarChart(dashboardData.cert_counts_by_template);
+      }
       if ("ca_counts_by_type" in dashboardData) {
         updateIssuingCaTypeChart(dashboardData.ca_counts_by_type);
       }
@@ -414,8 +451,8 @@
         //var donutChartCertEle = document.getElementById("donutChartCert").getContext("2d");
         //if (!donutChartCert) donutChartCert = new Chart(donutChartCertEle, donutChartCertConfig);
 
-        var barChartCertEle = document.getElementById("barChartCert").getContext("2d");
-        if (!barChartCert) barChartCert = new Chart(barChartCertEle, barChartCertConfig);
+        //var barChartCertEle = document.getElementById("barChartCert").getContext("2d");
+        //if (!barChartCert) barChartCert = new Chart(barChartCertEle, barChartCertConfig);
       } else if (chartTabId == "caChartTab") {
         // var lineChartEle = document.getElementById("lineChart").getContext("2d");
         // if(!lineChart)
