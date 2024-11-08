@@ -13,10 +13,12 @@ import datetime
 import logging
 from pyasn1.error import PyAsn1Error
 
+from devices.models import Device
+from pki import CertificateTypes, TemplateName
 from pki.models import CertificateModel
 from pki.pki.cmp.builder import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts
 from pki.pki.cmp.validator import ExtraCertsValidator, InitializationReqValidator
-from pki.oid import CertificateExtensionOid
+from pki.oid import CertificateExtensionOid, NameOid
 
 
 class CertMessageHandler:
@@ -644,10 +646,31 @@ class CertMessageHandler:
         #     critical=False,
         # )
 
+        def get_template_name(qs):
+            for entry in qs:
+                if 'tls-server' in entry.value:
+                    return TemplateName.TLSSERVER
+                if 'tls-client' in entry.value:
+                    return TemplateName.TLSCLIENT
+                if 'generic' in entry.value:
+                    return TemplateName.GENERIC
+            return None
+
         cert = cert_builder.sign(ca_key, hashes.SHA256())
 
-        CertificateModel.save_certificate(cert)
+        cert_model = CertificateModel.save_certificate(cert)
 
+        qs = cert_model.get_subject_attributes_for_oid(NameOid.PSEUDONYM)
+        for attr_value in qs:
+            device: Device = Device.get_by_name(attr_value.value)
+            if device:
+                device.save_certificate(
+                    certificate=cert_model,
+                    certificate_type=CertificateTypes.APPLICATION,
+                    domain=device.domain,
+                    template_name=get_template_name(qs),
+                    protocol='cmp'
+                    )
         return cert
 
     @staticmethod
