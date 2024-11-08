@@ -38,6 +38,11 @@ class Command(BaseCommand):
         self._save_issuing_ca('issuing-ca-c', ISSUING_CA_C_FILE_PATH)
         certificates = CertificateModel.objects.all()
         certificate_list = list(certificates)
+        certificate_types = [choice.value for choice in CertificateTypes]
+        template_names = [choice.value for choice in TemplateName]
+        device_onboarding_statuses = [choice.value for choice in Device.DeviceOnboardingStatus]
+        onboarding_protocols = [Device.OnboardingProtocol.TP_CLIENT.value, Device.OnboardingProtocol.MANUAL.value]
+
         data = {
             "arburg": [
                 "ALLROUNDER-Injection-Molding-Machine",
@@ -88,8 +93,6 @@ class Command(BaseCommand):
             ]
         }
 
-        # onboarding_protocols = [protocol.value for protocol in Device.OnboardingProtocol]
-        onboarding_protocols = [Device.OnboardingProtocol.TP_CLIENT.value, Device.OnboardingProtocol.MANUAL.value]
 
         print("Starting the process of adding domains and devices...\n")
         index = 0
@@ -119,14 +122,12 @@ class Command(BaseCommand):
                     device_name=device_name,
                     device_serial_number=serial_number,
                     onboarding_protocol=onboarding_protocol,
-                    domain=domain
+                    domain=domain,
+                    device_onboarding_status=random.choice(device_onboarding_statuses)
                 )
 
                 dev.save()
                 print(f"Device '{device_name}' created successfully.\n")
-                certificate_types = values = [choice.value for choice in CertificateTypes]
-                template_names = values = [choice.value for choice in TemplateName]
-
 
                 issued_dev_cert = IssuedDeviceCertificateModel(
                   device = dev,
