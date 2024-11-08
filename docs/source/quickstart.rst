@@ -3,10 +3,6 @@ Trustpoint Quickstart Guide 🚀
 
 This guide provides an introduction to Trustpoint and instructions for setting up the Trustpoint using Docker.
 
-.. contents::
-    :local:
-    :depth: 2
-
 Introduction 🌐
 ------------
 **Trustpoint** is a collaborative project dedicated to securing industrial environments through digital identities for machines and components. It addresses cybersecurity challenges in increasingly interconnected industrial settings by managing machine identities3. Trustpoint offers an open-source solution for secure, scalable management of digital identities, leveraging methods such as Zero-Touch Onboarding (based on standards like BRSKI) and user-driven onboarding for legacy or specialized systems.
