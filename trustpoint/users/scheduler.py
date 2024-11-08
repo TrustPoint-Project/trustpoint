@@ -39,7 +39,7 @@ class TaskScheduler:
         Submit a task to the thread pool for execution.
         """
         try:
-            logger.info(f"Submitting '{task_func.__name__}' to the thread pool.")
+            logger.debug(f"Submitting '{task_func.__name__}' to the thread pool.")
             future = self.executor.submit(task_func)
             return future
         except Exception as e:
