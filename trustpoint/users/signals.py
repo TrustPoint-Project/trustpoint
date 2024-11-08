@@ -1,7 +1,6 @@
 import threading
 import os
-from django.core.signals import request_started
-from django.db.models.signals import post_migrate, post_init
+from django.db.backends.signals import connection_created
 from django.dispatch import receiver
 from users.scheduler import TaskScheduler
 import logging
@@ -10,8 +9,8 @@ logger = logging.getLogger('tp.users')
 
 tasks_initialized = False
 
-@receiver(request_started)
-def trigger_tasks_on_first_request(sender, **kwargs):
+@receiver(connection_created)
+def trigger_tasks_on_startup(sender, **kwargs):
     """Trigger tasks after the first HTTP request is processed when running the server."""
     global tasks_initialized
     
@@ -23,7 +22,7 @@ def trigger_tasks_on_first_request(sender, **kwargs):
         return
 
     try:
-        logger.debug("Triggering periodic tasks after server startup on the first request...")
+        logger.debug("Triggering periodic tasks after server startup...")
         tasks_initialized = True
         scheduler = TaskScheduler()
         threading.Thread(target=scheduler.setup_periodic_tasks, args=(5,), daemon=True).start()
