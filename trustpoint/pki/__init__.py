@@ -41,4 +41,7 @@ class CertificateTypes(models.TextChoices):
 class TemplateName(models.TextChoices):
     GENERIC = 'Generic', _('Generic')
     TLSSERVER = 'TLS_Server', _('TLS Server')
+    TLSCLIENT = 'TLS_Client', _('TLS Client')
+    OPCUASERVER = 'OPC_UA_Server', _('OPC UA Server')
+    OPCUACLIENT = 'OPC_UA_Client', _('OPC UA Client')
     
