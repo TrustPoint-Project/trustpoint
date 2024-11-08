@@ -18,26 +18,28 @@
 
   <!-- chart Tab Content -->
   <div class="tab-content px-0">
+    
+    {% comment %} disabling for now
     <div class="text-end py-2">
       <button class="btn btn-blue">Today</button>
       <button class="btn btn-blue">Last Week</button>
       <button class="btn btn-blue">Last Month</button>
       <button class="btn btn-blue">Life</button>
-    </div>
+    </div> {% endcomment %}
     <!-- device chart tab content -->
     <div class="tab-pane fade show active" id="deviceChartTab">
       <div class="row p-3">
         <div class="col-5 px-3 shadow">
           <h2 class="p-2">Devices By Onboarding Status</h2>
-          <canvas id="devicesByOSLineChart" width="400" height="200"></canvas>
+          <canvas id="devicesByOSLineChart" class="pb-2" width="400" height="200"></canvas>
         </div>
         <div class="col-3 px-3 shadow">
           <h2 class="p-2">Devices By Domain</h2>
-          <canvas id="devicesByDomainDonutChart" width="200" height="200"></canvas>
+          <canvas id="devicesByDomainDonutChart" class="pb-2"  width="200" height="200"></canvas>
         </div>
         <div class="col-4 shadow">
           <h2 class="p-2">Devices By Onboarding Protocol</h2>
-          <canvas id="devicesByOPBarChart" width="400" height="200"></canvas>
+          <canvas id="devicesByOPBarChart" class="pb-2"  width="400" height="200"></canvas>
         </div>
       </div>
     </div>
@@ -46,15 +48,15 @@
       <div class="row p-3">
         <div class="col-5 shadow">
           <h2 class="p-2">Certificates By Status</h2>
-          <canvas id="certsByStatusLineChart" width="400" height="200"></canvas>
+          <canvas id="certsByStatusLineChart" class="pb-2"  width="400" height="200"></canvas>
         </div>
         <div class="col-3 shadow">
           <h2 class="p-2">Certificates By Domain</h2>
-          <canvas id="certsByDomainPieChart" width="200" height="200"></canvas>
+          <canvas id="certsByDomainPieChart" class="pb-2"  width="200" height="200"></canvas>
         </div>
         <div class="col-4 shadow">
           <h2 class="p-2">Certificates By Template</h2>
-          <canvas id="certsByTemplateBarChart" width="400" height="200"></canvas>
+          <canvas id="certsByTemplateBarChart" class="pb-2"  width="400" height="200"></canvas>
         </div>
       </div>
     </div>
@@ -107,15 +109,15 @@
         </div> {% endcomment %}
         <div class="col-3 shadow">
           <h2 class="p-2">Certificates By Issuing CA</h2>
-          <canvas id="certsByIssuingCADonutChart" width="200" height="200"></canvas>
+          <canvas id="certsByIssuingCADonutChart" class="pb-2"  width="200" height="200"></canvas>
         </div>
         <div class="col-6 shadow">
           <h2 class="p-2">Issued Certificates</h2>
-          <canvas id="certsByDateStackChart" width="400" height="200"></canvas>
+          <canvas id="certsByDateStackChart" class="pb-2"  width="400" height="200"></canvas>
         </div>
         <div class="col-3 shadow">
           <h2 class="p-2">Issuing CAs By Type</h2>
-          <canvas id="issuingCAsByTypePieChart" width="200" height="200"></canvas>
+          <canvas id="issuingCAsByTypePieChart" class="pb-2"  width="200" height="200"></canvas>
         </div>
       </div>
     </div>
