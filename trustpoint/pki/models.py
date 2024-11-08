@@ -13,12 +13,13 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 from cryptography.x509.extensions import ExtensionNotFound
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
-from pki.pki.request import Protocols
+from devices.models import Device
 
-from . import ReasonCode, CertificateStatus, CaLocalization
+from . import CertificateTypes, ReasonCode, CertificateStatus, CaLocalization, TemplateName
 
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
@@ -29,6 +30,7 @@ if TYPE_CHECKING:
     from typing import Union
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
+    from django.db.models import QuerySet
 
 log = logging.getLogger('tp.pki')
 
@@ -722,6 +724,16 @@ class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExten
 #     pass
 
 
+class IssuedDeviceCertificateModel(models.Model):
+    device = models.ForeignKey(Device, on_delete=models.CASCADE, editable=False, null=True, blank=True, related_name='issued_device_certificates')
+    certificate_type = models.CharField(max_length=256, choices=CertificateTypes.choices)
+    domain = models.ForeignKey('DomainModel', on_delete=models.CASCADE)
+    template_name = models.CharField(max_length=256, choices=TemplateName.choices, null=True, blank=True)
+    protocol = models.CharField(max_length=256, default=None, null=True, blank=True)
+    certificate = models.OneToOneField(
+        'CertificateModel', on_delete=models.CASCADE, related_name='issued_device_certificate', null=True, blank=True)
+
+
 class CertificateModel(models.Model):
     """X509 Certificate Model.
 
@@ -881,6 +893,9 @@ class CertificateModel(models.Model):
 
     # --------------------------------------------- Data Retrieval Methods ---------------------------------------------
 
+    def get_subject_attributes_for_oid(self, oid: NameOid) -> QuerySet[AttributeTypeAndValue]:
+        return self.subject.filter(oid=oid.value)
+    
     def get_certificate_serializer(self) -> CertificateSerializer:
         return CertificateSerializer(self.cert_pem)
 
@@ -1096,6 +1111,7 @@ class CertificateModel(models.Model):
 
         # ----------------------------------------- Certificate Model Instance -----------------------------------------
 
+
         cert_model = CertificateModel(
             sha256_fingerprint=sha256_fingerprint,
             signature_algorithm_oid=signature_algorithm_oid,
@@ -1235,11 +1251,11 @@ class CertificateModel(models.Model):
     @transaction.atomic
     def revoke(self, revocation_reason: ReasonCode) -> bool:
         """Revokes the certificate.
-        
+
         Returns: True if the certificate was successfully scheduled to be added to at least one CRL."""
         if self.certificate_status == CertificateStatus.REVOKED:
             return True # already revoked, prevent duplicate addition to CRL
-        
+
         self.revocation_reason = revocation_reason
         added_to_crl = False
         qs = self.issuer_references.all()
@@ -1253,7 +1269,7 @@ class CertificateModel(models.Model):
                     added_to_crl = True
                     if issuing_ca.auto_crl:
                         issuing_ca.get_issuing_ca().generate_crl()
-                except CertificateModel.issuing_ca_model.RelatedObjectDoesNotExist:
+                except ObjectDoesNotExist:
                     pass
         if added_to_crl:
             self.certificate_status = CertificateStatus.REVOKED
@@ -1264,6 +1280,7 @@ class CertificateModel(models.Model):
     def remove_private_key(self):
         self.private_key = None
         self._save()
+
 
 # ------------------------------------------------- Issuing CA Models --------------------------------------------------
 
@@ -1368,7 +1385,7 @@ class BaseCaModel(models.Model):
 
 class RootCaModel(BaseCaModel):
     """Root CA model.
-    
+
     Functionally equivalent to IssuingCaModel, but not part of issuing CA list and cannot be edited externally.
     """
     class Meta:
@@ -1395,12 +1412,6 @@ class CertificateChainOrderModel(models.Model):
         editable=False,
         related_name='issuing_ca_cert_chains')
     issuing_ca = models.ForeignKey(BaseCaModel, on_delete=models.CASCADE, editable=False)
-
-    def get_issuing_ca(
-            self,
-            unprotected_local_issuing_ca_class: type[UnprotectedLocalIssuingCa] = UnprotectedLocalIssuingCa
-    ) -> BaseCaModel:
-        return unprotected_local_issuing_ca_class(self)
 
     def __str__(self):
         return f'CertificateChainOrderModel({self.certificate.common_name})'
@@ -1523,7 +1534,7 @@ class CMPModel(models.Model):
         KUR = 'kur', 'Key Update Request'
 
     domain = models.OneToOneField('DomainModel', on_delete=models.CASCADE, related_name='cmp_protocol')
-    status = models.BooleanField(default=False)
+    status = models.BooleanField(default=True)
     url_path = models.URLField(max_length=1024, verbose_name='CMP URL Path')
     operation_modes = models.TextField(blank=True, verbose_name="Selected Operations")
 
@@ -1602,6 +1613,14 @@ class DomainModel(models.Model):
         self.full_clean()
         super().save(*args, **kwargs)
 
+        # TODO: this is not save -> error handling still required. -> undo everything if something fails below
+        cmp_path = '/.well-known/cmp/p/' + self.get_url_path_segment()
+        CMPModel.objects.get_or_create(domain=self, url_path=cmp_path)
+
+        est_path = '/.well-known/est/' + self.get_url_path_segment()
+        ESTModel.objects.get_or_create(domain=self, url_path=est_path)
+
+
     def get_url_path_segment(self):
         """@BytesWelder: I don't know what we need this for. @Alex mentioned this in his doc.
 
@@ -1612,7 +1631,7 @@ class DomainModel(models.Model):
         return self.unique_name.lower().replace(' ', '-')
 
     def get_protocol_object(self, protocol):
-        """Get correspondig CMP object"""
+        """Get corresponding CMP object"""
         if protocol == 'cmp':
             return self.cmp_protocol
         if protocol == 'est':

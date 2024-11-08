@@ -40,4 +40,4 @@ class CRLDownloadView(View):
             messages.info(self, _('CRL generated'))
         else:
             messages.warning(self, _('CRL could not be generated'))
-        return redirect('pki:issuing_cas')
+        return redirect('pki:issuing_cas-config', pk=ca_id)

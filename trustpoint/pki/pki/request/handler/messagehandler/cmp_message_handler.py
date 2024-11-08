@@ -3,6 +3,7 @@ from pyasn1_modules import rfc4210, rfc2511
 import logging
 import traceback
 
+from pki import CertificateStatus
 from pki.models import CertificateModel
 from pki.pki.request.message import HttpStatusCode
 
@@ -50,31 +51,40 @@ class CMPMessageHandler:
         self.logger.info("CMPMessageHandler initialized with alias: %s", self.alias)
 
 
-    def set_signature_based_protection(self, authorized_clients: list):
+
+    def set_signature_based_protection(self, authorized_clients: list | None = None):
         """
         Define params for signature based protection.
 
         :param authorized_clients: list, a list of pem encoded certificates which are authorized.
         """
         self.protection_mode_signature = True
-        self.authorized_clients = authorized_clients
-        self.logger.info("Signature-based protection mode set with %d authorized clients", len(authorized_clients))
+        if authorized_clients is None:
+            if self.issuing_ca_object is not None:
+                self._update_authorized_clients()
+            else:
+                raise RuntimeError(
+                    "Issuing CA must be set for signature-based protection without specifying authorized clients")
+        else:
+            self.authorized_clients = authorized_clients
+        self.logger.info("Signature-based protection mode set with %d authorized clients",
+                         len(self.authorized_clients))
 
     def _is_valid_authorized_clients(self):
         self.logger.debug("Validating authorized clients list.")
-        if self.authorized_clients:
-            if not isinstance(self.authorized_clients, list):
-                ValueError(f"authorized_clients must be a list")
 
-            if len(self.authorized_clients) == 0:
-                ValueError(f"authorized_clients must contain at least one certificate")
+        if not isinstance(self.authorized_clients, list):
+            raise ValueError(f"authorized_clients must be a list")
 
-            for cert in self.authorized_clients:
-                if not isinstance(cert, x509.Certificate):
-                    ValueError(f"Each item in authorized_clients must be an instance of x509.Certificate")
+        if len(self.authorized_clients) == 0:
+            raise ValueError(f"authorized_clients must contain at least one certificate")
+
+        for cert in self.authorized_clients:
+            if not isinstance(cert, x509.Certificate):
+                raise ValueError(f"Each item in authorized_clients must be an instance of x509.Certificate")
 
     def _configure_alias(self):
-        self.logger.debug("Configureing alias.")
+        self.logger.debug("Configuring alias.")
 
         if self.alias:
             if self.alias in cert_templates:
@@ -137,7 +147,7 @@ class CMPMessageHandler:
             response = self._handle_request()
             self.logger.info("Request processed successfully.")
 
-        except (PKIFailure) as e:
+        except PKIFailure as e:
             self.logger.error(traceback.format_exc())
             response = self._handle_error(e, e.code)
             #http_status_code = HttpStatusCode.BAD_REQUEST
@@ -182,6 +192,11 @@ class CMPMessageHandler:
 
         if not issuer_public_bytes_hex == certificate_query[0].issuer_public_bytes:
             raise BadRequest("Certificate serial number found but was not issued by associated Issuing CA")
+        
+        if certificate_query[0].certificate_status != CertificateStatus.OK:
+            raise BadRequest("Certificate is not valid (e.g. revoked)")
+
+        # TODO: Expiry check and policy for renewing expired certificates
 
         self.authorized_clients = [certificate_query[0].get_certificate_serializer().as_crypto()]
 

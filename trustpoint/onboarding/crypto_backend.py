@@ -8,22 +8,22 @@ import hashlib
 import hmac
 import logging
 import secrets
-from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING
 
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
+from django.db import transaction
+from pki import CertificateTypes, TemplateName
+from pki.oid import NameOid
 from pki.models import CertificateModel
 from pki.pki.request.handler.factory import CaRequestHandlerFactory
 from pki.pki.request.message.rest import PkiRestCsrRequestMessage, PkiRestPkcs12RequestMessage
 from util.strings import StringValidator
 
 if TYPE_CHECKING:
-    from cryptography.hazmat.primitives.asymmetric.types import CertificatePublicKeyTypes, PrivateKeyTypes
-    from cryptography.x509 import Certificate as X509Certificate
+    from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
     from devices.models import Device
 
 PBKDF2_ITERATIONS = 1000000
@@ -44,7 +44,7 @@ class OnboardingError(Exception):
 
 class VerificationError(Exception):
     """Exception raised for errors in signature verification."""
-    
+
     def __init__(self, message: str = 'An error occurred during signature verification.') -> None:
         """Initializes a new VerificationError with a given message."""
         self.message = message
@@ -69,7 +69,7 @@ class CryptoBackend:
         pkey = hashlib.pbkdf2_hmac('sha256', hexpass.encode(), hexsalt.encode(), iterations, dklen)
         h = hmac.new(pkey, message, hashlib.sha256)
         return h.hexdigest()
-    
+
     @staticmethod
     def get_server_tls_cert() -> str:
         """Returns the TLS certificate used by the Trustpoint server.
@@ -133,6 +133,7 @@ class CryptoBackend:
         return signing_ca.issuing_ca_certificate
 
     @staticmethod
+    @transaction.atomic
     def sign_ldevid_from_csr(csr_pem: bytes, device: Device) -> bytes:
         """Signs a certificate signing request (CSR) with the onboarding CA.
 
@@ -148,41 +149,38 @@ class CryptoBackend:
             OnboardingError: If the onboarding CA is not configured or not available.
         """
         log.debug('Received CSR for device %s', device.device_name)
-        csr = x509.load_pem_x509_csr(csr_pem)
-
-        try:
-            csr_serial = csr.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value
-        except (x509.ExtensionNotFound, IndexError):
-            csr_serial = None
-
-        if not device.device_serial_number and not csr_serial:
-            log.warning('No serial number provided in CSR for device %s', device.device_name)
-            serial = 'tp_' + secrets.token_urlsafe(12)
-            device.device_serial_number = serial
-        if csr_serial and not StringValidator.is_urlsafe(csr_serial):
-            exc_msg = 'Invalid serial number in CSR.'
-            raise OnboardingError(exc_msg)
-        if device.device_serial_number and csr_serial and device.device_serial_number != csr_serial:
-            exc_msg = 'CSR serial number does not match device serial number.'
-            raise OnboardingError(exc_msg)
-        serial_no = device.device_serial_number or csr_serial
-        device.device_serial_number = serial_no
 
         log.debug('Issuing LDevID for device %s', device.device_name)
 
         pki_request = PkiRestCsrRequestMessage(
-            domain_unique_name=device.domain.unique_name, csr=csr, serial_number=serial_no
+            domain_model=device.domain, raw_content=csr_pem,
+            serial_number_expected=device.device_serial_number, device_name=device.device_name
         )
         request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
         pki_response = request_handler.process_request()
         cert_model = pki_response.cert_model
-        if (not isinstance(cert_model, CertificateModel)):
+
+        if not isinstance(cert_model, CertificateModel):
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
             raise OnboardingError(exc_msg)
+        
+        try: # Extract device serial number from LDevID subject
+            sn = cert_model.get_subject_attributes_for_oid(NameOid.SERIAL_NUMBER)[0].value
+            device.device_serial_number = sn
+        except IndexError as e:
+            log.warning(f'Device serial empty for device {device.device_name}.'
+                        ' No serial number found in issued LDevID!')
 
-        device.ldevid = cert_model
+        device.save_certificate(
+            certificate=cert_model,
+            certificate_type=CertificateTypes.LDEVID,
+            domain=device.domain,
+            template_name=TemplateName.GENERIC,
+            protocol=device.onboarding_protocol
+        )
         device.save()
         log.info('Issued and stored LDevID for device %s', device.device_name)
+
         return pki_response.raw_response
 
     @staticmethod
@@ -212,6 +210,7 @@ class CryptoBackend:
         return private_key
 
     @staticmethod
+    @transaction.atomic
     def gen_keypair_and_ldevid(device: Device) -> bytes:
         """Generates a keypair and LDevID certificate for the device.
 
@@ -229,26 +228,28 @@ class CryptoBackend:
 
         log.debug('Issuing LDevID for device %s', device.device_name)
 
-        subject = x509.Name([
-            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'ldevid.trustpoint.local'),
-            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, serial_no)
-        ])
-
         pki_request = PkiRestPkcs12RequestMessage(
-            domain_unique_name=device.domain.unique_name, subject=subject
+            domain_model=device.domain, serial_number=serial_no, device_name=device.device_name
         )
         request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
         pki_response = request_handler.process_request()
         cert_model = pki_response.cert_model
-        if (not isinstance(cert_model, CertificateModel)):
+
+        if not isinstance(cert_model, CertificateModel):
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
             raise OnboardingError(exc_msg)
 
-        device.ldevid = cert_model
+        device.save_certificate(
+            certificate=cert_model,
+            certificate_type=CertificateTypes.LDEVID,
+            domain=device.domain,
+            template_name=TemplateName.GENERIC,
+            protocol=device.onboarding_protocol
+        )
         device.save()
         log.info('Issued and stored LDevID for device %s', device.device_name)
         return pki_response.raw_response
-    
+
     @staticmethod
     def get_nonce(nbytes: int = 16) -> str:
         """Generates a new nonce for use in the onboarding process."""
@@ -264,9 +265,9 @@ class CryptoBackend:
         """
 
         log.debug('Verifying (client) signature...')
-        hash = hashes.Hash(hashes.SHA256())
-        hash.update(message)
-        log.debug(f'SHA-256 hash of message: {hash.finalize().hex()}')
+        hash_ = hashes.Hash(hashes.SHA256())
+        hash_.update(message)
+        log.debug(f'SHA-256 hash of message: {hash_.finalize().hex()}')
 
         try:
             cert = x509.load_pem_x509_certificate(cert)
