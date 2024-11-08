@@ -6,19 +6,45 @@
 Welcome to Trustpoint's documentation!
 ======================================
 
-.. toctree::
-   :maxdepth: 3
-   :caption: Contents:
+Getting started
+-------------------
 
+.. toctree::
+   :maxdepth: 2
+   :caption: 🚀 Getting Started :
+
+   introduction
+   faq
+   community_support
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 🏗️ Architecture :
+
+   quickstart
    architecture
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 🖥️ User Interface Guide :
+
    issuing_cas_gui
    domains_gui
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 🔐 PKI :
+
    pki
    pki_models
    pki_issuing_ca
    domains
 
    validators
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 📚 API reference :
 
    api/api
 
