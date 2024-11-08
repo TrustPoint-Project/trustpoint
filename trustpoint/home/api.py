@@ -5,7 +5,7 @@ from ninja import Router, Schema
 from django.http import HttpRequest
 from ninja.responses import Response, codes_4xx
 from devices.models import Device
-from pki.models import CertificateModel, IssuingCaModel, DomainModel, BaseCaModel
+from pki.models import CertificateModel, IssuingCaModel, DomainModel, BaseCaModel, IssuedDeviceCertificateModel
 from pki import CaLocalization
 from trustpoint.schema import ErrorSchema, SuccessSchema
 from django.db.models import Count,F, Q,  Case, When, Value, IntegerField
@@ -175,21 +175,36 @@ def get_cert_counts_by_issuing_ca_and_date():
 
   return cert_counts_by_issuing_ca_and_date
 
+# def get_cert_counts_by_domain():
+#   """Get certificate count by domain from database"""
+#   cert_counts_by_domain = {}
+#   try:
+#     cert_domain_qr = DomainModel.objects \
+#       .filter(issuing_ca__issuing_ca_certificate__isnull=False) \
+#       .annotate(cert_count=Count('issuing_ca__issuing_ca_certificate__issued_certificate_references')) \
+#       .values('unique_name', 'cert_count')
+#      # Convert the queryset to a list
+#     cert_counts_by_domain = list(cert_domain_qr)
+#     #print("cert_counts_by_domain", cert_counts_by_domain)
+#   except Exception as e:
+#     print(f"Error occurred in certificate count by issuing ca query: {e}")
+
+#   return cert_counts_by_domain
+
 def get_cert_counts_by_domain():
   """Get certificate count by domain from database"""
   cert_counts_by_domain = {}
   try:
-    cert_domain_qr = DomainModel.objects \
-      .filter(issuing_ca__issuing_ca_certificate__isnull=False) \
-      .annotate(cert_count=Count('issuing_ca__issuing_ca_certificate__issued_certificate_references')) \
-      .values('unique_name', 'cert_count') 
+    cert_domain_qr = IssuedDeviceCertificateModel.objects \
+      .values(unique_name=F('domain__unique_name')) \
+      .annotate(cert_count=Count('domain')
+    )
     
      # Convert the queryset to a list
     cert_counts_by_domain = list(cert_domain_qr)
-    #print("cert_counts_by_domain", cert_counts_by_domain)
+    print("cert_counts_by_domain", cert_counts_by_domain)
   except Exception as e:
     print(f"Error occurred in certificate count by issuing ca query: {e}")
-
   return cert_counts_by_domain
 
 def get_issuing_ca_counts_by_type():
