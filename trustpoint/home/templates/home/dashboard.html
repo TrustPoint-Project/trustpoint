@@ -1,5 +1,8 @@
-{% extends 'trustpoint/base.html' %} {% block content %} {% include 'home/counts-panel.html' %} {%
-include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
+{% extends 'trustpoint/base.html' %}
+{% block content %}
+{% include 'home/counts-panel.html' %}
+{% include 'home/notifications-tab.html' %}
+{% include 'home/charts-tab.html' %}
 
 <script>
   var devicesByOSLineChart, devicesByDomainDonutChart, devicesByOPBarChart;
@@ -19,6 +22,21 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
       console.error("Error fetching device count:", error);
       return null; // Handle the error appropriately
     }
+  }
+
+  function drawNoDataMessageOnCanvas(canvas) {
+    const context = canvas.getContext("2d");
+    // Clear any previous content on the canvas
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Set font style and alignment for the message
+    context.font = "20px tpQuicksand, sans-serif";
+    context.fillStyle = "#444"; // Set a color for the message text
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+
+    // Display the "No Data Available" message at the center of the canvas
+    context.fillText("No Data Available", canvas.width / 2, canvas.height / 2);
   }
 
   // Below are the functions to update counts panel
@@ -97,7 +115,11 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
   // Function to update the issuing ca certificate stack chart
   function updateDeviceDateChart(deviceDateCounts) {
-    var devicesByOSLineChartEle = document.getElementById("devicesByOSLineChart").getContext("2d");
+    var canvas = document.getElementById("devicesByOSLineChart");
+    var devicesByOSLineChartEle = canvas.getContext("2d");
+    if (!deviceDateCounts) {
+      return drawNoDataMessageOnCanvas(canvas);
+    }
     devicesByOSLineChart != undefined ? devicesByOSLineChart.destroy() : "";
 
     const chartLabels = [...new Set(deviceDateCounts.map((item) => item.issue_date))]; // Unique dates
@@ -137,7 +159,11 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
   // Function to update the devices by onboarding protocol line chart
   function updateDeviceByOPLineChart(deviceOPCounts) {
-    var devicesByOPBarChartEle = document.getElementById("devicesByOPBarChart").getContext("2d");
+    const canvas = document.getElementById("devicesByOPBarChart");
+    var devicesByOPBarChartEle = canvas.getContext("2d");
+    if (!deviceOPCounts) {
+      return drawNoDataMessageOnCanvas(canvas);
+    }
     devicesByOPBarChart != undefined ? devicesByOPBarChart.destroy() : "";
     var chartLabels = [];
     var chartData = [];
@@ -173,9 +199,11 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
   // Function to update the devices by domain donut chart
   function updateDevicesByDomainDonutChart(deviceDomainCounts) {
-    var devicesByDomainDonutChartEle = document
-      .getElementById("devicesByDomainDonutChart")
-      .getContext("2d");
+    const canvas = document.getElementById("devicesByDomainDonutChart");
+    var devicesByDomainDonutChartEle = canvas.getContext("2d");
+    if (!deviceDomainCounts) {
+      return drawNoDataMessageOnCanvas(canvas);
+    }
     devicesByDomainDonutChart != undefined ? devicesByDomainDonutChart.destroy() : "";
     var chartLabels = [];
     var chartData = [];
@@ -202,9 +230,11 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
   // Function to update the certificates by domain pie chart
   function updateCertsByDomainPieChart(certDomainCounts) {
-    var certsByDomainPieChartEle = document
-      .getElementById("certsByDomainPieChart")
-      .getContext("2d");
+    const canvas = document.getElementById("certsByDomainPieChart");
+    var certsByDomainPieChartEle = canvas.getContext("2d");
+    if (!certDomainCounts) {
+      return drawNoDataMessageOnCanvas(canvas);
+    }
     certsByDomainPieChart != undefined ? certsByDomainPieChart.destroy() : "";
     var chartLabels = [];
     var chartData = [];
@@ -231,9 +261,11 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
   // Function to update the certy by template bar chart
   function updateCertsByTemplateBarChart(certsByTempateCounts) {
-    var certsByTemplateBarChartEle = document
-      .getElementById("certsByTemplateBarChart")
-      .getContext("2d");
+    const canvas = document.getElementById("certsByTemplateBarChart");
+    var certsByTemplateBarChartEle = canvas.getContext("2d");
+    if (!certsByTempateCounts) {
+      return drawNoDataMessageOnCanvas(canvas);
+    }
     certsByTemplateBarChart != undefined ? certsByTemplateBarChart.destroy() : "";
     var chartLabels = [];
     var chartData = [];
@@ -269,9 +301,11 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
   // Function to update the issuing ca counts
   function updateCertsByIssuingCAChart(certIssuingCACounts) {
-    var certsByIssuingCADonutChartEle = document
-      .getElementById("certsByIssuingCADonutChart")
-      .getContext("2d");
+    const canvas = document.getElementById("certsByIssuingCADonutChart");
+    var certsByIssuingCADonutChartEle = canvas.getContext("2d");
+    if (!certIssuingCACounts) {
+      return drawNoDataMessageOnCanvas(canvas);
+    }
     certsByIssuingCADonutChart != undefined ? certsByIssuingCADonutChart.destroy() : "";
     var chartLabels = [];
     var chartData = [];
@@ -298,9 +332,11 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
   // Function to update the issuing ca certificate stack chart
   function updateCertsByDateStackChart(certDateCounts) {
-    var certsByDateStackChartEle = document
-      .getElementById("certsByDateStackChart")
-      .getContext("2d");
+    const canvas = document.getElementById("certsByDateStackChart");
+    var certsByDateStackChartEle = canvas.getContext("2d");
+    if (!certDateCounts) {
+      return drawNoDataMessageOnCanvas(canvas);
+    }
     certsByDateStackChart != undefined ? certsByDateStackChart.destroy() : "";
 
     const chartLabels = [...new Set(certDateCounts.map((item) => item.issue_date))]; // Unique dates
@@ -340,9 +376,11 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
   // Function to update the issuing ca pie chart
   function updateIssuingCAsByTypePieChart(issuingCaTypeCounts) {
-    var issuingCAsByTypePieChartEle = document
-      .getElementById("issuingCAsByTypePieChart")
-      .getContext("2d");
+    const canvas = document.getElementById("issuingCAsByTypePieChart");
+    var issuingCAsByTypePieChartEle = canvas.getContext("2d");
+    if (!issuingCaTypeCounts) {
+      return drawNoDataMessageOnCanvas(canvas);
+    }
     issuingCAsByTypePieChart != undefined ? issuingCAsByTypePieChart.destroy() : "";
     var chartLabels = [];
     var chartData = [];
@@ -381,30 +419,16 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
       if ("iussuing_ca_counts" in dashboardData) {
         updateIssuingCACounts(dashboardData.iussuing_ca_counts);
       }
-      if ("device_counts_by_date_and_os" in dashboardData) {
-        updateDeviceDateChart(dashboardData.device_counts_by_date_and_os);
-      }
-      if ("device_counts_by_op" in dashboardData) {
-        updateDeviceByOPLineChart(dashboardData.device_counts_by_op);
-      }
-      if ("device_counts_by_domain" in dashboardData) {
-        updateDevicesByDomainDonutChart(dashboardData.device_counts_by_domain);
-      }
-      if ("cert_counts_by_issuing_ca" in dashboardData) {
-        updateCertsByIssuingCAChart(dashboardData.cert_counts_by_issuing_ca);
-      }
-      if ("cert_counts_by_issuing_ca_and_date" in dashboardData) {
-        updateCertsByDateStackChart(dashboardData.cert_counts_by_issuing_ca_and_date);
-      }
-      if ("cert_counts_by_domain" in dashboardData) {
-        updateCertsByDomainPieChart(dashboardData.cert_counts_by_domain);
-      }
-      if ("cert_counts_by_template" in dashboardData) {
-        updateCertsByTemplateBarChart(dashboardData.cert_counts_by_template);
-      }
-      if ("ca_counts_by_type" in dashboardData) {
-        updateIssuingCAsByTypePieChart(dashboardData.ca_counts_by_type);
-      }
+      updateDeviceDateChart(dashboardData.device_counts_by_date_and_os);
+      updateDeviceByOPLineChart(dashboardData.device_counts_by_op);
+      updateDevicesByDomainDonutChart(dashboardData.device_counts_by_domain);
+
+      updateCertsByDateStackChart(dashboardData.cert_counts_by_issuing_ca_and_date);
+      updateCertsByDomainPieChart(dashboardData.cert_counts_by_domain);
+      updateCertsByTemplateBarChart(dashboardData.cert_counts_by_template);
+
+      updateCertsByIssuingCAChart(dashboardData.cert_counts_by_issuing_ca);
+      updateIssuingCAsByTypePieChart(dashboardData.ca_counts_by_type);
     }
   }
 
