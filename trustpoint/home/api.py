@@ -160,7 +160,7 @@ def get_cert_counts_by_issuing_ca_and_date():
   cert_counts_by_issuing_ca_and_date = {}
   try:
     cert_issuing_ca_and_date_qr = CertificateModel.objects \
-      .filter(issuer_references__issuing_ca_model__isnull=False) \
+      .filter(issuer_references__issuing_ca_model__isnull=True) \
       .annotate(issue_date=TruncDate('added_at')) \
       .values('issue_date', name=F('issuing_ca_model__unique_name')) \
       .annotate(cert_count=Count('issued_certificate_references')) \
@@ -169,7 +169,7 @@ def get_cert_counts_by_issuing_ca_and_date():
 
      # Convert the queryset to a list
     cert_counts_by_issuing_ca_and_date = list(cert_issuing_ca_and_date_qr)
-    print("date", cert_counts_by_issuing_ca_and_date)
+    print("cert_counts_by_issuing_ca_and_date", cert_counts_by_issuing_ca_and_date)
   except Exception as e:
     print(f"Error occurred in certificate count by issuing ca query: {e}")
 
@@ -265,7 +265,6 @@ def dashboard_data(request: HttpRequest):
 
     ###### Get Issuing CA counts ######
     issuing_ca_counts = get_issuing_ca_counts()
-
     #print("issuing_CA", issuing_ca_counts)
     if issuing_ca_counts:
       dashboard_data["issuing_ca_counts"] = issuing_ca_counts
@@ -285,24 +284,31 @@ def dashboard_data(request: HttpRequest):
     if device_counts_by_domain:
       dashboard_data["device_counts_by_domain"] = device_counts_by_domain
     
+    ###### Get certificate count by domain ######
+    cert_counts_by_domain = get_cert_counts_by_domain()
+    if cert_counts_by_domain:
+      dashboard_data["cert_counts_by_domain"] = cert_counts_by_domain
+
+    ###### Get certificate count by template ######
+    cert_counts_by_template = get_cert_counts_by_template()
+    if cert_counts_by_template:
+      dashboard_data["cert_counts_by_template"] = cert_counts_by_template
+
     ###### Get certificate count by issuing ca ######
     cert_counts_by_issuing_ca = get_cert_counts_by_issuing_ca()
     if cert_counts_by_issuing_ca:
       dashboard_data["cert_counts_by_issuing_ca"] = cert_counts_by_issuing_ca
+
+    ###### Get certificate count by issuing ca and date ######
     cert_counts_by_issuing_ca_and_date = get_cert_counts_by_issuing_ca_and_date()
     if cert_counts_by_issuing_ca_and_date:
       dashboard_data["cert_counts_by_issuing_ca_and_date"] = cert_counts_by_issuing_ca_and_date
     
-    cert_counts_by_template = get_cert_counts_by_template()
-    if cert_counts_by_template:
-      dashboard_data["cert_counts_by_template"] = cert_counts_by_template
-    
-    cert_counts_by_domain = get_cert_counts_by_domain()
-    if cert_counts_by_domain:
-      dashboard_data["cert_counts_by_domain"] = cert_counts_by_domain
+    ###### Get issuing ca count by type ######
     issuing_ca_counts_by_type = get_issuing_ca_counts_by_type()
-    print("issuing ca count by type", issuing_ca_counts_by_type)
+    #print("issuing ca count by type", issuing_ca_counts_by_type)
     if issuing_ca_counts_by_type:
       dashboard_data["ca_counts_by_type"] = issuing_ca_counts_by_type
+
     return Response(dashboard_data)
 
