@@ -2,9 +2,11 @@
 include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
 <script>
-  var lineChartDevice, donutChartDevice, barChartDevice;
-  var lineChartCert, donutChartCert, certsByTemplateBarChart;
-  var lineChart, certsByDateStackChart, donutChartCA, certsByIssuingCaDonutChart;
+  var devicesByOSLineChart, devicesByDomainDonutChart, devicesByOPBarChart;
+  var certsByStatusLineChart, certsByDomainPieChart, certsByTemplateBarChart;
+  var certsByDateStackChart, certsByIssuingCADonutChart, issuingCAsByTypePieChart;
+
+  // Function to fetch dashboard data using backend api
   async function fetchDasbhboardData() {
     try {
       const response = await fetch("/api/home/dashboard_data");
@@ -18,6 +20,8 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
       return null; // Handle the error appropriately
     }
   }
+
+  // Below are the functions to update counts panel
 
   // Function to update the device counts
   function updateDeviceCounts(deviceCounts) {
@@ -89,10 +93,12 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     }%`;
   }
 
+  // Below are the functions to update charts
+
   // Function to update the issuing ca certificate stack chart
   function updateDeviceDateChart(deviceDateCounts) {
-    var lineChartDeviceEle = document.getElementById("lineChartDevice").getContext("2d");
-    lineChartDevice != undefined ? lineChartDevice.destroy() : "";
+    var devicesByOSLineChartEle = document.getElementById("devicesByOSLineChart").getContext("2d");
+    devicesByOSLineChart != undefined ? devicesByOSLineChart.destroy() : "";
 
     const chartLabels = [...new Set(deviceDateCounts.map((item) => item.issue_date))]; // Unique dates
     const datasets = {};
@@ -113,7 +119,7 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     // Convert datasets object to array for Chart.js
     const chartDatasets = Object.values(datasets);
     //console.log("line chart", chartDatasets, chartLabels);
-    lineChartDevice = new Chart(lineChartDeviceEle, {
+    devicesByOSLineChart = new Chart(devicesByOSLineChartEle, {
       type: "line",
       data: {
         labels: chartLabels,
@@ -129,35 +135,10 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     });
   }
 
-  function updateDeviceDomainChart(deviceDomainCounts) {
-    var donutChartDeviceEle = document.getElementById("donutChartDevice").getContext("2d");
-    donutChartDevice != undefined ? donutChartDevice.destroy() : "";
-    var chartLabels = [];
-    var chartData = [];
-    deviceDomainCounts.forEach((item) => {
-      chartLabels.push(item.unique_name);
-      chartData.push(item.device_count);
-    });
-    //console.log("deviceDomainCounts donut", chartData, chartLabels);
-    donutChartDevice = new Chart(donutChartDeviceEle, {
-      type: "doughnut",
-      data: {
-        labels: chartLabels,
-        datasets: [
-          {
-            data: chartData,
-            borderWidth: 1,
-            //backgroundColor: ["#0d6efd", "#ffc107", "#d10c15"],
-            hoverOffset: 4,
-          },
-        ],
-      },
-    });
-  }
-
-  function updateDeviceOPChart(deviceOPCounts) {
-    var barChartDeviceEle = document.getElementById("barChartDevice").getContext("2d");
-    barChartDevice != undefined ? barChartDevice.destroy() : "";
+  // Function to update the devices by onboarding protocol line chart
+  function updateDeviceByOPLineChart(deviceOPCounts) {
+    var devicesByOPBarChartEle = document.getElementById("devicesByOPBarChart").getContext("2d");
+    devicesByOPBarChart != undefined ? devicesByOPBarChart.destroy() : "";
     var chartLabels = [];
     var chartData = [];
     Object.entries(deviceOPCounts).forEach(([key, value]) => {
@@ -165,7 +146,7 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
       chartData.push(value);
     });
     //console.log(chartData, chartLabels);
-    barChartDevice = new Chart(barChartDeviceEle, {
+    devicesByOPBarChart = new Chart(devicesByOPBarChartEle, {
       type: "bar",
       data: {
         labels: chartLabels,
@@ -190,20 +171,20 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     });
   }
 
-  // Function to update the certificates by domain donut chart
-  function updateCertDomainChart(certDomainCounts) {
-    var certsByDomainPieChartEle = document
-      .getElementById("certsByDomainPieChart")
+  // Function to update the devices by domain donut chart
+  function updateDevicesByDomainDonutChart(deviceDomainCounts) {
+    var devicesByDomainDonutChartEle = document
+      .getElementById("devicesByDomainDonutChart")
       .getContext("2d");
-    donutChartCert != undefined ? donutChartCert.destroy() : "";
+    devicesByDomainDonutChart != undefined ? devicesByDomainDonutChart.destroy() : "";
     var chartLabels = [];
     var chartData = [];
-    certDomainCounts.forEach((item) => {
+    deviceDomainCounts.forEach((item) => {
       chartLabels.push(item.unique_name);
-      chartData.push(item.cert_count);
+      chartData.push(item.device_count);
     });
-    //console.log("certDomainCounts donut", chartData, chartLabels);
-    donutChartCert = new Chart(certsByDomainPieChartEle, {
+    //console.log("deviceDomainCounts donut", chartData, chartLabels);
+    devicesByDomainDonutChart = new Chart(devicesByDomainDonutChartEle, {
       type: "doughnut",
       data: {
         labels: chartLabels,
@@ -219,7 +200,37 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     });
   }
 
-  function updateCertsByTempateBarChart(certsByTempateCounts) {
+  // Function to update the certificates by domain pie chart
+  function updateCertsByDomainPieChart(certDomainCounts) {
+    var certsByDomainPieChartEle = document
+      .getElementById("certsByDomainPieChart")
+      .getContext("2d");
+    certsByDomainPieChart != undefined ? certsByDomainPieChart.destroy() : "";
+    var chartLabels = [];
+    var chartData = [];
+    certDomainCounts.forEach((item) => {
+      chartLabels.push(item.unique_name);
+      chartData.push(item.cert_count);
+    });
+    //console.log("certDomainCounts donut", chartData, chartLabels);
+    certsByDomainPieChart = new Chart(certsByDomainPieChartEle, {
+      type: "doughnut",
+      data: {
+        labels: chartLabels,
+        datasets: [
+          {
+            data: chartData,
+            borderWidth: 1,
+            //backgroundColor: ["#0d6efd", "#ffc107", "#d10c15"],
+            hoverOffset: 4,
+          },
+        ],
+      },
+    });
+  }
+
+  // Function to update the certy by template bar chart
+  function updateCertsByTemplateBarChart(certsByTempateCounts) {
     var certsByTemplateBarChartEle = document
       .getElementById("certsByTemplateBarChart")
       .getContext("2d");
@@ -258,10 +269,10 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
 
   // Function to update the issuing ca counts
   function updateCertsByIssuingCAChart(certIssuingCACounts) {
-    var certsByIssuingCaDonutChartEle = document
-      .getElementById("certsByIssuingCaDonutChart")
+    var certsByIssuingCADonutChartEle = document
+      .getElementById("certsByIssuingCADonutChart")
       .getContext("2d");
-    certsByIssuingCaDonutChart != undefined ? certsByIssuingCaDonutChart.destroy() : "";
+    certsByIssuingCADonutChart != undefined ? certsByIssuingCADonutChart.destroy() : "";
     var chartLabels = [];
     var chartData = [];
     certIssuingCACounts.forEach((item) => {
@@ -269,7 +280,7 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
       chartData.push(item.cert_count);
     });
     //console.log("certIssuingCACounts", chartData, chartLabels);
-    donutChartDevice = new Chart(certsByIssuingCaDonutChartEle, {
+    certsByIssuingCADonutChart = new Chart(certsByIssuingCADonutChartEle, {
       type: "doughnut",
       data: {
         labels: chartLabels,
@@ -328,19 +339,19 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
   }
 
   // Function to update the issuing ca pie chart
-  function updateIssuingCaTypeChart(issuingCaTypeCounts) {
-    var issuingCaByTypePieChartEle = document
-      .getElementById("issuingCaByTypePieChart")
+  function updateIssuingCAsByTypePieChart(issuingCaTypeCounts) {
+    var issuingCAsByTypePieChartEle = document
+      .getElementById("issuingCAsByTypePieChart")
       .getContext("2d");
-    donutChartCA != undefined ? donutChartCA.destroy() : "";
+    issuingCAsByTypePieChart != undefined ? issuingCAsByTypePieChart.destroy() : "";
     var chartLabels = [];
     var chartData = [];
     Object.entries(issuingCaTypeCounts).forEach(([key, value]) => {
       chartLabels.push(key);
       chartData.push(value);
     });
-    console.log("issuingCaTypeCounts", chartData, chartLabels);
-    donutChartDevice = new Chart(issuingCaByTypePieChartEle, {
+    //console.log("issuingCaTypeCounts", chartData, chartLabels);
+    issuingCAsByTypePieChart = new Chart(issuingCAsByTypePieChartEle, {
       type: "pie",
       data: {
         labels: chartLabels,
@@ -374,10 +385,10 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
         updateDeviceDateChart(dashboardData.device_counts_by_date_and_os);
       }
       if ("device_counts_by_op" in dashboardData) {
-        updateDeviceOPChart(dashboardData.device_counts_by_op);
+        updateDeviceByOPLineChart(dashboardData.device_counts_by_op);
       }
       if ("device_counts_by_domain" in dashboardData) {
-        updateDeviceDomainChart(dashboardData.device_counts_by_domain);
+        updateDevicesByDomainDonutChart(dashboardData.device_counts_by_domain);
       }
       if ("cert_counts_by_issuing_ca" in dashboardData) {
         updateCertsByIssuingCAChart(dashboardData.cert_counts_by_issuing_ca);
@@ -386,13 +397,13 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
         updateCertsByDateStackChart(dashboardData.cert_counts_by_issuing_ca_and_date);
       }
       if ("cert_counts_by_domain" in dashboardData) {
-        updateCertDomainChart(dashboardData.cert_counts_by_domain);
+        updateCertsByDomainPieChart(dashboardData.cert_counts_by_domain);
       }
       if ("cert_counts_by_template" in dashboardData) {
-        updateCertsByTempateBarChart(dashboardData.cert_counts_by_template);
+        updateCertsByTemplateBarChart(dashboardData.cert_counts_by_template);
       }
       if ("ca_counts_by_type" in dashboardData) {
-        updateIssuingCaTypeChart(dashboardData.ca_counts_by_type);
+        updateIssuingCAsByTypePieChart(dashboardData.ca_counts_by_type);
       }
     }
   }
@@ -437,19 +448,22 @@ include 'home/notifications-tab.html' %} {% include 'home/charts-tab.html' %}
     function updateChartContent(chartTabId) {
       //console.log("chartTabId", chartTabId);
       if (chartTabId == "deviceChartTab") {
-        //var lineChartDeviceEle = document.getElementById("lineChartDevice").getContext("2d");
-        //((if (!lineChartDevice) lineChartDevice = new Chart(lineChartDeviceEle, stackChartConfig);
-        //var donutChartDeviceEle = document.getElementById("donutChartDevice").getContext("2d");
-        //if (!donutChartDevice)
-        //  donutChartDevice = new Chart(donutChartDeviceEle, donutChartDeviceConfig);
-        //var barChartDeviceEle = document.getElementById("barChartDevice").getContext("2d");
-        //if (!barChartDevice) barChartDevice = new Chart(barChartDeviceEle, barChartDeviceConfig);
+        //var lineChartDeviceEle = document.getElementById("devicesByOSLineChart").getContext("2d");
+        //((if (!devicesByOSLineChart) devicesByOSLineChart = new Chart(lineChartDeviceEle, stackChartConfig);
+        //var donutChartDeviceEle = document.getElementById("devicesByDomainDonutChart").getContext("2d");
+        //if (!devicesByDomainDonutChart)
+        //  devicesByDomainDonutChart = new Chart(donutChartDeviceEle, donutChartDeviceConfig);
+        //var barChartDeviceEle = document.getElementById("devicesByOPBarChart").getContext("2d");
+        //if (!devicesByOPBarChart) devicesByOPBarChart = new Chart(barChartDeviceEle, barChartDeviceConfig);
       } else if (chartTabId == "certChartTab") {
-        var lineChartCertEle = document.getElementById("lineChartCert").getContext("2d");
-        if (!lineChartCert) lineChartCert = new Chart(lineChartCertEle, lineChartCertConfig);
+        var certsByStatusLineChartEle = document
+          .getElementById("certsByStatusLineChart")
+          .getContext("2d");
+        if (!certsByStatusLineChart)
+          certsByStatusLineChart = new Chart(certsByStatusLineChartEle, lineChartCertConfig);
 
-        //var donutChartCertEle = document.getElementById("donutChartCert").getContext("2d");
-        //if (!donutChartCert) donutChartCert = new Chart(donutChartCertEle, donutChartCertConfig);
+        //var donutChartCertEle = document.getElementById("certsByDomainPieChart").getContext("2d");
+        //if (!certsByDomainPieChart) certsByDomainPieChart = new Chart(donutChartCertEle, donutChartCertConfig);
 
         //var barChartCertEle = document.getElementById("barChartCert").getContext("2d");
         //if (!barChartCert) barChartCert = new Chart(barChartCertEle, barChartCertConfig);
