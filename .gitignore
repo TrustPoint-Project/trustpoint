@@ -170,7 +170,8 @@ migrations/
 
 .python-version
 
-tests/data/issuing_ca/*
-tests/data/issuing_cas/*
+tests/data/issuing_ca
+tests/data/issuing_cas
+*.p12
 
-docs/
+docs/build/
