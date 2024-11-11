@@ -15,13 +15,14 @@ Getting started
 
    introduction
    faq
+   quickstart
    community_support
+   usage_guide
 
 .. toctree::
    :maxdepth: 2
    :caption: 🏗️ Architecture :
 
-   quickstart
    architecture
 
 .. toctree::

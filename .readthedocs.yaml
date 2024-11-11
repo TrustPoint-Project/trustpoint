@@ -11,6 +11,13 @@ build:
   tools:
     python: "3.12"
 
+# TODO(AlexHx8472): Use poetry directly instead of the docs/source/requirements.txt
+#  jobs:
+#    post_create_environment:
+#      - pip install poetry
+#      - poetry config virtualenvs.create false
+#      - poetry install --with docs
+
 # Build documentation in the "docs/" directory with Sphinx
 sphinx:
   configuration: docs/source/conf.py

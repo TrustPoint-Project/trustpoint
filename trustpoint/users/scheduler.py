@@ -1,102 +1,82 @@
 import logging
-from datetime import datetime
-from django.utils import timezone
+import time
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 logger = logging.getLogger('tp.users')
 
 class TaskScheduler:
     """
-    Class responsible for setting up, deleting, and manually triggering periodic tasks.
-    It also handles one-time tasks and avoids duplicating schedules.
+    Class responsible for setting up and manually triggering periodic tasks
+    using Python's threading.
     """
 
     def __init__(self):
-        # List of periodic tasks to trigger or schedule
-        self.periodic_tasks = [
-            'users.tasks.check_system_health',
-            'users.tasks.check_for_security_vulnerabilities',
-            'users.tasks.check_certificate_validity',
-            'users.tasks.check_issuing_ca_validity',
-            'users.tasks.check_domain_issuing_ca',
-            'users.tasks.check_non_onboarded_devices',
-            'users.tasks.check_devices_with_failed_onboarding',
-            'users.tasks.check_devices_with_revoked_certificates',
-            'users.tasks.check_for_weak_signature_algorithms',
-            'users.tasks.check_for_insufficient_key_length',
-            'users.tasks.check_for_weak_ecc_curves',
-        ]
 
-    def delete_existing_schedules(self):
+        from users.tasks import (setup_trustpoint_notifications, check_system_health,
+                                 check_for_security_vulnerabilities,
+                                 check_certificate_validity, check_issuing_ca_validity, check_domain_issuing_ca,
+                                 check_non_onboarded_devices, check_devices_with_failed_onboarding,
+                                 check_devices_with_revoked_certificates, check_for_weak_signature_algorithms,
+                                 check_for_insufficient_key_length, check_for_weak_ecc_curves)
+
+        self.periodic_tasks = {
+            'setup_trustpoint_notifications': setup_trustpoint_notifications,
+            'check_system_health': check_system_health,
+            'check_for_security_vulnerabilities': check_for_security_vulnerabilities,
+            'check_certificate_validity': check_certificate_validity,
+            'check_issuing_ca_validity': check_issuing_ca_validity,
+            'check_domain_issuing_ca': check_domain_issuing_ca,
+            'check_non_onboarded_devices': check_non_onboarded_devices,
+            'check_devices_with_failed_onboarding': check_devices_with_failed_onboarding,
+            'check_devices_with_revoked_certificates': check_devices_with_revoked_certificates,
+            'check_for_weak_signature_algorithms': check_for_weak_signature_algorithms,
+            'check_for_insufficient_key_length': check_for_insufficient_key_length,
+            'check_for_weak_ecc_curves': check_for_weak_ecc_curves,
+        }
+
+    def run_task(self, task_func):
         """
-        Delete all existing schedules in Django-Q.
+        Submit a task to the thread pool for execution.
         """
-        from django_q.models import Schedule
         try:
-            Schedule.objects.all().delete()
-            logger.info("All existing schedules have been deleted.")
+            logger.debug(f"Submitting '{task_func.__name__}' to the thread pool.")
+            future = self.executor.submit(task_func)
+            return future
         except Exception as e:
-            logger.error(f"Failed to delete existing schedules: {e}")
+            logger.error(f"Failed to submit task '{task_func.__name__}': {e}")
 
-    def setup_periodic_tasks(self):
+    def setup_periodic_tasks(self, interval_minutes=10):
         """
-        Set up periodic tasks to run every 10 minutes. Tasks will start immediately if not already scheduled.
+        Schedule periodic tasks using a thread pool and sleep for the given interval.
         """
-        from django_q.models import Schedule
-        from django_q.tasks import async_task
         logger.info("Setting up periodic tasks...")
-        minutes = 1
+        with ThreadPoolExecutor(max_workers=len(self.periodic_tasks)) as self.executor:
+            while True:
+                logger.info("Triggering periodic tasks.")
+                futures = [self.run_task(task_func) for task_func in self.periodic_tasks.values()]
 
-        # Loop through the periodic tasks and schedule them
-        for task in self.periodic_tasks:
-            task_name = task.split('.')[-1]  # Use the function name as the task name
-            if not Schedule.objects.filter(name=task_name).exists():
-                try:
-                    Schedule.objects.create(
-                        name=task_name,
-                        func=task,
-                        schedule_type=Schedule.MINUTES,
-                        minutes=minutes,  # Execute every 10 minutes
-                        repeats=-1,  # Infinite repeats
-                        next_run=timezone.now(),
-                    )
-                    logger.info(f"Scheduled '{task_name}' to run every {minutes} minutes, starting immediately")
-                except Exception as e:
-                    logger.error(f"Failed to schedule '{task_name}': {e}")
-            else:
-                async_task(task)
-                logger.info(f"'{task_name}' is already scheduled")
+                for future in as_completed(futures):
+                    try:
+                        future.result()
+                    except Exception as e:
+                        logger.error(f"Task execution resulted in an error: {e}")
 
-    def schedule_one_time_task(self):
-        """
-        Schedule a one-time task if not already scheduled.
-        """
-        from django_q.models import Schedule
-        task_name = 'setup_trustpoint_notifications'
-        if not Schedule.objects.filter(name=task_name).exists():
-            try:
-                Schedule.objects.create(
-                    name=task_name,
-                    func='users.tasks.setup_trustpoint_notifications',
-                    schedule_type=Schedule.ONCE,
-                    next_run=timezone.now(),
-                    repeats=1,
-                )
-                logger.info(f"Scheduled '{task_name}' to run once")
-            except Exception as e:
-                logger.error(f"Failed to schedule one-time task '{task_name}': {e}")
-        else:
-            logger.info(f"One-time task '{task_name}' is already scheduled")
+                logger.info("All periodic tasks completed.")
+                logger.info(f"Sleeping for {interval_minutes} minutes before the next run.")
+                time.sleep(interval_minutes * 60)  # Convert minutes to seconds
 
-    def trigger_periodic_tasks(self):
+    def trigger_all_tasks_once(self):
         """
-        Manually trigger all periodic tasks once, without modifying their schedules.
+        Manually trigger all periodic tasks once, using a thread pool.
         """
-        from django_q.tasks import async_task
         logger.info("Manually triggering all periodic tasks.")
-        for task in self.periodic_tasks:
-            try:
-                logger.info(f"Triggering '{task}' task asynchronously.")
-                async_task(task)
-            except Exception as e:
-                logger.error(f"Failed to trigger task '{task}': {e}")
-        logger.info("All periodic tasks triggered successfully.")
+        with ThreadPoolExecutor(max_workers=len(self.periodic_tasks)) as self.executor:
+            futures = [self.run_task(task_func) for task_func in self.periodic_tasks.values()]
+
+            for future in as_completed(futures):
+                try:
+                    future.result()
+                except Exception as e:
+                    logger.error(f"Task execution resulted in an error: {e}")
+
+            logger.info("All periodic tasks triggered successfully.")
