@@ -17,6 +17,7 @@ from pki.models import CertificateModel
 from pki.pki.cmp.builder import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts
 from pki.pki.cmp.validator import ExtraCertsValidator, InitializationReqValidator
 from pki.oid import CertificateExtensionOid
+from pki.util.keys import SignatureSuite
 
 
 class CertMessageHandler:
@@ -643,8 +644,8 @@ class CertMessageHandler:
         #     subject_key_identifier,
         #     critical=False,
         # )
-
-        cert = cert_builder.sign(ca_key, hashes.SHA256())
+        hash_algorithm = SignatureSuite.get_hash_algorithm_by_key(ca_key)
+        cert = cert_builder.sign(ca_key, hash_algorithm)
 
         CertificateModel.save_certificate(cert)
 

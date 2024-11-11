@@ -118,7 +118,7 @@ class LocalCaRestPkcs12RequestHandler(CaRestRequestHandler):
         cert_builder = self._ldevid_add_common_cert_components(cert_builder, public_key)
         cert = cert_builder.sign(
             private_key=self._issuing_ca.private_key,
-            algorithm=hashes.SHA256())
+            algorithm=SignatureSuite.get_hash_algorithm_by_key(public_key))
 
         cert_model = CertificateModel.save_certificate(certificate=cert)
 

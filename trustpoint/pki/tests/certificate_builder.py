@@ -7,6 +7,7 @@ from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from cryptography.x509.oid import NameOID
 import datetime
 
+from pki.util.keys import SignatureSuite
 
 class CertificateBuilder:
     _builder: x509.CertificateBuilder = x509.CertificateBuilder()
@@ -47,6 +48,6 @@ class CertificateBuilder:
 
     def create_cert(self) -> CertificateBuilder:
         self._certificate = self._builder.sign(
-            private_key=self._private_key, algorithm=hashes.SHA256(),
+            private_key=self._private_key, algorithm=SignatureSuite.get_hash_algorithm_by_key(self._private_key)
         )
         return self

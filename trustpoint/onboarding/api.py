@@ -9,7 +9,7 @@ import logging
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
-from pki.util.keys import SignatureSuite
+from pki.util.keys import SignatureSuite, DigitalSignature
 
 from devices.models import Device
 from django.http import HttpRequest, HttpResponse
@@ -248,10 +248,11 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
         'server_tls_cert': Crypt.get_server_tls_cert(),	
     }
     response_bytes = str(response).encode()
-    hash = hashes.Hash(hashes.SHA256())
-    hash.update(response_bytes)
-    log.debug(f'SHA-256 hash of message: {hash.finalize().hex()}')
-    server_signature = ownership_private_key.sign(data=response_bytes, signature_algorithm=ec.ECDSA(hashes.SHA256()))
+    # hash = hashes.Hash(hashes.SHA256())
+    # hash.update(response_bytes)
+    # log.debug(f'SHA-256 hash of message: {hash.finalize().hex()}')
+    server_signature = DigitalSignature.sign(data=response_bytes, private_key=ownership_private_key)
+    #server_signature = ownership_private_key.sign(data=response_bytes, signature_algorithm=server_signature_suite.value)
     print(server_signature)
     server_signature = base64.b64encode(server_signature).decode()
     print(f'Server signature: {server_signature}')

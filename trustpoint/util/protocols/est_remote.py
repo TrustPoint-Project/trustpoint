@@ -16,6 +16,7 @@ from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from cryptography.hazmat.primitives.serialization import pkcs7
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from pki.models import IssuingCa
+from pki.util.keys import SignatureSuite
 from requests import Response, auth, get, post
 
 from util.x509.credentials import CredentialUploadHandler
@@ -67,7 +68,7 @@ class ESTProtocolHandler:
         csr = (
             x509.CertificateSigningRequestBuilder()
             .subject_name(subject_)
-            .sign(key, hashes.SHA256(), default_backend())
+            .sign(key, SignatureSuite.get_hash_algorithm_by_key(key), default_backend())
         )
 
         # Return PEM encoded key and CSR
