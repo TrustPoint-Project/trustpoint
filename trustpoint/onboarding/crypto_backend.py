@@ -163,7 +163,7 @@ class CryptoBackend:
         if not isinstance(cert_model, CertificateModel):
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
             raise OnboardingError(exc_msg)
-        
+
         try: # Extract device serial number from LDevID subject
             sn = cert_model.get_subject_attributes_for_oid(NameOid.SERIAL_NUMBER)[0].value
             device.device_serial_number = sn

@@ -54,6 +54,26 @@ router = Router()
 class RawFileSchema(Schema):
     """Wildcard schema, works for arbitrary content."""
 
+def _get_signature_suite_from_ca_type(issuing_ca_cert: CertificateModel) -> SignatureSuite:
+    if issuing_ca_cert.spki_algorithm_oid == PublicKeyAlgorithmOid.RSA.value:
+        if issuing_ca_cert.spki_key_size == 2048:
+            return SignatureSuite.RSA2048
+        elif issuing_ca_cert.spki_key_size == 3072:
+            return SignatureSuite.RSA3072
+        elif issuing_ca_cert.spki_key_size == 4096:
+            return SignatureSuite.RSA4096
+        else:
+            raise ValueError
+    elif issuing_ca_cert.spki_algorithm_oid == PublicKeyAlgorithmOid.ECC.value:
+        if issuing_ca_cert.spki_ec_curve_oid == EllipticCurveOid.SECP256R1.value:
+            return SignatureSuite.SECP256R1
+        elif issuing_ca_cert.spki_ec_curve_oid == EllipticCurveOid.SECP384R1.value:
+            return SignatureSuite.SECP384R1
+        else:
+            raise ValueError
+    else:
+        raise ValueError
+
 # --- PUBLIC ONBOARDING API ENDPOINTS ---
 
 @router.get('/trust-store/{url_ext}', response={200: RawFileSchema, 404: ErrorSchema}, auth=None, exclude_none=True)
@@ -69,24 +89,7 @@ def trust_store(request: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpRe
         return 404, {'error': 'Trust store file not found.'}
 
     issuing_ca_cert = onboarding_process.device.domain.issuing_ca.issuing_ca_certificate
-    if issuing_ca_cert.spki_algorithm_oid == PublicKeyAlgorithmOid.RSA.value:
-        if issuing_ca_cert.spki_key_size == 2048:
-            signature_suite = SignatureSuite.RSA2048
-        elif issuing_ca_cert.spki_key_size == 3072:
-            signature_suite = SignatureSuite.RSA3072
-        elif issuing_ca_cert.spki_key_size == 4096:
-            signature_suite = SignatureSuite.RSA4096
-        else:
-            raise ValueError
-    elif issuing_ca_cert.spki_algorithm_oid == PublicKeyAlgorithmOid.ECC.value:
-        if issuing_ca_cert.spki_ec_curve_oid == EllipticCurveOid.SECP256R1.value:
-            signature_suite = SignatureSuite.SECP256R1
-        elif issuing_ca_cert.spki_ec_curve_oid == EllipticCurveOid.SECP384R1.value:
-            signature_suite = SignatureSuite.SECP384R1
-        else:
-            raise ValueError
-    else:
-        raise ValueError
+    signature_suite = _get_signature_suite_from_ca_type(issuing_ca_cert)
 
     response = HttpResponse(trust_store_, status=200, content_type='application/x-pem-file')
     response['hmac-signature'] = onboarding_process.get_hmac()
@@ -205,8 +208,6 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
     if not idevid_cert_db:
         return 403, {'error': 'Unauthorized.'}
 
-    # TODO (Air): consider check if a device with this IDevID is already onboarded?
-
     # TODO (Air): Even more inefficient
     ownership_cert = None
     for ts in TrustStoreModel.objects.all():
@@ -228,6 +229,7 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
 
     if aoki_device:
         log.warning(f'Onboarding existing AOKI device {aoki_device.pk} ({idevid_subject_sn})!')
+        aoki_device.revoke_ldevid(ReasonCode.SUPERSEDED)
     else:
         aoki_device = Device(
             device_name=f'AOKI{idevid_subject_sn}', # temporary name until we know PK
@@ -283,11 +285,8 @@ def aoki_finalize(request: HttpRequest, data: AokiFinalizationMessageSchema):
     if not onboarding_process:
         return 404, {'error': 'Not found.'}
     
-    print(data)
     data_bytes = data.model_dump_json().encode()
-    print(data_bytes)
-    print(type(data))
-    print('Client Signature:', client_signature)
+
     try:
         onboarding_process.verify_client_signature(data_bytes, client_signature)
     except (VerificationError, InvalidSignature, OnboardingError):
@@ -295,10 +294,16 @@ def aoki_finalize(request: HttpRequest, data: AokiFinalizationMessageSchema):
         return 404, {'error': 'Not found.'}
     
     log.debug('AOKI client signature verified successfully.')
+
+    issuing_ca_cert = onboarding_process.device.domain.issuing_ca.issuing_ca_certificate
+    signature_suite = _get_signature_suite_from_ca_type(issuing_ca_cert)
     
     response = {
         'otp': onboarding_process.otp,
-        'device': onboarding_process.device.device_name
+        'device': onboarding_process.device.device_name,
+        'domain': onboarding_process.device.domain.unique_name,
+        'signature_suite': signature_suite.value,
+        'pki_protocol': 'CMP'
     }
     
     return 200, response

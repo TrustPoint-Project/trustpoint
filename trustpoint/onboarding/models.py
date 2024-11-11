@@ -284,9 +284,6 @@ class LDevIDOnboardingProcessMixin():
             raise
         if ldevid:
             self.state = OnboardingProcessState.LDEVID_SENT
-            if isinstance(self, AokiOnboardingProcess):
-                self._success()
-                self.cancel()
             log.info(f'LDevID issued for device {self.device.device_name} in onboarding process {self.id}.')
         else:
             self._fail('No LDevID was generated.')
@@ -305,6 +302,8 @@ class LDevIDOnboardingProcessMixin():
             raise
 
         self._success()
+        if isinstance(self, AokiOnboardingProcess):
+            self.cancel()
         return chain
 
 
