@@ -38,7 +38,7 @@ class NotificationTable(tables.Table):
             'created_at',
             'details',
             #'solve',
-            'delete',
+            #'delete',
         )
 
     notification_type = tables.Column(
@@ -58,7 +58,7 @@ class NotificationTable(tables.Table):
     # row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)    # noqa: ERA001
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
     #solve = tables.Column(empty_values=(), orderable=False, verbose_name=_('Solve'))
-    delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
+    #delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
 
     @staticmethod
     def render_details(record: NotificationModel) -> SafeString:
@@ -72,11 +72,11 @@ class NotificationTable(tables.Table):
     #     return format_html('<a href="solve/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
     #                        record.pk, _('Solve'))
 
-    @staticmethod
-    def render_delete(record: NotificationModel) -> SafeString:
-        """Creates the HTML hyperlink for the delete-view."""
-        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn"">{}</a>',
-                           record.pk, _('Delete'))
+    # @staticmethod
+    # def render_delete(record: NotificationModel) -> SafeString:
+    #     """Creates the HTML hyperlink for the delete-view."""
+    #     return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn"">{}</a>',
+    #                        record.pk, _('Delete'))
 
     @staticmethod
     def render_created_at(record: NotificationModel) -> SafeString:

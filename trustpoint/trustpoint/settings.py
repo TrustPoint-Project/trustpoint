@@ -61,7 +61,6 @@ INSTALLED_APPS = [
     # use "python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server.crt
     # --key-file ../tests/data/x509/https_server.pem" to run with HTTPS
     # note: replaces default exception debug page with worse one
-    'django_q',
     'taggit',
     'django_filters',
 ]
@@ -177,16 +176,5 @@ LOGIN_URL = 'users:login'
 DJANGO_LOG_LEVEL = 'INFO'
 
 LOGGING = logging_config
-
-
-Q_CLUSTER = {
-    'name': 'Django-Q',
-    'workers': 4,  # Number of worker processes
-    'recycle': 500,
-    'timeout': 60,
-    'queue_limit': 50,
-    'bulk': 10,
-    'orm': 'default',  # Use Django's ORM as the broker
-}
 
 TAGGIT_CASE_INSENSITIVE = True
