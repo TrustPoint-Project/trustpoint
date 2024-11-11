@@ -11,7 +11,7 @@ from pki.pki.request.handler import CaRequestHandler
 from pki.models import CertificateModel
 from pki.serializer.certificate import CertificateSerializer
 from pki.serializer.credential import CredentialSerializer
-from pki.util.keys import KeyAlgorithm, KeyGenerator
+from pki.util.keys import KeyGenerator, SignatureSuite
 
 from typing import TYPE_CHECKING
 
@@ -107,8 +107,9 @@ class LocalCaRestPkcs12RequestHandler(CaRestRequestHandler):
     _issuing_ca: UnprotectedLocalIssuingCa
 
     def process_request(self) -> PkiResponseMessage:
-        # TODO (Air): Automatically use the same key algorithm as the issuing CA
-        private_key = KeyGenerator(KeyAlgorithm.SECP256R1).generate_key()
+        signature_suite = SignatureSuite.get_signature_suite_by_public_key(
+            self._issuing_ca.get_issuing_ca_public_key_serializer().as_crypto())
+        private_key = KeyGenerator(signature_suite).generate_key()
         public_key = private_key.public_key()
 
         cert_builder = x509.CertificateBuilder()
