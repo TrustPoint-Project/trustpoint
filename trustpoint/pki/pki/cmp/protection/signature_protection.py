@@ -2,9 +2,9 @@ from pyasn1_modules import rfc4210
 from pyasn1.codec.der import encoder
 from pyasn1.type import univ, tag
 import cryptography.hazmat.primitives.hashes as hashes
-from cryptography.hazmat.primitives.asymmetric import padding, rsa
+from cryptography.hazmat.primitives.asymmetric import padding, rsa, ec
 from cryptography import x509
-
+from pki.util.keys import DigitalSignature
 
 class SignatureProtection:
     """
@@ -16,7 +16,7 @@ class SignatureProtection:
         client_public_key (rsa.RSAPublicKey): The client's public key extracted from the certificate.
     """
 
-    def __init__(self, ca_private_key: rsa.RSAPrivateKey, authorized_clients: list):
+    def __init__(self, ca_private_key: rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey, authorized_clients: list):
         """
         Initializes the SignatureProtection with a CA private key and a client certificate.
 
@@ -45,12 +45,7 @@ class SignatureProtection:
 
         encoded_protected_part = encoder.encode(protected_part)
 
-        signature = self.ca_private_key.sign(
-            encoded_protected_part,
-            padding.PKCS1v15(),
-            hashes.SHA256()
-        )
-
+        signature = DigitalSignature.sign(encoded_protected_part, self.ca_private_key)
 
         self.response_protection = rfc4210.PKIProtection(univ.BitString.fromOctetString(signature)).subtype(
             explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))
