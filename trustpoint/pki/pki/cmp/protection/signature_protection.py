@@ -1,10 +1,12 @@
 from pyasn1_modules import rfc4210
 from pyasn1.codec.der import encoder
 from pyasn1.type import univ, tag
-import cryptography.hazmat.primitives.hashes as hashes
-from cryptography.hazmat.primitives.asymmetric import padding, rsa, ec
-from cryptography import x509
 from pki.util.keys import DigitalSignature
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from cryptography.hazmat.primitives.asymmetric import rsa, ec
 
 class SignatureProtection:
     """
@@ -75,12 +77,13 @@ class SignatureProtection:
         # for cert in self.authorized_clients:
         #     authorized_pub_key = cert.public_key()
         #     try:
-        #         authorized_pub_key.verify(
-        #             signature,
-        #             encoded_protected_part,
-        #             padding.PKCS1v15(),
-        #             hashes.SHA256()
-        #         )
+        #         DigitalSignature.verify(signature, encoded_protected_part, authorized_pub_key)
+        #         #authorized_pub_key.verify(
+        #         #    signature,
+        #         #    encoded_protected_part,
+        #         #    padding.PKCS1v15(),
+        #         #    hashes.SHA256()
+        #         #)
         #         print("Verification successful: The signature of the protection is correct.")
         #         verification_status = True
         #         break
