@@ -16,7 +16,7 @@ Make sure you have the following installed:
 2. **Git**: To clone the Trustpoint repository.
 
 Step-by-Step Setup (Load from Dockerhub) ⬇️
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. **Pull the Trustpoint Docker Image**
 
@@ -42,7 +42,7 @@ Step-by-Step Setup (Load from Dockerhub) ⬇️
    - **-p 443:443**: Maps the container's HTTPS port to your local machine's port 443.
 
 Step-by-Step Setup (Build container) 🔧
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 1. **Clone the Trustpoint Repository**
 

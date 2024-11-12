@@ -20,6 +20,7 @@ Trustpoint works in two main stages:
         - **Zero-touch Onboarding (Work in Progress)**: A feature under development that will allow fully automated device onboarding without user intervention.
             - **BRSKI**: A zero-touch onboarding standard defined in RFC 8995
             - **AOKI**: A custom and simplified zero-touch onboarding
+
 .. admonition:: Why Onboarding First is Crucial!
    :class: tip
 
