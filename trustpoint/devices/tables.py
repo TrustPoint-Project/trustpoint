@@ -10,6 +10,8 @@ from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
+from devices import DeviceOnboardingStatus
+
 from .exceptions import UnknownOnboardingProtocolError, UnknownOnboardingStatusError
 from .models import Device
 from taggit.managers import TaggableManager
@@ -79,7 +81,7 @@ class DeviceTable(tables.Table):
         if not record.domain:
             return format_html('<span class="text-danger">' + _('Select Domain') + '</span>')
         return format_html(
-            f'<span class="text-{Device.DeviceOnboardingStatus.get_color(record.device_onboarding_status)}">'
+            f'<span class="text-{DeviceOnboardingStatus.get_color(record.device_onboarding_status)}">'
             f'{record.get_device_onboarding_status_display()}'
             '</span>'
         )
@@ -100,19 +102,19 @@ class DeviceTable(tables.Table):
             UnknownOnboardingStatusError:
                 Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
         """
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
+        if record.device_onboarding_status == DeviceOnboardingStatus.NOT_ONBOARDED:
             return format_html(
                 '<a href="{}" class="btn btn-success tp-onboarding-btn">{}</a>',
                 reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
                 _('Start Onboarding')
             )
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
+        if record.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_FAILED:
             return format_html(
                 '<a href="{}" class="btn btn-warning tp-onboarding-btn">{}</a>',
                 reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
                 _('Retry Onboarding')
             )
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.REVOKED:
+        if record.device_onboarding_status == DeviceOnboardingStatus.REVOKED:
             return format_html(
                 '<a href="{}" class="btn btn-info tp-onboarding-btn">{}</a>',
                 reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
@@ -136,17 +138,17 @@ class DeviceTable(tables.Table):
             UnknownOnboardingStatusError:
                 Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
         """
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
+        if record.device_onboarding_status == DeviceOnboardingStatus.NOT_ONBOARDED:
             return format_html(
                 '<button class="btn btn-success tp-onboarding-btn" disabled>{}</a>',
                 _('Zero-Touch Pending')
             )
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
+        if record.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_FAILED:
             return format_html(
                 '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn">{}</a>',
                 record.pk, _('Reset Context')
             )
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.REVOKED:
+        if record.device_onboarding_status == DeviceOnboardingStatus.REVOKED:
             return format_html(
                 '<button class="btn btn-info tp-onboarding-btn" disabled>{}</a>',
                 _('Revoked')
@@ -169,13 +171,13 @@ class DeviceTable(tables.Table):
         if not record.domain:
             return ''
 
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+        if record.device_onboarding_status == DeviceOnboardingStatus.ONBOARDED:
             return format_html(
                 '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
                 reverse('onboarding:revoke', kwargs={'device_id': record.pk}),
                 _('Revoke Certificate')
             )
-        if record.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+        if record.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_RUNNING:
             return format_html(
                 '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
                 reverse('onboarding:exit', kwargs={'device_id': record.pk}),

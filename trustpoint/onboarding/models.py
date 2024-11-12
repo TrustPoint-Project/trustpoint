@@ -8,6 +8,7 @@ import threading
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
+from devices import DeviceOnboardingStatus
 from devices.models import Device
 from django.db import models
 from pki import ReasonCode
@@ -132,7 +133,7 @@ class OnboardingProcess():
         if not onboarding_process:
             onboarding_process = process_type(device)
             onboarding_processes.append(onboarding_process)
-            device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_RUNNING
+            device.device_onboarding_status = DeviceOnboardingStatus.ONBOARDING_RUNNING
             # TODO(Air): very unnecessary save required to update onboarding status in table
             # Problem: if server is restarted during onboarding, status is stuck at running
             device.save()
@@ -145,8 +146,8 @@ class OnboardingProcess():
         process = OnboardingProcess.get_by_device(device)
         if process:
             return process.cancel()
-        if device and device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
-            device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+        if device and device.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_RUNNING:
+            device.device_onboarding_status = DeviceOnboardingStatus.NOT_ONBOARDED
             device.revoke_ldevid(ReasonCode.CESSATION)
             device.save()
             log.info(f'Request to cancel non-existing onboarding process for device {device.device_name}.')
@@ -159,9 +160,9 @@ class OnboardingProcess():
         self.active = False
         self.timer.cancel()
         onboarding_processes.remove(self)
-        if self.device and self.device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+        if self.device and self.device.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_RUNNING:
             # actual cancellation (cancel() may be called just to remove the process from onboarding_processes)
-            self.device.device_onboarding_status = Device.DeviceOnboardingStatus.NOT_ONBOARDED
+            self.device.device_onboarding_status = DeviceOnboardingStatus.NOT_ONBOARDED
             self.device.revoke_ldevid(ReasonCode.CESSATION)
             self.device.save()
             self.state = OnboardingProcessState.CANCELED
@@ -204,7 +205,7 @@ class OnboardingProcess():
         self.active = False
         self.error_reason = reason
         self.timer.cancel()
-        self.device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_FAILED
+        self.device.device_onboarding_status = DeviceOnboardingStatus.ONBOARDING_FAILED
         self.device.revoke_ldevid(ReasonCode.CESSATION)
         self.device.save()
         log.error(f'Onboarding process {self.id} for device {self.device.device_name} failed: {reason}')
@@ -214,7 +215,7 @@ class OnboardingProcess():
         self.state = OnboardingProcessState.COMPLETED
         self.active = False
         self.timer.cancel()
-        self.device.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDED
+        self.device.device_onboarding_status = DeviceOnboardingStatus.ONBOARDED
         self.device.save()
         log.info(f'Onboarding process {self.id} for device {self.device.device_name} completed.')
 

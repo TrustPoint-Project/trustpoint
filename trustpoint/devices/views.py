@@ -8,11 +8,14 @@ from typing import TYPE_CHECKING
 from django_filters.views import FilterView
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
+from django.contrib import messages
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_tables2 import SingleTableView
 
+from devices.forms import DeviceForm
 from trustpoint.views.base import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
 
 from .filters import DeviceFilter
@@ -59,12 +62,14 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
 
 
 class EditDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
-    """Device Edit View."""
-
     model = Device
-    fields = ['device_name', 'onboarding_protocol', 'domain', 'tags']  # noqa: RUF012
+    form_class = DeviceForm  # Custom form to disable fields during onboarding
     template_name = 'devices/edit.html'
     success_url = reverse_lazy('devices:devices')
+
+    def form_valid(self, form):
+        messages.success(self.request, _("Settings updated successfully."))
+        return super().form_valid(form)
 
 
 class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):

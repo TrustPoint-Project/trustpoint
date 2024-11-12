@@ -6,6 +6,7 @@ import secrets
 from typing import TYPE_CHECKING
 
 
+from devices import DeviceOnboardingStatus
 from devices.models import Device
 from django.contrib import messages
 from django.http import Http404, HttpResponse
@@ -409,7 +410,7 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         device = self.get_object()
-        context['onboarded'] = device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED
+        context['onboarded'] = device.device_onboarding_status == DeviceOnboardingStatus.ONBOARDED
         context['form'] = RevokeCertificateForm()
 
         certs_by_domain = {}

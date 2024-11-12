@@ -21,6 +21,8 @@ from pki import CertificateStatus, CertificateTypes
 
 from .exceptions import UnknownOnboardingStatusError
 
+from . import DeviceOnboardingStatus
+
 from pki.validator.field import UniqueNameValidator
 from typing import TYPE_CHECKING
 
@@ -34,31 +36,6 @@ class Device(models.Model):
     """Device Model."""
 
     issued_device_certificates: IssuedDeviceCertificateModel
-
-    class DeviceOnboardingStatus(models.TextChoices):
-        """Device Onboarding Status."""
-
-        NOT_ONBOARDED = 'P', _('Pending')
-        ONBOARDING_RUNNING = 'R', _('Running')
-        ONBOARDED = 'O', _('Onboarded')
-        ONBOARDING_FAILED = 'F', _('Failed')
-        REVOKED = 'D', _('Revoked')
-
-        @classmethod
-        def get_color(cls: Device.DeviceOnboardingStatus, choice: Device.DeviceOnboardingStatus | str) -> str:
-            """Gets the bootstrap 5.3 color name."""
-            choice = str(choice)
-            if choice == cls.ONBOARDING_RUNNING:
-                return 'warning-emphasis'
-            if choice == cls.NOT_ONBOARDED.value:
-                return 'warning'
-            if choice == cls.ONBOARDED.value:
-                return 'success'
-            if choice == cls.REVOKED.value:
-                return 'info'
-            if choice == cls.ONBOARDING_FAILED.value:
-                return 'danger'
-            raise UnknownOnboardingStatusError(choice)
 
     class OnboardingProtocol(models.TextChoices):
         """Supported Onboarding Protocols."""
@@ -156,12 +133,12 @@ class Device(models.Model):
         with transaction.atomic():
             revocation_success = ldevid.revoke(revocation_reason)
             ldevid = None
-            if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+            if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDED:
                 if revocation_success:
-                    self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
+                    self.device_onboarding_status = DeviceOnboardingStatus.REVOKED
                 else:
                     # TODO(Air): Check if this makes sense to express the state "cannot revoke since CA is gone"
-                    self.device_onboarding_status = Device.DeviceOnboardingStatus.ONBOARDING_FAILED
+                    self.device_onboarding_status = DeviceOnboardingStatus.ONBOARDING_FAILED
             self.save()
 
         if not revocation_success:
@@ -212,7 +189,7 @@ class Device(models.Model):
 
         # TODO(Air): check that device is not already onboarded
         # Re-onboarding might be a valid use case, e.g. to renew a certificate
-        if device.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+        if device.device_onboarding_status == DeviceOnboardingStatus.ONBOARDED:
             log.warning('Re-onboarding device %s which is already onboarded.', device.device_name)
 
         return True, None
@@ -277,22 +254,22 @@ class Device(models.Model):
             UnknownOnboardingStatusError:
                 Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
         """
-        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+        if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDED:
             # TODO (Air): Revoked devices are free to re-onboard, perhaps also delete IDevID from truststore?
             return self._render_onboarded_revoke()
-        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+        if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_RUNNING:
             return self._render_running_cancel()
-        if self.device_onboarding_status == Device.DeviceOnboardingStatus.REVOKED:
+        if self.device_onboarding_status == DeviceOnboardingStatus.REVOKED:
             return format_html(
                 '<a href="onboarding/reset/{}/" class="btn btn-info tp-onboarding-btn disabled">{}</a>',
                 self.pk, _('Onboard again')
             )
-        if self.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
+        if self.device_onboarding_status == DeviceOnboardingStatus.NOT_ONBOARDED:
             return format_html(
                 '<button class="btn btn-success tp-onboarding-btn" disabled>{}</a>',
                 _('Zero-Touch Pending')
             )
-        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
+        if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_FAILED:
             return format_html(
                 '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn disabled">{}</a>',
                 self.pk, _('Reset Context')
@@ -310,23 +287,23 @@ class Device(models.Model):
             UnknownOnboardingStatusError:
                 Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
         """
-        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
+        if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDED:
             return self._render_onboarded_revoke()
-        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_RUNNING:
+        if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_RUNNING:
             return self._render_running_cancel()
-        if self.device_onboarding_status == Device.DeviceOnboardingStatus.NOT_ONBOARDED:
+        if self.device_onboarding_status == DeviceOnboardingStatus.NOT_ONBOARDED:
             return format_html(
                 '<a href="{}" class="btn btn-success tp-onboarding-btn">{}</a>',
                 reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
                 _('Start Onboarding')
             )
-        if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDING_FAILED:
+        if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_FAILED:
             return format_html(
                 '<a href="{}" class="btn btn-warning tp-onboarding-btn">{}</a>',
                 reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
                 _('Retry Onboarding')
             )
-        if self.device_onboarding_status == Device.DeviceOnboardingStatus.REVOKED:
+        if self.device_onboarding_status == DeviceOnboardingStatus.REVOKED:
             return format_html(
                 '<a href="{}" class="btn btn-info tp-onboarding-btn">{}</a>',
                 reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),

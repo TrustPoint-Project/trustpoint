@@ -235,6 +235,7 @@ class DomainBaseForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields['unique_name'].label += UniqueNameValidator.form_label
+        self.fields['issuing_ca'].required = True
 
     def save(self, commit=True):
         domain_instance = super().save(commit=False)

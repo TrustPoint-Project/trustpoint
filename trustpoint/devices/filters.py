@@ -2,6 +2,8 @@ import django_filters
 from django import forms
 from taggit.models import Tag
 
+from devices import DeviceOnboardingStatus
+
 from .models import Device
 from pki.models import DomainModel
 
@@ -19,7 +21,7 @@ class DeviceFilter(django_filters.FilterSet):
     )
 
     device_onboarding_status = django_filters.ChoiceFilter(
-        choices=Device.DeviceOnboardingStatus,
+        choices=DeviceOnboardingStatus,
         widget=forms.Select(attrs={'class': 'form-select'})
     )
 
