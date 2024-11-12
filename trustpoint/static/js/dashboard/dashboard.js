@@ -40,7 +40,8 @@ async function fetchAndUpdateDashboardData() {
     updateCertsByDomainPieChart(dashboardData.cert_counts_by_domain);
     updateCertsByTemplateBarChart(dashboardData.cert_counts_by_template);
 
-    updateCertsByStatusLineChart(dashboardData.cert_counts_by_status);
+    //updateCertsByStatusLineChart(dashboardData.cert_counts_by_status);
+    updateCertsByStatusBarChart(dashboardData.cert_counts_by_status)
 
     updateCertsByIssuingCAChart(dashboardData.cert_counts_by_issuing_ca);
     updateIssuingCAsByTypePieChart(dashboardData.ca_counts_by_type);
@@ -94,11 +95,11 @@ document.addEventListener("DOMContentLoaded", function () {
       //var barChartDeviceEle = document.getElementById("devicesByOPBarChart").getContext("2d");
       //if (!devicesByOPBarChart) devicesByOPBarChart = new Chart(barChartDeviceEle, barChartDeviceConfig);
     } else if (chartTabId == "certChartTab") {
-      var certsByStatusLineChartEle = document
-        .getElementById("certsByStatusLineChart")
-        .getContext("2d");
-      if (!certsByStatusLineChart)
-        certsByStatusLineChart = new Chart(certsByStatusLineChartEle, lineChartCertConfig);
+      // var certsByStatusLineChartEle = document
+      //   .getElementById("certsByStatusLineChart")
+      //   .getContext("2d");
+      // if (!certsByStatusLineChart)
+      //   certsByStatusLineChart = new Chart(certsByStatusLineChartEle, lineChartCertConfig);
 
       //var donutChartCertEle = document.getElementById("certsByDomainPieChart").getContext("2d");
       //if (!certsByDomainPieChart) certsByDomainPieChart = new Chart(donutChartCertEle, donutChartCertConfig);
