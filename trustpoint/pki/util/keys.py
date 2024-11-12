@@ -84,7 +84,7 @@ class KeyGenerator:
         return key
     
 class DigitalSignature:
-    """A class that uses an appropriate digital signature algortihm based on the key type.
+    """A class that uses an appropriate digital signature algorithm based on the key type.
     
     Uses the RSA-PKCS1.5 signature scheme for RSA keys and ECDSA for EC keys."""
 
@@ -98,7 +98,7 @@ class DigitalSignature:
                 #     mgf=padding.MGF1(hashes.SHA256()),
                 #     salt_length=padding.PSS.MAX_LENGTH
                 # ),
-                hash=hashes.SHA256()
+                algorithm=hashes.SHA256()
             )
         if isinstance(private_key, ec.EllipticCurvePrivateKey):
             if isinstance(private_key.curve, ec.SECP256R1):
@@ -120,16 +120,16 @@ class DigitalSignature:
                 #     mgf=padding.MGF1(hashes.SHA256()),
                 #     salt_length=padding.PSS.MAX_LENGTH
                 # ),
-                hash=hashes.SHA256()
+                algorithm=hashes.SHA256()
             )
-            return True
+            return
         if isinstance(public_key, ec.EllipticCurvePublicKey):
             if isinstance(public_key.curve, ec.SECP256R1):
                 public_key.verify(signature, data, signature_algorithm=ec.ECDSA(hashes.SHA256()))
-                return True
+                return
             if isinstance(public_key.curve, ec.SECP384R1):
                 public_key.verify(signature, data, signature_algorithm=ec.ECDSA(hashes.SHA384()))
-                return True
+                return
             raise ValueError
         
         raise ValueError
