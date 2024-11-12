@@ -50,9 +50,10 @@ class TaskScheduler:
         Schedule periodic tasks using a thread pool and sleep for the given interval.
         """
         logger.info("Setting up periodic tasks...")
-        with ThreadPoolExecutor(max_workers=len(self.periodic_tasks)) as self.executor:
+        with ThreadPoolExecutor(max_workers=1) as self.executor:
             while True:
                 logger.info("Triggering periodic tasks.")
+                time.sleep(5)
                 futures = [self.run_task(task_func) for task_func in self.periodic_tasks.values()]
 
                 for future in as_completed(futures):
