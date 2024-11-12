@@ -3,12 +3,12 @@ function updateDeviceCounts(deviceCounts) {
     document.getElementById("total-device-count").textContent = `${deviceCounts.total}`;
     document.getElementById("onboared-device-count").textContent = `Onboarded: ${deviceCounts.Onboarded}`;
     document.getElementById("pending-device-count").textContent = `Waiting: ${deviceCounts.Pending}`;
-    // Update progress bars
+
     document.getElementById("onboared-device-progress").style.width = `${
-        (deviceCounts.O * 100) / deviceCounts.total
+        (deviceCounts.Onboarded * 100) / deviceCounts.total
     }%`;
     document.getElementById("pending-device-progress").style.width = `${
-        (deviceCounts.P * 100) / deviceCounts.total
+        (deviceCounts.Pending * 100) / deviceCounts.total
     }%`;
 }
 
