@@ -6,7 +6,7 @@ from devices import DeviceOnboardingStatus
 from devices.models import Device
 from django.contrib import messages
 from django.db import transaction
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
@@ -68,6 +68,7 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
     model = DomainModel
     template_name = 'pki/domains/config.html'
     context_object_name = 'domain'
+    success_url = reverse_lazy('pki:domains')
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -107,6 +108,7 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
             if form.is_valid():
                 form.save()
 
+
         selected_truststore_ids = request.POST.getlist('truststores')
         selected_truststores = TrustStoreModel.objects.filter(pk__in=selected_truststore_ids)
         domain.truststores.set(selected_truststores)
@@ -121,7 +123,7 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
                 protocol_object.save()
 
         messages.success(request, _("Settings updated successfully."))
-        return self.get(request, *args, **kwargs)
+        return HttpResponseRedirect(self.success_url)
 
     def get_protocol_form(self, protocol_name):
         """Returns the form instance for a given protocol."""
