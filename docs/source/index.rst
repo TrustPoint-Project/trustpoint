@@ -11,7 +11,7 @@ Welcome to Trustpoint's documentation!
 
 .. warning::
 
-      Trustpoint is currently in an early technology preview (beta) state. Do not use it in production.
+      Trustpoint is currently in a technology preview (beta) state. Do not use it in production.
 
 
 .. toctree::

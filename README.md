@@ -10,7 +10,7 @@
 </p>
 
 > [!CAUTION]
-> Trustpoint is currently in an **early technology preview** (alpha) state. Do not use it in production.
+> Trustpoint is currently in a **technology preview** (beta) state. Do not use it in production.
 
 ## Why Trustpoint?
 
