@@ -4,6 +4,7 @@ import logging
 from ninja import Router, Schema
 from django.http import HttpRequest
 from ninja.responses import Response, codes_4xx
+from devices import DeviceOnboardingStatus
 from devices.models import Device
 from pki.models import CertificateModel, IssuingCaModel, DomainModel, BaseCaModel, IssuedDeviceCertificateModel
 from pki import CaLocalization, CertificateStatus, TemplateName
@@ -32,7 +33,7 @@ def get_device_counts():
   device_counts = {item['device_onboarding_status']: item['count'] for item in device_qr}
 
   # Set default value of 0 if status is not present
-  for status, _ in Device.DeviceOnboardingStatus.choices:
+  for status, _ in DeviceOnboardingStatus.choices:
     device_counts.setdefault(status, 0)
 
   device_counts['total'] = sum(device_counts.values())

@@ -1,6 +1,7 @@
 import datetime
 from django.utils import timezone
 
+from devices import DeviceOnboardingStatus
 from devices.models import Device
 from pki.models import CertificateModel, BaseCaModel, DomainModel
 from home.models import NotificationModel, NotificationMessage, NotificationStatus
@@ -253,7 +254,7 @@ def check_non_onboarded_devices():
     """
     Task to create an info notification if a device is not onboarded.
     """
-    non_onboarded_devices = Device.objects.filter(device_onboarding_status=Device.DeviceOnboardingStatus.NOT_ONBOARDED)
+    non_onboarded_devices = Device.objects.filter(device_onboarding_status=DeviceOnboardingStatus.NOT_ONBOARDED)
 
     for device in non_onboarded_devices:
         if not NotificationModel.objects.filter(event='DEVICE_NOT_ONBOARDED', device=device).exists():
@@ -277,7 +278,7 @@ def check_devices_with_failed_onboarding():
     Task to check if any devices have failed onboarding and create critical notifications.
     """
     failed_onboarding_devices = Device.objects.filter(
-        device_onboarding_status=Device.DeviceOnboardingStatus.ONBOARDING_FAILED)
+        device_onboarding_status=DeviceOnboardingStatus.ONBOARDING_FAILED)
 
     for device in failed_onboarding_devices:
         if not NotificationModel.objects.filter(event='DEVICE_ONBOARDING_FAILED', device=device).exists():
@@ -300,7 +301,7 @@ def check_devices_with_revoked_certificates():
     """
     Task to check if any devices have had their certificates revoked and create informational notifications.
     """
-    revoked_devices = Device.objects.filter(device_onboarding_status=Device.DeviceOnboardingStatus.REVOKED)
+    revoked_devices = Device.objects.filter(device_onboarding_status=DeviceOnboardingStatus.REVOKED)
 
     for device in revoked_devices:
         if not NotificationModel.objects.filter(event='DEVICE_CERTIFICATE_REVOKED', device=device).exists():

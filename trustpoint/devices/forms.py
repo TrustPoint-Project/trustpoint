@@ -1,5 +1,7 @@
 from django import forms
 
+from devices import DeviceOnboardingStatus
+
 from .models import Device
 
 
@@ -12,6 +14,6 @@ class DeviceForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         if self.instance and self.instance.pk and self.instance.device_onboarding_status in [
-            Device.DeviceOnboardingStatus.ONBOARDED,
-            Device.DeviceOnboardingStatus.ONBOARDING_RUNNING]:
+            DeviceOnboardingStatus.ONBOARDED,
+            DeviceOnboardingStatus.ONBOARDING_RUNNING]:
             self.fields['domain'].disabled = True

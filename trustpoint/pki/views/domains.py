@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import enum
 
+from devices import DeviceOnboardingStatus
 from devices.models import Device
 from django.contrib import messages
+from django.db import transaction
 from django.http import HttpResponse, JsonResponse
 from django.template.loader import render_to_string
 from django.urls import reverse_lazy
@@ -13,8 +15,9 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
 from django_tables2 import RequestConfig, SingleTableView
 
+from pki import ReasonCode
 from pki.forms import CMPForm, DomainCreateForm, DomainUpdateForm, ESTForm
-from pki.models import DomainModel, TrustStoreModel
+from pki.models import DomainModel, IssuedDeviceCertificateModel, TrustStoreModel
 from pki.tables import DomainTable, TrustStoreConfigFromDomainTable
 from trustpoint.views.base import BulkDeleteView, ContextDataMixin, TpLoginRequiredMixin
 
@@ -143,6 +146,19 @@ class DomainBulkDeleteConfirmView(DomainContextMixin, TpLoginRequiredMixin, Bulk
     ignore_url = reverse_lazy('pki:domains')
     template_name = 'pki/domains/confirm_delete.html'
     context_object_name = 'domains'
+
+
+    @transaction.atomic
+    def post(self, *args, **kwargs):
+        for domain_id in kwargs:
+            domain = DomainModel.objects.get(pk=self.kwargs.get(domain_id))
+            query_sets = IssuedDeviceCertificateModel.objects.filter(domain=domain)
+
+            for query_set in query_sets:
+                query_set.certificate.revoke(ReasonCode.CESSATION)
+                query_set.device.device_onboarding_status = DeviceOnboardingStatus.REVOKED
+                query_set.device.save()
+        return super().post(*args, **kwargs)
 
 
 class ProtocolConfigView(DomainContextMixin, View):

@@ -2,6 +2,7 @@
 
 from ninja import Router, Schema
 from django.http import HttpRequest
+from devices import DeviceOnboardingStatus
 from devices.models import Device
 
 from devtools import debug
@@ -42,7 +43,7 @@ def device_api_dict(dev: Device) -> dict:
         # TODO(Air): Prefer using the enum key instead of the label
         # (e.g. so that we can change the label for i18n without breaking the API)
         'onboarding_protocol': str(Device.OnboardingProtocol(dev.onboarding_protocol).label),
-        'onboarding_status': str(Device.DeviceOnboardingStatus(dev.device_onboarding_status).label)
+        'onboarding_status': str(DeviceOnboardingStatus(dev.device_onboarding_status).label)
     }
 
 
