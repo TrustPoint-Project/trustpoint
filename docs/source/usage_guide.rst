@@ -32,7 +32,7 @@ Trustpoint works in two main stages:
 
 
 Issuing CA Operating Modes
-===============
+==========================
 
 Trustpoint can be configured to operate in different modes in relation to the Issuing CA. These modes provide flexibility for various environments and security requirements:
 

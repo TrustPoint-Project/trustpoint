@@ -15,7 +15,8 @@ Getting started
 
    introduction
    faq
-   quickstart
+   quickstart_setup
+   quickstart_operate
    community_support
    usage_guide
 
@@ -31,6 +32,12 @@ Getting started
 
    issuing_cas_gui
    domains_gui
+
+.. toctree::
+   :maxdepth: 2
+   :caption: 📟 Devices :
+
+   onboarding
 
 .. toctree::
    :maxdepth: 2

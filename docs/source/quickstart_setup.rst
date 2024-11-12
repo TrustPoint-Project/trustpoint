@@ -1,10 +1,12 @@
-Trustpoint Quickstart Guide 🚀
+.. _quickstart_setup_link:
+
+Quickstart Setup Guide
 ===========================
 
 This guide provides an introduction to Trustpoint and instructions for setting up the Trustpoint using Docker.
 
 Introduction 🌐
-------------
+---------------
 **Trustpoint** is a collaborative project dedicated to securing industrial environments through digital identities for machines and components. It addresses cybersecurity challenges in increasingly interconnected industrial settings by managing machine identities3. Trustpoint offers an open-source solution for secure, scalable management of digital identities, leveraging methods such as Zero-Touch Onboarding (based on standards like BRSKI) and user-driven onboarding for legacy or specialized systems.
 
 **Project Team**
@@ -19,17 +21,17 @@ The project has been funded by the German Federal Ministry of Education and Rese
 --------------------------------------
 
 Getting Started with Docker 🐳
----------------------------------
+------------------------------
 
 Prerequisites ✅
-^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^
 Make sure you have the following installed:
 
 1. **Docker**: Version 20.10 or higher.
 2. **Git**: To clone the Trustpoint repository.
 
 Step-by-Step Setup 🔧
-^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^
 
 1. **Clone the Trustpoint Repository**
 
@@ -96,9 +98,8 @@ Step-by-Step Setup 🔧
    - Enter and confirm the new password.
    - Click **Save** to update the password.
 
-
 Tips and Troubleshooting 🧰
-------------------------
+---------------------------
 
 - **View Logs**: For troubleshooting, view logs with:
 
@@ -112,10 +113,9 @@ Tips and Troubleshooting 🧰
 
       docker stop trustpoint-container && docker rm trustpoint-container
 
-For detailed configuration and further customization options, refer to the Trustpoint project documentation in the repository.
 
 What to Do Next ➡️
----------------
+------------------
 
 After setting up and Trustpoint, here are some recommended next steps to explore the full capabilities of the platform:
 
@@ -126,6 +126,6 @@ After setting up and Trustpoint, here are some recommended next steps to explore
    The easiest way to fully utilize Trustpoint is by pairing it with the associated Trustpoint Client, which is installed on end devices. The client enables streamlined identity management and certificate issuance. For more details, visit the [Trustpoint Client GitHub repository](https://github.com/TrustPoint-Project/trustpoint-client).
 
 3. **Issue your first certificate for an end device** 🛡️:
-   To do this, you need an Issuing CA certificate, a domain and a device that you must define in Trustpoint.
+   To do this, you need an Issuing CA certificate, a domain and a device that you must define in Trustpoint. Therefore follow the steps described in :ref:`quickstart_operate_link`
 
 

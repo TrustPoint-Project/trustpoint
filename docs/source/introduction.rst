@@ -33,7 +33,7 @@ The documentation is organized into the following main sections:
 Getting Started
 ---------------
 
-To begin using TrustPoint, we recommend exploring the "Getting started Guides" section to familiarize yourself with the core features and setup. For detailed information on PKI concepts and best practices, refer to the "PKI" section.
+To begin using TrustPoint, we recommend exploring the :ref:`quickstart_setup_link` section to familiarize yourself with the core features and setup. For detailed information on PKI concepts and best practices, refer to the "PKI" section.
 
 Users and Scenarios
 -------------------
