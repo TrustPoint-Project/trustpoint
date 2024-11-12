@@ -40,7 +40,7 @@ def setup_trustpoint_notifications():
         documentation_message = NotificationMessage.objects.create(
             short_description='Access the Trustpoint Documentation',
             long_description='You can find the official Trustpoint documentation here: '
-                             '<a href="https://industrial-security.io">Trustpoint Documentation</a>'
+                             '<a href="https://trustpoint.readthedocs.io">Trustpoint Documentation</a>'
         )
         notification = NotificationModel.objects.create(
             event='TRUSTPOINT_DOCUMENTATION',
