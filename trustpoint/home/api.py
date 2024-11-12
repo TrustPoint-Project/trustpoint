@@ -38,6 +38,25 @@ def get_device_counts():
   device_counts['total'] = sum(device_counts.values())
   return device_counts
 
+def get_device_count_by_onboarding_status():
+  """Get device count by onboarding status from database"""
+  device_os_counts = {str(status): 0 for _, status in Device.DeviceOnboardingStatus.choices}
+  try:
+    device_os_qr = Device.objects.values('device_onboarding_status').annotate(
+      count=Count('device_onboarding_status')
+    )
+  except Exception as e:
+    print(f"Error occurred in device count by onboarding protocol query: {e}")
+  # Mapping from short code to human-readable name
+  protocol_mapping = {key: str(value) for key, value in Device.DeviceOnboardingStatus.choices}
+  device_os_counts = {
+    protocol_mapping[item['device_onboarding_status']]: item['count']
+    for item in device_os_qr
+  }
+
+  device_os_counts['total'] = sum(device_os_counts.values())
+  return device_os_counts
+
 def get_cert_counts():
   """Get certificate counts from database"""
   cert_counts = {}
@@ -261,7 +280,8 @@ def dashboard_data(request: HttpRequest):
     dashboard_data = {}
 
     ###### Get Device counts ######
-    device_counts = get_device_counts()
+    #device_counts = get_device_counts()
+    device_counts = get_device_count_by_onboarding_status()
     #print("device_counts", device_counts)
 
     dashboard_data["device_counts"] = device_counts
