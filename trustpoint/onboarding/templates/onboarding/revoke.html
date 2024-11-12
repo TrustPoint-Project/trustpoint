@@ -1,11 +1,12 @@
 {% extends 'trustpoint/base.html' %}
+{% load i18n %}
 
 {% block content %}
     <form method="POST">
         {% csrf_token %}
         <div class="card">
             <div class="card-header d-flex">
-                <h1>Confirm - Certificate revocation</h1>
+                <h1>{% trans 'Confirm certificate revocation' %}</h1>
             </div>
             <div class="card-body pt-3 pb-3">
 
@@ -14,7 +15,7 @@
                 <hr>
 
                 <div class="form-group">
-                    <label for="id_revocation_reason">Revocation Reason</label>
+                    <label for="id_revocation_reason">{% trans 'Revocation Reason' %}</label>
                     <select id="id_revocation_reason" name="revocation_reason" class="form-control form-select">
                         {% for value, name in form.revocation_reason.field.choices %}
                             <option value="{{ value }}" {% if form.revocation_reason.value == value %}selected{% endif %}>{{ name }}</option>
@@ -23,13 +24,13 @@
                 </div>
 
                 <div class="tp-form-btn-group tp-form-btn-group pt-4">
-                    <a href="{% url 'devices:devices' %}" class="btn btn-secondary">Cancel</a>
+                    <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
                     <button type="submit" class="btn btn-danger"
                     {% if not onboarded %}
                         disabled
                     {% endif %}
                     >
-                        Revoke certificate
+                        {% trans 'Revoke certificate' %}
                     </button>
                 </div>
 

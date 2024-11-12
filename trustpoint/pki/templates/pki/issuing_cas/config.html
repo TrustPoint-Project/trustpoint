@@ -48,7 +48,7 @@
                                 <div>UnprotectedLocalIssuingCa</div>
                             </div>
                             <div class="tp-card-split">
-                                <div>{% trans 'Created at:' %}</div>
+                                <div>{% trans 'Created at' %}</div>
                                 <div>{{ issuing_ca.get_issuing_ca_certificate.added_at }}</div> <!-- Danger! not to mix up with time of cert creation. -->
                             </div>
                             <div class="tp-card-split">
@@ -113,12 +113,11 @@
                             </div>
                         </div>
                     </div>
-                    <div class="card-footer">
-                        <div class="tp-card-btn-footer">
-                            <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
-                            <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
-                            <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
-                        </div>
+                    <hr>
+                    <div class="tp-card-btn-footer">
+                        <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                        <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                        <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
                     </div>
                 </div>
             </div>

@@ -76,7 +76,7 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
 
     unique_name = forms.CharField(
         max_length=256,
-        label=f'Unique Name ' + UniqueNameValidator.form_label,
+        label=_('Unique Name') + ' ' + UniqueNameValidator.form_label,
         widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
         required=True,
         validators=[UniqueNameValidator()])
@@ -88,7 +88,7 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
         label=_('[Optional] PKCS#12 password'),
         required=False)
 
-    auto_crl = forms.BooleanField(label='Generate CRL upon certificate revocation.', initial=True, required=False)
+    auto_crl = forms.BooleanField(label=_('Generate CRL upon certificate revocation.'), initial=True, required=False)
 
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']
@@ -139,7 +139,7 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
 
     unique_name = forms.CharField(
         max_length=256,
-        label=f'Unique Name ' + UniqueNameValidator.form_label,
+        label=_('Unique Name') + ' ' + UniqueNameValidator.form_label,
         widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
         validators=[UniqueNameValidator()])
     private_key_file = forms.FileField(
@@ -155,7 +155,7 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
     certificate_chain = forms.FileField(
         label=_('[Optional] Certificate Chain (.pem, .p7b, .p7c) '), required=False)
     
-    auto_crl = forms.BooleanField(label='Generate CRL upon certificate revocation.', initial=True, required=False)
+    auto_crl = forms.BooleanField(label=_('Generate CRL upon certificate revocation.'), initial=True, required=False)
 
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']
@@ -264,7 +264,7 @@ class TrustStoreAddForm(forms.Form):
 
     unique_name = forms.CharField(
         max_length=256,
-        label=f'Unique Name ' + UniqueNameValidator.form_label,
+        label=_('Unique Name') + ' ' + UniqueNameValidator.form_label,
         widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
         required=True,
         validators=[UniqueNameValidator()])
