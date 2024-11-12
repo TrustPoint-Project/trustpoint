@@ -27,7 +27,7 @@ class CliCommandBuilder:
                 return f' -{short_flag} {val}'
             return f' --{key} {val}'
 
-        cmd = 'trustpoint-client provision auto'
+        cmd = 'trustpoint-client onboard auto'
         cmd += _flag('otp', 'o')
         cmd += _flag('device', 'd')
         cmd += _flag('host', 'h')
