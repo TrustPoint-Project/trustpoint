@@ -114,11 +114,10 @@ def get_cert_counts_by_status():
     print(f"Error occurred in cert counts by status query: {e}")
   # Mapping from short code to human-readable name
   status_mapping = {key: str(value) for key, value in CertificateStatus.choices}
-  cert_status_counts = {
+  cert_status_counts.update({
     status_mapping[item['certificate_status']]: item['count']
     for item in cert_status_qr
-  }
-
+  })
   cert_status_counts['total'] = sum(cert_status_counts.values())
   return cert_status_counts
 
@@ -179,10 +178,10 @@ def get_device_count_by_onboarding_protocol():
     print(f"Error occurred in device count by onboarding protocol query: {e}")
   # Mapping from short code to human-readable name
   protocol_mapping = {key: str(value) for key, value in Device.OnboardingProtocol.choices}
-  device_op_counts = {
+  device_op_counts.update({
     protocol_mapping[item['onboarding_protocol']]: item['count']
     for item in device_op_qr
-  }
+  })
 
   #device_op_counts['total'] = sum(device_op_counts.values())
   return device_op_counts
@@ -265,10 +264,10 @@ def get_cert_counts_by_template():
     print(f"Error occurred in certificate count by template query: {e}")
   # Mapping from short code to human-readable name
   template_mapping = {key: str(value) for key, value in TemplateName.choices}
-  cert_counts_by_template = {
+  cert_counts_by_template.update({
     template_mapping[item['template_name']]: item['count']
     for item in cert_template_qr
-  }
+  })
 
   return cert_counts_by_template
 
@@ -305,11 +304,19 @@ def dashboard_data(request: HttpRequest):
 
     dashboard_data["device_counts"] = device_counts
 
+    cert_counts_by_status = get_cert_counts_by_status()
+    if cert_counts_by_status:
+      dashboard_data["cert_counts_by_status"] = cert_counts_by_status
+
     ###### Get certificate counts ######
     cert_counts = get_cert_counts()
     #print("certificate_counts", cert_counts)
     if cert_counts:
       dashboard_data["cert_counts"] = cert_counts
+      dashboard_data["cert_counts_by_status"].update({
+        'Active':  cert_counts['active'],
+        'Expired': cert_counts['expired']
+      })
 
     ###### Get Issuing CA counts ######
     issuing_ca_counts = get_issuing_ca_counts()
@@ -356,9 +363,5 @@ def dashboard_data(request: HttpRequest):
     #print("issuing ca count by type", issuing_ca_counts_by_type)
     if issuing_ca_counts_by_type:
       dashboard_data["ca_counts_by_type"] = issuing_ca_counts_by_type
-
-    cert_counts_by_status = get_cert_counts_by_status()
-    if cert_counts_by_status:
-        dashboard_data["cert_counts_by_status"] = cert_counts_by_status
 
     return Response(dashboard_data)
