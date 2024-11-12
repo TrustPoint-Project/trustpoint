@@ -63,7 +63,7 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
 
 class EditDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
     model = Device
-    form_class = DeviceForm  # Verwenden Sie das benutzerdefinierte Formular
+    form_class = DeviceForm  # Custom form to disable fields during onboarding
     template_name = 'devices/edit.html'
     success_url = reverse_lazy('devices:devices')
 

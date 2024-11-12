@@ -16,4 +16,5 @@ class DeviceForm(forms.ModelForm):
         if self.instance and self.instance.pk and self.instance.device_onboarding_status in [
             DeviceOnboardingStatus.ONBOARDED,
             DeviceOnboardingStatus.ONBOARDING_RUNNING]:
+            self.fields['onboarding_protocol'].disabled = True
             self.fields['domain'].disabled = True
