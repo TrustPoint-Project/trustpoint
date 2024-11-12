@@ -45,7 +45,7 @@ As a result, Trustpoint aims to offer a solution tailored to the domain of machi
 - **Import Issuing CA**: Integrate with an existing PKI by importing external CAs.
 - **Self-Generated CA**: Create a root and issuing CA for testing purposes.
 
-## 4. Miscellaneous
+### 4. Miscellaneous
 - **User Interface**: Manage certificates and devices through an intuitive web-based UI.
 - **Dashboard**: View device and certificate statuses.
 - **Deployment**: Easily deploy TrustPoint using Docker for simplified installation and scaling.
