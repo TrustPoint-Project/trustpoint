@@ -1,3 +1,6 @@
+{% load static %}
+<script src="{% static 'js/dashboard/charts-tab.js' %}"></script>
+
 <div class="row py-3 px-0">
   <h1>Charts</h1>
 </div>
@@ -18,26 +21,28 @@
 
   <!-- chart Tab Content -->
   <div class="tab-content px-0">
+    
+    {% comment %} disabling for now
     <div class="text-end py-2">
       <button class="btn btn-blue">Today</button>
       <button class="btn btn-blue">Last Week</button>
       <button class="btn btn-blue">Last Month</button>
       <button class="btn btn-blue">Life</button>
-    </div>
+    </div> {% endcomment %}
     <!-- device chart tab content -->
     <div class="tab-pane fade show active" id="deviceChartTab">
       <div class="row p-3">
         <div class="col-5 px-3 shadow">
-          <h2 class="p-2">Devices</h2>
-          <canvas id="lineChartDevice" width="400" height="200"></canvas>
+          <h2 class="p-2">Devices by onboarding status</h2>
+          <canvas id="devicesByOSLineChart" class="pb-2" width="400" height="200"></canvas>
         </div>
         <div class="col-3 px-3 shadow">
-          <h2 class="p-2">Current Devices</h2>
-          <canvas id="donutChartDevice" width="200" height="200"></canvas>
+          <h2 class="p-2">Active devices by Domain</h2>
+          <canvas id="devicesByDomainDonutChart" class="pb-2"  width="200" height="200"></canvas>
         </div>
         <div class="col-4 shadow">
-          <h2 class="p-2">Devices</h2>
-          <canvas id="barChartDevice" width="400" height="200"></canvas>
+          <h2 class="p-2">devices by onboarding protocol</h2>
+          <canvas id="devicesByOPBarChart" class="pb-2"  width="400" height="200"></canvas>
         </div>
       </div>
     </div>
@@ -45,23 +50,23 @@
     <div class="tab-pane fade" id="certChartTab">
       <div class="row p-3">
         <div class="col-5 shadow">
-          <h2 class="p-2">Certificates</h2>
-          <canvas id="lineChartCert" width="400" height="200"></canvas>
+          <h2 class="p-2">Certificates By Status</h2>
+          <canvas id="certsByStatusLineChart" class="pb-2"  width="400" height="200"></canvas>
         </div>
         <div class="col-3 shadow">
-          <h2 class="p-2">Current Certificates</h2>
-          <canvas id="donutChartCert" width="200" height="200"></canvas>
+          <h2 class="p-2">Certificates By Domain</h2>
+          <canvas id="certsByDomainPieChart" class="pb-2"  width="200" height="200"></canvas>
         </div>
         <div class="col-4 shadow">
-          <h2 class="p-2">Certificate Templates</h2>
-          <canvas id="barChartCert" width="400" height="200"></canvas>
+          <h2 class="p-2">Certificates By Template</h2>
+          <canvas id="certsByTemplateBarChart" class="pb-2"  width="400" height="200"></canvas>
         </div>
       </div>
     </div>
     <!-- CA chart tab content -->
     <div class="tab-pane fade" id="caChartTab">
       <div class="row p-3">
-        <div class="col-3 shadow">
+        {% comment %} <div class="col-3 shadow">
           <div class="row py-3">
             <div class="col-5"><h2>Issuing CA 1</h2></div>
             <div class="col-7">
@@ -104,14 +109,18 @@
               </div>
             </div>
           </div>
+        </div> {% endcomment %}
+        <div class="col-3 shadow">
+          <h2 class="p-2">Certificates By Issuing CA</h2>
+          <canvas id="certsByIssuingCADonutChart" class="pb-2"  width="200" height="200"></canvas>
         </div>
         <div class="col-6 shadow">
           <h2 class="p-2">Issued Certificates</h2>
-          <canvas id="barChartCA" width="400" height="200"></canvas>
+          <canvas id="certsByDateStackChart" class="pb-2"  width="400" height="200"></canvas>
         </div>
         <div class="col-3 shadow">
-          <h2 class="p-2">Issuing CA</h2>
-          <canvas id="donutChartCA" width="200" height="200"></canvas>
+          <h2 class="p-2">Issuing CAs By Type</h2>
+          <canvas id="issuingCAsByTypePieChart" class="pb-2"  width="200" height="200"></canvas>
         </div>
       </div>
     </div>

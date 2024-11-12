@@ -117,9 +117,7 @@
 
         <div class="card-footer">
             <div class="tp-card-btn-footer">
-                <button type="button" class="btn btn-secondary" onClick="history.back()">
-                    {% trans 'Back' %}
-                </button>
+                <a href="{% url 'home:dashboard' %}" class="btn btn-secondary">{% trans "Back" %}</a>
                 {% if notification.notification_type == 'WAR' or notification.notification_type == 'CRI' %}
                     {% if not is_solved %}
                         <!-- Mark as Solved Button -->

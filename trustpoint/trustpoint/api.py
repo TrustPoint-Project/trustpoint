@@ -5,6 +5,7 @@ from __future__ import annotations
 from ninja import NinjaAPI
 from ninja.security import HttpBearer, django_auth
 from devices.api import router as devices_router
+from home.api import router as home_router
 from onboarding.api import router as onboarding_router
 from users.api import router as users_router
 from users.models import PersonalAccessToken
@@ -27,6 +28,7 @@ api.add_router('/devices/', devices_router, tags=['Devices'])
 api.add_router('/onboarding/', onboarding_router, tags=['Onboarding'])
 # api.add_router('/pki/', pki_router, tags=['PKI'])
 api.add_router('/users/', users_router, tags=['Users'])
+api.add_router('/home', home_router, tags=['Home'])
 
 # TODO(Air): Couldn't get non-GET requests to work with CSRF using Django-auth reliably
 # Therefore a simple bearer personal access token login system is implemented for now with a separate /login endpoint

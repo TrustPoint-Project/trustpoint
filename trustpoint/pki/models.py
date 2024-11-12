@@ -901,6 +901,10 @@ class CertificateModel(models.Model):
 
     def get_public_key_serializer(self) -> PublicKeySerializer:
         return PublicKeySerializer(self.public_key_pem)
+    
+    def get_certificate_status(self):
+        status_mapping = dict(CertificateStatus.choices)
+        return status_mapping.get(self.certificate_status)
 
     # TODO: check order of chains
     def get_certificate_chains(self, include_self: bool = True) -> list[list[CertificateModel]]:
