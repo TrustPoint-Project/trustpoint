@@ -20,6 +20,6 @@ jobs:
     - name: Push the Docker image
       run: |
         docker tag trustpoint:${{ github.sha }} ${{ secrets.DOCKER_HUB_USERNAME }}/trustpoint:${{ github.sha }}
-        docker tag trustpoint:latest ${{ secrets.DOCKER_HUB_USERNAME }}/trustpoint:latest
+        docker tag trustpoint:v0.1.0 ${{ secrets.DOCKER_HUB_USERNAME }}/trustpoint:v0.1.0
         docker push ${{ secrets.DOCKER_HUB_USERNAME }}/trustpoint:${{ github.sha }}
-        docker push ${{ secrets.DOCKER_HUB_USERNAME }}/trustpoint:latest
+        docker push ${{ secrets.DOCKER_HUB_USERNAME }}/trustpoint:v0.1.0
