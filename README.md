@@ -32,14 +32,24 @@ As a result, Trustpoint aims to offer a solution tailored to the domain of machi
 
 ## What are the features of this early technology preview?
 
-- Django-based responsive GUI
-- Manage Issuing CAs via PKCS12, PEM, or request from external PKI via EST
-- Lightweight PKI (local root CA) for testing and evaluation purposes
-- Demo of user-driven onboarding with [Trustpoint Client](https://github.com/TrustPoint-Project/trustpoint-client)
-- Manual device onboarding via CLI and PKCS12 export
-- Device management table
-- Demo home visualization update
-- Sample configuration views
+### 1. Device Onboarding
+- **[Trustpoint Client](https://github.com/TrustPoint-Project/trustpoint-client)**: Simple onboarding through a client interface.
+- **Command-Line Interface (CLI)**: Onboard devices manually via Linux commands.
+- **Browser-Based Onboarding**: Use a web interface for easy onboarding.
+- **PKCS#12 File**: Download certificate files for manual installation.
+
+### 2. Application Certificate Management
+- **Certificate Requests**: Issue certificates for apps or systems.
+
+### 3. Certificate Authority (CA) Modes
+- **Import Issuing CA**: Integrate with an existing PKI by importing external CAs.
+- **Self-Generated CA**: Create a root and issuing CA for testing purposes.
+
+## 4. Miscellaneous
+- **User Interface**: Manage certificates and devices through an intuitive web-based UI.
+- **Dashboard**: View device and certificate statuses.
+- **Deployment**: Easily deploy TrustPoint using Docker for simplified installation and scaling.
+- **Certificate Management Protocol (CMP)**: Supports CMP for automated certificate management, allowing easy integration with other CMP-compliant systems.
 
 ## Who is developing Trustpoint?
 
