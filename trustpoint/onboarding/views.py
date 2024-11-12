@@ -26,6 +26,7 @@ from .models import (
     OnboardingProcess,
     OnboardingProcessState,
 )
+from pki.util.keys import SignatureSuite
 
 if TYPE_CHECKING:
     from typing import Any
@@ -298,6 +299,9 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
 
         onboarding_process = OnboardingProcess.make_onboarding_process(device, ManualOnboardingProcess)
 
+        issuing_ca_cert = device.domain.issuing_ca.issuing_ca_certificate
+        signature_suite = SignatureSuite.get_signature_suite_from_cert_type(issuing_ca_cert)
+
         context = {
             'page_category': 'onboarding',
             'page_name': 'manual',
@@ -306,7 +310,8 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             'device_name': device.device_name,
             'device': device.device_name,
             'device_id': device.id,
-            'url': onboarding_process.url
+            'url': onboarding_process.url,
+            'sig_suite': signature_suite
         }
 
         if device.onboarding_protocol == Device.OnboardingProtocol.TP_CLIENT:
@@ -321,7 +326,7 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
             context['cmd_1'].append(CliCommandBuilder.cli_calc_hmac())
             context['cmd_1'].append(CliCommandBuilder.cli_compare_hmac())
 
-            context['cmd_2'] = [CliCommandBuilder.cli_gen_key_and_csr()]
+            context['cmd_2'] = [CliCommandBuilder.cli_gen_key_and_csr(context)]
             context['cmd_2'].append(CliCommandBuilder.cli_get_ldevid(context))
             context['cmd_2'].append(CliCommandBuilder.cli_rm_csr())
 

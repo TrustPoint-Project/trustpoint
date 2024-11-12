@@ -5,8 +5,14 @@ from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from cryptography.hazmat.primitives.asymmetric import padding
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
+from pki.oid import PublicKeyAlgorithmOid, EllipticCurveOid
 
 from django.db import models
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pki.models import CertificateModel
 
 class SignatureSuite(Enum):
 
@@ -50,6 +56,27 @@ class SignatureSuite(Enum):
                 return hashes.SHA384()
             
         return hashes.SHA256()
+    
+    @classmethod
+    def get_signature_suite_from_cert_type(cls, cert: CertificateModel) -> SignatureSuite:
+        if cert.spki_algorithm_oid == PublicKeyAlgorithmOid.RSA.value:
+            if cert.spki_key_size == 2048:
+                return cls.RSA2048
+            elif cert.spki_key_size == 3072:
+                return cls.RSA3072
+            elif cert.spki_key_size == 4096:
+                return cls.RSA4096
+            else:
+                raise ValueError
+        elif cert.spki_algorithm_oid == PublicKeyAlgorithmOid.ECC.value:
+            if cert.spki_ec_curve_oid == EllipticCurveOid.SECP256R1.value:
+                return cls.SECP256R1
+            elif cert.spki_ec_curve_oid == EllipticCurveOid.SECP384R1.value:
+                return cls.SECP384R1
+            else:
+                raise ValueError
+        else:
+            raise ValueError
 
 
 class AutoGenPkiKeyAlgorithm(models.TextChoices):
