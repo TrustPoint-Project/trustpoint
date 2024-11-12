@@ -1,10 +1,12 @@
 <p align="center">
   <img alt="Trustpoint" src="/.github-assets/trustpoint_banner.png"><br/>
   <strong>The open source trust anchor software for machines and factories to manage digital identities.</strong><br/><br/>
-  <a href="https://trustpoint.campus-schwarzwald.de/"><img src="https://img.shields.io/badge/Landing_Page_(german)-014BAD?style=flat"></a>
+  <a href="https://trustpoint.campus-schwarzwald.de/en/"><img src="https://img.shields.io/badge/Landing_Page-014BAD?style=flat"></a>
   <a href="https://github.com/orgs/TrustPoint-Project/discussions"><img src="https://img.shields.io/badge/GitHub-Discussions-014BAD?style=flat"></a>
+  <a href="https://trustpoint.readthedocs.io"><img src="https://img.shields.io/readthedocs/trustpoint"></a>
+  <a href="https://hub.docker.com/r/trustpoint2023/trustpoint"><img src="https://img.shields.io/docker/automated/trustpoint2023/trustpoint"></a> 
   <img src="https://img.shields.io/badge/License-MIT-014BAD?style=flat">
-  <img src="https://img.shields.io/badge/Status-Early_technology_preview-red?style=flat">
+  <img src="https://img.shields.io/badge/Status-Beta-red?style=flat">
 </p>
 
 > [!CAUTION]
@@ -41,7 +43,7 @@ As a result, Trustpoint aims to offer a solution tailored to the domain of machi
 
 ## Who is developing Trustpoint?
 
-Trustpoint is currently being developed by a consortium of five organizations: Campus Schwarzwald, Keyfactor, achelos GmbH, Hamm-Lippstadt University of Applied Sciences and asvin GmbH. Several industrial companies are also part of the project as associated partners. These include ARBURG GmbH + Co KG, Homag GmbH, J. Schmalz GmbH, PHOENIX CONTACT GmbH & Co. KG, FANUC Deutschland GmbH and Siemens AG.
+Trustpoint is currently being developed by a consortium of five organizations: Campus Schwarzwald, Keyfactor, achelos GmbH, Hamm-Lippstadt University of Applied Sciences and asvin GmbH. Several industrial companies are also part of the project as associated partners. These include ARBURG GmbH + Co KG, Belden Inc., Diebold Nixdorf, Homag GmbH, J. Schmalz GmbH, PHOENIX CONTACT GmbH & Co. KG and Siemens AG.
 
 Trustpoint is funded as part of a project sponsored by the German Federal Ministry of Education and Research. Questions can be asked in [Discussions](https://github.com/orgs/TrustPoint-Project/discussions) and will be answered by us. We look forward to hearing about your experiences with Trustpoint. You can send suggestions to trustpoint@campus-schwarzwald.de.
 
