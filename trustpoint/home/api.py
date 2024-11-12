@@ -76,7 +76,7 @@ def get_cert_counts():
     print(f"Error occurred in certificate count query: {e}")
   return cert_counts
 
-def get_cert_counts_by_status():
+def get_cert_counts_by_status_and_date():
     """Get certificate counts grouped by issue date and certificate status."""
     cert_counts_by_status = []
     try:
@@ -102,6 +102,25 @@ def get_cert_counts_by_status():
     except Exception as e:
         print(f'Error occurred in certificate count by status query: {e}')
     return cert_counts_by_status
+
+def get_cert_counts_by_status():
+  """Get certs count by onboarding status from database"""
+  cert_status_counts = {str(status): 0 for _, status in CertificateStatus.choices}
+  try:
+    cert_status_qr = CertificateModel.objects.values('certificate_status').annotate(
+      count=Count('certificate_status')
+    )
+  except Exception as e:
+    print(f"Error occurred in cert counts by status query: {e}")
+  # Mapping from short code to human-readable name
+  status_mapping = {key: str(value) for key, value in CertificateStatus.choices}
+  cert_status_counts = {
+    status_mapping[item['certificate_status']]: item['count']
+    for item in cert_status_qr
+  }
+
+  cert_status_counts['total'] = sum(cert_status_counts.values())
+  return cert_status_counts
 
 def get_issuing_ca_counts():
   """Get issuing CA counts from database"""
