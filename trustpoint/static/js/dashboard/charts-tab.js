@@ -236,6 +236,63 @@ function updateDevicesByDomainDonutChart(deviceDomainCounts) {
     });
 }
 
+// Function to update the certs by status bar chart
+function updateCertsByStatusBarChart(certStatusCounts) {
+  const canvas = document.getElementById("certsByStatusLineChart");
+  const certsByStatusLineChartEle = canvas.getContext("2d");
+
+  if (!certStatusCounts) {
+    return drawNoDataMessageOnCanvas(canvas);
+  }
+  certsByStatusLineChart != undefined ? certsByStatusLineChart.destroy() : "";
+  var chartLabels = [];
+  var chartData = [];
+  Object.entries(certStatusCounts).forEach(([key, value]) => {
+    chartLabels.push(key);
+    chartData.push(value);
+  });
+  certsByStatusLineChart = new Chart(certsByStatusLineChartEle, {
+    type: "bar",
+    data: {
+      labels: chartLabels,
+      datasets: [
+        {
+          label: "Number of Certificates",
+          data: chartData,
+          //borderColor: "#0d6efd",
+          //backgroundColor: "#0d6efd",
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.8)', // Red
+            'rgba(54, 162, 235, 0.8)', // Blue
+            // 'rgba(255, 206, 86, 0.8)', // Yellow
+            // 'rgba(75, 192, 192, 0.8)', // Green
+            // 'rgba(153, 102, 255, 0.8)', // Purple
+            // 'rgba(255, 159, 64, 0.8)'   // Orange
+        ],
+        borderColor: [
+            'rgba(255, 99, 132, 1)',
+            'rgba(54, 162, 235, 1)',
+            // 'rgba(255, 206, 86, 1)',
+            // 'rgba(75, 192, 192, 1)',
+            // 'rgba(153, 102, 255, 1)',
+            // 'rgba(255, 159, 64, 1)'
+        ],
+          tension: 0.4,
+          fill: "true",
+        },
+      ],
+    },
+    options: {
+      indexAxis: "y",
+      scales: {
+        y: {
+          beginAtZero: "true",
+        },
+      },
+    },
+  });
+}
+
 // Function to update the certificates by domain pie chart
 function updateCertsByDomainPieChart(certDomainCounts) {
     const canvas = document.getElementById("certsByDomainPieChart");
