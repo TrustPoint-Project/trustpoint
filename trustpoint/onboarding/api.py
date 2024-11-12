@@ -9,15 +9,13 @@ import logging
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
-from cryptography.hazmat.primitives.asymmetric import ec
-from sphinx.util.inspect import signature
+from pki.util.keys import SignatureSuite, DigitalSignature
 
 from devices.models import Device
 from django.http import HttpRequest, HttpResponse
 from ninja import Router, Schema
 from ninja.responses import Response, codes_4xx
 from pathlib import Path
-from enum import Enum
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
 from onboarding.crypto_backend import VerificationError, OnboardingError
@@ -38,14 +36,6 @@ from onboarding.schema import (
 )
 from pki import ReasonCode
 from pki.models import CertificateModel, TrustStoreModel, DomainModel
-
-class SignatureSuite(Enum):
-
-    RSA2048 = 'RSA2048SHA256'
-    RSA3072 = 'RSA3072SHA256'
-    RSA4096 = 'RSA4096SHA256'
-    SECP256R1 = 'SECP256R1SHA256'
-    SECP384R1 = 'SECP384R1SHA384'
 
 log = logging.getLogger('tp.onboarding')
 
@@ -260,10 +250,11 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
         'server_tls_cert': Crypt.get_server_tls_cert(),	
     }
     response_bytes = str(response).encode()
-    hash = hashes.Hash(hashes.SHA256())
-    hash.update(response_bytes)
-    log.debug(f'SHA-256 hash of message: {hash.finalize().hex()}')
-    server_signature = ownership_private_key.sign(data=response_bytes, signature_algorithm=ec.ECDSA(hashes.SHA256()))
+    # hash = hashes.Hash(hashes.SHA256())
+    # hash.update(response_bytes)
+    # log.debug(f'SHA-256 hash of message: {hash.finalize().hex()}')
+    server_signature = DigitalSignature.sign(data=response_bytes, private_key=ownership_private_key)
+    #server_signature = ownership_private_key.sign(data=response_bytes, signature_algorithm=server_signature_suite.value)
     print(server_signature)
     server_signature = base64.b64encode(server_signature).decode()
     print(f'Server signature: {server_signature}')

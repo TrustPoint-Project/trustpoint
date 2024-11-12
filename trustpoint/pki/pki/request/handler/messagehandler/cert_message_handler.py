@@ -19,6 +19,7 @@ from pki.models import CertificateModel
 from pki.pki.cmp.builder import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts
 from pki.pki.cmp.validator import ExtraCertsValidator, InitializationReqValidator
 from pki.oid import CertificateExtensionOid, NameOid
+from pki.util.keys import SignatureSuite
 
 
 class CertMessageHandler:
@@ -645,6 +646,8 @@ class CertMessageHandler:
         #     subject_key_identifier,
         #     critical=False,
         # )
+        hash_algorithm = SignatureSuite.get_hash_algorithm_by_key(ca_key)
+        cert = cert_builder.sign(ca_key, hash_algorithm)
 
         def get_template_name(qs):
             for entry in qs:
@@ -655,8 +658,6 @@ class CertMessageHandler:
                 if 'generic' in entry.value:
                     return TemplateName.GENERIC
             return None
-
-        cert = cert_builder.sign(ca_key, hashes.SHA256())
 
         cert_model = CertificateModel.save_certificate(cert)
 

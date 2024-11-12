@@ -18,6 +18,7 @@ from django.db import transaction
 from pki import CertificateTypes, TemplateName
 from pki.oid import NameOid
 from pki.models import CertificateModel
+from pki.util.keys import DigitalSignature
 from pki.pki.request.handler.factory import CaRequestHandlerFactory
 from pki.pki.request.message.rest import PkiRestCsrRequestMessage, PkiRestPkcs12RequestMessage
 from util.strings import StringValidator
@@ -278,4 +279,4 @@ class CryptoBackend:
             raise VerificationError(exc_msg) from e
         
         # print(f'signature: {signature}')
-        signer_public_key.verify(signature=signature, data=message, signature_algorithm=ec.ECDSA(hashes.SHA256()))
+        DigitalSignature.verify(signature=signature, data=message, public_key=signer_public_key)
