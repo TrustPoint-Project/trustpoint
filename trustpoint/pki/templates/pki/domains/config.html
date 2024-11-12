@@ -88,7 +88,6 @@
                                         <th>Status</th>
                                         <th>Operations</th>
                                         <th>URL Path</th>
-                                        <th>Details</th>
                                         <th>Config</th>
                                     </tr>
                                 </thead>
@@ -102,7 +101,6 @@
                                                 </td>
                                                 <td>{{ protocol.get_operation_list|length }}/{{ protocol.Operations|length }}</td>
                                                 <td>{{ protocol.url_path }}</td>
-                                                <td><a href="{% url 'pki:domains' %}" class="btn btn-primary tp-table-btn">{% trans 'Details' %}</a></td>
                                                 <td>
                                                     <button type="button" class="btn btn-primary tp-table-btn config-button" data-url="{% url 'pki:protocol-config' protocol_name=protocol_name domain_id=domain.pk%}" data-bs-toggle="modal" data-bs-target="#configModal">
                                                         {% trans 'Config' %}
@@ -143,4 +141,31 @@
             </div>
         </form>
     </div>
+<script>
+
+    document.addEventListener("DOMContentLoaded", function () {
+        console.log('DOMContentLoaded gestartet');
+    
+        // Deaktiviert die Checkbox für EST
+        const estCheckbox = document.querySelector('input[name="protocols"][value="est"]');
+        if (estCheckbox) {
+            console.log("EST-Checkbox gefunden und deaktiviert.");
+            estCheckbox.disabled = true;
+        } else {
+            console.log("EST-Checkbox nicht gefunden.");
+        }
+    
+        // Deaktiviert den Config-Button für EST
+        const estConfigButton = document.querySelector('button[data-url*="/pki/domains/protocol-config/est/"]');
+        if (estConfigButton) {
+            console.log("EST-Config-Button gefunden und deaktiviert.");
+            estConfigButton.disabled = true;
+        } else {
+            console.log("EST-Config-Button nicht gefunden.");
+        }
+    });
+    
+    </script>
+    
 {% endblock content %}
+
