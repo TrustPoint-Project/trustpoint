@@ -44,4 +44,3 @@ class TemplateName(models.TextChoices):
     TLSCLIENT = 'TLS_Client', _('TLS Client')
     OPCUASERVER = 'OPC_UA_Server', _('OPC UA Server')
     OPCUACLIENT = 'OPC_UA_Client', _('OPC UA Client')
-    

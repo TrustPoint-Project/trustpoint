@@ -1,3 +1,6 @@
+{% load static %}
+<script src="{% static 'js/dashboard/charts-tab.js' %}"></script>
+
 <div class="row py-3 px-0">
   <h1>Charts</h1>
 </div>
@@ -30,15 +33,15 @@
     <div class="tab-pane fade show active" id="deviceChartTab">
       <div class="row p-3">
         <div class="col-5 px-3 shadow">
-          <h2 class="p-2">Devices By Onboarding Status</h2>
+          <h2 class="p-2">Devices by onboarding status</h2>
           <canvas id="devicesByOSLineChart" class="pb-2" width="400" height="200"></canvas>
         </div>
         <div class="col-3 px-3 shadow">
-          <h2 class="p-2">Devices By Domain</h2>
+          <h2 class="p-2">Active devices by Domain</h2>
           <canvas id="devicesByDomainDonutChart" class="pb-2"  width="200" height="200"></canvas>
         </div>
         <div class="col-4 shadow">
-          <h2 class="p-2">Devices By Onboarding Protocol</h2>
+          <h2 class="p-2">devices by onboarding protocol</h2>
           <canvas id="devicesByOPBarChart" class="pb-2"  width="400" height="200"></canvas>
         </div>
       </div>
