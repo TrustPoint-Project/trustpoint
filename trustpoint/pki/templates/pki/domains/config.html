@@ -146,22 +146,19 @@
     document.addEventListener("DOMContentLoaded", function () {
         console.log('DOMContentLoaded gestartet');
     
-        // Deaktiviert die Checkbox für EST
         const estCheckbox = document.querySelector('input[name="protocols"][value="est"]');
         if (estCheckbox) {
-            console.log("EST-Checkbox gefunden und deaktiviert.");
             estCheckbox.disabled = true;
-        } else {
-            console.log("EST-Checkbox nicht gefunden.");
         }
     
-        // Deaktiviert den Config-Button für EST
         const estConfigButton = document.querySelector('button[data-url*="/pki/domains/protocol-config/est/"]');
         if (estConfigButton) {
-            console.log("EST-Config-Button gefunden und deaktiviert.");
             estConfigButton.disabled = true;
-        } else {
-            console.log("EST-Config-Button nicht gefunden.");
+        }
+
+        const cmpConfigButton = document.querySelector('button[data-url*="/pki/domains/protocol-config/cmp/"]');
+        if (estConfigButton) {
+            cmpConfigButton.disabled = true;
         }
     });
     
