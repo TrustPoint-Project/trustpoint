@@ -41,7 +41,7 @@ def get_device_counts():
 
 def get_device_count_by_onboarding_status():
   """Get device count by onboarding status from database"""
-  device_os_counts = {str(status): 0 for _, status in Device.DeviceOnboardingStatus.choices}
+  device_os_counts = {str(status): 0 for _, status in DeviceOnboardingStatus.choices}
   try:
     device_os_qr = Device.objects.values('device_onboarding_status').annotate(
       count=Count('device_onboarding_status')
@@ -49,7 +49,7 @@ def get_device_count_by_onboarding_status():
   except Exception as e:
     print(f"Error occurred in device count by onboarding protocol query: {e}")
   # Mapping from short code to human-readable name
-  protocol_mapping = {key: str(value) for key, value in Device.DeviceOnboardingStatus.choices}
+  protocol_mapping = {key: str(value) for key, value in DeviceOnboardingStatus.choices}
   device_os_counts = {
     protocol_mapping[item['device_onboarding_status']]: item['count']
     for item in device_os_qr
