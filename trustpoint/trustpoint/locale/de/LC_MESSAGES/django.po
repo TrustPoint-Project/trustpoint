@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-28 14:57+0100\n"
+"POT-Creation-Date: 2024-11-12 10:09+0100\n"
 "PO-Revision-Date: 2024-10-28 15:27+0100\n"
 "Last-Translator: Christian Schwinne <christian.schwinne  AT hshl.de>\n"
 "Language-Team: \n"
@@ -131,10 +131,6 @@ msgstr "Beschreibung"
 msgid "Details"
 msgstr "Details"
 
-#: .\home\tables.py:61 .\home\tables.py:79
-msgid "Delete"
-msgstr "Entfernen"
-
 #: .\home\templates\home\notification_details.html:8
 msgid "Notification Details"
 msgstr "Benachrichtigungsdetails"
@@ -166,11 +162,6 @@ msgstr "Issuing CA:"
 #: .\home\templates\home\notification_details.html:89
 msgid "Message:"
 msgstr "Nachricht:"
-
-# "Status" is technically the correct plural form, but I found the plural more important to convey here
-#: .\home\templates\home\notification_details.html:97
-msgid "Statuses:"
-msgstr "Stati:"
 
 #: .\home\templates\home\notification_details.html:111
 msgid "Created At:"
@@ -229,11 +220,11 @@ msgstr "Root CA-Zertifikat"
 msgid "Intermediate CA Certificate"
 msgstr "Zwischen-CA-Zertifikat"
 
-#: .\trustpoint\settings.py:137
+#: .\trustpoint\settings.py:136
 msgid "German"
 msgstr "Deutsch"
 
-#: .\trustpoint\settings.py:138
+#: .\trustpoint\settings.py:137
 msgid "English"
 msgstr "Englisch"
 
@@ -309,14 +300,25 @@ msgstr "Ausloggen"
 msgid "Login required!"
 msgstr "Login erforderlich!"
 
+#~ msgid "Delete"
+#~ msgstr "Entfernen"
+
+# "Status" is technically the correct plural form, but I found the plural more important to convey here
+#~ msgid "Statuses:"
+#~ msgstr "Stati:"
+
 #~ msgid "Endpoint Profiles"
 #~ msgstr "Endpunkt-Profile"
 
 #~ msgid "Root CAs"
 #~ msgstr "Root CAs"
 
-#~ msgid "Must start with a letter and only contain letters, numbers and underscores."
-#~ msgstr "Muss mit einem Buchstaben beginnen und darf nur aus Buchstaben, Ziffern, und Unterstrichen bestehen."
+#~ msgid ""
+#~ "Must start with a letter and only contain letters, numbers and "
+#~ "underscores."
+#~ msgstr ""
+#~ "Muss mit einem Buchstaben beginnen und darf nur aus Buchstaben, Ziffern, "
+#~ "und Unterstrichen bestehen."
 
 #~ msgid "Version"
 #~ msgstr "Version"

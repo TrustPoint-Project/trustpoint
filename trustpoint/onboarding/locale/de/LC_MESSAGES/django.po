@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-28 14:57+0100\n"
-"PO-Revision-Date: 2024-10-28 15:43+0100\n"
+"POT-Creation-Date: 2024-11-12 10:29+0100\n"
+"PO-Revision-Date: 2024-11-12 10:29+0100\n"
 "Last-Translator: Christian Schwinne <christian.schwinne  AT hshl.de>\n"
 "Language-Team: \n"
 "Language: de\n"
@@ -74,6 +74,7 @@ msgstr "Zurück"
 #: .\onboarding\templates\onboarding\manual\cli.html:68
 #: .\onboarding\templates\onboarding\manual\client.html:31
 #: .\onboarding\templates\onboarding\manual\download.html:34
+#: .\onboarding\templates\onboarding\revoke.html:27
 msgid "Cancel"
 msgstr "Abbrechen"
 
@@ -156,45 +157,57 @@ msgstr "Onboarding-Status"
 msgid "Download certificate for device %(device_name)s"
 msgstr "Zertifikat für Gerät %(device_name)s herunterladen"
 
-#: .\onboarding\views.py:43
+#: .\onboarding\templates\onboarding\revoke.html:9
+msgid "Confirm certificate revocation"
+msgstr "Zertifikatswiderruf bestätigen"
+
+#: .\onboarding\templates\onboarding\revoke.html:18
+msgid "Revocation Reason"
+msgstr "Widerrufsgrund"
+
+#: .\onboarding\templates\onboarding\revoke.html:33
+msgid "Revoke certificate"
+msgstr "Zertifikat widerrufen"
+
+#: .\onboarding\views.py:46
 msgid "Onboarding: device_id kwarg not provided."
 msgstr "Onboarding: device_id kwarg fehlt."
 
-#: .\onboarding\views.py:48 .\onboarding\views.py:364
+#: .\onboarding\views.py:51 .\onboarding\views.py:367
 #, python-format
 msgid "Onboarding: Device with ID %s not found."
 msgstr "Onboarding: Kein Gerät mit der ID %s gefunden."
 
-#: .\onboarding\views.py:86
+#: .\onboarding\views.py:89
 msgid "Keep the PKCS12 file secure! It contains the private key of the device."
 msgstr ""
 "Halten Sie die PKCS12-Datei geheim! Sie enthält den privaten Schlüssel des "
 "Geräts."
 
-#: .\onboarding\views.py:174
+#: .\onboarding\views.py:177
 msgid "Device or password does not match."
 msgstr "Geräte-ID oder Passwort stimmen nicht überein."
 
-#: .\onboarding\views.py:344
+#: .\onboarding\views.py:347
 msgid "Error"
 msgstr "Fehler"
 
-#: .\onboarding\views.py:370
+#: .\onboarding\views.py:373
 #, python-format
 msgid "Onboarding: Device %s onboarded successfully."
 msgstr "Onboarding: Das Gerät %s wurde erfolgreich hinzugefügt."
 
-#: .\onboarding\views.py:375
+#: .\onboarding\views.py:378
 #, python-format
 msgid "Onboarding process for device %(name)s failed. %(reason)s"
 msgstr "Onboarding-Prozess für das Gerät %(name)s fehlgeschlagen. %(reason)s"
 
-#: .\onboarding\views.py:379
+#: .\onboarding\views.py:382
 #, python-format
 msgid "Onboarding process for device %s canceled."
 msgstr "Onboarding-Prozess für das Gerät %s abgebrochen."
 
-#: .\onboarding\views.py:383
+#: .\onboarding\views.py:386
 #, python-format
 msgid ""
 "Onboarding process for device %(name)s is in unexpected state %(state)s."
@@ -202,21 +215,21 @@ msgstr ""
 "Onboarding-Prozess für das Gerät %(name)s ist im unerwarteten Zustand "
 "%(state)s."
 
-#: .\onboarding\views.py:388
+#: .\onboarding\views.py:391
 #, python-format
 msgid "No active onboarding process for device %s found."
 msgstr "Es wurde kein aktiver Onboarding-Prozess für das Gerät %s gefunden."
 
-#: .\onboarding\views.py:401
+#: .\onboarding\views.py:404
 msgid "Revocation"
 msgstr "Zertifikatswiderruf"
 
-#: .\onboarding\views.py:428
+#: .\onboarding\views.py:444
 #, python-format
 msgid "LDevID certificate for device %s revoked."
 msgstr "Das LDevID-Zertifikat für Gerät %s wurde widerrufen."
 
-#: .\onboarding\views.py:431
+#: .\onboarding\views.py:447
 #, python-format
 msgid ""
 "Failed to revoke LDevID certificate for device %s. This may be due to a "
@@ -225,7 +238,7 @@ msgstr ""
 "Das LDevID-Zertifikat von Gerät %s konnte nicht widerrufen werden. "
 "Möglicherweise wurde die CA entfernt."
 
-#: .\onboarding\views.py:434
+#: .\onboarding\views.py:450
 #, python-format
 msgid "Device %s has no LDevID certificate to revoke."
 msgstr "Das Gerät %s hat kein LDevID-Zertifikat, das widerrufen werden kann."

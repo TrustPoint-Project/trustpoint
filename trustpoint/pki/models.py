@@ -1293,7 +1293,7 @@ class BaseCaModel(models.Model):
     proxy_name = models.CharField(max_length=20) # to distinguish between Issuing and Root CA classes
 
     unique_name = models.CharField(
-        verbose_name=f'Unique Name',
+        verbose_name=_('Unique Name'),
         max_length=100,
         validators=[UniqueNameValidator()],
         unique=True,
@@ -1336,7 +1336,7 @@ class BaseCaModel(models.Model):
 
     # TODO: remote_ca_config -> ForeignKey
 
-    auto_crl = models.BooleanField(default=True, verbose_name='Generate CRL upon certificate revocation.')
+    auto_crl = models.BooleanField(default=True, verbose_name=_('Generate CRL upon certificate revocation.'))
 
     next_crl_generation_time = models.IntegerField(default=(24*60))
 
@@ -1479,7 +1479,7 @@ class CRLStorage(models.Model):
 class TrustStoreModel(models.Model):
 
     unique_name = models.CharField(
-        verbose_name=f'Unique Name',
+        verbose_name=_('Unique Name'),
         max_length=100,
         validators=[UniqueNameValidator()],
         unique=True
@@ -1580,7 +1580,7 @@ class DomainModel(models.Model):
     """Endpoint Profile model."""
 
     unique_name = models.CharField(
-        f'Unique Name',
+        _('Unique Name'),
         max_length=100,
         unique=True,
         validators=[UniqueNameValidator()])
