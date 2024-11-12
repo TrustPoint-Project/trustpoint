@@ -1,7 +1,7 @@
 """Module that creates CLI command strings for onboarding a device."""
 
 from onboarding.crypto_backend import PBKDF2_DKLEN, PBKDF2_ITERATIONS
-
+from pki.util.keys import SignatureSuite
 
 class CliCommandBuilder:
     """Builds CLI command strings for onboarding a device."""
@@ -103,15 +103,32 @@ class CliCommandBuilder:
         return 'if [ "" = "$(diff tp-resp.hmac tp.hmac)" ]; then mv tp-trust-store.pem trust-store.pem; fi && rm tp*'
 
     @staticmethod
-    def cli_gen_key_and_csr() -> str:
+    def cli_gen_key_and_csr(ctx: dict) -> str:
         """Generates a private key and a CSR.
 
         Returns (str): The CLI command.
         """
+        sig_suite = ctx.get('sig_suite', '')
+
+        hash_flag = '-sha256'
+        if sig_suite == SignatureSuite.SECP384R1:
+            hash_flag = '-sha384'
+
+        key_flag = 'ec -pkeyopt ec_paramgen_curve:prime256v1' # default/fallback to SECP256R1
+        if sig_suite == SignatureSuite.SECP384R1:
+            key_flag = 'ec -pkeyopt ec_paramgen_curve:secp384r1'
+        elif sig_suite == SignatureSuite.RSA4096:
+            key_flag = 'rsa:4096'
+        elif sig_suite == SignatureSuite.RSA3072:
+            key_flag = 'rsa:3072'
+        elif sig_suite == SignatureSuite.RSA2048:
+            key_flag = 'rsa:2048'
+        
+
         return (
             'openssl  req -nodes -outform PEM -new -out ldevid.csr \\\n'
             '-keyform PEM -keyout ldevid-private-key.pem \\\n'
-            '-subj "/" -sha256 -newkey ec -pkeyopt ec_paramgen_curve:prime256v1')
+            f'-subj "/" {hash_flag} -newkey {key_flag}')
 
     @staticmethod
     def cli_get_ldevid(ctx: dict) -> str:
