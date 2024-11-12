@@ -78,8 +78,8 @@ class CliCommandBuilder:
         return (
             f'openssl kdf -keylen {PBKDF2_DKLEN} \\\n'
             '\t\t\t-kdfopt digest:SHA256 \\\n'
-            f'\t\t\t-kdfopt pass:{ctx.get("tsotp", "")} \\\n'
-            f'\t\t\t-kdfopt salt:{ctx.get("tssalt", "")} \\\n'
+            f'\t\t\t-kdfopt pass:{ctx.get("otp", "")} \\\n'
+            f'\t\t\t-kdfopt salt:{ctx.get("device", "")} \\\n'
             f'\t\t\t-kdfopt iter:{PBKDF2_ITERATIONS} \\\n'
             '\t\t\t-binary \\\n'
             '\t\t\t-out tp-key.bin PBKDF2')
@@ -125,7 +125,7 @@ class CliCommandBuilder:
         """
         return (
             f'curl -X POST https://{ctx.get("host", "")}/api/onboarding/ldevid/{ctx.get("url", "")} \\\n'
-            f'--user {ctx.get("salt", "")}:{ctx.get("otp", "")} \\\n'
+            f'--user {ctx.get("device", "")}:{ctx.get("otp", "")} \\\n'
             '-F "ldevid.csr=@ldevid.csr" \\\n'
             '--cacert trust-store.pem > ldevid.pem')
 
