@@ -13,7 +13,7 @@
             <div class="card-body py-3">
 
                 {% for object in objects %}
-                    {% include 'devices/sub_details.html' with device=object %}
+                    {% include 'devices/sub_details.html' with device=object short=True %}
                 {% endfor %}
 
                 <div class="alert alert-info d-flex" role="alert">  
