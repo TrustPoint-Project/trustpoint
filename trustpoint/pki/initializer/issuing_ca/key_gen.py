@@ -8,7 +8,7 @@ from pki.issuing_ca import UnprotectedLocalIssuingCa
 from pki.models import RootCaModel
 from pki.serializer import CertificateCollectionSerializer
 from pki.util.ca import CaGenerator
-from pki.util.keys import KeyAlgorithm, KeyGenerator
+from pki.util.keys import SignatureSuite, KeyGenerator
 
 from .local import LocalIssuingCaInitializer
 
@@ -19,10 +19,10 @@ class KeyGenLocalIssuingCaInitializer(LocalIssuingCaInitializer, abc.ABC):
 
 class UnprotectedKeyGenLocalCaInitializer(KeyGenLocalIssuingCaInitializer):
     """Base class for unprotected local CA initializers."""
-    _key_algorithm: KeyAlgorithm
+    _key_algorithm: SignatureSuite
     _ca_localization: CaLocalization = CaLocalization.AUTO_GEN_PKI
 
-    def __init__(self, unique_name: str, key_algorithm: KeyAlgorithm, auto_crl: bool = True) -> None:
+    def __init__(self, unique_name: str, key_algorithm: SignatureSuite, auto_crl: bool = True) -> None:
         self._unique_name = unique_name
         self._auto_crl = auto_crl
         self._key_algorithm = key_algorithm
@@ -58,7 +58,7 @@ class UnprotectedKeyGenLocalIssuingCaInitializer(UnprotectedKeyGenLocalCaInitial
     """Responsible for initializing the local issuing (subordinate) CA."""
     _root_ca: UnprotectedLocalIssuingCa
 
-    def __init__(self, unique_name: str, key_algorithm: KeyAlgorithm,
+    def __init__(self, unique_name: str, key_algorithm: SignatureSuite,
                  root_ca: UnprotectedLocalIssuingCa, auto_crl: bool = True) -> None:
         """Initialize the arguments."""
         self._unique_name = unique_name

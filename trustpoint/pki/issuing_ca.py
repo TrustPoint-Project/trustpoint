@@ -9,8 +9,9 @@ from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
 from django.db import transaction
 
-from . import ReasonCode, CertificateStatus
 from .serializer import CertificateCollectionSerializer, PrivateKeySerializer
+from . import CertificateStatus, ReasonCode
+from .util.keys import SignatureSuite
 
 if TYPE_CHECKING:
     from typing import Union
@@ -133,7 +134,9 @@ class UnprotectedLocalIssuingCa(IssuingCa):
                 revoked_cert = self._build_revoked_cert(entry.revocation_datetime, entry.cert)
                 self.crl_builder = self.crl_builder.add_revoked_certificate(revoked_cert)
             log.debug('CRL generation finished. Starting signing.')
-            crl = self.crl_builder.sign(private_key=self._private_key_serializer.as_crypto(), algorithm=hashes.SHA256())
+            hash_algorithm = SignatureSuite.get_hash_algorithm_by_key(
+                self._issuing_ca_model.get_issuing_ca_public_key_serializer().as_crypto())
+            crl = self.crl_builder.sign(private_key=self._private_key_serializer.as_crypto(), algorithm=hash_algorithm)
             log.debug('CRL signing finished.')
             self.save_crl_to_database(crl.public_bytes(encoding=serialization.Encoding.PEM).decode('utf-8'))
             revoked_certificates.delete()

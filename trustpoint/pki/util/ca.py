@@ -3,6 +3,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric.types import CertificatePublicKeyTypes, PrivateKeyTypes
 
+from pki.util.keys import SignatureSuite
 
 class CaGenerator:
     @staticmethod
@@ -53,7 +54,7 @@ class CaGenerator:
         ).add_extension(
             x509.AuthorityKeyIdentifier.from_issuer_public_key(signing_key.public_key()), critical=False
         ).sign(
-            signing_key, hashes.SHA256(), default_backend()
+            signing_key, SignatureSuite.get_hash_algorithm_by_key(signing_key), default_backend()
         )
 
         return certificate

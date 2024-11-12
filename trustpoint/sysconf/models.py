@@ -62,7 +62,7 @@ class SecurityConfig(models.Model):
     security_mode = models.CharField(max_length=6, choices=SecurityModeChoices.choices, default=SecurityModeChoices.LOW)
 
     auto_gen_pki = models.BooleanField(default=False)
-    auto_gen_pki_key_algorithm = models.CharField(max_length=12,
+    auto_gen_pki_key_algorithm = models.CharField(max_length=24,
                                                   choices=AutoGenPkiKeyAlgorithm,
                                                   default=AutoGenPkiKeyAlgorithm.RSA2048)
 

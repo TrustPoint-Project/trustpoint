@@ -114,7 +114,7 @@ class DeviceTable(tables.Table):
             )
         if record.device_onboarding_status == Device.DeviceOnboardingStatus.REVOKED:
             return format_html(
-                '<a href="{}" class="btn btn btn-info tp-onboarding-btn">{}</a>',
+                '<a href="{}" class="btn btn-info tp-onboarding-btn">{}</a>',
                 reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
                 _('Onboard again')
             )
@@ -145,6 +145,11 @@ class DeviceTable(tables.Table):
             return format_html(
                 '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn">{}</a>',
                 record.pk, _('Reset Context')
+            )
+        if record.device_onboarding_status == Device.DeviceOnboardingStatus.REVOKED:
+            return format_html(
+                '<button class="btn btn-info tp-onboarding-btn" disabled>{}</a>',
+                _('Revoked')
             )
         raise UnknownOnboardingStatusError(record.device_onboarding_status)
 

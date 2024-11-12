@@ -27,3 +27,6 @@ class AokiFinalizationResponseSchema(Schema):
     """Schema for the server response to the finalization message sent by the client."""
     otp: str
     device: str
+    domain: str
+    signature_suite: str
+    pki_protocol: str

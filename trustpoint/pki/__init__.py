@@ -27,7 +27,8 @@ class CertificateStatus(models.TextChoices):
 class CaLocalization(models.TextChoices):
     """The localization of the CA.
 
-    Auto-Gen PKI is a special case of the local CA, where the root CA is self-signed by the system."""
+    Auto-Gen PKI is a special case of the local CA, where the root CA is self-signed by the system.
+    """
     LOCAL = "L", _('Local')
     REMOTE = "R", _('Remote')
     AUTO_GEN_PKI = "A", _('AutoGenPKI')
@@ -40,7 +41,5 @@ class CertificateTypes(models.TextChoices):
 
 class TemplateName(models.TextChoices):
     GENERIC = 'Generic', _('Generic')
-    TLSSERVER = 'TLS_Server', _('TLS Server')
-    TLSCLIENT = 'TLS_Client', _('TLS Client')
-    OPCUASERVER = 'OPC_UA_Server', _('OPC UA Server')
-    OPCUACLIENT = 'OPC_UA_Client', _('OPC UA Client')
+    TLSSERVER = 'TLS-Server', _('TLS Server')
+    TLSCLIENT = 'TLS-Client', _('TLS Client')

@@ -176,6 +176,14 @@ class Device(models.Model):
             return None
 
     @classmethod
+    def get_by_name(cls: Device, device_name: str) -> Device | None:
+        """Returns the device with a given name."""
+        try:
+            return cls.objects.get(device_name=device_name)
+        except cls.DoesNotExist:
+            return None
+
+    @classmethod
     def check_onboarding_prerequisites(
             cls: Device, device_id: int,
             allowed_onboarding_protocols: list[Device.OnboardingProtocol]) -> tuple[bool, str | None]:
