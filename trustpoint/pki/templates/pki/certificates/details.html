@@ -20,6 +20,12 @@
 
                         {% include 'pki/certificates/components/general.html' %}
 
+                        {% if cert.issued_device_certificate %}
+
+                            {% include 'pki/certificates/components/additional.html' %}
+
+                        {% endif %}
+
                         {% include 'pki/certificates/components/hierarchy.html' %}
 
                         {% include 'pki/certificates/components/validity.html' %}

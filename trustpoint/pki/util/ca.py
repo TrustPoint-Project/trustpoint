@@ -4,7 +4,7 @@ from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives.asymmetric.types import CertificatePublicKeyTypes, PrivateKeyTypes
 
 
-class CaGenerator():
+class CaGenerator:
     @staticmethod
     def generate_subject(common_name: str) -> x509.Name:
 

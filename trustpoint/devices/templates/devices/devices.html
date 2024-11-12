@@ -5,8 +5,8 @@
 
 {% block content %}
 
-<div class="card" style="display: flex; flex-direction: column; max-height: 100%;">
-    <div class="card-header">
+<div class="card card-main" style="display: flex; flex-direction: column; max-height: 85vh;">
+    <div class="card-header tp-card-header" style="min-height: 40px;">
         <h1>{% trans 'Devices' %}</h1>
     </div>
 
@@ -47,22 +47,23 @@
                     {{ filter.form.tags }}
                 </div>
                 <div>
-                    <button type="submit" class="btn btn-primary filter-btn">Filter</button>
-                    <a href="{% url 'devices:devices' %}" class="btn btn-secondary filter-btn">Reset</a>
+                    <button type="submit" class="btn btn-primary filter-btn">{% trans 'Filter' %}</button>
+                    <a href="{% url 'devices:devices' %}" class="btn btn-secondary filter-btn">{% trans 'Reset' %}</a>
                 </div>
             </form>
         </div>
         {% render_table table %}
     </div>
-        
-    <div class="card-footer d-flex justify-content-between tp-sticky-footer">
-        <div>
-            <button type="button" class="btn btn-secondary tp-table-select-btn" data-tp-url="delete">{% trans "Delete selected" %}</button>
-        </div>
-        <div>
-            <a class="btn btn-primary" href="{% url 'devices:devices-add' %}">
-                {% trans "Add new Device" %}
-            </a>
+    <div>
+        <div class="card-footer d-flex justify-content-between tp-sticky-footer">
+            <div>
+                <button type="button" class="btn btn-secondary tp-table-select-btn" data-tp-url="delete">{% trans "Delete selected" %}</button>
+            </div>
+            <div>
+                <a class="btn btn-primary" href="{% url 'devices:devices-add' %}">
+                    {% trans "Add new Device" %}
+                </a>
+            </div>
         </div>
     </div>
 </div>

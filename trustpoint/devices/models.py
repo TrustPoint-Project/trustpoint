@@ -6,24 +6,34 @@ from __future__ import annotations
 import logging
 import re
 
+from django.core.exceptions import ObjectDoesNotExist
+
 from django.db import models, transaction
 from django.db.models import Count
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from pki.models import CertificateModel, DomainModel
 from taggit.managers import TaggableManager
+
+from pki import CertificateStatus, CertificateTypes
+
 
 from .exceptions import UnknownOnboardingStatusError
 
 from pki.validator.field import UniqueNameValidator
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from pki.models import DomainModel, IssuedDeviceCertificateModel
 
 log = logging.getLogger('tp.devices')
 
 
 class Device(models.Model):
     """Device Model."""
+
+    issued_device_certificates: IssuedDeviceCertificateModel
 
     class DeviceOnboardingStatus(models.TextChoices):
         """Device Onboarding Status."""
@@ -60,24 +70,78 @@ class Device(models.Model):
         BRSKI = 'BR', _('BRSKI')
         AOKI = 'AO', _('AOKI')
 
+
     device_name = models.CharField(
         _('Device name'), max_length=100, unique=True, default='test', validators=[UniqueNameValidator()]
     )
     device_serial_number = models.CharField(_('Serial number'), max_length=100, blank=True)
-    ldevid = models.ForeignKey(CertificateModel, on_delete=models.SET_NULL, blank=True, null=True)
     onboarding_protocol = models.CharField(
         _('Onboarding protocol'), max_length=2, choices=OnboardingProtocol, default=OnboardingProtocol.MANUAL, blank=True
     )
     device_onboarding_status = models.CharField(
         max_length=1, choices=DeviceOnboardingStatus, default=DeviceOnboardingStatus.NOT_ONBOARDED, blank=True
     )
-    domain = models.ForeignKey(DomainModel, verbose_name=_('Domain'), on_delete=models.SET_NULL, blank=True, null=True)
+    domain = models.ForeignKey('pki.DomainModel', verbose_name=_('Domain'), on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)
     tags = TaggableManager(blank=True)
 
     def __str__(self: Device) -> str:
-        """Returns a Device object in human-readable format."""
+        """Returns a Device object in human-readable format.
+
+        Returns: A formatted string containing the device name and serial number.
+        """
         return f'Device({self.device_name}, {self.device_serial_number})'
+
+    def get_current_ldevid_by_domain(self, domain):
+        """Retrieves the current active LDevID certificate for a specified domain.
+
+        Args:
+            domain: The domain for which the current active LDevID certificate should be retrieved.
+
+        Returns:
+            The active LDevID certificate if found, otherwise None.
+
+        Raises:
+            IssuedDeviceCertificateModel.ObjectDoesNotExist: If no active LDevID certificates are found.
+        """
+        try:
+            return self.issued_device_certificates.get(
+                certificate_type=CertificateTypes.LDEVID,
+                domain=domain,
+                certificate__certificate_status=CertificateStatus.OK
+            ).certificate
+        except ObjectDoesNotExist:
+            return None
+
+    def get_all_active_certs_by_domain(self, domain):
+        """Retrieves all active certificates for a specified domain, grouped by type.
+
+        Args:
+            domain: The domain for which active certificates should be retrieved.
+
+        Returns:
+            dict: A dictionary containing:
+                - 'domain': The domain for the certificates.
+                - 'ldevid': The current active LDevID certificate or None if unavailable.
+                - 'other': A queryset of other active certificates excluding LDevID certificates.
+        """
+        query_sets = self.issued_device_certificates.filter(
+            domain=domain,
+            certificate__certificate_status=CertificateStatus.OK
+        ).exclude(certificate_type=CertificateTypes.LDEVID)
+
+        return {'domain': domain,
+            'ldevid': self.get_current_ldevid_by_domain(domain=domain),
+            'other': query_sets}
+
+    def save_certificate(self, certificate, certificate_type, domain, template_name, protocol):
+        self.issued_device_certificates.create(
+            certificate=certificate,
+            certificate_type=certificate_type,
+            domain=domain,
+            template_name=template_name,
+            protocol=protocol
+        )
 
     def revoke_ldevid(self: Device, revocation_reason) -> bool:
         """Revokes the LDevID.
@@ -85,12 +149,13 @@ class Device(models.Model):
         Deletes the LDevID file and sets the device status to REVOKED.
         Actual revocation (CRL, OCSP) is not yet implemented.
         """
-        if not self.ldevid:
+        ldevid = self.get_current_ldevid_by_domain(domain=self.domain)
+        if not ldevid:
             return False
 
         with transaction.atomic():
-            revocation_success = self.ldevid.revoke(revocation_reason)
-            self.ldevid = None
+            revocation_success = ldevid.revoke(revocation_reason)
+            ldevid = None
             if self.device_onboarding_status == Device.DeviceOnboardingStatus.ONBOARDED:
                 if revocation_success:
                     self.device_onboarding_status = Device.DeviceOnboardingStatus.REVOKED
@@ -110,6 +175,14 @@ class Device(models.Model):
         """Returns the device with a given ID."""
         try:
             return cls.objects.get(pk=device_id)
+        except cls.DoesNotExist:
+            return None
+
+    @classmethod
+    def get_by_name(cls: Device, device_name: str) -> Device | None:
+        """Returns the device with a given name."""
+        try:
+            return cls.objects.get(device_name=device_name)
         except cls.DoesNotExist:
             return None
 
@@ -155,7 +228,7 @@ class Device(models.Model):
             reverse('onboarding:revoke', kwargs={'device_id': self.pk}),
             _('Revoke Certificate')
         )
-    
+
     def _render_running_cancel(self) -> str:
         """Renders the 'Cancel' action for devices that have status Running.
 

@@ -12,7 +12,7 @@ logging_config = {
     'handlers': {
         'file': {
             'class': 'logging.handlers.TimedRotatingFileHandler',
-            'level': 'DEBUG',
+            'level': 'INFO',
             'formatter': 'detailed',
             'filename': 'media/log/tp.log',
             'when': 'midnight',
@@ -23,7 +23,7 @@ logging_config = {
         },
         'console': {
             'class': 'logging.StreamHandler',
-            'level': 'DEBUG',
+            'level': 'INFO',
             'formatter': 'detailed',
         },
     },
@@ -40,11 +40,11 @@ logging_config = {
             'propagate': False,
         },
         'root': {
-            'level': 'WARNING',
+            'level': 'INFO',
             'handlers': ['file'],
         },
         'tp': {
-            'level': 'DEBUG',
+            'level': 'INFO',
             'handlers': ['file', 'console'],
             'propagate': False,
         },

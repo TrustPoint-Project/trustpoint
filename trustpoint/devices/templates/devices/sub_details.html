@@ -32,8 +32,57 @@
             </div>
         </li>
         <li>
+            <div>{% trans 'Creation date' %}</div>
+            <div>{{ device.created_at }}</div>
+        </li>
+        <li>
             <div>{% trans 'Device onboarding status' %}</div>
             <div>{{ device.get_device_onboarding_status_display }}</div>
         </li>
+    </ul>
+
+    <hr class="hr-m">
+
+    <ul class="tp-kvp-list">
+        {% for domain, certs in certs_by_domain.items %}
+            <li>
+                <div>{% trans 'Domain' %}</div>
+                <div>
+                    <a href="{% url 'pki:domains-detail' pk=domain.pk %}">
+                        {{ domain.unique_name }}
+                    </a>
+                </div>
+            </li>
+            <hr>
+            <li>
+                <div>{% trans 'LDevID Certificate' %}</div>
+                <div>
+                    {% if certs.ldevid %}
+                        <a href="{% url 'pki:certificate-detail' pk=certs.ldevid.id %}">
+                            {{ certs.ldevid.common_name }}
+                        </a>
+                    {% else %}
+                        No LDevID certificate associated with this domain.
+                    {% endif %}
+                </div>
+            </li>
+            <li>
+                <div>{% trans 'Other Certificates' %}</div>
+                <div>
+                    {% if certs.other %}
+                        <ul>
+                            {% for cert in certs.other %}
+                                <a href="{% url 'pki:certificate-detail' pk=cert.certificate.id %}">
+                                    {{ cert.certificate.common_name }}
+                                </a>
+                                <br>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        No other certificates associated with this domain.
+                    {% endif %}
+                </div>
+            </li>
+        {% endfor %}
     </ul>
 {% endblock sub_details %}

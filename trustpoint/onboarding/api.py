@@ -10,12 +10,14 @@ from cryptography import x509
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
+from sphinx.util.inspect import signature
+
 from devices.models import Device
-from django.db.utils import IntegrityError
 from django.http import HttpRequest, HttpResponse
 from ninja import Router, Schema
 from ninja.responses import Response, codes_4xx
 from pathlib import Path
+from enum import Enum
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
 from onboarding.crypto_backend import VerificationError, OnboardingError
@@ -26,6 +28,7 @@ from onboarding.models import (
     OnboardingProcess,
     OnboardingProcessState,
 )
+from pki.oid import PublicKeyAlgorithmOid, EllipticCurveOid
 from trustpoint.schema import ErrorSchema, SuccessSchema
 from onboarding.schema import (
     AokiInitMessageSchema,
@@ -36,12 +39,40 @@ from onboarding.schema import (
 from pki import ReasonCode
 from pki.models import CertificateModel, TrustStoreModel, DomainModel
 
+class SignatureSuite(Enum):
+
+    RSA2048 = 'RSA2048SHA256'
+    RSA3072 = 'RSA3072SHA256'
+    RSA4096 = 'RSA4096SHA256'
+    SECP256R1 = 'SECP256R1SHA256'
+    SECP384R1 = 'SECP384R1SHA384'
+
 log = logging.getLogger('tp.onboarding')
 
 router = Router()
 
 class RawFileSchema(Schema):
     """Wildcard schema, works for arbitrary content."""
+
+def _get_signature_suite_from_ca_type(issuing_ca_cert: CertificateModel) -> SignatureSuite:
+    if issuing_ca_cert.spki_algorithm_oid == PublicKeyAlgorithmOid.RSA.value:
+        if issuing_ca_cert.spki_key_size == 2048:
+            return SignatureSuite.RSA2048
+        elif issuing_ca_cert.spki_key_size == 3072:
+            return SignatureSuite.RSA3072
+        elif issuing_ca_cert.spki_key_size == 4096:
+            return SignatureSuite.RSA4096
+        else:
+            raise ValueError
+    elif issuing_ca_cert.spki_algorithm_oid == PublicKeyAlgorithmOid.ECC.value:
+        if issuing_ca_cert.spki_ec_curve_oid == EllipticCurveOid.SECP256R1.value:
+            return SignatureSuite.SECP256R1
+        elif issuing_ca_cert.spki_ec_curve_oid == EllipticCurveOid.SECP384R1.value:
+            return SignatureSuite.SECP384R1
+        else:
+            raise ValueError
+    else:
+        raise ValueError
 
 # --- PUBLIC ONBOARDING API ENDPOINTS ---
 
@@ -52,20 +83,19 @@ def trust_store(request: HttpRequest, url_ext: str) -> tuple[int, dict] | HttpRe
     if not onboarding_process:
         return 404, {'error': 'Onboarding process not found.'}
     try:
-        trust_store = Crypt.get_trust_store()
+        trust_store_ = Crypt.get_trust_store()
     except FileNotFoundError:
         onboarding_process.fail('Trust store file not found.')
         return 404, {'error': 'Trust store file not found.'}
 
-    response = HttpResponse(trust_store, status=200, content_type='application/x-pem-file')
+    issuing_ca_cert = onboarding_process.device.domain.issuing_ca.issuing_ca_certificate
+    signature_suite = _get_signature_suite_from_ca_type(issuing_ca_cert)
+
+    response = HttpResponse(trust_store_, status=200, content_type='application/x-pem-file')
     response['hmac-signature'] = onboarding_process.get_hmac()
     response['domain'] = onboarding_process.device.domain.unique_name
-    issuing_ca_cert = onboarding_process.device.domain.issuing_ca.issuing_ca_certificate
-    response['algorithm'] = issuing_ca_cert.spki_algorithm
-    response['curve'] = issuing_ca_cert.spki_ec_curve
-    response['key-size'] = issuing_ca_cert.spki_key_size
-    response['device-id'] = str(onboarding_process.device.id)
-    response['default-pki-protocol'] = 'CMP'
+    response['signature-suite'] = signature_suite.value
+    response['pki-protocol'] = 'CMP'
     response['Content-Disposition'] = 'attachment; filename="tp-trust-store.pem"'
     if onboarding_process.state == OnboardingProcessState.HMAC_GENERATED:
         onboarding_process.state = OnboardingProcessState.TRUST_STORE_SENT
@@ -178,8 +208,6 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
     if not idevid_cert_db:
         return 403, {'error': 'Unauthorized.'}
 
-    # TODO (Air): consider check if a device with this IDevID is already onboarded?
-
     # TODO (Air): Even more inefficient
     ownership_cert = None
     for ts in TrustStoreModel.objects.all():
@@ -201,6 +229,7 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
 
     if aoki_device:
         log.warning(f'Onboarding existing AOKI device {aoki_device.pk} ({idevid_subject_sn})!')
+        aoki_device.revoke_ldevid(ReasonCode.SUPERSEDED)
     else:
         aoki_device = Device(
             device_name=f'AOKI{idevid_subject_sn}', # temporary name until we know PK
@@ -256,11 +285,8 @@ def aoki_finalize(request: HttpRequest, data: AokiFinalizationMessageSchema):
     if not onboarding_process:
         return 404, {'error': 'Not found.'}
     
-    print(data)
     data_bytes = data.model_dump_json().encode()
-    print(data_bytes)
-    print(type(data))
-    print('Client Signature:', client_signature)
+
     try:
         onboarding_process.verify_client_signature(data_bytes, client_signature)
     except (VerificationError, InvalidSignature, OnboardingError):
@@ -268,10 +294,16 @@ def aoki_finalize(request: HttpRequest, data: AokiFinalizationMessageSchema):
         return 404, {'error': 'Not found.'}
     
     log.debug('AOKI client signature verified successfully.')
+
+    issuing_ca_cert = onboarding_process.device.domain.issuing_ca.issuing_ca_certificate
+    signature_suite = _get_signature_suite_from_ca_type(issuing_ca_cert)
     
     response = {
         'otp': onboarding_process.otp,
-        'device': onboarding_process.device.device_name
+        'device': onboarding_process.device.device_name,
+        'domain': onboarding_process.device.domain.unique_name,
+        'signature_suite': signature_suite.value,
+        'pki_protocol': 'CMP'
     }
     
     return 200, response

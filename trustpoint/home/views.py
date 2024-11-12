@@ -1,10 +1,11 @@
 import json
 from django.views.generic.base import RedirectView, TemplateView
 from django.shortcuts import render, get_object_or_404, redirect
-from django_tables2 import SingleTableView, RequestConfig
+from django_tables2 import RequestConfig
 from datetime import datetime, timedelta
-from django.db.models import Count, Q
 from trustpoint.views.base import TpLoginRequiredMixin, ContextDataMixin
+from .filters import NotificationFilter
+from django.core.management import call_command
 
 from .models import NotificationModel, NotificationStatus
 from .tables import NotificationTable
@@ -409,172 +410,18 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         return context
 
     def handle_notifications(self, context):
-        new_status, created = NotificationStatus.objects.get_or_create(status='NEW')
-        solved_status, created = NotificationStatus.objects.get_or_create(status='SOLVED')
-
         all_notifications = NotificationModel.objects.all()
 
-        tables = {
-            'all': NotificationTable(all_notifications),
-            'system': NotificationTable(
-                all_notifications.filter(notification_source=NotificationModel.NotificationSource.SYSTEM)),
-            'certificate': NotificationTable(
-                all_notifications.filter(notification_source=NotificationModel.NotificationSource.CERTIFICATE)),
-            'domain': NotificationTable(
-                all_notifications.filter(notification_source=NotificationModel.NotificationSource.DOMAIN)),
-            'issuing_ca': NotificationTable(
-                all_notifications.filter(notification_source=NotificationModel.NotificationSource.ISSUING_CA)),
-            'device': NotificationTable(
-                all_notifications.filter(notification_source=NotificationModel.NotificationSource.DEVICE)),
-        }
+        notification_filter = NotificationFilter(self.request.GET, queryset=all_notifications)
+        filtered_notifications = notification_filter.qs
 
-        for key, table in tables.items():
-            RequestConfig(self.request, paginate={"per_page": 5}).configure(table)
+        all_notifications_table = NotificationTable(filtered_notifications)
+        RequestConfig(self.request, paginate={"per_page": 5}).configure(all_notifications_table)
 
-        context.update({
-            'all_notifications_table': tables['all'],
-            'system_notifications_table': tables['system'],
-            'certificate_notifications_table': tables['certificate'],
-            'domain_notifications_table': tables['domain'],
-            'issuing_ca_notifications_table': tables['issuing_ca'],
-            'device_notifications_table': tables['device'],
-        })
-
-        notification_counts = all_notifications.filter(statuses=new_status).values('notification_source').annotate(
-            total=Count('id'),
-            critical=Count('id', filter=Q(notification_type='CRI'))
-        )
-
-        context['all_notifications_count'] = all_notifications.filter(statuses=new_status).count()
-        context['system_notifications_count'] = all_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.SYSTEM, statuses=new_status).count()
-        context['certificate_notifications_count'] = all_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.CERTIFICATE, statuses=new_status).count()
-        context['domain_notifications_count'] = all_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.DOMAIN, statuses=new_status).count()
-        context['issuing_ca_notifications_count'] = all_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.ISSUING_CA, statuses=new_status).count()
-        context['device_notifications_count'] = all_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.DEVICE, statuses=new_status).count()
-
-        unsolved_notifications = all_notifications.exclude(statuses=solved_status)
-
-        # Critical notifications
-        context['all_notifications_critical'] = unsolved_notifications.filter(notification_type='CRI').count()
-        context['system_notifications_critical'] = unsolved_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.SYSTEM, notification_type='CRI').count()
-        context['certificate_notifications_critical'] = unsolved_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.CERTIFICATE, notification_type='CRI').count()
-        context['domain_notifications_critical'] = unsolved_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.DOMAIN, notification_type='CRI').count()
-        context['issuing_ca_notifications_critical'] = unsolved_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.ISSUING_CA, notification_type='CRI').count()
-        context['device_notifications_critical'] = unsolved_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.DEVICE, notification_type='CRI').count()
-
-        # Warning notifications
-        context['all_notifications_warn'] = unsolved_notifications.filter(notification_type='WAR').count()
-        context['system_notifications_warn'] = unsolved_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.SYSTEM, notification_type='WAR').count()
-        context['certificate_notifications_warn'] = unsolved_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.CERTIFICATE, notification_type='WAR').count()
-        context['domain_notifications_warn'] = unsolved_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.DOMAIN, notification_type='WAR').count()
-        context['issuing_ca_notifications_warn'] = unsolved_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.ISSUING_CA, notification_type='WAR').count()
-        context['device_notifications_warn'] = unsolved_notifications.filter(
-            notification_source=NotificationModel.NotificationSource.DEVICE, notification_type='WAR').count()
+        context['all_notifications_table'] = all_notifications_table
+        context['notification_filter'] = notification_filter
 
         return context
-
-
-class AllNotificationsView(SingleTableView):
-    """View to display all notifications."""
-
-    model = NotificationModel
-    table_class = NotificationTable
-    template_name = 'home/all_notifications.html'
-
-    # queryset = NotificationModel.objects.all()  # Fetch all notifications
-
-    def get_queryset(self):
-        return NotificationModel.objects.all()
-
-
-class SystemNotificationsView(SingleTableView):
-    """View to display notifications filtered by system source."""
-
-    model = NotificationModel
-    table_class = NotificationTable
-    template_name = 'home/system_notifications.html'
-
-    def get_queryset(self):
-        return NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.SYSTEM)
-
-
-class CertificateNotificationsView(SingleTableView):
-    """View to display notifications filtered by certificate source."""
-
-    model = NotificationModel
-    table_class = NotificationTable
-    template_name = 'home/certificate_notifications.html'
-
-    def get_queryset(self):
-        return NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.CERTIFICATE)
-
-
-class DomainNotificationsView(SingleTableView):
-    """View to display notifications filtered by domain source."""
-
-    model = NotificationModel
-    table_class = NotificationTable
-    template_name = 'home/domain_notifications.html'
-
-    def get_queryset(self):
-        return NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.DOMAIN)
-
-
-class IssuingCaNotificationsView(SingleTableView):
-    """View to display notifications filtered by Issuing Ca source."""
-
-    model = NotificationModel
-    table_class = NotificationTable
-    template_name = 'home/issuing_ca_notifications.html'
-
-    def get_queryset(self):
-        return NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.ISSUING_CA)
-
-
-class DeviceNotificationsView(SingleTableView):
-    """View to display notifications filtered by device source."""
-
-    model = NotificationModel
-    table_class = NotificationTable
-    template_name = 'home/device_notifications.html'
-
-    def get_queryset(self):
-        return NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.DEVICE)
-
-
-def notifications_with_tabs(request):
-    """View to display notifications with tabs for each source."""
-
-    context = {
-        'all_notifications_table': NotificationTable(NotificationModel.objects.all()),
-        'system_notifications_table': NotificationTable(
-            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.SYSTEM)),
-        'certificate_notifications_table': NotificationTable(
-            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.CERTIFICATE)),
-        'issuing_ca_notifications_table': NotificationTable(
-            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.ISSUING_CA)),
-        'domain_notifications_table': NotificationTable(
-            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.DOMAIN)),
-        'device_notifications_table': NotificationTable(
-            NotificationModel.objects.filter(notification_source=NotificationModel.NotificationSource.DEVICE)),
-    }
-
-    return render(request, 'home/notifications-tab.html', context)
-
 
 def notification_details_view(request, pk):
     notification = get_object_or_404(NotificationModel, pk=pk)
@@ -619,3 +466,25 @@ def mark_as_solved(request, pk):
     }
 
     return render(request, 'home/notification_details.html', context)
+
+
+class AddDomainsAndDevicesView(TpLoginRequiredMixin, TemplateView):
+    """View to execute the add_domains_and_devices management command and pass status to the template."""
+
+    def get(self, request, *args, **kwargs):
+        context = {}
+
+        try:
+            # Call the management command
+            call_command('add_domains_and_devices')
+
+            # Define success message
+            context['status'] = 'success'
+            context['message'] = 'The add_domains_and_devices command has been executed successfully.'
+        except Exception as e:
+            # Define error message
+            context['status'] = 'error'
+            context['message'] = f'Error executing command: {e}'
+
+        # Render the template with the context
+        return render(request, 'home/command_status.html', context)

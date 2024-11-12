@@ -1,122 +1,260 @@
 {% load django_tables2 %}
 {% load i18n %}
+{% load static %}
 
 {% block content %}
     <div class="row py-3 px-0">
         <h1>Notifications</h1>
     </div>
 
-    <ul class="nav nav-tabs" id="myTab" role="tablist">
-        <li class="nav-item" role="presentation">
-            <a class="nav-link active" id="all-tab" data-bs-toggle="tab" href="#all" role="tab" aria-controls="all"
-               aria-selected="true">
-                All
-                {% if all_notifications_count > 0 %}
-                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="New notifications">{{ all_notifications_count }}</span>
-                {% endif %}
-                {% if all_notifications_critical > 0 %}
-                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ all_notifications_critical }}</span>
-                {% endif %}
-                {% if all_notifications_warn > 0 %}
-                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ all_notifications_warn }}</span>
-                {% endif %}
-            </a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" id="system-tab" data-bs-toggle="tab" href="#system" role="tab" aria-controls="system"
-               aria-selected="false">
-                System
-                {% if system_notifications_count > 0 %}
-                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="New notifications">{{ system_notifications_count }}</span>
-                {% endif %}
-                {% if system_notifications_critical > 0 %}
-                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ system_notifications_critical }}</span>
-                {% endif %}
-                {% if system_notifications_warn > 0 %}
-                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ system_notifications_warn }}</span>
-                {% endif %}
-            </a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" id="certificate-tab" data-bs-toggle="tab" href="#certificate" role="tab"
-               aria-controls="certificate" aria-selected="false">
-                Certificate
-                {% if certificate_notifications_count > 0 %}
-                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="New notifications">{{ certificate_notifications_count }}</span>
-                {% endif %}
-                {% if certificate_notifications_critical > 0 %}
-                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ certificate_notifications_critical }}</span>
-                {% endif %}
-                {% if certificate_notifications_warn > 0 %}
-                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ certificate_notifications_warn }}</span>
-                {% endif %}
-            </a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" id="issuingca-tab" data-bs-toggle="tab" href="#issuingca" role="tab"
-               aria-controls="issuingca" aria-selected="false">
-                Issuing CA
-                {% if issuing_ca_notifications_count > 0 %}
-                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="New notifications">{{ issuing_ca_notifications_count }}</span>
-                {% endif %}
-                {% if issuing_ca_notifications_critical > 0 %}
-                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ issuing_ca_notifications_critical }}</span>
-                {% endif %}
-                {% if issuing_ca_notifications_warn > 0 %}
-                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ issuing_ca_notifications_warn }}</span>
-                {% endif %}
-            </a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" id="domain-tab" data-bs-toggle="tab" href="#domain" role="tab" aria-controls="domain"
-               aria-selected="false">
-                Domain
-                {% if domain_notifications_count > 0 %}
-                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="New notifications">{{ domain_notifications_count }}</span>
-                {% endif %}
-                {% if domain_notifications_critical > 0 %}
-                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ domain_notifications_critical }}</span>
-                {% endif %}
-                {% if domain_notifications_warn > 0 %}
-                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ domain_notifications_warn }}</span>
-                {% endif %}
-            </a>
-        </li>
-        <li class="nav-item" role="presentation">
-            <a class="nav-link" id="device-tab" data-bs-toggle="tab" href="#device" role="tab" aria-controls="device"
-               aria-selected="false">
-                Device
-                {% if device_notifications_count > 0 %}
-                    <span class="badge bg-secondary" data-bs-toggle="tooltip" title="New notifications">{{ device_notifications_count }}</span>
-                {% endif %}
-                {% if device_notifications_critical > 0 %}
-                    <span class="badge bg-danger" data-bs-toggle="tooltip" title="Critical notifications">{{ device_notifications_critical }}</span>
-                {% endif %}
-                {% if device_notifications_warn > 0 %}
-                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Warning notifications">{{ device_notifications_warn }}</span>
-                {% endif %}
-            </a>
-        </li>
-    </ul>
+    <div class="filter-container d-flex align-items-center">
 
-    <div class="tab-content px-0 shadow">
-        <div class="tab-pane fade show active" id="all" role="tabpanel" aria-labelledby="all-tab">
-            {% render_table all_notifications_table %}
+        <span>Filter:</span>
+
+        <!-- HTML Buttons for Filtering -->
+        <div class="filter-buttons">
+            <button type="button" class="filter-button filter-button-cri" onclick="toggleFilterType('CRI')">
+                <svg class="icon" width="12" height="12" fill="currentColor">
+                    <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
+                </svg>
+                Critical
+            </button>
+            <button type="button" class="filter-button filter-button-war" onclick="toggleFilterType('WAR')">
+                <svg class="icon" width="12" height="12" fill="currentColor">
+                    <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
+                </svg>
+                Warning
+            </button>
+            <button type="button" class="filter-button filter-button-inf" onclick="toggleFilterType('INF')">
+                <svg class="icon" width="12" height="12" fill="currentColor">
+                    <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
+                </svg>
+                Info
+            </button>
+            <button type="button" class="filter-button filter-button-set" onclick="toggleFilterType('SET')">
+                <svg class="icon" width="12" height="12" fill="currentColor">
+                    <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
+                </svg>
+                Setup
+            </button>
         </div>
-        <div class="tab-pane fade" id="system" role="tabpanel" aria-labelledby="system-tab">
-            {% render_table system_notifications_table %}
+
+        <div class="vertical-separator"></div>
+
+
+        <div class="filter-buttons">
+            <button type="button" class="filter-button filter-button-s" onclick="toggleFilterSource('S')">
+                <svg class="icon" width="12" height="12" fill="currentColor">
+                    <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
+                </svg>
+                System
+            </button>
+            <button type="button" class="filter-button filter-button-d" onclick="toggleFilterSource('D')">
+                <svg class="icon" width="12" height="12" fill="currentColor">
+                    <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
+                </svg>
+                Domain
+            </button>
+            <button type="button" class="filter-button filter-button-e" onclick="toggleFilterSource('E')">
+                <svg class="icon" width="12" height="12" fill="currentColor">
+                    <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
+                </svg>
+                Device
+            </button>
+            <button type="button" class="filter-button filter-button-i" onclick="toggleFilterSource('I')">
+                <svg class="icon" width="12" height="12" fill="currentColor">
+                    <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
+                </svg>
+                Issuing CA
+            </button>
+            <button type="button" class="filter-button filter-button-c" onclick="toggleFilterSource('C')">
+                <svg class="icon" width="12" height="12" fill="currentColor">
+                    <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
+                </svg>
+                Certificate
+            </button>
         </div>
-        <div class="tab-pane fade" id="certificate" role="tabpanel" aria-labelledby="certificate-tab">
-            {% render_table certificate_notifications_table %}
-        </div>
-        <div class="tab-pane fade" id="issuingca" role="tabpanel" aria-labelledby="issuingca-tab">
-            {% render_table issuing_ca_notifications_table %}
-        </div>
-        <div class="tab-pane fade" id="domain" role="tabpanel" aria-labelledby="domain-tab">
-            {% render_table domain_notifications_table %}
-        </div>
-        <div class="tab-pane fade" id="device" role="tabpanel" aria-labelledby="device-tab">
-            {% render_table device_notifications_table %}
+
+        <div class="vertical-separator"></div>
+
+        <div class="filter-buttons" style="display: inline-block;">
+            <button type="button" class="filter-button filter-button-today" onclick="setDateRange('today')">Today
+            </button>
+            <button type="button" class="filter-button filter-button-last7days" onclick="setDateRange('last7days')">Last
+                7 Days
+            </button>
+            <button type="button" class="filter-button filter-button-last30days" onclick="setDateRange('last30days')">
+                Last 30 Days
+            </button>
+            <button type="button" class="filter-button filter-button-all" onclick="setDateRange('all')">All</button>
         </div>
     </div>
+
+    <form id="filter-form" method="get">
+        <input type="hidden" name="notification_type" id="notification_type_input">
+        <input type="hidden" name="notification_source" id="notification_source_input">
+        <input type="hidden" name="date_range" id="date_range_input">
+    </form>
+
+    {% render_table all_notifications_table %}
+
+    <script>
+        let selectedNotificationTypes = ['CRI', 'WAR', 'INF', 'SET']; // All types active by default    
+        let selectedNotificationSources = ['S', 'D', 'E', 'I', 'C']; // All sources active by default
+        let selectedDateRange = 'all';
+
+        // Function to toggle notification type filters
+        function toggleFilterType(type) {
+            const button = document.querySelector(`.filter-button-${type.toLowerCase()}`);
+            const icon = button.querySelector('use');
+
+            if (button) {
+                const index = selectedNotificationTypes.indexOf(type);
+                if (index > -1) {
+                    // Remove type from the selected list
+                    selectedNotificationTypes.splice(index, 1);
+                    button.classList.remove('active');
+                    icon.setAttribute('xlink:href', "{% static 'img/icons.svg' %}#icon-plus");
+                } else {
+                    // Add type to the selected list
+                    selectedNotificationTypes.push(type);
+                    button.classList.add('active');
+                    icon.setAttribute('xlink:href', "{% static 'img/icons.svg' %}#icon-minus");
+                }
+
+                // Update the hidden input with all selected types
+                document.getElementById('notification_type_input').value = selectedNotificationTypes.join(',');
+
+                // Submit the form only if both filters are correctly set
+                submitFilters();
+            }
+        }
+
+        // Function to toggle notification source filters
+        function toggleFilterSource(source) {
+            const button = document.querySelector(`.filter-button-${source.toLowerCase()}`);
+            const icon = button ? button.querySelector('use') : null;
+
+            if (button && icon) {
+                const index = selectedNotificationSources.indexOf(source);
+                if (index > -1) {
+                    // Remove source from the selected list
+                    selectedNotificationSources.splice(index, 1);
+                    button.classList.remove('active');
+                    icon.setAttribute('xlink:href', "{% static 'img/icons.svg' %}#icon-plus");
+                } else {
+                    // Add source to the selected list
+                    selectedNotificationSources.push(source);
+                    button.classList.add('active');
+                    icon.setAttribute('xlink:href', "{% static 'img/icons.svg' %}#icon-minus");
+                }
+
+                // Update the hidden input with all selected sources
+                document.getElementById('notification_source_input').value = selectedNotificationSources.join(',');
+
+                // Submit the form only if both filters are correctly set
+                submitFilters();
+            }
+        }
+
+        function setDateRange(range) {
+            // Deselect any previously active date range buttons
+            if (selectedDateRange) {
+                const previousButton = document.querySelector(`.filter-button-${selectedDateRange}`);
+                if (previousButton) {
+                    previousButton.classList.remove('active');
+                }
+            }
+
+            // Set the new date range
+            selectedDateRange = range;
+            const button = document.querySelector(`.filter-button-${range}`);
+            if (button) {
+                button.classList.add('active');
+            }
+
+            // Update the hidden input for date range
+            document.getElementById('date_range_input').value = range;
+
+            // Submit the form
+            submitFilters();
+        }
+
+        // Function to submit the form with both filters
+        function submitFilters() {
+            const urlParams = new URLSearchParams(window.location.search);
+
+            // Update the URL parameters with the selected filters
+            if (selectedNotificationTypes.length > 0) {
+                urlParams.set('notification_type', selectedNotificationTypes.join(','));
+            } else {
+                urlParams.delete('notification_type');
+            }
+
+            if (selectedNotificationSources.length > 0) {
+                urlParams.set('notification_source', selectedNotificationSources.join(','));
+            } else {
+                urlParams.delete('notification_source');
+            }
+
+            if (selectedDateRange) {
+                urlParams.set('date_range', selectedDateRange);
+            } else {
+                urlParams.delete('date_range');
+            }
+
+            // Construct the new URL
+            const newUrl = `${window.location.pathname}?${urlParams.toString()}`;
+
+            // Redirect to the new URL
+            window.location.href = newUrl;
+        }
+
+        // Function to load and set button states on page load
+        function loadButtonStates() {
+            const urlParams = new URLSearchParams(window.location.search);
+            const notificationTypes = urlParams.get('notification_type');
+            const notificationSources = urlParams.get('notification_source');
+            const dateRange = urlParams.get('date_range');
+
+            // Load notification type states
+            if (notificationTypes) {
+                selectedNotificationTypes = notificationTypes.split(',');
+            }
+            selectedNotificationTypes.forEach(type => {
+                const button = document.querySelector(`.filter-button-${type.toLowerCase()}`);
+                const icon = button.querySelector('use');
+                if (button) {
+                    button.classList.add('active');
+                    icon.setAttribute('xlink:href', "{% static 'img/icons.svg' %}#icon-minus");
+                }
+            });
+
+            // Load notification source states
+            if (notificationSources) {
+                selectedNotificationSources = notificationSources.split(',');
+            }
+            selectedNotificationSources.forEach(source => {
+                const button = document.querySelector(`.filter-button-${source.toLowerCase()}`);
+                const icon = button.querySelector('use');
+                if (button) {
+                    button.classList.add('active');
+                    icon.setAttribute('xlink:href', "{% static 'img/icons.svg' %}#icon-minus");
+                }
+            });
+
+            // Load date range state
+            if (dateRange) {
+                selectedDateRange = dateRange;
+            }
+            const button = document.querySelector(`.filter-button-${selectedDateRange}`);
+            if (button) {
+                button.classList.add('active');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadButtonStates);
+
+    </script>
+
 {% endblock %}

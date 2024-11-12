@@ -73,4 +73,10 @@
   <symbol id="icon-back" viewBox="0 0 16 16"> <!-- BI chevron-left -->
     <path fill-rule="evenodd" d="M11.354 1.646a.5.5 0 0 1 0 .708L5.707 8l5.647 5.646a.5.5 0 0 1-.708.708l-6-6a.5.5 0 0 1 0-.708l6-6a.5.5 0 0 1 .708 0"/>
   </symbol>
+  <symbol id="icon-plus" viewBox="0 0 16 16"> <!-- BI plus -->
+  <path d="M8 1a.5.5 0 0 1 .5.5v6h6a.5.5 0 0 1 0 1h-6v6a.5.5 0 0 1-1 0v-6H1a.5.5 0 0 1 0-1h6v-6A.5.5 0 0 1 8 1z"/>
+  </symbol>
+  <symbol id="icon-minus" viewBox="0 0 16 16"> <!-- BI minus -->
+    <path d="M1 8a.5.5 0 0 1 .5-.5h13a.5.5 0 0 1 0 1h-13A.5.5 0 0 1 1 8z"/>
+  </symbol>
 </svg>

@@ -49,6 +49,12 @@ class CertificateCreationCommandMixin:
         builder = builder.add_extension(
             x509.BasicConstraints(ca=True, path_length=None), critical=True,
         )
+        builder = builder.add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(public_key), critical=False
+        )
+        builder = builder.add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(public_key), critical=False
+        )
         certificate = builder.sign(
             private_key=private_key, algorithm=hashes.SHA256(),
         )
@@ -80,7 +86,13 @@ class CertificateCreationCommandMixin:
         builder = builder.serial_number(x509.random_serial_number())
         builder = builder.public_key(public_key)
         builder = builder.add_extension(
-            x509.BasicConstraints(ca=True, path_length=None), critical=True,
+            x509.BasicConstraints(ca=True, path_length=None), critical=True
+        )
+        builder = builder.add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(public_key), critical=False
+        )
+        builder = builder.add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(issuer_private_key.public_key()), critical=False
         )
         certificate = builder.sign(
             private_key=issuer_private_key, algorithm=hashes.SHA256(),
@@ -128,7 +140,7 @@ class CertificateCreationCommandMixin:
             intermediate_ca_certs.append(CertificateModel.save_certificate(cert))
 
         issuing_ca_model = IssuingCaModel()
-        issuing_ca_model.unique_name = 'Issuing CA'
+        issuing_ca_model.unique_name = 'issuing_ca'
         issuing_ca_model.issuing_ca_certificate = issuing_ca_cert_model
         issuing_ca_model.root_ca_certificate = root_ca_cert_model
         issuing_ca_model.private_key_pem = private_key.private_bytes(

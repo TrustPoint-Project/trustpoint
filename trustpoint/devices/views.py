@@ -76,9 +76,20 @@ class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        device = (self.get_object())
+        device: Device = (self.get_object())
 
         context['onboarding_button'] = device.render_onboarding_action()
+        certs_by_domain = {}
+        #TODO: Iterate through domains, if we have multiple domains associate with one device
+        if device.domain:
+            domain_certs = device.get_all_active_certs_by_domain(device.domain)
+            if domain_certs:
+                certs_by_domain[device.domain] = {
+                    'ldevid': domain_certs['ldevid'],
+                    'other': domain_certs['other'],
+                }
+
+        context['certs_by_domain'] = certs_by_domain
         return context
 
 
