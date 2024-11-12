@@ -38,10 +38,10 @@ An Issuing Certificate Authority (CA) is central to managing certificates for yo
    .. code-block:: bash
 
        # Generate a private key
-       openssl genrsa -out ca-key.pem 2048
+       openssl ecparam -genkey -name secp256r1 -out ca-key.pem
 
        # Create a self-signed certificate
-       openssl req -x509 -new -nodes -key ca-key.pem -sha256 -days 1825 -out ca-cert.pem -subj "/C=US/ST=State/L=City/O=Organization/OU=OrgUnit/CN=MyIssuingCA"
+       openssl req -x509 -new -nodes -key ca-key.pem -sha256 -days 1825 -out ca-cert.pem -subj "/C=DE/ST=BW/L=Freudenstadt/O=Trustpoint/CN=MyIssuingCA"
 
        # Create a P12 file containing the private key and the certificate
        openssl pkcs12 -export -out ca-cert.p12 -inkey ca-key.pem -in ca-cert.pem -name "MyIssuingCA"
@@ -104,7 +104,7 @@ Devices are the end nodes that will receive digital certificates. Follow these s
 
 .. note::
 
-      trustpoint offers different onboarding mechanisms. For more information see :ref:`onboarding_link`
+      trustpoint offers different onboarding mechanisms. For more information see :ref:`onboarding_link`. `Trustpoint-Client <https://trustpoint-client.readthedocs.io>`_ is the easiest and preferred way of consuming Trustpoint.
 
 .. admonition:: 🥳 CONGRATULATIONS!
    :class: tip

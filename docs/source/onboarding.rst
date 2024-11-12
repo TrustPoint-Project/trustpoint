@@ -1,7 +1,7 @@
 .. _onboarding_link:
 
 Onboarding Mechanisms
-===================================
+=====================
 
 This document outlines the different mechanisms available to onboard devices to Trustpoint, including user-driven and automated methods. These methods aim to streamline the process of issuing initial certificates that are used for secure device authentication with Trustpoint.
 
@@ -31,7 +31,7 @@ Requirements:
 
 - Access to the Device.
 - Python 3.10 or greater on device.
-- Trsutpoint client installed on the device (via `pip install trustpoint-client`).
+- Trustpoint-Client installed on the device (via `pip install trustpoint-client`).
 - An connection to communicate with Trustpoint services.
 
 Using the CLI of a Linux Machine
@@ -72,8 +72,7 @@ Requirements:
 
 Manual Download of a P12 File
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-In cases where the is no direct connection to Trustpoint, they can download a PKCS#12 (.p12) format file containing the device certificate or a separate key and certificate in PEM  and distribute it manually to the target machine. This approach can be useful for integrating with legacy systems or for offline onboarding scenarios.
-
+In cases in which there is no direct connection to the Trustpoint, an admin with access to the Trustpoint-GUI can download the desired domain credential (PKCS#12 or PEM files) and manually onboard the device with it, e.g. by using an USB-Stick.
 How It Works:
 
 - A new device with the Onboarded protocol **Manual download** is added to Trustpoint

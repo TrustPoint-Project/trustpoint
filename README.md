@@ -1,10 +1,12 @@
 <p align="center">
   <img alt="Trustpoint" src="/.github-assets/trustpoint_banner.png"><br/>
   <strong>The open source trust anchor software for machines and factories to manage digital identities.</strong><br/><br/>
-  <a href="https://trustpoint.campus-schwarzwald.de/"><img src="https://img.shields.io/badge/Landing_Page_(german)-014BAD?style=flat"></a>
+  <a href="https://trustpoint.campus-schwarzwald.de/en/"><img src="https://img.shields.io/badge/Landing_Page-014BAD?style=flat"></a>
   <a href="https://github.com/orgs/TrustPoint-Project/discussions"><img src="https://img.shields.io/badge/GitHub-Discussions-014BAD?style=flat"></a>
+  <a href="https://trustpoint.readthedocs.io"><img src="https://img.shields.io/readthedocs/trustpoint"></a>
+  <a href="https://hub.docker.com/r/trustpoint2023/trustpoint"><img src="https://img.shields.io/docker/automated/trustpoint2023/trustpoint"></a> 
   <img src="https://img.shields.io/badge/License-MIT-014BAD?style=flat">
-  <img src="https://img.shields.io/badge/Status-Early_technology_preview-red?style=flat">
+  <img src="https://img.shields.io/badge/Status-Beta-red?style=flat">
 </p>
 
 > [!CAUTION]
@@ -30,18 +32,28 @@ As a result, Trustpoint aims to offer a solution tailored to the domain of machi
 
 ## What are the features of this early technology preview?
 
-- Django-based responsive GUI
-- Manage Issuing CAs via PKCS12, PEM, or request from external PKI via EST
-- Lightweight PKI (local root CA) for testing and evaluation purposes
-- Demo of user-driven onboarding with [Trustpoint Client](https://github.com/TrustPoint-Project/trustpoint-client)
-- Manual device onboarding via CLI and PKCS12 export
-- Device management table
-- Demo home visualization update
-- Sample configuration views
+### 1. Device Onboarding
+- **[Trustpoint Client](https://github.com/TrustPoint-Project/trustpoint-client)**: Simple onboarding through a client interface.
+- **Command-Line Interface (CLI)**: Onboard devices manually via Linux commands.
+- **Browser-Based Onboarding**: Use a web interface for easy onboarding.
+- **PKCS#12 File**: Download certificate files for manual installation.
+
+### 2. Application Certificate Management
+- **Certificate Requests**: Issue certificates for apps or systems.
+
+### 3. Certificate Authority (CA) Modes
+- **Import Issuing CA**: Integrate with an existing PKI by importing external CAs.
+- **Self-Generated CA**: Create a root and issuing CA for testing purposes.
+
+### 4. Miscellaneous
+- **User Interface**: Manage certificates and devices through an intuitive web-based UI.
+- **Dashboard**: View device and certificate statuses.
+- **Deployment**: Easily deploy TrustPoint using Docker for simplified installation and scaling.
+- **Certificate Management Protocol (CMP)**: Supports CMP for automated certificate management, allowing easy integration with other CMP-compliant systems.
 
 ## Who is developing Trustpoint?
 
-Trustpoint is currently being developed by a consortium of five organizations: Campus Schwarzwald, Keyfactor, achelos GmbH, Hamm-Lippstadt University of Applied Sciences and asvin GmbH. Several industrial companies are also part of the project as associated partners. These include ARBURG GmbH + Co KG, Homag GmbH, J. Schmalz GmbH, PHOENIX CONTACT GmbH & Co. KG, FANUC Deutschland GmbH and Siemens AG.
+Trustpoint is currently being developed by a consortium of five organizations: Campus Schwarzwald, Keyfactor, achelos GmbH, Hamm-Lippstadt University of Applied Sciences and asvin GmbH. Several industrial companies are also part of the project as associated partners. These include ARBURG GmbH + Co KG, Belden Inc., Diebold Nixdorf, Homag GmbH, J. Schmalz GmbH, PHOENIX CONTACT GmbH & Co. KG and Siemens AG.
 
 Trustpoint is funded as part of a project sponsored by the German Federal Ministry of Education and Research. Questions can be asked in [Discussions](https://github.com/orgs/TrustPoint-Project/discussions) and will be answered by us. We look forward to hearing about your experiences with Trustpoint. You can send suggestions to trustpoint@campus-schwarzwald.de.
 
@@ -233,96 +245,5 @@ ruff format .
 
 ### Docker
 
-You can also build and run Trustpoint as a Docker image.
+See [Quickstart Setup](https://trustpoint.readthedocs.io/en/latest/quickstart_setup.html#)
 
-1. Build the Docker image:
-
-   - Open a terminal and navigate to your project's root directory.
-   - Run the following command to build the Docker image:
-
-   ```
-   docker build -t trustpoint .
-   ```
-
-2. Run the Docker container:
-   - Once the image is built, you can run a container based on that image:
-   ```
-   docker run -p 8000:8000 trustpoint
-   ```
-
-### docker compose
-
-You can also build and run Trustpoint as a Docker image.
-
-1. Build the Docker image:
-
-   - Open a terminal and navigate to your project's root directory.
-   - Run the following command to build the Docker image:
-
-   ```
-   docker compose build
-   ```
-
-2. Run the Docker container:
-   - Once the image is built, you can run a container based on that image:
-   ```
-   docker compose up
-   ```
-   or to run in daemon mode
-   ```
-   docker compose up -d
-   ```
-3. check the apache access logs
-   - once the container is running
-   ```
-   docker compose exec trustpoint tail /var/log/apache2/access.log -f
-   ```
-4. access the trustpoint server at http://localhost:8000
-
-## Usage
-
-### Demo Onboarding using Trustpoint Client on localhost
-
-- make sure your database schema is up to date
-
-```
-python manage.py makemigrations
-python manage.py migrate
-```
-
-- Start Trustpoint developer server with HTTPS (runserver_plus)
-- Add root CA (do not use in production!)
-  - localhost as common name
-- Add new issuing CA
-  - CA type: Local issuing CA, Import method: Import issuing CA from file
-  - use PEM format
-  - select the keys and certs from tests/data/rsa2048, leave password empty
-  - Alternatively, generate CA from local root CA
-- Add Endpoint profile
-  - add unique name and select an issuing CA from dropdown
-- Add new device
-  - Set device name
-  - Select onboarding protocol: Trustpoint Client
-  - Select the endpoint profile as previously added
-- Start onboarding using the [Trustpoint Client](https://github.com/TrustPoint-Project/trustpoint-client)
-  - copy the command by the trustpoint server frontend
-  - run the command in trustpoint-client folder. It should give an output similar to the following:
-  ```
-  Provisioning client...
-  Current system time is 2024-04-16T14:50:58Z
-  Retrieving Trustpoint Trust Store
-  trust-store.pem missing, downloading from Trustpoint...
-  Using PBKDF2-HMAC verification
-  Computed PBKDF2-key: 5195651ac62207f15b3425bf7a7cef919a5be5499abf02c258b82b107d740da4
-  Computed HMAC: af92597d792de750f0a3b7f89e78895659fd646fde760f9047288098cd3da75a
-  Thank you, the trust store was downloaded successfully.
-  Generating private key and CSR for LDevID
-  Device Serial number: tpclient_3DIhO3zuhH6KDrBu
-  Uploading CSR to Trustpoint for signing
-  LDevID certificate downloaded successfully
-  Cert expires 2025-04-16 14:50:58+00:00, 364 days, 23:59:59 h from now.
-  Downloading LDevID certificate chain
-  Certificate chain downloaded successfully
-  Successfully provisioned the Trustpoint-Client.
-  ```
-  - on trustpoint frontend device onboarding status will turned to `ok`

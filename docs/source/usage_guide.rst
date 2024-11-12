@@ -18,7 +18,8 @@ Trustpoint works in two main stages:
             - **Browser-Based Onboarding**: Trustpoint offers a web interface for convenient onboarding through a browser.
             - **Manual Download of a P12 File**: Users can download a PKCS#12 file containing the certificate and manually distribute it to the target machine.
         - **Zero-touch Onboarding (Work in Progress)**: A feature under development that will allow fully automated device onboarding without user intervention.
-
+            - **BRSKI**: A zero-touch onboarding standard defined in RFC 8995
+            - **AOKI**: A custom and simplified zero-touch onboarding
 .. admonition:: Why Onboarding First is Crucial!
    :class: tip
 
@@ -106,16 +107,17 @@ Managing Truststores in Trustpoint
   - Select the desired Truststore to associate with the Domain.
   - Save the configuration.
 
+.. note::
+
+      Distribution of truststores through domains is not yet supported.
+
 
 Security Considerations
 =======================
 
-With the current versions of Trustpoint, there is no built-in capability to securely store private keys. However, this feature is planned for future releases, where a secure key storage mechanism will be implemented.
+With the current versions of Trustpoint, there is no built-in capability to securely store private keys. However, this feature is planned for future releases and will include HSM / TPM support, likely through the use of PKCS#11.
 
 Backup and Recovery
 ===================
 
-Currently, Trustpoint does not provide built-in Backup and Recovery functionality. This means that users must implement their own backup strategies to ensure the security and availability of Trustpoint configurations, certificates, and private keys.
-
-In future versions, a comprehensive Backup and Recovery feature will be added, allowing for seamless data protection and simplified restoration processes.
-
+The Trustpoint is currently in an early Beta Phase and does not yet have backup, update and restore features implemented. Thus, be aware that you will not be able to update the current version and take your configurations with you on migration to a later version.

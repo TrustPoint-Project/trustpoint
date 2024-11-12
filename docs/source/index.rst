@@ -3,11 +3,16 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. image:: /../../.github-assets/trustpoint_banner.png
+   :align: center
+
 Welcome to Trustpoint's documentation!
 ======================================
 
-Getting started
--------------------
+.. warning::
+
+      Trustpoint is currently in an early technology preview (beta) state. Do not use it in production.
+
 
 .. toctree::
    :maxdepth: 2
@@ -20,18 +25,6 @@ Getting started
    community_support
    usage_guide
 
-.. toctree::
-   :maxdepth: 2
-   :caption: 🏗️ Architecture :
-
-   architecture
-
-.. toctree::
-   :maxdepth: 2
-   :caption: 🖥️ User Interface Guide :
-
-   issuing_cas_gui
-   domains_gui
 
 .. toctree::
    :maxdepth: 2
@@ -39,27 +32,11 @@ Getting started
 
    onboarding
 
-.. toctree::
-   :maxdepth: 2
-   :caption: 🔐 PKI :
-
-   pki
-   pki_models
-   pki_issuing_ca
-   domains
-
-   validators
 
 .. toctree::
    :maxdepth: 2
-   :caption: 📚 API reference :
+   :caption: 📍 Indices and tables :
 
-   api/api
+   glossary
 
 
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
