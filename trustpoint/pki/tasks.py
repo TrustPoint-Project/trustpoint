@@ -1,11 +1,11 @@
 import logging
 import threading
 import time
-from datetime import datetime, timedelta
+import datetime
+from datetime import timedelta
 from datetime import timezone as tz
 from heapq import heapify, heappop, heappush
 
-from django.conf import settings
 from django.utils import timezone
 
 from .models import BaseCaModel
@@ -57,7 +57,7 @@ def schedule_next_crl(issuing_ca: BaseCaModel) -> None:
         entry (IssuingCa or DomainProfile): The issuing instance for which to schedule the next CRL generation.
     """
     crl = issuing_ca.get_issuing_ca().get_crl_as_x509()
-    next_crl_time = crl.next_update_utc if crl else datetime.now() + timedelta(minutes=issuing_ca.next_crl_generation_time)
+    next_crl_time = crl.next_update_utc if crl else datetime.datetime.now(datetime.UTC) + timedelta(minutes=issuing_ca.next_crl_generation_time)
     heappush(crl_schedule, (next_crl_time, issuing_ca.pk, issuing_ca))
 
 
