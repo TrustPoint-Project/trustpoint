@@ -19,6 +19,7 @@ async function fetchDasbhboardData() {
 // Funktion zum Aktualisieren der Dashboard-Daten
 async function fetchAndUpdateDashboardData() {
   const dashboardData = await fetchDasbhboardData();
+  console.log("dashboard data", dashboardData)
   if (dashboardData) {
     if ("device_counts" in dashboardData) {
       updateDeviceCounts(dashboardData.device_counts);
@@ -30,7 +31,8 @@ async function fetchAndUpdateDashboardData() {
       updateIssuingCACounts(dashboardData.issuing_ca_counts);
     }
 
-    updateDeviceDateChart(dashboardData.device_counts_by_date_and_os);
+    //updateDeviceDateChart(dashboardData.device_counts_by_date_and_os);
+    updateDeviceByOSBarChart(dashboardData.device_counts)
     updateDeviceByOPLineChart(dashboardData.device_counts_by_op);
     updateDevicesByDomainDonutChart(dashboardData.device_counts_by_domain);
 
@@ -38,7 +40,8 @@ async function fetchAndUpdateDashboardData() {
     updateCertsByDomainPieChart(dashboardData.cert_counts_by_domain);
     updateCertsByTemplateBarChart(dashboardData.cert_counts_by_template);
 
-    updateCertsByStatusLineChart(dashboardData.cert_counts_by_status);
+    //updateCertsByStatusLineChart(dashboardData.cert_counts_by_status);
+    updateCertsByStatusBarChart(dashboardData.cert_counts_by_status)
 
     updateCertsByIssuingCAChart(dashboardData.cert_counts_by_issuing_ca);
     updateIssuingCAsByTypePieChart(dashboardData.ca_counts_by_type);
@@ -52,19 +55,19 @@ fetchAndUpdateDashboardData();
 
 document.addEventListener("DOMContentLoaded", function () {
   //device charts data from context
-  var stackChartConfig = JSON.parse("{{ line_chart_device_config|escapejs }}");
-  var donutChartDeviceConfig = JSON.parse("{{ donut_chart_device_config|escapejs }}");
-  var barChartDeviceConfig = JSON.parse("{{ bar_chart_device_config|escapejs }}");
+  // var stackChartConfig = JSON.parse("{{ line_chart_device_config|escapejs }}");
+  // var donutChartDeviceConfig = JSON.parse("{{ donut_chart_device_config|escapejs }}");
+  // var barChartDeviceConfig = JSON.parse("{{ bar_chart_device_config|escapejs }}");
 
   //cert charts data from context
-  var lineChartCertConfig = JSON.parse("{{ line_chart_cert_config|escapejs }}");
-  var donutChartCertConfig = JSON.parse("{{ donut_chart_cert_config|escapejs }}");
-  var barChartCertConfig = JSON.parse("{{ bar_chart_cert_config|escapejs }}");
+  //var lineChartCertConfig = JSON.parse("{{ line_chart_cert_config|escapejs }}");
+  // var donutChartCertConfig = JSON.parse("{{ donut_chart_cert_config|escapejs }}");
+  // var barChartCertConfig = JSON.parse("{{ bar_chart_cert_config|escapejs }}");
 
-  //CA charts data from context
-  var barChartCAConfig = JSON.parse("{{ bar_chart_ca_config|escapejs }}");
-  var lineChartConfig = JSON.parse("{{ line_chart_config|escapejs }}");
-  var donutChartCAConfig = JSON.parse("{{ donut_chart_ca_config|escapejs }}");
+  // //CA charts data from context
+  // var barChartCAConfig = JSON.parse("{{ bar_chart_ca_config|escapejs }}");
+  // var lineChartConfig = JSON.parse("{{ line_chart_config|escapejs }}");
+  // var donutChartCAConfig = JSON.parse("{{ donut_chart_ca_config|escapejs }}");
 
   var chartTabEl = document.getElementById("chartTabs");
   var chartTab = new bootstrap.Tab(chartTabEl);
@@ -92,11 +95,11 @@ document.addEventListener("DOMContentLoaded", function () {
       //var barChartDeviceEle = document.getElementById("devicesByOPBarChart").getContext("2d");
       //if (!devicesByOPBarChart) devicesByOPBarChart = new Chart(barChartDeviceEle, barChartDeviceConfig);
     } else if (chartTabId == "certChartTab") {
-      var certsByStatusLineChartEle = document
-        .getElementById("certsByStatusLineChart")
-        .getContext("2d");
-      if (!certsByStatusLineChart)
-        certsByStatusLineChart = new Chart(certsByStatusLineChartEle, lineChartCertConfig);
+      // var certsByStatusLineChartEle = document
+      //   .getElementById("certsByStatusLineChart")
+      //   .getContext("2d");
+      // if (!certsByStatusLineChart)
+      //   certsByStatusLineChart = new Chart(certsByStatusLineChartEle, lineChartCertConfig);
 
       //var donutChartCertEle = document.getElementById("certsByDomainPieChart").getContext("2d");
       //if (!certsByDomainPieChart) certsByDomainPieChart = new Chart(donutChartCertEle, donutChartCertConfig);
