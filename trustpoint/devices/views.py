@@ -13,6 +13,7 @@ from django.views.generic.edit import CreateView, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_tables2 import SingleTableView
 
+from devices.forms import DeviceForm
 from trustpoint.views.base import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
 
 from .filters import DeviceFilter
@@ -59,10 +60,8 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
 
 
 class EditDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
-    """Device Edit View."""
-
     model = Device
-    fields = ['device_name', 'onboarding_protocol', 'domain', 'tags']  # noqa: RUF012
+    form_class = DeviceForm  # Verwenden Sie das benutzerdefinierte Formular
     template_name = 'devices/edit.html'
     success_url = reverse_lazy('devices:devices')
 
