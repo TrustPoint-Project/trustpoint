@@ -1,21 +1,23 @@
 {% load static %}
+{% load i18n %}
+
 <script src="{% static 'js/dashboard/charts-tab.js' %}"></script>
 
 <div class="row py-3 px-0">
-  <h1>Charts</h1>
+  <h1>{% trans 'Charts' %}</h1>
 </div>
 <!-- Chart row -->
 <div class="row p-3 shadow">
   <!-- table  Tab Navigation -->
   <ul class="nav nav-tabs" id="chartTabs">
     <li class="nav-alert">
-      <a class="nav-link active" data-bs-toggle="tab" href="#deviceChartTab">Device</a>
+      <a class="nav-link active" data-bs-toggle="tab" href="#deviceChartTab">{% trans 'Device' %}</a>
     </li>
     <li class="nav-alert">
-      <a class="nav-link" data-bs-toggle="tab" href="#certChartTab">Certificate</a>
+      <a class="nav-link" data-bs-toggle="tab" href="#certChartTab">{% trans 'Certificate' %}</a>
     </li>
     <li class="nav-alert">
-      <a class="nav-link" data-bs-toggle="tab" href="#caChartTab">CA</a>
+      <a class="nav-link" data-bs-toggle="tab" href="#caChartTab">{% trans 'CA' %}</a>
     </li>
   </ul>
 
@@ -24,24 +26,24 @@
     
     {% comment %} disabling for now
     <div class="text-end py-2">
-      <button class="btn btn-blue">Today</button>
-      <button class="btn btn-blue">Last Week</button>
-      <button class="btn btn-blue">Last Month</button>
-      <button class="btn btn-blue">Life</button>
+      <button class="btn btn-blue">{% trans 'Today' %}</button>
+      <button class="btn btn-blue">{% trans 'Last Week' %}</button>
+      <button class="btn btn-blue">{% trans 'Last Month' %}</button>
+      <button class="btn btn-blue">{% trans 'All Time' %}</button>
     </div> {% endcomment %}
     <!-- device chart tab content -->
     <div class="tab-pane fade show active" id="deviceChartTab">
       <div class="row p-3">
         <div class="col-5 px-3 shadow">
-          <h2 class="p-2">Devices by onboarding status</h2>
+          <h2 class="p-2">{% trans 'Devices by onboarding status' %}</h2>
           <canvas id="devicesByOSLineChart" class="pb-2" width="400" height="200"></canvas>
         </div>
         <div class="col-3 px-3 shadow">
-          <h2 class="p-2">Active devices by Domain</h2>
+          <h2 class="p-2">{% trans 'Active devices by Domain' %}</h2>
           <canvas id="devicesByDomainDonutChart" class="pb-2"  width="200" height="200"></canvas>
         </div>
         <div class="col-4 shadow">
-          <h2 class="p-2">devices by onboarding protocol</h2>
+          <h2 class="p-2">{% trans 'Devices by onboarding protocol' %}</h2>
           <canvas id="devicesByOPBarChart" class="pb-2"  width="400" height="200"></canvas>
         </div>
       </div>
@@ -50,15 +52,15 @@
     <div class="tab-pane fade" id="certChartTab">
       <div class="row p-3">
         <div class="col-5 shadow">
-          <h2 class="p-2">Certificates By Status</h2>
+          <h2 class="p-2">{% trans 'Certificates By Status' %}</h2>
           <canvas id="certsByStatusLineChart" class="pb-2"  width="400" height="200"></canvas>
         </div>
         <div class="col-3 shadow">
-          <h2 class="p-2">Certificates By Domain</h2>
+          <h2 class="p-2">{% trans 'Certificates By Domain' %}</h2>
           <canvas id="certsByDomainPieChart" class="pb-2"  width="200" height="200"></canvas>
         </div>
         <div class="col-4 shadow">
-          <h2 class="p-2">Certificates By Template</h2>
+          <h2 class="p-2">{% trans 'Certificates By Template' %}</h2>
           <canvas id="certsByTemplateBarChart" class="pb-2"  width="400" height="200"></canvas>
         </div>
       </div>
@@ -111,15 +113,15 @@
           </div>
         </div> {% endcomment %}
         <div class="col-3 shadow">
-          <h2 class="p-2">Certificates By Issuing CA</h2>
+          <h2 class="p-2">{% trans 'Certificates By Issuing CA' %}</h2>
           <canvas id="certsByIssuingCADonutChart" class="pb-2"  width="200" height="200"></canvas>
         </div>
         <div class="col-6 shadow">
-          <h2 class="p-2">Issued Certificates</h2>
+          <h2 class="p-2">{% trans 'Issued Certificates' %}</h2>
           <canvas id="certsByDateStackChart" class="pb-2"  width="400" height="200"></canvas>
         </div>
         <div class="col-3 shadow">
-          <h2 class="p-2">Issuing CAs By Type</h2>
+          <h2 class="p-2">{% trans 'Issuing CAs By Type' %}</h2>
           <canvas id="issuingCAsByTypePieChart" class="pb-2"  width="200" height="200"></canvas>
         </div>
       </div>
