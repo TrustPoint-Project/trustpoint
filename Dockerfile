@@ -38,6 +38,10 @@ RUN yes | python manage.py reset_db
 # change permission for db file
 RUN chmod 664 db.sqlite3
 
+# collect static files
+RUN python manage.py collectstatic --noinput
+
+
 # Change owner and group
 RUN chown -R www-data:www-data .
 
