@@ -19,7 +19,9 @@ class DiscoveryConfig(AppConfig):
         """Django startup hook, handle startup and shutdown."""
         super().ready()
 
-        if not os.environ.get('TRUSTPOINT_RUNNING'):
+        if not os.environ.get('TRUSTPOINT_RUNNING') and \
+                not os.environ.get('RUN_MAIN') and \
+                not os.environ.get('WERKZEUG_RUN_MAIN'):
             # Just helper process, not running startup code
             return
     
