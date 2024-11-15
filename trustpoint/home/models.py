@@ -121,7 +121,7 @@ class NotificationModel(models.Model):
         NotificationStatus,
         related_name='notifications')
 
-    created_at = models.DateTimeField(auto_now_add=True)
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name=_('Created at'))
 
     def __str__(self) -> str:
         """Returns a human-readable string."""

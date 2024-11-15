@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-11-13 16:05+0100\n"
+"POT-Creation-Date: 2024-11-14 11:16+0100\n"
 "PO-Revision-Date: 2024-11-12 10:31+0100\n"
 "Last-Translator: Christian Schwinne <christian.schwinne  AT hshl.de>\n"
 "Language-Team: \n"
@@ -66,6 +66,14 @@ msgstr "OK"
 #: .\pki\__init__.py:22
 msgid "Revoked"
 msgstr "Widerrufen"
+
+#: .\pki\__init__.py:23
+msgid "Expired"
+msgstr ""
+
+#: .\pki\__init__.py:24
+msgid "Not Yet Valid"
+msgstr ""
 
 #: .\pki\__init__.py:32
 msgid "Local"

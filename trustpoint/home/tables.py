@@ -85,8 +85,8 @@ class NotificationTable(tables.Table):
 
         if record.statuses.filter(status=NotificationStatus.StatusChoices.NEW).exists():
             return format_html(
-                '{} <span class="badge bg-secondary">New</span>',
-                created_at_display
+                '{} <span class="badge bg-secondary">{}</span>',
+                created_at_display, _('New')
             )
 
         return format_html('{}', created_at_display)

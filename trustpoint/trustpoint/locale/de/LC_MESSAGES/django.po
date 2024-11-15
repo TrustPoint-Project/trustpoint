@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-11-13 16:05+0100\n"
-"PO-Revision-Date: 2024-11-13 16:43+0100\n"
+"POT-Creation-Date: 2024-11-14 11:26+0100\n"
+"PO-Revision-Date: 2024-11-14 11:26+0100\n"
 "Last-Translator: Christian Schwinne <christian.schwinne  AT hshl.de>\n"
 "Language-Team: \n"
 "Language: de\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.5\n"
 
-#: .\home\models.py:20
+#: .\home\models.py:20 .\home\tables.py:89
 msgid "New"
 msgstr "Neu"
 
@@ -112,6 +112,10 @@ msgstr "Issuing CA"
 #: .\home\templates\home\notifications-tab.html:74
 msgid "Certificate"
 msgstr "Zertifikat"
+
+#: .\home\models.py:124
+msgid "Created at"
+msgstr "Erstellt um"
 
 #: .\home\tables.py:31
 msgid "There are no Notifications available."
@@ -304,6 +308,25 @@ msgstr "Ausgewählte herunterladen"
 #: .\log\templates\log_detail.html:13
 msgid "Download"
 msgstr "Herunterladen"
+
+#: .\users\tasks.py:43
+msgid "Access the Trustpoint Documentation"
+msgstr "Lesen Sie die Dokumentation von Trustpoint"
+
+#: .\users\tasks.py:44
+#, python-format
+msgid "You can find the official Trustpoint documentation here: %(link)s"
+msgstr "Die offizielle Trustpoint-Dokumentation finden Sie hier: %(link)s"
+
+#: .\users\tasks.py:264
+#, python-format
+msgid "Device %(dev)s is not onboarded in %(domain)s."
+msgstr "Das Gerät %(dev)s ist nicht in die Domain %(domain)s eingebunden."
+
+#: .\users\tasks.py:267
+#, python-format
+msgid "The device %(dev)s has not completed onboarding."
+msgstr "Der Onboarding-Vorgang von Gerät %(dev)s ist nicht abgeschlossen."
 
 #: .\users\templates\users\login.html:31
 msgid "Trustpoint - Login"
