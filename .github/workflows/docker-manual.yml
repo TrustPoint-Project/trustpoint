@@ -10,7 +10,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag trustpoint:${{ github.sha }} --tag trustpoint:v0.2.0-dev
+      run: docker build . --file Dockerfile --tag trustpoint:${{ github.sha }} --tag trustpoint:v0.1.1
     - name: Log in to Docker Hub
       uses: docker/login-action@v2
       with:
@@ -20,6 +20,6 @@ jobs:
     - name: Push the Docker image
       run: |
         docker tag trustpoint:${{ github.sha }} ${{ secrets.DOCKER_HUB_USERNAME }}/trustpoint:${{ github.sha }}
-        docker tag trustpoint:v0.2.0-dev ${{ secrets.DOCKER_HUB_USERNAME }}/trustpoint:v0.2.0-dev
+        docker tag trustpoint:v0.1.1 ${{ secrets.DOCKER_HUB_USERNAME }}/trustpoint:v0.1.1
         docker push ${{ secrets.DOCKER_HUB_USERNAME }}/trustpoint:${{ github.sha }}
-        docker push ${{ secrets.DOCKER_HUB_USERNAME }}/trustpoint:v0.2.0-dev
+        docker push ${{ secrets.DOCKER_HUB_USERNAME }}/trustpoint:v0.1.1
