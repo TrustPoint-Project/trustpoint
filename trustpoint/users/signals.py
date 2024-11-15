@@ -17,7 +17,7 @@ def trigger_tasks_on_startup(sender, **kwargs):
     if tasks_initialized:
         return
 
-    if not os.environ.get('RUN_MAIN') and not os.environ.get('WERKZEUG_RUN_MAIN'):
+    if not os.environ.get('TRUSTPOINT_RUNNING'):
         # Just helper process, not running startup code
         return
 
