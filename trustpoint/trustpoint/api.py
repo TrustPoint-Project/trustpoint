@@ -21,7 +21,7 @@ class AuthBearer(HttpBearer):
 api = NinjaAPI(
     auth=(AuthBearer(), django_auth),
     title='Trustpoint API',
-    version='0.2.0-dev'
+    version='0.1.1'
 )
 
 api.add_router('/devices/', devices_router, tags=['Devices'])

@@ -175,3 +175,5 @@ tests/data/issuing_cas
 *.p12
 
 docs/build/
+
+collected_static
