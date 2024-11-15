@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-11-14 11:26+0100\n"
-"PO-Revision-Date: 2024-11-14 11:26+0100\n"
+"POT-Creation-Date: 2024-11-15 11:14+0100\n"
+"PO-Revision-Date: 2024-11-15 11:14+0100\n"
 "Last-Translator: Christian Schwinne <christian.schwinne  AT hshl.de>\n"
 "Language-Team: \n"
 "Language: de\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.5\n"
 
-#: .\home\models.py:20 .\home\tables.py:89
+#: .\home\models.py:20 .\home\tables.py:93
 msgid "New"
 msgstr "Neu"
 
@@ -75,45 +75,152 @@ msgstr "Abgelaufen"
 msgid "Pending"
 msgstr "Wartend"
 
-#: .\home\models.py:58
+#: .\home\models.py:82
 msgid "SETUP"
 msgstr "SETUP"
 
-#: .\home\models.py:60
+#: .\home\models.py:84
 msgid "INFO"
 msgstr "INFO"
 
-#: .\home\models.py:61
+#: .\home\models.py:85
 msgid "WARNING"
 msgstr "WARNUNG"
 
-#: .\home\models.py:62
+#: .\home\models.py:86
 msgid "CRITICAL"
 msgstr "KRITISCH"
 
-#: .\home\models.py:66 .\home\templates\home\notifications-tab.html:50
+#: .\home\models.py:90 .\home\templates\home\notifications-tab.html:50
 msgid "System"
 msgstr "System"
 
-#: .\home\models.py:67 .\home\templates\home\notifications-tab.html:56
+#: .\home\models.py:91 .\home\templates\home\notifications-tab.html:56
 msgid "Domain"
 msgstr "Domain"
 
-#: .\home\models.py:68 .\home\templates\home\charts-tab.html:14
+#: .\home\models.py:92 .\home\templates\home\charts-tab.html:14
 #: .\home\templates\home\notifications-tab.html:62
 msgid "Device"
 msgstr "Gerät"
 
-#: .\home\models.py:69 .\home\templates\home\notifications-tab.html:68
+#: .\home\models.py:93 .\home\templates\home\notifications-tab.html:68
 msgid "Issuing CA"
 msgstr "Issuing CA"
 
-#: .\home\models.py:70 .\home\templates\home\charts-tab.html:17
+#: .\home\models.py:94 .\home\templates\home\charts-tab.html:17
 #: .\home\templates\home\notifications-tab.html:74
 msgid "Certificate"
 msgstr "Zertifikat"
 
-#: .\home\models.py:124
+#: .\home\models.py:114
+msgid "Custom Message"
+msgstr "Benutzerdefinierte Nachricht"
+
+#: .\home\models.py:118
+#, python-brace-format
+msgid "Test for Issuing CA: {ca}"
+msgstr "Ein Test für Issuing CA: {ca}"
+
+#: .\home\models.py:119
+#, python-brace-format
+msgid "Notification for Issuing CA: {ca}"
+msgstr "Benachrichtigung für Issuing CA: {ca}"
+
+#: .\home\models.py:122
+#, python-brace-format
+msgid "Test for Domain: {domain}"
+msgstr "Test für Domain: {domain}"
+
+#: .\home\models.py:123
+#, python-brace-format
+msgid "Notification for Domain: {domain}"
+msgstr "Benachrichtigung für Domain: {domain}"
+
+#: .\home\models.py:126
+#, python-brace-format
+msgid "Test for Certificate: {cn}"
+msgstr "Test für Zertifikat: {cn}"
+
+#: .\home\models.py:127
+#, python-brace-format
+msgid "Notification for Certificate: Common Name {cn} with Serial Number {sn}"
+msgstr ""
+"Benachrichtigung für Zertifikat: Common Name {cn} mit Seriennummer {sn}"
+
+#: .\home\models.py:130
+#, python-brace-format
+msgid "Test for Device: {device}"
+msgstr "Test für Gerät: {device}"
+
+#: .\home\models.py:131
+#, python-brace-format
+msgid "Notification for Device: {device}"
+msgstr "Benachrichtigung für Gerät: {device}"
+
+#: .\home\models.py:135
+msgid "Populate test data"
+msgstr "Testdaten einfügen"
+
+#: .\home\models.py:136
+#, python-brace-format
+msgid ""
+"Click <a href=\"{url}\">here</a> to add test issuing CAs, domains and "
+"devices."
+msgstr ""
+"Nutzen Sie diesen <a href=\"{url}\">Link</a>, um zu Testzwecken Issuing CAs, "
+"Domains und Geräte hinzuzufügen."
+
+#: .\home\models.py:139
+msgid "Access the Trustpoint Documentation"
+msgstr "Lesen Sie die Dokumentation von Trustpoint"
+
+#: .\home\models.py:140
+#, python-brace-format
+msgid "You can find the official Trustpoint documentation here: {link}"
+msgstr "Die offizielle Dokumentation für Trustpoint finden Sie hier: {link}"
+
+#: .\home\models.py:143
+msgid "Explore the Trustpoint project"
+msgstr "Entdecken Sie das Trustpoint-Forschungsprojekt"
+
+#: .\home\models.py:144
+#, python-brace-format
+msgid ""
+"Visit the Trustpoint GitHub repository for more information: <a "
+"href=\"{url_github}\" target=\"_blank\">Trustpoint GitHub</a>\n"
+"Learn more about industrial security and the Trustpoint project on our <a "
+"href=\"{url_homepage}\" target=\"_blank\">homepage</a>"
+msgstr ""
+"Besuchen Sie das Trustpoint GitHub-Repository für weitere Informationen: <a "
+"href=\"{url_github}\" target=\"_blank\">Trustpoint GitHub</a>\n"
+"Auf unserer <a href=\"{url_homepage}\" target=\"_blank\">Homepage</a> finden "
+"Sie mehr nützliche Infos über industrielle Sicherheit und das Truspoint-"
+"Forschungsprojekt"
+
+#: .\home\models.py:150
+msgid "Welcome to Trustpoint!"
+msgstr "Willkommen bei Trustpoint!"
+
+#: .\home\models.py:151
+msgid ""
+"Thank you for setting up Trustpoint. This system will help you manage your "
+"certificates and secure your environment."
+msgstr ""
+"Vielen Dank für die Installation von Trustpoint. Dieses System wird Ihnen "
+"helfen, Ihre Zertifikate zu verwalten und Ihre Umgebung abzusichern."
+
+#: .\home\models.py:156
+msgid "Unknown Notification message string."
+msgstr "Unbekannter Benachrichtigungstext."
+
+#: .\home\models.py:157
+#, python-format
+msgid "Guess we messed up. Type of this notification is %(type)s"
+msgstr ""
+"Da ist etwas schiefgelaufen. Der Typ dieser Benachrichtigung ist %(type)s"
+
+#: .\home\models.py:222
 msgid "Created at"
 msgstr "Erstellt um"
 
@@ -129,11 +236,11 @@ msgstr "Art"
 msgid "Source"
 msgstr "Quelle"
 
-#: .\home\tables.py:53
+#: .\home\tables.py:54
 msgid "Description"
 msgstr "Beschreibung"
 
-#: .\home\tables.py:59 .\home\tables.py:67
+#: .\home\tables.py:59 .\home\tables.py:71
 msgid "Details"
 msgstr "Details"
 
@@ -212,48 +319,48 @@ msgstr "Geräte"
 msgid "Issuing CAs"
 msgstr "Issuing CAs"
 
-#: .\home\templates\home\notification_details.html:8
+#: .\home\templates\home\notification_details.html:9
 msgid "Notification Details"
 msgstr "Benachrichtigungsdetails"
 
-#: .\home\templates\home\notification_details.html:15
+#: .\home\templates\home\notification_details.html:16
 msgid "Notification Type:"
 msgstr "Benachrichtigungsart:"
 
-#: .\home\templates\home\notification_details.html:36
+#: .\home\templates\home\notification_details.html:37
 msgid "Notification Source:"
 msgstr "Quelle der Benachrichtigung:"
 
-#: .\home\templates\home\notification_details.html:48
+#: .\home\templates\home\notification_details.html:49
 msgid "Domain:"
 msgstr "Domain:"
 
-#: .\home\templates\home\notification_details.html:58
+#: .\home\templates\home\notification_details.html:61
 msgid "Certificate:"
 msgstr "Zertifikat:"
 
-#: .\home\templates\home\notification_details.html:69
+#: .\home\templates\home\notification_details.html:73
 msgid "Device:"
 msgstr "Gerät:"
 
-#: .\home\templates\home\notification_details.html:79
+#: .\home\templates\home\notification_details.html:85
 msgid "Issuing CA:"
 msgstr "Issuing CA:"
 
-#: .\home\templates\home\notification_details.html:89
+#: .\home\templates\home\notification_details.html:97
 msgid "Message:"
 msgstr "Nachricht:"
 
-#: .\home\templates\home\notification_details.html:111
+#: .\home\templates\home\notification_details.html:119
 msgid "Created At:"
 msgstr "Erstellt um:"
 
-#: .\home\templates\home\notification_details.html:120
+#: .\home\templates\home\notification_details.html:128
 #: .\log\templates\log.html:17 .\log\templates\log_detail.html:12
 msgid "Back"
 msgstr "Zurück"
 
-#: .\home\templates\home\notification_details.html:125
+#: .\home\templates\home\notification_details.html:133
 msgid "Mark as Solved"
 msgstr "Als gelöst markieren"
 
@@ -309,21 +416,12 @@ msgstr "Ausgewählte herunterladen"
 msgid "Download"
 msgstr "Herunterladen"
 
-#: .\users\tasks.py:43
-msgid "Access the Trustpoint Documentation"
-msgstr "Lesen Sie die Dokumentation von Trustpoint"
-
-#: .\users\tasks.py:44
-#, python-format
-msgid "You can find the official Trustpoint documentation here: %(link)s"
-msgstr "Die offizielle Trustpoint-Dokumentation finden Sie hier: %(link)s"
-
-#: .\users\tasks.py:264
+#: .\users\tasks.py:251
 #, python-format
 msgid "Device %(dev)s is not onboarded in %(domain)s."
 msgstr "Das Gerät %(dev)s ist nicht in die Domain %(domain)s eingebunden."
 
-#: .\users\tasks.py:267
+#: .\users\tasks.py:254
 #, python-format
 msgid "The device %(dev)s has not completed onboarding."
 msgstr "Der Onboarding-Vorgang von Gerät %(dev)s ist nicht abgeschlossen."
@@ -428,6 +526,23 @@ msgstr "Ausloggen"
 msgid "Login required!"
 msgstr "Login erforderlich!"
 
+#, python-brace-format
+#~ msgid ""
+#~ "Visit the Trustpoint GitHub repository for more information: <a "
+#~ "href=\"{url_github}\" target=\"_blank\">Trustpoint GitHub</a>\n"
+#~ "Learn more about industrial security and the Trustpoint project on our <a "
+#~ "href=\"{url_homepage}\">homepage</a>"
+#~ msgstr ""
+#~ "Besuchen Sie das Trustpoint GitHub-Repository für weitere Informationen: "
+#~ "<a href=\"{url_github}\" target=\"_blank\">Trustpoint GitHub</a>\n"
+#~ "Auf unserer <a href=\"{url_homepage}\">Homepage</a> finden Sie mehr "
+#~ "nützliche Infos über industrielle Sicherheit und das Truspoint-"
+#~ "Forschungsprojekt"
+
+#, python-format
+#~ msgid "You can find the official Trustpoint documentation here: %(link)s"
+#~ msgstr "Die offizielle Trustpoint-Dokumentation finden Sie hier: %(link)s"
+
 #~ msgid "Delete"
 #~ msgstr "Entfernen"
 
@@ -441,8 +556,12 @@ msgstr "Login erforderlich!"
 #~ msgid "Root CAs"
 #~ msgstr "Root CAs"
 
-#~ msgid "Must start with a letter and only contain letters, numbers and underscores."
-#~ msgstr "Muss mit einem Buchstaben beginnen und darf nur aus Buchstaben, Ziffern, und Unterstrichen bestehen."
+#~ msgid ""
+#~ "Must start with a letter and only contain letters, numbers and "
+#~ "underscores."
+#~ msgstr ""
+#~ "Muss mit einem Buchstaben beginnen und darf nur aus Buchstaben, Ziffern, "
+#~ "und Unterstrichen bestehen."
 
 #~ msgid "Version"
 #~ msgstr "Version"

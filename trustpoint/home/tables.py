@@ -34,7 +34,7 @@ class NotificationTable(tables.Table):
             # 'row_checkbox',   # noqa: ERA001
             'notification_type',
             'notification_source',
-            'message',
+            'short_message',
             'created_at',
             'details',
             #'solve',
@@ -49,9 +49,9 @@ class NotificationTable(tables.Table):
         verbose_name=_('Source')
     )
 
-    message = tables.Column(
-        verbose_name=_('Description'),
-        accessor='message__short_description'
+    short_message = tables.Column(
+        empty_values=(),
+        verbose_name=_('Description')
     )
 
 
@@ -59,6 +59,10 @@ class NotificationTable(tables.Table):
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
     #solve = tables.Column(empty_values=(), orderable=False, verbose_name=_('Solve'))
     #delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
+
+    @staticmethod
+    def render_short_message(record: NotificationModel) -> SafeString:
+        return format_html(record.short_translated)
 
     @staticmethod
     def render_details(record: NotificationModel) -> SafeString:
