@@ -55,11 +55,6 @@ RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
     -subj "/C=DE/ST=BW/L=Stuttgart/O=Trustpoint/OU=Trustpoint/CN=localhost"
 
 
-## change permissions for files
-### TODO(AlexHx8472): Temporary. However, only test data lives in here. It's not a security issue here.
-#RUN chmod -R 777 /var/www/html/trustpoint/tests/data/
-
-
 # Copy Apache configuration
 ADD ./trustpoint-apache-http.conf /etc/apache2/sites-available/000-default.conf
 ADD ./trustpoint-apache-https.conf /etc/apache2/sites-available/localhost.conf
