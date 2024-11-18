@@ -177,3 +177,5 @@ tests/data/issuing_cas
 docs/build/
 
 collected_static
+
+*.sh

@@ -99,18 +99,18 @@ class CertificateCreationCommandMixin:
         )
         return certificate, private_key
 
-
-    @staticmethod
+    @classmethod
     def store_issuing_ca(
+            cls,
             issuing_ca_cert: x509.Certificate,
             chain: list[x509.Certificate],
             private_key: rsa.RSAPrivateKey,
             filename: str) -> None:
+
         tests_data_path = Path(__file__).parent.parent.parent.parent.parent / Path('tests/data/issuing_cas')
         issuing_ca_path = tests_data_path / Path(filename)
         # shutil.rmtree(tests_data_path, ignore_errors=True)
         tests_data_path.mkdir(exist_ok=True)
-
         print('\nSaving Issuing CA and Certificates\n')
 
         p12 = pkcs12.serialize_key_and_certificates(

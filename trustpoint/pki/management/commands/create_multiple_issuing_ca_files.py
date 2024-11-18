@@ -22,12 +22,6 @@ class Command(CertificateCreationCommandMixin, BaseCommand):
     def handle(self, *args, **kwargs) -> None:
 
         root_1, root_1_key = self.create_root_ca('Root CA')
-        issuing_1, issuing_1_key = self.create_issuing_ca(root_1_key, 'Root CA', 'Issuing CA A')
-        issuing_2, issuing_2_key = self.create_issuing_ca(root_1_key, 'Root CA', 'Issuing CA B')
-        issuing_3, issuing_3_key = self.create_issuing_ca(root_1_key, 'Root CA', 'Issuing CA C')
-
-        self.store_issuing_ca(issuing_1, [root_1], issuing_1_key, 'A.p12')
-        self.store_issuing_ca(issuing_2, [root_1], issuing_2_key, 'B.p12')
-        self.store_issuing_ca(issuing_3, [root_1], issuing_3_key, 'C.p12')
-
-        self.store_issuing_ca(root_1, [], root_1_key, 'D_Root.p12')
+        _, _ = self.create_issuing_ca(root_1_key, 'Root CA', 'Issuing CA A')
+        _, _ = self.create_issuing_ca(root_1_key, 'Root CA', 'Issuing CA B')
+        _, _ = self.create_issuing_ca(root_1_key, 'Root CA', 'Issuing CA C')

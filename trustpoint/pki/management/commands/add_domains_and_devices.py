@@ -3,6 +3,7 @@ import random
 import string
 from pathlib import Path
 from django.core.management.base import BaseCommand
+
 from pki.models import DomainModel, IssuingCaModel
 from devices.models import Device
 from django.core.management import call_command
@@ -18,8 +19,8 @@ P12_PW = b'testing321'
 class Command(BaseCommand):
     help = 'Add domains and associated device names with random onboarding protocol and serial number'
 
-    @staticmethod
-    def _save_issuing_ca(unique_name: str, file_path: Path) -> None:
+    @classmethod
+    def _save_issuing_ca(cls, unique_name: str, file_path: Path) -> None:
         initializer = UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(
             unique_name=unique_name,
             p12=file_path.read_bytes(),

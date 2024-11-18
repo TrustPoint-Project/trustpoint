@@ -38,6 +38,8 @@ RUN yes | python manage.py reset_db
 # change permission for db file
 RUN chmod 664 db.sqlite3
 
+
+
 # collect static files
 RUN python manage.py collectstatic --noinput
 
@@ -45,11 +47,17 @@ RUN python manage.py collectstatic --noinput
 # Change owner and group
 RUN chown -R www-data:www-data .
 
+
 # Generate self-signed certificates
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
  -keyout /etc/ssl/private/apache-selfsigned.key \
   -out /etc/ssl/certs/apache-selfsigned.crt  \
     -subj "/C=DE/ST=BW/L=Stuttgart/O=Trustpoint/OU=Trustpoint/CN=localhost"
+
+
+## change permissions for files
+### TODO(AlexHx8472): Temporary. However, only test data lives in here. It's not a security issue here.
+#RUN chmod -R 777 /var/www/html/trustpoint/tests/data/
 
 
 # Copy Apache configuration
