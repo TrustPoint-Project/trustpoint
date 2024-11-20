@@ -3,6 +3,7 @@ from enum import Enum
 
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.asymmetric.types import CertificatePublicKeyTypes
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
 from pki.oid import PublicKeyAlgorithmOid, EllipticCurveOid
@@ -137,7 +138,7 @@ class DigitalSignature:
         raise ValueError
     
     @staticmethod
-    def verify(signature: bytes, data: bytes, public_key: rsa.RSAPublicKey | ec.EllipticCurvePublicKey) -> None:
+    def verify(signature: bytes, data: bytes, public_key: CertificatePublicKeyTypes) -> None:
         if isinstance(public_key, rsa.RSAPublicKey):
             public_key.verify(
                 signature,

@@ -315,8 +315,6 @@ class ManualOnboardingProcess(LDevIDOnboardingProcessMixin, OnboardingProcess):
         """Initializes a new manual onboarding process for a device."""
         super().__init__(dev)
         print('init ManualOnboardingProcess')
-        self.tsotp = secrets.token_hex(8)
-        self.tssalt = secrets.token_hex(8)
         self.gen_thread = threading.Thread(target=self._calc_hmac, daemon=True)
         self.gen_thread.start()
         self.hmac = None
@@ -392,7 +390,7 @@ class AokiOnboardingProcess(LDevIDOnboardingProcessMixin, ZeroTouchOnboardingPro
     def verify_client_signature(self, message: bytes, signature: bytes) -> None:
         """Verifies the client signature of the server nonce message"""
         try:
-            Crypt.verify_signature(message=message, cert=self._idevid_cert, signature=signature)
+            Crypt.verify_signature(message=message, cert_bytes=self._idevid_cert, signature=signature)
         except Exception as e:
             self._fail(str(e))
             self.cancel()
