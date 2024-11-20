@@ -58,8 +58,11 @@ class Device(models.Model):
         default=DeviceOnboardingStatus.NOT_ONBOARDED,
         blank=True,
     )
-    domain: DomainModel | models.ForeignKey | None = models.ForeignKey(
-        'pki.DomainModel', verbose_name=_('Domain'), on_delete=models.SET_NULL, blank=True, null=True
+    domain: DomainModel | models.ManyToManyField | None = models.ManyToManyField(
+        'pki.DomainModel',
+        verbose_name=_('Domains'),
+        related_name='devices',
+        blank=True
     )
     created_at: models.DateTimeField = models.DateTimeField(default=timezone.now)
     tags = TaggableManager(blank=True)
