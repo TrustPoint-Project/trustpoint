@@ -19,5 +19,11 @@
             <div>Certificate Status</div>
             <div>{{ cert.get_certificate_status }}</div>
         </div>
+        {% if cert.get_certificate_status == 'Revoked' %}
+        <div>
+            <div>Revocation Reason</div>
+            <div>{{ cert.revocation_reason }}</div>
+        </div>
+        {% endif %}
     </div>
 {% endblock general %}

@@ -1,33 +1,26 @@
 """Module that contains all models corresponding to the devices app."""
 
-
 from __future__ import annotations
 
 import logging
-import re
+from typing import TYPE_CHECKING
 
 from django.core.exceptions import ObjectDoesNotExist
-
 from django.db import models, transaction
-from django.db.models import Count
+from django.db.models import Count, QuerySet
 from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
+from pki import CertificateStatus, CertificateTypes, ReasonCode
+from pki.validator.field import UniqueNameValidator
 from taggit.managers import TaggableManager
 
-from pki import CertificateStatus, CertificateTypes
-
-
+from . import DeviceOnboardingStatus
 from .exceptions import UnknownOnboardingStatusError
 
-from . import DeviceOnboardingStatus
-
-from pki.validator.field import UniqueNameValidator
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from pki.models import DomainModel, IssuedDeviceCertificateModel
+    from pki.models import CertificateModel, DomainModel, IssuedDeviceCertificateModel
 
 log = logging.getLogger('tp.devices')
 
@@ -35,7 +28,7 @@ log = logging.getLogger('tp.devices')
 class Device(models.Model):
     """Device Model."""
 
-    issued_device_certificates: IssuedDeviceCertificateModel
+    issued_device_certificates: models.Manager[IssuedDeviceCertificateModel]
 
     class OnboardingProtocol(models.TextChoices):
         """Supported Onboarding Protocols."""
@@ -47,19 +40,28 @@ class Device(models.Model):
         BRSKI = 'BR', _('BRSKI')
         AOKI = 'AO', _('AOKI')
 
-
-    device_name = models.CharField(
+    device_name: models.CharField = models.CharField(
         _('Device name'), max_length=100, unique=True, default='test', validators=[UniqueNameValidator()]
     )
-    device_serial_number = models.CharField(_('Serial number'), max_length=100, blank=True)
-    onboarding_protocol = models.CharField(
-        _('Onboarding protocol'), max_length=2, choices=OnboardingProtocol, default=OnboardingProtocol.MANUAL, blank=True
+    device_serial_number: models.CharField = models.CharField(_('Serial number'), max_length=100, blank=True)
+    onboarding_protocol: models.CharField = models.CharField(
+        _('Onboarding protocol'),
+        max_length=2,
+        choices=OnboardingProtocol,
+        default=OnboardingProtocol.MANUAL,
+        blank=True,
     )
-    device_onboarding_status = models.CharField(verbose_name=_('Device onboarding status'),
-        max_length=1, choices=DeviceOnboardingStatus, default=DeviceOnboardingStatus.NOT_ONBOARDED, blank=True
+    device_onboarding_status: models.CharField = models.CharField(
+        verbose_name=_('Device onboarding status'),
+        max_length=1,
+        choices=DeviceOnboardingStatus,
+        default=DeviceOnboardingStatus.NOT_ONBOARDED,
+        blank=True,
     )
-    domain = models.ForeignKey('pki.DomainModel', verbose_name=_('Domain'), on_delete=models.SET_NULL, blank=True, null=True)
-    created_at = models.DateTimeField(default=timezone.now)
+    domain: DomainModel | models.ForeignKey | None = models.ForeignKey(
+        'pki.DomainModel', verbose_name=_('Domain'), on_delete=models.SET_NULL, blank=True, null=True
+    )
+    created_at: models.DateTimeField = models.DateTimeField(default=timezone.now)
     tags = TaggableManager(blank=True)
 
     def __str__(self: Device) -> str:
@@ -69,7 +71,7 @@ class Device(models.Model):
         """
         return f'Device({self.device_name}, {self.device_serial_number})'
 
-    def get_current_ldevid_by_domain(self, domain):
+    def get_current_ldevid_by_domain(self, domain: DomainModel) -> CertificateModel | None:
         """Retrieves the current active LDevID certificate for a specified domain.
 
         Args:
@@ -85,12 +87,12 @@ class Device(models.Model):
             return self.issued_device_certificates.get(
                 certificate_type=CertificateTypes.LDEVID,
                 domain=domain,
-                certificate__certificate_status=CertificateStatus.OK
+                certificate__certificate_status=CertificateStatus.OK,
             ).certificate
         except ObjectDoesNotExist:
             return None
 
-    def get_all_active_certs_by_domain(self, domain):
+    def get_all_active_certs_by_domain(self, domain: DomainModel) -> dict:
         """Retrieves all active certificates for a specified domain, grouped by type.
 
         Args:
@@ -103,30 +105,49 @@ class Device(models.Model):
                 - 'other': A queryset of other active certificates excluding LDevID certificates.
         """
         query_sets = self.issued_device_certificates.filter(
-            domain=domain,
-            certificate__certificate_status=CertificateStatus.OK
+            domain=domain, certificate__certificate_status=CertificateStatus.OK
         ).exclude(certificate_type=CertificateTypes.LDEVID)
 
-        return {'domain': domain,
-            'ldevid': self.get_current_ldevid_by_domain(domain=domain),
-            'other': query_sets}
+        return {'domain': domain, 'ldevid': self.get_current_ldevid_by_domain(domain=domain), 'other': query_sets}
 
-    def save_certificate(self, certificate, certificate_type, domain, template_name, protocol):
+    def save_certificate(
+        self,
+        certificate: IssuedDeviceCertificateModel,
+        certificate_type: CertificateTypes,
+        domain: DomainModel,
+        template_name: str,
+        protocol: str
+    ) -> None:
+        """Saves a certificate for the device.
+
+        Args:
+            certificate (IssuedDeviceCertificateModel): The certificate to save.
+            certificate_type (CertificateTypes): The type of the certificate.
+            domain (DomainModel): The associated domain.
+            template_name (str): The name of the certificate template.
+            protocol (str): The protocol used to issue the certificate.
+        """
         self.issued_device_certificates.create(
             certificate=certificate,
             certificate_type=certificate_type,
             domain=domain,
             template_name=template_name,
-            protocol=protocol
+            protocol=protocol,
         )
 
-    def revoke_ldevid(self: Device, revocation_reason) -> bool:
+    def revoke_ldevid(self: Device, revocation_reason: ReasonCode) -> bool:
         """Revokes the LDevID.
 
-        Deletes the LDevID file and sets the device status to REVOKED.
-        Actual revocation (CRL, OCSP) is not yet implemented.
+        Args:
+            revocation_reason (str): The reason for revocation.
+
+        Returns:
+            bool: True if the revocation was successful, False otherwise.
         """
+        ldevid = None
+
         ldevid = self.get_current_ldevid_by_domain(domain=self.domain)
+
         if not ldevid:
             return False
 
@@ -148,15 +169,16 @@ class Device(models.Model):
         return True
 
     @classmethod
-    def get_by_id(cls: Device, device_id: int) -> Device | None:
+    def get_by_id(cls: type[Device], device_id: int) -> Device | None:
         """Returns the device with a given ID."""
         try:
             return cls.objects.get(pk=device_id)
         except cls.DoesNotExist:
             return None
 
+
     @classmethod
-    def get_by_name(cls: Device, device_name: str) -> Device | None:
+    def get_by_name(cls: type[Device], device_name: str) -> Device | None:
         """Returns the device with a given name."""
         try:
             return cls.objects.get(device_name=device_name)
@@ -165,8 +187,8 @@ class Device(models.Model):
 
     @classmethod
     def check_onboarding_prerequisites(
-            cls: Device, device_id: int,
-            allowed_onboarding_protocols: list[Device.OnboardingProtocol]) -> tuple[bool, str | None]:
+        cls: type[Device], device_id: int, allowed_onboarding_protocols: list[Device.OnboardingProtocol]
+    ) -> tuple[bool, str | None]:
         """Checks if criteria for starting the onboarding process are met."""
         device = cls.get_by_id(device_id)
 
@@ -183,7 +205,7 @@ class Device(models.Model):
             try:
                 label = Device.OnboardingProtocol(device.onboarding_protocol).label
             except ValueError:
-                return False, _('Onboarding: Please select a valid onboarding protocol.')
+                return False, 'Onboarding: Please select a valid onboarding protocol.'
 
             return False, f'Onboarding protocol {label} is not implemented.'
 
@@ -203,7 +225,7 @@ class Device(models.Model):
         return format_html(
             '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
             reverse('onboarding:revoke', kwargs={'device_id': self.pk}),
-            _('Revoke Certificate')
+            _('Revoke Certificate'),
         )
 
     def _render_running_cancel(self) -> str:
@@ -215,7 +237,7 @@ class Device(models.Model):
         return format_html(
             '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
             reverse('onboarding:exit', kwargs={'device_id': self.pk}),
-            _('Cancel Onboarding')
+            _('Cancel Onboarding'),
         )
 
     def render_onboarding_action(self) -> str:
@@ -262,17 +284,18 @@ class Device(models.Model):
         if self.device_onboarding_status == DeviceOnboardingStatus.REVOKED:
             return format_html(
                 '<a href="onboarding/reset/{}/" class="btn btn-info tp-onboarding-btn disabled">{}</a>',
-                self.pk, _('Onboard again')
+                self.pk,
+                _('Onboard again'),
             )
         if self.device_onboarding_status == DeviceOnboardingStatus.NOT_ONBOARDED:
             return format_html(
-                '<button class="btn btn-success tp-onboarding-btn" disabled>{}</a>',
-                _('Zero-Touch Pending')
+                '<button class="btn btn-success tp-onboarding-btn" disabled>{}</a>', _('Zero-Touch Pending')
             )
         if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_FAILED:
             return format_html(
                 '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn disabled">{}</a>',
-                self.pk, _('Reset Context')
+                self.pk,
+                _('Reset Context'),
             )
         raise UnknownOnboardingStatusError(self.device_onboarding_status)
 
@@ -295,26 +318,38 @@ class Device(models.Model):
             return format_html(
                 '<a href="{}" class="btn btn-success tp-onboarding-btn">{}</a>',
                 reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
-                _('Start Onboarding')
+                _('Start Onboarding'),
             )
         if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_FAILED:
             return format_html(
                 '<a href="{}" class="btn btn-warning tp-onboarding-btn">{}</a>',
                 reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
-                _('Retry Onboarding')
+                _('Retry Onboarding'),
             )
         if self.device_onboarding_status == DeviceOnboardingStatus.REVOKED:
             return format_html(
                 '<a href="{}" class="btn btn-info tp-onboarding-btn">{}</a>',
                 reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
-                _('Onboard again')
+                _('Onboard again'),
             )
-        log.error(f'Unknown onboarding status {self.device_onboarding_status}. Failed to render entry in table.')
+        msg = f'Unknown onboarding status {self.device_onboarding_status}. Failed to render entry in table.'
+        log.error(msg)
         raise UnknownOnboardingStatusError(self.device_onboarding_status)
 
     @staticmethod
-    def count_devices_by_domain_and_status(domain: DomainModel) -> int:
-        """Returns the number of devices for a given domain, grouped by onboarding status."""
-        return Device.objects.filter(domain=domain) \
-            .values('device_onboarding_status') \
+    def count_devices_by_domain_and_status(domain: DomainModel) -> QuerySet:
+        """Returns the number of devices for a given domain, grouped by onboarding status.
+
+        Args:
+            domain (DomainModel): The domain for which devices should be counted.
+
+        Returns:
+            QuerySet: A QuerySet containing dictionaries with keys:
+                - 'device_onboarding_status' (str): The onboarding status of the devices.
+                - 'count' (int): The number of devices with the corresponding status.
+        """
+        return (
+            Device.objects.filter(domain=domain)
+            .values('device_onboarding_status')
             .annotate(count=Count('device_onboarding_status'))
+        )

@@ -1,12 +1,11 @@
 """API endpoints for the devices app."""
+from __future__ import annotations
 
+from django.http import HttpRequest  # noqa: TCH002
 from ninja import Router, Schema
-from django.http import HttpRequest
+
 from devices import DeviceOnboardingStatus
 from devices.models import Device
-
-from devtools import debug
-
 from trustpoint.schema import ErrorSchema, SuccessSchema
 
 router = Router()
@@ -14,6 +13,7 @@ router = Router()
 
 class DeviceInfoSchema(Schema):
     """Schema for the device information."""
+
     id: int
     name: str
     serial_number: str
@@ -23,57 +23,56 @@ class DeviceInfoSchema(Schema):
 
 class DeviceCreateSchema(Schema):
     """Schema for creating a new device."""
+
     name: str
-    serial_number: str = ""
+    serial_number: str = ''
     onboarding_protocol: Device.OnboardingProtocol
 
 
 class DeviceUpdateSchema(Schema):
     """Schema for updating an existing device."""
-    name: str = None
-    serial_number: str = None
+
+    name: str
+    serial_number: str
 
 
 def device_api_dict(dev: Device) -> dict:
     """Gets a dict with device details corresponding to DeviceInfoSchema."""
     return {
-        'id': dev.id,
+        'id': dev.pk,
         'name': dev.device_name,
         'serial_number': dev.device_serial_number,
         # TODO(Air): Prefer using the enum key instead of the label
         # (e.g. so that we can change the label for i18n without breaking the API)
         'onboarding_protocol': str(Device.OnboardingProtocol(dev.onboarding_protocol).label),
-        'onboarding_status': str(DeviceOnboardingStatus(dev.device_onboarding_status).label)
+        'onboarding_status': str(DeviceOnboardingStatus(dev.device_onboarding_status).label),
     }
 
 
 @router.get('/', response=list[DeviceInfoSchema], exclude_none=True)
-def devices(request: HttpRequest):
+def devices(request: HttpRequest) -> list[dict]:
     """Get a list of all devices."""
+    _ = request
     qs = Device.objects.all()
-    response = []
-    for dev in qs:
-        response.append(device_api_dict(dev))
-    return response
+    return [device_api_dict(dev) for dev in qs]
 
 
 @router.get('/{device_id}', response={200: DeviceInfoSchema, 404: ErrorSchema}, exclude_none=True)
-def device(request: HttpRequest, device_id: int):
+def device(request: HttpRequest, device_id: int) -> tuple[int, dict]:
     """Returns details about a device with a given ID."""
+    _ = request
     dev = Device.get_by_id(device_id)
     if not dev:
         return 404, {'error': 'Device not found.'}
-    
+
     return 200, device_api_dict(dev)
 
 
 @router.post('/', response={201: DeviceInfoSchema, 400: ErrorSchema}, exclude_none=True)
-def create_device(request: HttpRequest, data: DeviceCreateSchema):
+def create_device(request: HttpRequest, data: DeviceCreateSchema) -> tuple[int, dict]:
     """Creates a new device."""
-    dev = Device(
-        device_name=data.name,
-        serial_number=data.serial_number,
-        onboarding_protocol=data.onboarding_protocol)
+    _ = request
+    dev = Device(device_name=data.name, serial_number=data.serial_number, onboarding_protocol=data.onboarding_protocol)
     # TODO(Air): Set domain
     # TODO(Air): String validation (e.g. not empty, max. length)
     dev.save()
@@ -81,12 +80,13 @@ def create_device(request: HttpRequest, data: DeviceCreateSchema):
 
 
 @router.patch('/{device_id}', response={200: DeviceInfoSchema, 404: ErrorSchema, 422: ErrorSchema}, exclude_none=True)
-def update_device(request: HttpRequest, device_id: int, data: DeviceUpdateSchema):
+def update_device(request: HttpRequest, device_id: int, data: DeviceUpdateSchema) -> tuple[int, dict]:
     """Updates a device with a given ID."""
+    _ = request
     dev = Device.get_by_id(device_id)
     if not dev:
         return 404, {'error': 'Device not found.'}
-    
+
     if data.name:
         dev.device_name = data.name
 
@@ -100,11 +100,12 @@ def update_device(request: HttpRequest, device_id: int, data: DeviceUpdateSchema
 
 
 @router.delete('/{device_id}', response={200: SuccessSchema, 404: ErrorSchema}, exclude_none=True)
-def delete_device(request: HttpRequest, device_id: int):
+def delete_device(request: HttpRequest, device_id: int) -> tuple[int, dict]:
     """Deletes a device with a given ID."""
+    _ = request
     dev = Device.get_by_id(device_id)
     if not dev:
         return 404, {'error': 'Device not found.'}
-    
+
     dev.delete()
     return 200, {'success': True}

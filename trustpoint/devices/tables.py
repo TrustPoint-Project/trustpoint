@@ -1,8 +1,8 @@
 """Module that contains all tables corresponding to the devices application."""
 
-
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 import django_tables2 as tables
@@ -12,15 +12,18 @@ from django.utils.translation import gettext_lazy as _
 
 from devices import DeviceOnboardingStatus
 
-from .exceptions import UnknownOnboardingProtocolError, UnknownOnboardingStatusError
+from .exceptions import UnknownOnboardingStatusError
 from .models import Device
-from taggit.managers import TaggableManager
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
+    from taggit.managers import TaggableManager
 
 
 CHECKBOX_ATTRS: dict[str, dict[str, str]] = {'th': {'id': 'checkbox-column'}, 'td': {'class': 'row_checkbox'}}
+
+
+log = logging.getLogger('tp.devices')
 
 
 class DeviceTable(tables.Table):
@@ -64,9 +67,9 @@ class DeviceTable(tables.Table):
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
     edit = tables.Column(empty_values=(), orderable=False, verbose_name=_('Edit'))
     delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
-    tags = tables.Column(empty_values=(), orderable=False, verbose_name=_('Tags'), attrs={
-        'td': {'class': 'tags-column'}
-    })
+    tags = tables.Column(
+        empty_values=(), orderable=False, verbose_name=_('Tags'), attrs={'td': {'class': 'tags-column'}}
+    )
 
     @staticmethod
     def render_device_onboarding_status(record: Device) -> str:
@@ -85,7 +88,7 @@ class DeviceTable(tables.Table):
             f'{record.get_device_onboarding_status_display()}'
             '</span>'
         )
-    
+
     @staticmethod
     def _render_manual_onboarding_action(record: Device) -> str:
         """Renders the device onboarding section for the manual onboarding cases.
@@ -106,21 +109,22 @@ class DeviceTable(tables.Table):
             return format_html(
                 '<a href="{}" class="btn btn-success tp-onboarding-btn">{}</a>',
                 reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
-                _('Start Onboarding')
+                _('Start Onboarding'),
             )
         if record.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_FAILED:
             return format_html(
                 '<a href="{}" class="btn btn-warning tp-onboarding-btn">{}</a>',
                 reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
-                _('Retry Onboarding')
+                _('Retry Onboarding'),
             )
         if record.device_onboarding_status == DeviceOnboardingStatus.REVOKED:
             return format_html(
                 '<a href="{}" class="btn btn-info tp-onboarding-btn">{}</a>',
                 reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
-                _('Onboard again')
+                _('Onboard again'),
             )
         exc_msg = f'Unknown onboarding status {record.device_onboarding_status}. Failed to render entry in table.'
+        log.error(exc_msg)
         raise UnknownOnboardingStatusError(record.device_onboarding_status)
 
     @staticmethod
@@ -140,19 +144,16 @@ class DeviceTable(tables.Table):
         """
         if record.device_onboarding_status == DeviceOnboardingStatus.NOT_ONBOARDED:
             return format_html(
-                '<button class="btn btn-success tp-onboarding-btn" disabled>{}</a>',
-                _('Zero-Touch Pending')
+                '<button class="btn btn-success tp-onboarding-btn" disabled>{}</a>', _('Zero-Touch Pending')
             )
         if record.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_FAILED:
             return format_html(
                 '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn">{}</a>',
-                record.pk, _('Reset Context')
+                record.pk,
+                _('Reset Context'),
             )
         if record.device_onboarding_status == DeviceOnboardingStatus.REVOKED:
-            return format_html(
-                '<button class="btn btn-info tp-onboarding-btn" disabled>{}</a>',
-                _('Revoked')
-            )
+            return format_html('<button class="btn btn-info tp-onboarding-btn" disabled>{}</a>', _('Revoked'))
         raise UnknownOnboardingStatusError(record.device_onboarding_status)
 
     def render_onboarding_action(self: DeviceTable, record: Device) -> str:
@@ -175,13 +176,13 @@ class DeviceTable(tables.Table):
             return format_html(
                 '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
                 reverse('onboarding:revoke', kwargs={'device_id': record.pk}),
-                _('Revoke Certificate')
+                _('Revoke Certificate'),
             )
         if record.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_RUNNING:
             return format_html(
                 '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
                 reverse('onboarding:exit', kwargs={'device_id': record.pk}),
-                _('Cancel Onboarding')
+                _('Cancel Onboarding'),
             )
 
         is_manual = record.onboarding_protocol == Device.OnboardingProtocol.MANUAL
@@ -196,7 +197,9 @@ class DeviceTable(tables.Table):
         if is_brski or is_aoki:
             return self._render_zero_touch_onboarding_action(record)
 
-        #raise UnknownOnboardingProtocolError(record.onboarding_protocol)
+        # TODO @Aircookie: do we still want to raise it?
+
+        # raise UnknownOnboardingProtocolError(record.onboarding_protocol) :noqa ERA001
         return format_html('<span class="text-danger">' + _('Unknown onboarding protocol!') + '</span>')
 
     @staticmethod
@@ -209,8 +212,9 @@ class DeviceTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
-                           record.pk, _('Details'))
+        return format_html(
+            '<a href="details/{}/" class="btn btn-primary tp-table-btn"">{}</a>', record.pk, _('Details')
+        )
 
     @staticmethod
     def render_edit(record: Device) -> SafeString:
@@ -234,12 +238,18 @@ class DeviceTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the delete-view.
         """
-        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
-                           record.pk, _('Delete'))
+        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>', record.pk, _('Delete'))
 
     @staticmethod
-    def render_tags(value: TaggableManager):
-        """Renders the tags as a comma-separated list."""
+    def render_tags(value: TaggableManager) -> str:
+        """Renders the tags as a comma-separated string.
+
+        Args:
+            value (TaggableManager): The tags associated with the record.
+
+        Returns:
+            str: A comma-separated list of tags or a placeholder if no tags are present.
+        """
         if value:
             return ', '.join([tag.name for tag in value.all()])
         return '-'

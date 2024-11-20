@@ -98,6 +98,7 @@ class CertificateAdmin(admin.ModelAdmin):
         'sha256_fingerprint',
         'common_name',
         'certificate_status',
+        'revocation_reason',
 
         'signature_algorithm_oid',
         'signature_algorithm',

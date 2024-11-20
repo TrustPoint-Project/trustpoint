@@ -1,4 +1,5 @@
 """App (package) that is responsible for all device related operations and views."""
+
 from __future__ import annotations
 
 from django.db import models
@@ -17,7 +18,7 @@ class DeviceOnboardingStatus(models.TextChoices):
     REVOKED = 'D', _('Revoked')
 
     @classmethod
-    def get_color(cls: DeviceOnboardingStatus, choice: DeviceOnboardingStatus | str) -> str:
+    def get_color(cls: type[DeviceOnboardingStatus], choice: DeviceOnboardingStatus | str) -> str:
         """Gets the bootstrap 5.3 color name."""
         choice = str(choice)
         if choice == cls.ONBOARDING_RUNNING:

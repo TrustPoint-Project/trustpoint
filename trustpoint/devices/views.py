@@ -1,19 +1,20 @@
 """Contains views specific to the devices application."""
 
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from django_filters.views import FilterView
+from django.contrib import messages
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
-from django.contrib import messages
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
+from django_filters.views import FilterView
 from django_tables2 import SingleTableView
+from pki.models import DomainModel
+from pki.validator.field import UniqueNameValidator
 
 from devices.forms import DeviceForm
 from trustpoint.views.base import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
@@ -21,8 +22,6 @@ from trustpoint.views.base import BulkDeletionMixin, ContextDataMixin, TpLoginRe
 from .filters import DeviceFilter
 from .models import Device
 from .tables import DeviceTable
-
-from pki.validator.field import UniqueNameValidator
 
 if TYPE_CHECKING:
     from typing import Any
@@ -56,19 +55,37 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
     template_name = 'devices/add.html'
     success_url = reverse_lazy('devices:devices')
 
-    def clean_device_name(self, device_name) -> str:
+    def clean_device_name(self, device_name: str) -> str:
+        """Validates and cleans the device name.
+
+        Args:
+            device_name (str): The name of the device to validate.
+
+        Returns:
+            str: The cleaned device name.
+        """
         UniqueNameValidator(device_name)
         return device_name
 
 
 class EditDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
+    """Device Edit View."""
+
     model = Device
     form_class = DeviceForm  # Custom form to disable fields during onboarding
     template_name = 'devices/edit.html'
     success_url = reverse_lazy('devices:devices')
 
-    def form_valid(self, form):
-        messages.success(self.request, _("Settings updated successfully."))
+    def form_valid(self, form: DeviceForm) -> HttpResponse:
+        """Handles the form validation and success message.
+
+        Args:
+            form (DeviceForm): The form being validated.
+
+        Returns:
+            HttpResponse: The response after successful form validation.
+        """
+        messages.success(self.request, _('Settings updated successfully.'))
         return super().form_valid(form)
 
 
@@ -79,23 +96,34 @@ class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
     pk_url_kwarg = 'pk'
     template_name = 'devices/details.html'
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Adds additional context data for the device detail view.
+
+        Args:
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            dict[str, Any]: The context data for the view.
+        """
         context = super().get_context_data(**kwargs)
-        device: Device = (self.get_object())
+        device: Device = self.get_object()
 
         context['onboarding_button'] = device.render_onboarding_action()
         certs_by_domain = {}
-        #TODO: Iterate through domains, if we have multiple domains associate with one device
+        # TODO @BytesWelder: Iterate through domains, if we have multiple domains associate with one device
         if device.domain:
-            domain_certs = device.get_all_active_certs_by_domain(device.domain)
-            if domain_certs:
-                certs_by_domain[device.domain] = {
-                    'ldevid': domain_certs['ldevid'],
-                    'other': domain_certs['other'],
-                }
+            if isinstance(device.domain, DomainModel):
+                domain_certs = device.get_all_active_certs_by_domain(device.domain)
+                if domain_certs:
+                    certs_by_domain[device.domain] = {
+                        'ldevid': domain_certs['ldevid'],
+                        'other': domain_certs['other'],
+                    }
 
-        context['certs_by_domain'] = certs_by_domain
-        return context
+            context['certs_by_domain'] = certs_by_domain
+            return context
+        msg = f'Didn not find any domains for device {device}.'
+        raise ValueError(msg)
 
 
 class DevicesBulkDeleteView(
@@ -146,31 +174,26 @@ class DevicesBulkDeleteView(
         """
         return self.kwargs['pks'].split('/')
 
-    def get_queryset(self: DevicesBulkDeleteView, *args: Any, **kwargs: Any) -> QuerySet | None:  # noqa: ARG002
-        """Gets the queryset of the objects to be deleted.
+    def get_queryset(self: DevicesBulkDeleteView) -> QuerySet:
+        """Retrieve the queryset of devices to delete.
 
-        Args:
-            *args (list):
-                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
-            **kwargs (dict):
-                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
+        Checks if all primary keys correspond to existing objects in the database.
+        If not, an empty QuerySet is returned.
 
         Returns:
-            QuerySet | None:
-                The queryset of the objects to be deleted.
-                None, if one or more primary keys do not have corresponding objects in the database or
-                if the primary key list pks is empty.
+            QuerySet: The queryset of devices to delete, or an empty QuerySet if validation fails.
         """
         pks = self.get_pks()
         if not pks:
-            return None
+            return self.model.objects.none()
         queryset = self.model.objects.filter(pk__in=pks)
 
         if len(pks) != len(queryset):
-            queryset = None
+            return self.model.objects.none()
 
         self.queryset = queryset
         return queryset
+
 
     def get(self: DevicesBulkDeleteView, *args: Any, **kwargs: Any) -> HttpResponse:
         """Handles HTTP GET requests.

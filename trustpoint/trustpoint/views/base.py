@@ -84,7 +84,6 @@ class BulkDeletionMixin:
     queryset: Any
     get_queryset: Callable
     success_url = None
-    object_list = list
 
     def delete(self, *args, **kwargs):
         self.queryset = self.get_queryset()
