@@ -8,7 +8,7 @@ app_name = 'devices'
 urlpatterns = [
     path('', views.DeviceListView.as_view(), name='devices'),
     path('add/', views.CreateDeviceView.as_view(), name='devices-add'),
-    path('config/<int:pk>/', views.EditDeviceView.as_view(), name='devices-config'),
+    path('config/<int:pk>/', views.ConfigDeviceView.as_view(), name='devices-config'),
     path('details/<int:pk>/', views.DeviceDetailView.as_view()),
     re_path(
         r'^delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',

@@ -9,6 +9,7 @@ from __future__ import annotations
 from typing import Any, ClassVar
 
 from django import forms
+from pki.models import DomainModel
 
 from devices import DeviceOnboardingStatus
 
@@ -54,3 +55,13 @@ class DeviceForm(forms.ModelForm):
         ):
             self.fields['onboarding_protocol'].disabled = True
             self.fields['domain'].disabled = True
+
+
+class DomainSelectionForm(forms.Form):
+    """Form to select multiple domains."""
+    domains = forms.ModelMultipleChoiceField(
+        queryset=DomainModel.objects.all(),
+        widget=forms.CheckboxSelectMultiple(),
+        label='Select Domains',
+        required=False
+    )

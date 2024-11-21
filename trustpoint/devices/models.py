@@ -70,9 +70,9 @@ class Device(models.Model):
     def __str__(self: Device) -> str:
         """Returns a Device object in human-readable format.
 
-        Returns: A formatted string containing the device name and serial number.
+        Returns: A formatted string containing the device name.
         """
-        return f'Device({self.device_name}, {self.device_serial_number})'
+        return self.device_name
 
     def get_current_ldevid_by_domain(self, domain: DomainModel) -> CertificateModel | None:
         """Retrieves the current active LDevID certificate for a specified domain.

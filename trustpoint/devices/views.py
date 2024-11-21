@@ -2,21 +2,23 @@
 
 from __future__ import annotations
 
+import logging
 from typing import TYPE_CHECKING
 
 from django.contrib import messages
+from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView
+from django.views.generic.edit import CreateView, FormView, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_filters.views import FilterView
 from django_tables2 import SingleTableView
 from pki.models import DomainModel
 from pki.validator.field import UniqueNameValidator
 
-from devices.forms import DeviceForm
+from devices.forms import DeviceForm, DomainSelectionForm
 from trustpoint.views.base import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
 
 from .filters import DeviceFilter
@@ -29,6 +31,7 @@ if TYPE_CHECKING:
     from django.db.models import QuerySet
     from django.http import HttpResponse
 
+log = logging.getLogger('tp.devices')
 
 class DeviceContextMixin(TpLoginRequiredMixin, ContextDataMixin):
     """Mixin which adds context_data for the Devices -> Devices pages."""
@@ -68,26 +71,46 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
         return device_name
 
 
-class EditDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
-    """Device Edit View."""
-
+class ConfigDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
+    """Device Config View."""
     model = Device
-    form_class = DeviceForm  # Custom form to disable fields during onboarding
-    template_name = 'devices/edit.html'
+    template_name = 'devices/config.html'
     success_url = reverse_lazy('devices:devices')
+    form_class = DomainSelectionForm
 
-    def form_valid(self, form: DeviceForm) -> HttpResponse:
-        """Handles the form validation and success message.
+    def get_form(self):
+        """Return the form with preselected domains."""
+        device = self.get_object()
+        form = self.form_class(
+            initial={'domains': device.domain.all()}
+        )
+        return form
 
-        Args:
-            form (DeviceForm): The form being validated.
+    def form_valid(self, form):
+        """Handle valid form submission."""
+        try:
+            selected_domains = form.cleaned_data['domains']
+            device = self.get_object()
+            device.domain.set(selected_domains)
+            device.save()
+            messages.success(self.request, _('Domains successfully updated.'))
+            return redirect(self.success_url)
+        except Exception as e:
+            msg=f'Error while saving domains: {e}'
+            log.exception(msg)
+            return self.form_invalid(form)
 
-        Returns:
-            HttpResponse: The response after successful form validation.
-        """
-        messages.success(self.request, _('Settings updated successfully.'))
-        return super().form_valid(form)
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
 
+    def form_invalid(self, form):
+        """Handle invalid form submission."""
+        messages.error(self.request, _('There was an error updating the domains.'))
+        return self.render_to_response(self.get_context_data(form=form))
 
 class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
     """Detail view for Devices."""

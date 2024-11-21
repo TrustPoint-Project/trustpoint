@@ -56,9 +56,8 @@ class DeviceTable(tables.Table):
     # device_onboarding_status = tables.Column(empty_values=(), orderable=True, verbose_name=_('Onboarding Status'))
     domain = tables.Column(
         empty_values=(None, ''),
-        orderable=True,
-        accessor='domain.unique_name',
-        verbose_name=_('Domain'),
+        orderable=False,
+        verbose_name=_('Domains'),
     )
     # onboarding_action = tables.Column(empty_values=(), orderable=False, verbose_name=_('Onboarding Action'))
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
@@ -200,6 +199,15 @@ class DeviceTable(tables.Table):
     #     return format_html('<span class="text-danger">' + _('Unknown onboarding protocol!') + '</span>')
 
     @staticmethod
+    def render_domain(record: Device) -> str:
+        """Renders the domains as a vertical list."""
+        if hasattr(record, 'domain') and record.domain.exists():
+            return format_html(''.join([f'<li>{domain.unique_name}</li>' for domain in record.domain.all()])
+            )
+        return _('No Domains Assigned')
+
+
+    @staticmethod
     def render_details(record: Device) -> SafeString:
         """Creates the html hyperlink for the details-view.
 
@@ -214,18 +222,6 @@ class DeviceTable(tables.Table):
         )
 
     @staticmethod
-    def render_config(record: Device) -> SafeString:
-        """Creates the html hyperlink for the config-view.
-
-        Args:
-            record (Device): The current record of the Device model.
-
-        Returns:
-            SafeString: The html hyperlink for the config-view.
-        """
-        return format_html('<a href="config/{}/" class="btn btn-primary tp-table-btn">{}</a>', record.pk, _('Config'))
-
-    @staticmethod
     def render_delete(record: Device) -> SafeString:
         """Creates the html hyperlink for the delete-view.
 
@@ -236,6 +232,18 @@ class DeviceTable(tables.Table):
             SafeString: The html hyperlink for the delete-view.
         """
         return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>', record.pk, _('Delete'))
+
+    @staticmethod
+    def render_config(record: Device) -> SafeString:
+        """Creates the html hyperlink for the config-view.
+
+        Args:
+            record (Device): The current record of the Device model.
+
+        Returns:
+            SafeString: The html hyperlink for the config-view.
+        """
+        return format_html('<a href="config/{}/" class="btn btn-primary tp-table-btn">{}</a>', record.pk, _('Config'))
 
     @staticmethod
     def render_tags(value: TaggableManager) -> str:
