@@ -2,10 +2,12 @@
 from __future__ import annotations
 
 from django.http import HttpRequest  # noqa: TCH002
+from django.shortcuts import get_object_or_404
 from ninja import Router, Schema
 
 from devices import DeviceOnboardingStatus
 from devices.models import Device
+from pki.models import DomainModel
 from trustpoint.schema import ErrorSchema, SuccessSchema
 
 router = Router()
@@ -48,6 +50,31 @@ def device_api_dict(dev: Device) -> dict:
         'onboarding_status': str(DeviceOnboardingStatus(dev.device_onboarding_status).label),
     }
 
+@router.get('/domain-certificates/{domain_id}/', summary='Get domain certificates')
+def get_domain_certificates(request, domain_id: int):
+    """Returns active certs for a domain ."""
+    domain = get_object_or_404(DomainModel, id=domain_id)
+    devices = domain.devices.all()
+
+    certificates = []
+    for device in devices:
+        certs = device.get_all_active_certs_by_domain(domain)
+        if certs['ldevid']:
+            certificates.append({
+                'type': 'LDevID',
+                'expiration_date': certs['ldevid'].not_valid_after.strftime('%Y-%m-%d %H:%M:%S'),
+                'status': certs['ldevid'].certificate_status,
+                'revoke_url': f"/certificates/revoke/{certs['ldevid'].pk}/"
+            })
+        for issued_cert in certs['other']:
+            certificates.append({
+                'type': issued_cert.certificate_type,
+                'expiration_date': issued_cert.certificate.not_valid_after.strftime('%Y-%m-%d %H:%M:%S'),
+                'status': issued_cert.certificate.certificate_status,
+                'revoke_url': f'/certificates/revoke/{issued_cert.certificate.pk}/'
+            })
+
+    return {'certificates': certificates}
 
 @router.get('/', response=list[DeviceInfoSchema], exclude_none=True)
 def devices(request: HttpRequest) -> list[dict]:

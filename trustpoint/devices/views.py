@@ -6,10 +6,11 @@ import logging
 from typing import TYPE_CHECKING
 
 from django.contrib import messages
-from django.http import HttpResponseRedirect
-from django.shortcuts import redirect
+from django.http import HttpResponseRedirect, JsonResponse
+from django.shortcuts import get_object_or_404, redirect
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
+from django.views import View
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormView, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
@@ -188,6 +189,7 @@ class AddDomainsView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
         messages.error(self.request, _('There was an error updating the domains.'))
         return self.render_to_response(self.get_context_data(form=form))
 
+
 class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
     """Detail view for Devices."""
 
@@ -209,20 +211,21 @@ class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
 
         context['onboarding_button'] = device.render_onboarding_action()
         certs_by_domain = {}
-        # TODO @BytesWelder: Iterate through domains, if we have multiple domains associate with one device
-        if device.domain:
-            if isinstance(device.domain, DomainModel):
-                domain_certs = device.get_all_active_certs_by_domain(device.domain)
+        if device.domain.exists():
+            for domain in device.domain.all():
+                domain_certs = device.get_all_active_certs_by_domain(domain)
                 if domain_certs:
-                    certs_by_domain[device.domain] = {
+                    certs_by_domain[domain] = {
                         'ldevid': domain_certs['ldevid'],
                         'other': domain_certs['other'],
                     }
 
             context['certs_by_domain'] = certs_by_domain
-            return context
-        msg = f'Didn not find any domains for device {device}.'
-        raise ValueError(msg)
+        else:
+            msg = f'Didn not find any domains for device {device}.'
+            raise ValueError(msg)
+
+        return context
 
 
 class DevicesBulkDeleteView(

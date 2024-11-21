@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 
 import django_tables2 as tables
 from django.urls import reverse
-from django.utils.html import format_html
+from django.utils.html import format_html, format_html_join
 from django.utils.translation import gettext_lazy as _
 
 from devices import DeviceOnboardingStatus
@@ -198,13 +198,30 @@ class DeviceTable(tables.Table):
     #     # raise UnknownOnboardingProtocolError(record.onboarding_protocol) :noqa ERA001
     #     return format_html('<span class="text-danger">' + _('Unknown onboarding protocol!') + '</span>')
 
+
+
+
+    # @staticmethod
+    # def render_domain(record: Device) -> str:
+    #     """Renders the domains as a vertical list."""
+    #     if hasattr(record, 'domain') and record.domain.exists():
+    #         return format_html(''.join([f'<li>{domain.unique_name}</li>' for domain in record.domain.all()])
+    #         )
+    #     return _('No Domains Assigned')
+    
     @staticmethod
     def render_domain(record: Device) -> str:
         """Renders the domains as a vertical list."""
         if hasattr(record, 'domain') and record.domain.exists():
-            return format_html(''.join([f'<li>{domain.unique_name}</li>' for domain in record.domain.all()])
+            return format_html(
+                '<ul>{}</ul>',
+                format_html_join(
+                    '',
+                    '<li><a href="#" data-bs-toggle="modal" data-bs-target="#domainModal" data-domain-id="{}">{}</a></li>',
+                    ((domain.id, domain.unique_name) for domain in record.domain.all())
+                )
             )
-        return _('No Domains Assigned')
+        return _('No Domain associated')
 
 
     @staticmethod
