@@ -65,3 +65,12 @@ class DomainSelectionForm(forms.Form):
         label='Select Domains',
         required=False
     )
+
+class DeviceConfigForm(forms.ModelForm):
+    """Form to configure the device."""
+    class Meta:
+        model = Device
+        fields = ['device_serial_number']
+        widgets = {
+            'device_serial_number': forms.TextInput(),
+        }

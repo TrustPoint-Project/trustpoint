@@ -20,4 +20,5 @@ urlpatterns = [
         views.DeviceListView.as_view(),
         name='devices-redirect',
     ),
+    path('config/<int:pk>/add-domains/', views.AddDomainsView.as_view(), name='add_domains'),
 ]

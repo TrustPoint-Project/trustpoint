@@ -1,0 +1,79 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% block content %}
+<div class="card tp-card-centered">
+    <div class="card-header">
+        <h2>{% trans "Device Configuration" %}</h2>
+    </div>
+    <form method="post">
+        {% csrf_token %}
+        <div class="card-body">
+            <div class="tp-card-centered-content">
+                <!-- Device Serial Number -->
+                <div class="card-body">
+                    <h3>{% trans "General Information" %}</h3>
+                    <hr>
+                    <div class="mb-3">
+                        <label for="id_device_serial_number" class="form-label">{% trans "Device Serial Number" %}</label>
+                        {{ form.device_serial_number }}
+                    </div>
+                </div>
+            </div>
+            <div class="tp-card-centered-content">
+                <!-- Associated Domains -->
+                <div class="card-body">
+                    <h3>{% trans "Associated Domains" %}</h3>
+                    <hr>
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>{% trans "Domain Name" %}</th>
+                                <th>{% trans "Cert Count" %}</th>
+                                <th>{% trans "Actions" %}</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if domains %}
+                                {% for domain in domains %}
+                                    <tr>
+                                        <td>{{ domain.unique_name }}</td>
+                                        <td>{{ domain.certificates.count }}</td>
+                                        <td class="d-flex gap-2">
+                                            <a href="{% url 'pki:domains-config' domain.pk %}" class="btn btn-secondary btn-sm">
+                                                {% trans "Issue Certificates" %}
+                                            </a>
+                                            <a href="{% url 'pki:domains-config' domain.pk %}" class="btn btn-primary btn-sm">
+                                                {% trans "Config" %}
+                                            </a>
+                                            <form method="post" style="display: inline;">
+                                                {% csrf_token %}
+                                                <button name="delete_domain" value="{{ domain.pk }}" class="btn btn-danger btn-sm">
+                                                    {% trans "Delete" %}
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="3" class="text-muted text-center">{% trans "No associated domains" %}</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
+                    <div>
+                        <a href="{{ add_domains_url }}" class="btn btn-success">
+                            {% trans "Add Domains" %}
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer d-flex justify-content-end gap-3">
+            <button type="submit" class="btn btn-primary">
+                {% trans "Save Configuration" %}
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock content %}

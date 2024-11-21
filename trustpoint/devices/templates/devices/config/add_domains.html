@@ -1,0 +1,39 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% block content %}
+{% load crispy_forms_filters %}
+<div class="card tp-card-centered">
+    <div class="card-header">
+        <h2>{% trans "Add Domains" %}</h2>
+    </div>
+    <div class="card-body">
+        {% if no_domains_available %}
+            <div class="tp-card-centered-content">
+                <div class="card-body">
+                    <p class="text-center text-muted">
+                        {% trans "All available domains are already associated with this device, or no domains have been created yet." %}
+                    </p>
+                    <button type="button" class="btn btn-secondary" onClick="history.back()">{% trans "Back" %}</button>
+                </div>
+            </div>
+        {% else %}
+            <form method="post">
+                {% csrf_token %}
+                <div class="tp-card-centered-content">
+                    <div class="card-body">
+                        <h3>{% trans "Available Domains" %}</h3>
+                        <hr>
+                        <div>
+                            {{ form|crispy }}
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer d-flex justify-content-end gap-3">
+                    <button type="submit" class="btn btn-primary">{% trans "Add Selected Domains" %}</button>
+                    <button type="button" class="btn btn-secondary" onClick="history.back()">{% trans "Cancel" %}</button>
+                </div>
+            </form>
+        {% endif %}
+    </div>
+</div>
+{% endblock content %}

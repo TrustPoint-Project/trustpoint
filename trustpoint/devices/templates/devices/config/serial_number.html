@@ -1,0 +1,9 @@
+{% load i18n %}
+<div class="form-group">
+    <form method="post">
+        {% csrf_token %}
+        <label class="form-label">{% trans "Serial Number" %}</label>
+        <input type="text" name="serial_number" class="form-control" value="{{ device.device_serial_number }}">
+        <button type="submit" class="btn btn-primary mt-3">{% trans "Save Serial Number" %}</button>
+    </form>
+</div>

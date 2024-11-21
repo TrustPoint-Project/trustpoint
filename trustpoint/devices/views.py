@@ -8,7 +8,7 @@ from typing import TYPE_CHECKING
 from django.contrib import messages
 from django.http import HttpResponseRedirect
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormView, UpdateView
@@ -18,7 +18,7 @@ from django_tables2 import SingleTableView
 from pki.models import DomainModel
 from pki.validator.field import UniqueNameValidator
 
-from devices.forms import DeviceForm, DomainSelectionForm
+from devices.forms import DeviceConfigForm, DeviceForm, DomainSelectionForm
 from trustpoint.views.base import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
 
 from .filters import DeviceFilter
@@ -74,38 +74,114 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
 class ConfigDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
     """Device Config View."""
     model = Device
-    template_name = 'devices/config.html'
+    template_name = 'devices/config/config.html'
     success_url = reverse_lazy('devices:devices')
-    form_class = DomainSelectionForm
+    form_class = DeviceConfigForm
 
-    def get_form(self):
-        """Return the form with preselected domains."""
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_context_data(self, **kwargs):
+        """Adds domains and additional actions to the context."""
+        context = super().get_context_data(**kwargs)
         device = self.get_object()
-        form = self.form_class(
-            initial={'domains': device.domain.all()}
-        )
-        return form
+
+        context['domains'] = device.domain.all()
+        context['add_domains_url'] = reverse('devices:add_domains', kwargs={'pk': device.pk})
+        return context
+
+    def post(self, request, *args, **kwargs):
+        device = self.get_object()
+
+        # Handle domain deletion
+        if 'delete_domain' in request.POST:
+            domain_id = request.POST.get('delete_domain')
+            try:
+                domain = device.domain.get(pk=domain_id)
+                device.domain.remove(domain)
+                messages.success(request, _(f'Domain {domain} successfully removed.'))
+            except DomainModel.DoesNotExist:
+                messages.error(request, _('The domain does not exist or is not associated with this device.'))
+            return redirect(self.get_success_url())
+
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+        return self.form_invalid(form)
 
     def form_valid(self, form):
         """Handle valid form submission."""
         try:
-            selected_domains = form.cleaned_data['domains']
             device = self.get_object()
-            device.domain.set(selected_domains)
+            device.device_serial_number = form.cleaned_data.get('device_serial_number', device.device_serial_number)
             device.save()
-            messages.success(self.request, _('Domains successfully updated.'))
-            return redirect(self.success_url)
+
+            messages.success(self.request, _('Device configuration updated successfully.'))
+            return redirect(self.get_success_url())
         except Exception as e:
-            msg=f'Error while saving domains: {e}'
-            log.exception(msg)
+            log.exception(f'Error while saving device configuration: {e}')
+            messages.error(self.request, _('There was an error updating the device configuration.'))
             return self.form_invalid(form)
+
+    def get_success_url(self):
+        """Redirect back to the configuration page of the current device."""
+        return reverse('devices:devices-config', kwargs={'pk': self.object.pk})
+
+
+class AddDomainsView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
+    """View to add domains to a device."""
+    model = Device
+    form_class = DomainSelectionForm
+    template_name = 'devices/config/add_domains.html'
+
+    def dispatch(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().dispatch(request, *args, **kwargs)
+
+    def get_form(self, form_class=None):
+        """Override the form to show only unassociated domains."""
+        form_class = form_class or self.form_class
+        device = self.get_object()
+
+        available_domains = DomainModel.objects.exclude(id__in=device.domain.values_list('id', flat=True))
+
+        form = form_class()
+        form.fields['domains'].queryset = available_domains
+        return form
+
+    def get_context_data(self, **kwargs):
+        """Add information about the available domains to the context."""
+        context = super().get_context_data(**kwargs)
+        device = self.get_object()
+
+        # Get the available domains
+        available_domains = DomainModel.objects.exclude(id__in=device.domain.values_list('id', flat=True))
+
+        # Add a flag to indicate if there are no domains available
+        if not available_domains.exists():
+            context['no_domains_available'] = True
+        return context
+
+    def get_success_url(self):
+        """Redirect back to the configuration page of the current device."""
+        return reverse('devices:devices-config', kwargs={'pk': self.object.pk})
 
     def post(self, request, *args, **kwargs):
         form = self.get_form()
         form = self.form_class(request.POST)
         if form.is_valid():
             return self.form_valid(form)
-        return self.form_invalid(form)
+        else:
+            return self.form_invalid(form)
+
+    def form_valid(self, form):
+        """Add selected domains to the device."""
+        device = self.get_object()
+        selected_domains = form.cleaned_data['domains']
+        device.domain.add(*selected_domains)
+        messages.success(self.request, _('Domains successfully added.'))
+        return redirect(self.get_success_url())
 
     def form_invalid(self, form):
         """Handle invalid form submission."""
