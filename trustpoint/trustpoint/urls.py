@@ -25,15 +25,16 @@ from django.views.decorators.http import last_modified
 from django.views.decorators.vary import vary_on_cookie
 from django.views.i18n import JavaScriptCatalog
 
-from . import api
+# from . import api
 from .views import base
 
 last_modified_date = timezone.now()
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('api/', api.api.urls),
+    # path('admin/', admin.site.urls),
+    # path('api/', api.api.urls),
     path('users/', include('users.urls')),
+    path('setup-wizard/', include('setup_wizard.urls')),
     path('pki/', include('pki.urls.pki')),
     path('.well-known/est/', include('pki.urls.est')),
     path('.well-known/cmp/', include('pki.urls.cmp')),
