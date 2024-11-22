@@ -15,44 +15,44 @@ log = logging.getLogger('tp.startup')
 
 from typing import Any
 
-class StartupTaskManager:
 
+class StartupTaskManager:
     _db_tasks_started = False
-    _mdns_instance : TrustpointMDNSResponder | None = None
+    _mdns_instance: TrustpointMDNSResponder | None = None
 
     @staticmethod
     def running_dev_server() -> bool:
-        "True if executing the development server (manage.py runserver or runserver_plus)"
-        return os.environ.get('RUN_MAIN') or os.environ.get('WERKZEUG_RUN_MAIN')
-    
+        """True if executing the development server (manage.py runserver or runserver_plus)"""
+        return bool(os.environ.get('RUN_MAIN')) or bool(os.environ.get('WERKZEUG_RUN_MAIN'))
+
     @staticmethod
     def running_wsgi_server() -> bool:
-        "True if executing the WSGI server (Apache, ...)"
+        """True if executing the WSGI server (Apache, ...)"""
         return 'django.core.wsgi' in sys.modules
-    
+
     @staticmethod
     def running_server() -> bool:
-        "True if running any server (dev or wsgi)"
+        """True if running any server (dev or wsgi)"""
         return StartupTaskManager.running_wsgi_server() or StartupTaskManager.running_dev_server()
-    
+
     @staticmethod
     def handle_startup_tasks():
         """Starts periodic tasks, called by ready in startup.apps"""
         if not StartupTaskManager.running_dev_server and not StartupTaskManager.running_wsgi_server:
             # Just helper process, not running startup code
             return
-        
+
         log.info('Running startup tasks')
 
         _mdns_instance = TrustpointMDNSResponder()
         connection_created.connect(StartupTaskManager.handle_startup_db_tasks)
 
     @staticmethod
-    def handle_startup_db_tasks(sender: Any, **kwargs : Any):
+    def handle_startup_db_tasks(sender: Any, **kwargs: Any):
         """Handle startup tasks that require an established database connection"""
         if StartupTaskManager._db_tasks_started:
             return
-        
+
         StartupTaskManager._db_tasks_started = True
         connection_created.disconnect(StartupTaskManager.handle_startup_db_tasks)
 
@@ -74,7 +74,6 @@ class StartupTaskManager:
 
         if StartupTaskManager._mdns_instance:
             StartupTaskManager._mdns_instance.unregister()
-        
 
     def __init__(self) -> None:
         raise TypeError('Not permitted to create instances of StartupTaskManager')
