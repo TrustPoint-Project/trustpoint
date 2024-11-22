@@ -7,11 +7,5 @@ class PkiConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'pki'
 
-    def ready(self):
-        if not os.environ.get('TRUSTPOINT_RUNNING') and \
-                not os.environ.get('RUN_MAIN') and \
-                not os.environ.get('WERKZEUG_RUN_MAIN'):
-            # Just helper process, not running startup code
-            return
-
+    def ready(self) -> None:
         import pki.signals

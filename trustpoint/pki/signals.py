@@ -1,6 +1,5 @@
 import logging
 
-from django.db.backends.signals import connection_created
 from django.db.models.signals import post_delete, post_save, pre_delete
 from django.dispatch import receiver
 
@@ -24,19 +23,3 @@ def handle_post_delete(sender, instance, **kwargs) -> None:
 @receiver(pre_delete, sender=BaseCaModel)
 def handle_pre_delete(sender, instance, **kwargs) -> None:
     instance.issuing_ca_certificate.remove_private_key()
-
-
-crl_thread_started = False
-
-
-@receiver(connection_created)
-def initial_database_connection(sender, connection, **kwargs):
-    global crl_thread_started
-    if crl_thread_started:
-        return
-    crl_thread_started = True
-
-    logger.info('Initial database connection established: %s', connection.alias)
-
-    from .tasks import start_crl_generation_thread
-    start_crl_generation_thread()

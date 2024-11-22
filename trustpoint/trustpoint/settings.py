@@ -64,6 +64,8 @@ INSTALLED_APPS = [
     # note: replaces default exception debug page with worse one
     'taggit',
     'django_filters',
+    # ensure startup is the last app in the list so that ready() is called after all other apps are initialized
+    'startup.apps.StartupConfig'
 ]
 
 MIDDLEWARE = [
