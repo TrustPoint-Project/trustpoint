@@ -321,8 +321,6 @@ def start(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpRespon
     properties = {
         'otp': onboarding_process.otp,
         'salt': onboarding_process.salt,
-        'tsotp': onboarding_process.tsotp,
-        'tssalt': onboarding_process.tssalt,
         'host': request.get_host(),
         'url': onboarding_process.url,
         'device': {

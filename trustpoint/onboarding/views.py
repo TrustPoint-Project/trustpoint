@@ -215,7 +215,8 @@ class P12DownloadView(OnboardingUtilMixin, View):
         device = self.device
         download_token = request.GET.get('token')
         onboarding_process = OnboardingProcess.get_by_device(device)
-        if not onboarding_process or not onboarding_process.cred_serializer or not download_token:
+        if (not onboarding_process or not isinstance(onboarding_process, DownloadOnboardingProcess)
+            or not onboarding_process.cred_serializer or not download_token):
             return HttpResponse('Not found.', status=404)
 
         if download_token == onboarding_process.download_token:
@@ -239,7 +240,8 @@ class PemDownloadView(OnboardingUtilMixin, View):
         device = self.device
         download_token = request.GET.get('token')
         onboarding_process = OnboardingProcess.get_by_device(device)
-        if not onboarding_process or not onboarding_process.cred_serializer or not download_token:
+        if (not onboarding_process or not isinstance(onboarding_process, DownloadOnboardingProcess)
+            or not onboarding_process.cred_serializer or not download_token):
             return HttpResponse('Not found.', status=404)
 
         if download_token == onboarding_process.download_token:
