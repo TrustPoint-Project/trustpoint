@@ -178,4 +178,4 @@ docs/build/
 
 collected_static
 
-*.sh
+_*.sh
