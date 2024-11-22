@@ -379,6 +379,10 @@ a.tp-primary:focus, a.tp-primary:hover, a.tp-primary:active,
     max-width: 25rem;
 }
 
+.tp-card-setup-wizard {
+    min-width: 50rem;
+}
+
 hr.hr-m {
     margin: 0.6rem -0.125rem 0.6rem -0.125rem;
 }
