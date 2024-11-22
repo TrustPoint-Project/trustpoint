@@ -22,7 +22,7 @@ from .forms import BrowserLoginForm, RevokeCertificateForm
 from .models import (
     BrowserOnboardingProcess,
     DownloadOnboardingProcess,
-    ManualOnboardingProcess,
+    ManualCsrOnboardingProcess,
     OnboardingProcess,
     OnboardingProcessState,
 )
@@ -86,7 +86,7 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
 
         device = self.device
 
-        onboarding_process = OnboardingProcess.make_onboarding_process(device, DownloadOnboardingProcess)
+        onboarding_process = DownloadOnboardingProcess.make_onboarding_process(device)
 
         messages.warning(request, _('Keep the PKCS12 file secure! It contains the private key of the device.'))
 
@@ -119,7 +119,7 @@ class BrowserInitializationView(TpLoginRequiredMixin, OnboardingUtilMixin, Templ
 
         device = self.device
 
-        onboarding_process = OnboardingProcess.make_onboarding_process(device, BrowserOnboardingProcess)
+        onboarding_process = BrowserOnboardingProcess.make_onboarding_process(device)
 
         otp = secrets.token_hex(8)
         onboarding_process.set_otp(otp)
@@ -299,7 +299,7 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
         if device.onboarding_protocol == Device.OnboardingProtocol.BROWSER:
             return BrowserInitializationView.as_view()(request, *args, **kwargs)
 
-        onboarding_process = OnboardingProcess.make_onboarding_process(device, ManualOnboardingProcess)
+        onboarding_process = ManualCsrOnboardingProcess.make_onboarding_process(device)
 
         issuing_ca_cert = device.domain.issuing_ca.issuing_ca_certificate
         signature_suite = SignatureSuite.get_signature_suite_from_cert_type(issuing_ca_cert)

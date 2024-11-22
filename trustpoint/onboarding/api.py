@@ -21,7 +21,7 @@ from onboarding.crypto_backend import CryptoBackend as Crypt
 from onboarding.crypto_backend import VerificationError, OnboardingError
 from onboarding.models import (
     DownloadOnboardingProcess,
-    ManualOnboardingProcess,
+    ManualCsrOnboardingProcess,
     AokiOnboardingProcess,
     OnboardingProcess,
     OnboardingProcessState,
@@ -211,7 +211,7 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
         aoki_device.device_name = f'AOKI_Device_{aoki_device.pk}'
         aoki_device.save()
     
-    onboarding_process = OnboardingProcess.make_onboarding_process(aoki_device, AokiOnboardingProcess)
+    onboarding_process = AokiOnboardingProcess.make_onboarding_process(aoki_device)
     onboarding_process.set_idevid_cert(idevid)
 
     # TODO (Air): get the private key for the ownership certificate
@@ -311,13 +311,13 @@ def start(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpRespon
         return 422, {'error': msg}
 
     if (device.onboarding_protocol == Device.OnboardingProtocol.MANUAL):
-        onboarding_process = OnboardingProcess.make_onboarding_process(device, DownloadOnboardingProcess)
+        onboarding_process = DownloadOnboardingProcess.make_onboarding_process(device)
         response = HttpResponse(onboarding_process.get_pkcs12(), status=200, content_type='application/x-pkcs12')
         response['Content-Disposition'] = f'attachment; filename="{device.device_serial_number}.p12"'
         onboarding_process.cancel()
         return response
 
-    onboarding_process = OnboardingProcess.make_onboarding_process(device, ManualOnboardingProcess)
+    onboarding_process = ManualCsrOnboardingProcess.make_onboarding_process(device)
     properties = {
         'otp': onboarding_process.otp,
         'salt': onboarding_process.salt,

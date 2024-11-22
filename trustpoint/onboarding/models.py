@@ -116,8 +116,8 @@ class OnboardingProcess():
     if TYPE_CHECKING:
         OnboardingProcessTypes = TypeVar('OnboardingProcessTypes', bound='OnboardingProcess')
 
-    @staticmethod
-    def make_onboarding_process(device: Device, process_type: type[OnboardingProcessTypes]) -> OnboardingProcessTypes:
+    @classmethod
+    def make_onboarding_process(cls: OnboardingProcessTypes, device: Device) -> OnboardingProcessTypes:
         """Returns the onboarding process for the device, creates a new one if it does not exist.
 
         Args:
@@ -131,7 +131,7 @@ class OnboardingProcess():
         onboarding_process = OnboardingProcess.get_by_device(device)
 
         if not onboarding_process:
-            onboarding_process = process_type(device)
+            onboarding_process = cls(device)
             _onboarding_processes.append(onboarding_process)
             device.device_onboarding_status = DeviceOnboardingStatus.ONBOARDING_RUNNING
             # TODO(Air): very unnecessary save required to update onboarding status in table
@@ -281,13 +281,12 @@ class LDevIDOnboardingProcessMixin():
         return chain
 
 
-class ManualOnboardingProcess(LDevIDOnboardingProcessMixin, OnboardingProcess):
+class ManualCsrOnboardingProcess(LDevIDOnboardingProcessMixin, OnboardingProcess):
     """Onboarding process for a device using the full manual onboarding with OTP and HMAC trust store verification."""
 
     def __init__(self, dev: Device) -> None:
         """Initializes a new manual onboarding process for a device."""
         super().__init__(dev)
-        print('init ManualOnboardingProcess')
         self.gen_thread = threading.Thread(target=self._calc_hmac, daemon=True)
         self.gen_thread.start()
         self.hmac = None

@@ -13,7 +13,7 @@ from pki.util.keys import KeyGenerator, SignatureSuite
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
 from onboarding.crypto_backend import OnboardingError
-from onboarding.models import DownloadOnboardingProcess, ManualOnboardingProcess, OnboardingProcess, _onboarding_processes
+from onboarding.models import DownloadOnboardingProcess, ManualCsrOnboardingProcess, OnboardingProcess, _onboarding_processes
 
 
 class CryptoBackendTests(TestCase):
@@ -114,14 +114,14 @@ class OnboardingProcessTests(TestCase):
         (instead of making a new one)
         """
         device = Device(serial_number='1234567890abcdef')
-        onboarding_process = ManualOnboardingProcess(device)
+        onboarding_process = ManualCsrOnboardingProcess(device)
         _onboarding_processes.append(onboarding_process)
-        process = OnboardingProcess.make_onboarding_process(device, ManualOnboardingProcess)
+        process = ManualCsrOnboardingProcess.make_onboarding_process(device)
         self.assertIs(process, onboarding_process, 'make_onboarding_process did not return existing process.')
 
     def test_make_onboarding_process_new_process(self):
         """Tests that make_onboarding_process creates a new onboarding process for the device."""
         device = Device(serial_number='1234567890abcdef')
-        process = OnboardingProcess.make_onboarding_process(device, ManualOnboardingProcess)
+        process = ManualCsrOnboardingProcess.make_onboarding_process(device)
         self.assertIsInstance(process, OnboardingProcess, 'make_onboarding_process did not return new process.')
         self.assertIn(process, _onboarding_processes, 'New process not added to _onboarding_processes.')
