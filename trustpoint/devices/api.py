@@ -4,10 +4,11 @@ from __future__ import annotations
 from django.http import HttpRequest  # noqa: TCH002
 from django.shortcuts import get_object_or_404
 from ninja import Router, Schema
+from pki import CertificateTypes
+from pki.models import DomainModel
 
 from devices import DeviceOnboardingStatus
 from devices.models import Device
-from pki.models import DomainModel
 from trustpoint.schema import ErrorSchema, SuccessSchema
 
 router = Router()
@@ -75,6 +76,19 @@ def get_domain_certificates(request, domain_id: int):
             })
 
     return {'certificates': certificates}
+
+
+@router.get('/certificate-types/', summary='Get certificate types')
+def get_certificate_types(request):
+    """Returns all available certificate types."""
+    return {'types': [{'value': ct.value, 'label': ct.label} for ct in CertificateTypes]}
+
+
+@router.get('/onboarding-methods/', summary='Get onboarding methods')
+def get_onboarding_methods(request):
+    """Returns all supported onboarding procedures."""
+    return {'methods': [{'value': op.value, 'label': op.label} for op in Device.OnboardingProtocol]}
+
 
 @router.get('/', response=list[DeviceInfoSchema], exclude_none=True)
 def devices(request: HttpRequest) -> list[dict]:
