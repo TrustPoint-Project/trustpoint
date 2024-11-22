@@ -28,6 +28,7 @@ with (Path(__file__).resolve().parent / Path('dev_secret_key.txt')).open('r') as
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+ADMIN_ENABLED = True if DEBUG else False
 
 ALLOWED_HOSTS = ['*']
 
@@ -38,8 +39,8 @@ ADVERTISED_PORT = 443
 # Application definition
 
 INSTALLED_APPS = [
-    'users.apps.UsersConfig',
     'setup_wizard.apps.SetupWizardConfig',
+    'users.apps.UsersConfig',
     'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
     'log.apps.LogConfig',
@@ -65,7 +66,6 @@ INSTALLED_APPS = [
     'taggit',
     'django_filters',
     # ensure startup is the last app in the list so that ready() is called after all other apps are initialized
-    'startup.apps.StartupConfig'
 ]
 
 MIDDLEWARE = [
@@ -183,5 +183,3 @@ LOGGING = logging_config
 TAGGIT_CASE_INSENSITIVE = True
 
 STATIC_ROOT = Path(__file__).parent.parent / Path('collected_static')
-
-ADMIN_ENABLED = False

@@ -8,7 +8,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 EXPOSE 80 443
 
 # Update apt repository and install required dependencies from apt
-RUN apt update -y && apt install -y sudo apt-utils apache2 apache2-utils python3 python3-venv libapache2-mod-wsgi-py3 python3-pip
+RUN apt update -y && apt install -y sudo apt-utils apache2 apache2-utils python3 python3-venv libapache2-mod-wsgi-py3 python3-pip sed
 
 # Enable apache2 ssl and rewrite modules
 RUN a2enmod ssl
@@ -26,6 +26,9 @@ COPY ./ /var/www/html/trustpoint/
 
 # Sets the current WORKDIR for the following commands
 WORKDIR /var/www/html/trustpoint/
+
+## Sets DEBUG = False in the Django settings
+RUN sed -i '/DEBUG = True/s/True/False/' trustpoint/trustpoint/settings.py
 
 # Install dependencies (we do not need venv in the container)
 RUN $POETRY_HOME/bin/poetry config virtualenvs.create false && $POETRY_HOME/bin/poetry install --no-interaction
