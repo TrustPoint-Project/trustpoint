@@ -39,6 +39,7 @@ ADVERTISED_PORT = 443
 
 INSTALLED_APPS = [
     'users.apps.UsersConfig',
+    'setup_wizard.apps.SetupWizardConfig',
     'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
     'log.apps.LogConfig',
@@ -179,4 +180,6 @@ LOGGING = logging_config
 
 TAGGIT_CASE_INSENSITIVE = True
 
-STATIC_ROOT = 'collected_static'
+STATIC_ROOT = Path(__file__).parent.parent / Path('collected_static')
+
+ADMIN_ENABLED = False
