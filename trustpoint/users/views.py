@@ -7,6 +7,7 @@ from django.contrib import messages
 
 from setup_wizard import SetupWizardState
 from setup_wizard.views import StartupWizardRedirect
+from setup_wizard.startup import StartupTaskManager
 
 
 class TrustpointLoginView(LoginView):
@@ -16,6 +17,9 @@ class TrustpointLoginView(LoginView):
         # clears all messages
         for _ in messages.get_messages(self.request):
             pass
+
+        if StartupTaskManager.running_dev_server():
+            return super().get(*args, **kwargs)
 
         wizard_state = SetupWizardState.get_current_state()
         if wizard_state == SetupWizardState.WIZARD_COMPLETED:
@@ -27,6 +31,9 @@ class TrustpointLoginView(LoginView):
         # clears all messages
         for _ in messages.get_messages(self.request):
             pass
+
+        if StartupTaskManager.running_dev_server():
+            return super().post(*args, **kwargs)
 
         wizard_state = SetupWizardState.get_current_state()
         if wizard_state == SetupWizardState.WIZARD_COMPLETED:
