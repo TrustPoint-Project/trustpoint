@@ -38,7 +38,7 @@ class TrustStoreInitializer:
         self._trust_store = trust_store
 
     @transaction.atomic
-    def save(self) -> None:
+    def save(self) -> TrustStoreModel:
         """Saves the trust store to database."""
         saved_certs = []
 
@@ -58,3 +58,5 @@ class TrustStoreInitializer:
             _trust_store_order_model.certificate = certificate
             _trust_store_order_model.trust_store = trust_store_model
             _trust_store_order_model.save()
+
+        return trust_store_model
