@@ -14,6 +14,7 @@ from django.urls import reverse_lazy
 from setup_wizard.forms import EmptyForm ,StartupWizardTlsCertificateForm
 from setup_wizard.tls_credential import Generator
 from setup_wizard import SetupWizardState
+from setup_wizard.startup import StartupTaskManager
 
 from pki.initializer import TrustStoreInitializer
 from pki.models import CertificateModel, TrustpointTlsServerCredentialModel, TrustStoreModel, \
@@ -59,9 +60,13 @@ class SetupWizardInitialView(TemplateView):
     template_name = 'setup_wizard/initial.html'
 
     def get(self, *args, **kwargs):
+        if StartupTaskManager.running_dev_server():
+            return redirect('users:login', permanent=False)
+
         wizard_state = SetupWizardState.get_current_state()
         if wizard_state != SetupWizardState.WIZARD_INITIAL:
             return StartupWizardRedirect.redirect_by_state(wizard_state)
+
         return super().get(*args, **kwargs)
 
 
@@ -72,15 +77,23 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
     success_url = reverse_lazy('setup_wizard:tls_server_credential_apply')
 
     def get(self, *args, **kwargs):
+        if StartupTaskManager.running_dev_server():
+            return redirect('users:login', permanent=False)
+
         wizard_state = SetupWizardState.get_current_state()
         if wizard_state != SetupWizardState.WIZARD_INITIAL:
             return StartupWizardRedirect.redirect_by_state(wizard_state)
+
         return super().get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
+        if StartupTaskManager.running_dev_server():
+            return redirect('users:login', permanent=False)
+
         wizard_state = SetupWizardState.get_current_state()
         if wizard_state != SetupWizardState.WIZARD_INITIAL:
             return StartupWizardRedirect.redirect_by_state(wizard_state)
+
         return super().post(*args, **kwargs)
 
     def form_valid(self, form):
@@ -130,6 +143,9 @@ class SetupWizardImportTlsServerCredentialView(View):
     http_method_names = ['get']
 
     def get(self, *args, **kwargs):
+        if StartupTaskManager.running_dev_server():
+            return redirect('users:login', permanent=False)
+
         wizard_state = SetupWizardState.get_current_state()
         if wizard_state != SetupWizardState.WIZARD_INITIAL:
             return StartupWizardRedirect.redirect_by_state(wizard_state)
@@ -148,6 +164,8 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
     success_url = reverse_lazy('setup_wizard:demo_data')
 
     def get(self, *args, **kwargs):
+        if StartupTaskManager.running_dev_server():
+            return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()
         if wizard_state != SetupWizardState.WIZARD_TLS_SERVER_CREDENTIAL_APPLY:
@@ -164,6 +182,8 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
         return TrustStoreDownloadResponseBuilder(trust_store.id, file_format).as_django_http_response()
 
     def post(self, *args, **kwargs):
+        if StartupTaskManager.running_dev_server():
+            return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()
         if wizard_state != SetupWizardState.WIZARD_TLS_SERVER_CREDENTIAL_APPLY:
@@ -226,6 +246,8 @@ class SetupWizardTlsServerCredentialApplyCancelView(View):
     http_method_names = ['get']
 
     def get(self, *args, **kwargs):
+        if StartupTaskManager.running_dev_server():
+            return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()
         if wizard_state != SetupWizardState.WIZARD_TLS_SERVER_CREDENTIAL_APPLY:
@@ -264,15 +286,23 @@ class SetupWizardDemoDataView(FormView):
     success_url = reverse_lazy('setup_wizard:create_super_user')
 
     def get(self, *args, **kwargs):
+        if StartupTaskManager.running_dev_server():
+            return redirect('users:login', permanent=False)
+
         wizard_state = SetupWizardState.get_current_state()
         if wizard_state != SetupWizardState.WIZARD_DEMO_DATA:
             return StartupWizardRedirect.redirect_by_state(wizard_state)
+
         return super().get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
+        if StartupTaskManager.running_dev_server():
+            return redirect('users:login', permanent=False)
+
         wizard_state = SetupWizardState.get_current_state()
         if wizard_state != SetupWizardState.WIZARD_DEMO_DATA:
             return StartupWizardRedirect.redirect_by_state(wizard_state)
+
         return super().post(*args, **kwargs)
 
     def _execute_state_bump(self):
@@ -318,16 +348,23 @@ class SetupWizardCreateSuperUserView(FormView):
 
 
     def get(self, *args, **kwargs):
+        if StartupTaskManager.running_dev_server():
+            return redirect('users:login', permanent=False)
+
         wizard_state = SetupWizardState.get_current_state()
-        print(wizard_state)
         if wizard_state != SetupWizardState.WIZARD_CREATE_SUPER_USER:
             return StartupWizardRedirect.redirect_by_state(wizard_state)
+
         return super().get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
+        if StartupTaskManager.running_dev_server():
+            return redirect('users:login', permanent=False)
+
         wizard_state = SetupWizardState.get_current_state()
         if wizard_state != SetupWizardState.WIZARD_CREATE_SUPER_USER:
             return StartupWizardRedirect.redirect_by_state(wizard_state)
+
         return super().post(*args, **kwargs)
 
     def _execute_state_bump(self):
