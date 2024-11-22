@@ -18,7 +18,7 @@ Including another URLconf
 """
 from django.conf import settings
 from django.conf.urls.static import static
-# from django.contrib import admin
+from django.contrib import admin
 from django.urls import include, path
 from django.utils import timezone
 from django.views.decorators.http import last_modified
@@ -30,8 +30,15 @@ from .views import base
 
 last_modified_date = timezone.now()
 
-urlpatterns = [
-    # path('admin/', admin.site.urls),
+
+if  settings.DEBUG:
+    urlpatterns = [
+        path('admin/', admin.site.urls)
+    ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    urlpatterns = []
+
+urlpatterns += [
     path('api/', api.api.urls),
     path('users/', include('users.urls')),
     path('setup-wizard/', include('setup_wizard.urls')),
@@ -51,9 +58,6 @@ urlpatterns = [
         )),
         name='javascript-catalog'
     ),
-    path('', base.IndexView.as_view()),
     path('logs/', include("log.urls")),
+    path('', base.IndexView.as_view()),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
