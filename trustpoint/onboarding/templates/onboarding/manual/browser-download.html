@@ -5,7 +5,7 @@
 
 {% block head %}
     <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
-    <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:exit' device_id %}"</script>
+    <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:exit' onboarding_process_id %}"</script>
     <script src="{% url 'javascript-catalog' %}"></script>
     <script src="{% static 'js/onboarding.js' %}"></script>
 {% endblock head %}
@@ -22,22 +22,22 @@
             </div>
             <h2>{% trans "Download PKCS12 key and certificate" %}</h2>
             <div class="text-center">
-                <a href="{% url 'onboarding:api-p12-download' device_id %}?token={{ download_token }}" class="btn btn-primary mt-2 min-width-15">{% trans "Download PKCS12" %}</a>
+                <a href="{% url 'onboarding:api-p12-download' onboarding_process_id %}?token={{ download_token }}" class="btn btn-primary mt-2 min-width-15">{% trans "Download PKCS12" %}</a>
             </div>
             <hr>
             <h2>{% trans "Certificate and keypair in PEM format" %}</h2>
             <div class="text-center">
-                <a href="{% url 'onboarding:pem-download' device_id %}?token={{ download_token }}" class="btn btn-secondary mt-2 min-width-15">{% trans "Download PEM" %}</a>
+                <a href="{% url 'onboarding:pem-download' onboarding_process_id %}?token={{ download_token }}" class="btn btn-secondary mt-2 min-width-15">{% trans "Download PEM" %}</a>
             </div>
             <hr>
             <h2>{% trans "Java KeyStore" %}</h2>
             <div class="text-center">
-                <a href="{% url 'onboarding:keystore-download' device_id %}" class="btn btn-secondary mt-2 min-width-15 disabled">{% trans "Download Java KeyStore" %}</a>
+                <a href="{% url 'onboarding:keystore-download' onboarding_process_id %}" class="btn btn-secondary mt-2 min-width-15 disabled">{% trans "Download Java KeyStore" %}</a>
             </div>
         </div>
         <div class="card-footer text-body-secondary">
             <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans "Back" %}</a>
-            <a href="{% url 'onboarding:exit' device_id %}" class="btn btn-danger">{% trans "Cancel" %}</a>
+            <a href="{% url 'onboarding:exit' onboarding_process_id %}" class="btn btn-danger">{% trans "Cancel" %}</a>
         </div>
     </div>
 {% endblock content %}

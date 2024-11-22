@@ -3,7 +3,7 @@ import random
 import string
 from pathlib import Path
 from django.core.management.base import BaseCommand
-from devices import DeviceOnboardingStatus
+from devices import DeviceOnboardingStatus, OnboardingProtocol
 from pki.models import DomainModel, IssuingCaModel, IssuedDeviceCertificateModel, CertificateModel
 from devices.models import Device
 from pki import CertificateTypes, TemplateName
@@ -42,7 +42,7 @@ class Command(BaseCommand):
         certificate_types = [choice.value for choice in CertificateTypes]
         template_names = [choice.value for choice in TemplateName]
         device_onboarding_statuses = [choice.value for choice in DeviceOnboardingStatus]
-        onboarding_protocols = [Device.OnboardingProtocol.TP_CLIENT.value, Device.OnboardingProtocol.MANUAL.value]
+        onboarding_protocols = [OnboardingProtocol.TP_CLIENT.value, OnboardingProtocol.MANUAL.value]
 
         data = {
             "arburg": [

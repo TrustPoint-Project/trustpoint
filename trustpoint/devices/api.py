@@ -7,7 +7,7 @@ from ninja import Router, Schema
 from pki import CertificateTypes
 from pki.models import DomainModel
 
-from devices import DeviceOnboardingStatus
+from devices import DeviceOnboardingStatus, OnboardingProtocol
 from devices.models import Device
 from trustpoint.schema import ErrorSchema, SuccessSchema
 
@@ -29,7 +29,7 @@ class DeviceCreateSchema(Schema):
 
     name: str
     serial_number: str = ''
-    onboarding_protocol: Device.OnboardingProtocol
+    onboarding_protocol: OnboardingProtocol
 
 
 class DeviceUpdateSchema(Schema):
@@ -47,7 +47,7 @@ def device_api_dict(dev: Device) -> dict:
         'serial_number': dev.device_serial_number,
         # TODO(Air): Prefer using the enum key instead of the label
         # (e.g. so that we can change the label for i18n without breaking the API)
-        'onboarding_protocol': str(Device.OnboardingProtocol(dev.onboarding_protocol).label),
+        'onboarding_protocol': str(OnboardingProtocol(dev.onboarding_protocol).label),
         'onboarding_status': str(DeviceOnboardingStatus(dev.device_onboarding_status).label),
     }
 
@@ -65,7 +65,7 @@ def get_domain_certificates(request, domain_id: int):
                 'type': 'LDevID',
                 'expiration_date': certs['ldevid'].not_valid_after.strftime('%Y-%m-%d %H:%M:%S'),
                 'status': certs['ldevid'].certificate_status,
-                'revoke_url': f"/certificates/revoke/{certs['ldevid'].pk}/"
+                'revoke_url': f"/onboarding/revoke/{certs['ldevid'].pk}/"
             })
         for issued_cert in certs['other']:
             certificates.append({
@@ -87,7 +87,7 @@ def get_certificate_types(request):
 @router.get('/onboarding-methods/', summary='Get onboarding methods')
 def get_onboarding_methods(request):
     """Returns all supported onboarding procedures."""
-    return {'methods': [{'value': op.value, 'label': op.label} for op in Device.OnboardingProtocol]}
+    return {'methods': [{'value': op.value, 'label': op.label} for op in OnboardingProtocol]}
 
 
 @router.get('/', response=list[DeviceInfoSchema], exclude_none=True)

@@ -7,7 +7,7 @@ from pki.models import CertificateModel
 
 
 class BrowserLoginForm(forms.Form):
-    device_id = forms.IntegerField(label='Device ID')
+    onboarding_process_id = forms.IntegerField(label='Onboarding Process ID')
     otp = forms.CharField(widget=forms.PasswordInput(), label='OTP', max_length=24)
 
 

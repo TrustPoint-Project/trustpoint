@@ -212,7 +212,7 @@ class CryptoBackend:
 
     @staticmethod
     @transaction.atomic
-    def gen_keypair_and_ldevid(device: Device) -> bytes:
+    def gen_keypair_and_ldevid(device: Device, domain_id: int, onboarding_protocol: str) -> bytes:
         """Generates a keypair and LDevID certificate for the device.
 
         Returns: The keypair and LDevID certificate as PKCS12 bytes.
@@ -229,8 +229,10 @@ class CryptoBackend:
 
         log.debug('Issuing LDevID for device %s', device.device_name)
 
+        domain_model = device.get_domain(domain_id)
+
         pki_request = PkiRestPkcs12RequestMessage(
-            domain_model=device.domain, serial_number=serial_no, device_name=device.device_name
+            domain_model=domain_model, serial_number=serial_no, device_name=device.device_name
         )
         request_handler = CaRequestHandlerFactory.get_request_handler(pki_request)
         pki_response = request_handler.process_request()
@@ -240,12 +242,15 @@ class CryptoBackend:
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
             raise OnboardingError(exc_msg)
 
+
+        print('onboarding_protocol: ', onboarding_protocol)
+
         device.save_certificate(
             certificate=cert_model,
             certificate_type=CertificateTypes.LDEVID,
-            domain=device.domain,
+            domain=domain_model,
             template_name=TemplateName.GENERIC,
-            protocol=device.onboarding_protocol
+            onboarding_protocol=onboarding_protocol
         )
         device.save()
         log.info('Issued and stored LDevID for device %s', device.device_name)

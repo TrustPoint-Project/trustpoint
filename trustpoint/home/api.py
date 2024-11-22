@@ -4,7 +4,7 @@ import logging
 from ninja import Router, Schema
 from django.http import HttpRequest
 from ninja.responses import Response, codes_4xx
-from devices import DeviceOnboardingStatus
+from devices import DeviceOnboardingStatus, OnboardingProtocol
 from devices.models import Device
 from pki.models import CertificateModel, IssuingCaModel, DomainModel, BaseCaModel, IssuedDeviceCertificateModel
 from pki import CaLocalization, CertificateStatus, TemplateName
@@ -154,7 +154,7 @@ def get_device_counts_by_date_and_status():
 
 def get_device_count_by_onboarding_protocol():
   """Get device count by onboarding protocol from database"""
-  device_op_counts = {str(status): 0 for _, status in Device.OnboardingProtocol.choices}
+  device_op_counts = {str(status): 0 for _, status in OnboardingProtocol.choices}
   try:
     device_op_qr = Device.objects.values('onboarding_protocol').annotate(
       count=Count('onboarding_protocol')
@@ -162,7 +162,7 @@ def get_device_count_by_onboarding_protocol():
   except Exception as e:
     print(f"Error occurred in device count by onboarding protocol query: {e}")
   # Mapping from short code to human-readable name
-  protocol_mapping = {key: str(value) for key, value in Device.OnboardingProtocol.choices}
+  protocol_mapping = {key: str(value) for key, value in OnboardingProtocol.choices}
   device_op_counts = {
     protocol_mapping[item['onboarding_protocol']]: item['count']
     for item in device_op_qr

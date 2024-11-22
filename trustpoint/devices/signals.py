@@ -22,5 +22,5 @@ def device_pre_delete(sender: type[Device], instance: Device, **_: dict) -> None
         instance (Device): The instance of the model being deleted.
         **_ (dict): Additional keyword arguments provided by the signal.
     """
-    if isinstance(instance.domain, DomainModel) and instance.get_current_ldevid_by_domain(domain=instance.domain):
+    if isinstance(instance.domains, DomainModel) and instance.get_current_ldevid_by_domain(domain=instance.domains):
         instance.revoke_ldevid(revocation_reason=ReasonCode.CESSATION)

@@ -8,10 +8,12 @@ import threading
 from enum import IntEnum
 from typing import TYPE_CHECKING
 
-from devices import DeviceOnboardingStatus
+from devices import DeviceOnboardingStatus, OnboardingProtocol
 from devices.models import Device
 from django.db import models
+from django.utils.translation import gettext as _
 from pki import ReasonCode
+from pki.models import DomainModel
 from pki.serializer import CredentialSerializer
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
@@ -61,13 +63,15 @@ class OnboardingProcess():
 
     id_counter = 1  # only unique within the current server runtime
 
-    def __init__(self, dev: Device) -> None:
+    def __init__(self, dev: Device, domain_id: int, onboarding_protocol: OnboardingProtocol) -> None:
         """Initializes a new onboarding process for a device.
 
         Generates secrets, starts two threads for trust store HMAC generation and a timer for timeout.
         """
         super().__init__()
         self.device = dev
+        self.domain_id = domain_id
+        self.onboarding_protocol = onboarding_protocol
         self.id = OnboardingProcess.id_counter
         self.state = OnboardingProcessState.STARTED
         self.error_reason = ''
@@ -117,7 +121,7 @@ class OnboardingProcess():
         OnboardingProcessTypes = TypeVar('OnboardingProcessTypes', bound='OnboardingProcess')
 
     @staticmethod
-    def make_onboarding_process(device: Device, process_type: type[OnboardingProcessTypes]) -> OnboardingProcessTypes:
+    def make_onboarding_process(device: Device, domain_id: int, process_type: type[OnboardingProcessTypes], onboarding_protocol: str) -> OnboardingProcessTypes:
         """Returns the onboarding process for the device, creates a new one if it does not exist.
 
         Args:
@@ -129,11 +133,15 @@ class OnboardingProcess():
         """
         # check if onboarding process for this device already exists
         onboarding_process = OnboardingProcess.get_by_device(device)
+        try:
+            onboarding_protocol = OnboardingProtocol(onboarding_protocol)
+        except ValueError:
+            msg = f'{onboarding_protocol} No valid onboarding protocol found.'
+            log.exception(_(msg))
 
         if not onboarding_process:
-            onboarding_process = process_type(device)
+            onboarding_process = process_type(device, domain_id, onboarding_protocol)
             onboarding_processes.append(onboarding_process)
-            device.device_onboarding_status = DeviceOnboardingStatus.ONBOARDING_RUNNING
             # TODO(Air): very unnecessary save required to update onboarding status in table
             # Problem: if server is restarted during onboarding, status is stuck at running
             device.save()
@@ -191,7 +199,7 @@ class OnboardingProcess():
         try:
             if not self.device.device_serial_number:
                 self.device.device_serial_number = 'tpdl_' + secrets.token_urlsafe(12)
-            self.cred_serializer = CredentialSerializer(Crypt.gen_keypair_and_ldevid(self.device))
+            self.cred_serializer = CredentialSerializer(Crypt.gen_keypair_and_ldevid(self.device, self.domain_id, str(self)))
             self.state = OnboardingProcessState.LDEVID_SENT
             log.info(f'LDevID issued for device {self.device.device_name} in onboarding process {self.id}.')
         except Exception as e:  # noqa: BLE001
@@ -232,7 +240,6 @@ class LDevIDOnboardingProcessMixin():
 
     def __init__(self, dev: Device):
         """Initializes the mixin"""
-        super().__init__(dev)
         self.otp = secrets.token_hex(8)
         self.salt = self.url
         self.gen_thread = threading.Thread(target=self._calc_hmac, daemon=True)
@@ -311,9 +318,10 @@ class LDevIDOnboardingProcessMixin():
 class ManualOnboardingProcess(LDevIDOnboardingProcessMixin, OnboardingProcess):
     """Onboarding process for a device using the full manual onboarding with OTP and HMAC trust store verification."""
 
-    def __init__(self, dev: Device) -> None:
+    def __init__(self, dev: Device, domain_id, onboarding_protocol) -> None:
         """Initializes a new manual onboarding process for a device."""
-        super().__init__(dev)
+        OnboardingProcess.__init__(self, dev, domain_id, onboarding_protocol)
+        LDevIDOnboardingProcessMixin.__init__(self, dev)
         print('init ManualOnboardingProcess')
         self.tsotp = secrets.token_hex(8)
         self.tssalt = secrets.token_hex(8)
@@ -326,9 +334,9 @@ class DownloadOnboardingProcess(OnboardingProcess):
     """Onboarding process for a device using the download onboarding method."""
     #_device: Device
 
-    def __init__(self, dev: Device) -> None:
+    def __init__(self, dev: Device, domain_id: int, onboarding_protocol: OnboardingProtocol) -> None:
         """Initializes a new download onboarding process for a device."""
-        super().__init__(dev)
+        super().__init__(dev, domain_id, onboarding_protocol)
         #self._device = dev
         self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
         self.gen_thread.start()
@@ -339,9 +347,9 @@ class BrowserOnboardingProcess(OnboardingProcess):
     """Onboarding process for a device using the download onboarding method."""
     MAXPWTRIES = 3
 
-    def __init__(self, dev: Device) -> None:
+    def __init__(self, dev: Device, domain_id: int, onboarding_protocol: OnboardingProtocol) -> None:
         """Initializes a new download onboarding process for a device."""
-        super().__init__(dev)
+        super().__init__(dev, domain_id, onboarding_protocol)
         self._browser_otp = None
         self.password_tries = 0
 

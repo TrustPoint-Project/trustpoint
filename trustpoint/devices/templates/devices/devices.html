@@ -4,7 +4,6 @@
 {% load static %}
 
 {% block content %}
-
 <div class="card card-main" style="display: flex; flex-direction: column; max-height: 85vh;">
     <div class="card-header tp-card-header" style="min-height: 40px;">
         <h1>{% trans 'Devices' %}</h1>
@@ -86,7 +85,7 @@
           <select id="onboardingMethodDropdown" class="form-select" style="width: auto; display: inline-block;">
           </select>
           
-          <button id="addCertificateButton" class="btn btn-primary" disabled>Add Certificate</button>
+          <button id="addCertificateButton" class="btn btn-primary">Add Certificate</button>
         </div>
       </div>
     </div>
@@ -94,96 +93,92 @@
 
 <script type="text/javascript">
     document.addEventListener('DOMContentLoaded', function () {
-      const domainModal = document.getElementById('domainModal');
-      const certTypeDropdown = document.getElementById('certTypeDropdown');
-      const onboardingMethodDropdown = document.getElementById('onboardingMethodDropdown');
-      const addCertificateButton = document.getElementById('addCertificateButton');
-  
-      function loadDropdownOptions() {
-        fetch('/api/devices/certificate-types/')
-          .then(response => response.json())
-          .then(data => {
-            certTypeDropdown.innerHTML = data.types.map(type => `
-              <option value="${type.value}">${type.label}</option>
-            `).join('');
-          })
-          .catch(error => console.error('Error fetching certificate types:', error));
-  
-        fetch('/api/devices/onboarding-methods/')
-          .then(response => response.json())
-          .then(data => {
-            onboardingMethodDropdown.innerHTML = data.methods.map(method => `
-              <option value="${method.value}">${method.label}</option>
-            `).join('');
-          })
-          .catch(error => console.error('Error fetching onboarding methods:', error));
-      }
+    const domainModal = document.getElementById('domainModal');
+    const certTypeDropdown = document.getElementById('certTypeDropdown');
+    const onboardingMethodDropdown = document.getElementById('onboardingMethodDropdown');
+    const addCertificateButton = document.getElementById('addCertificateButton');
+    let domainId = null;
 
-      domainModal.addEventListener('show.bs.modal', function (event) {
+    function loadDropdownOptions() {
+        certTypeDropdown.innerHTML = '<option>Loading...</option>';
+        onboardingMethodDropdown.innerHTML = '<option>Loading...</option>';
+
+        fetch('/api/devices/certificate-types/')
+            .then(response => response.json())
+            .then(data => {
+                certTypeDropdown.innerHTML = data.types.map(type => `
+                    <option value="${type.value}">${type.label}</option>
+                `).join('');
+            })
+            .catch(error => console.error('Error fetching certificate types:', error));
+
+        fetch('/api/devices/onboarding-methods/')
+            .then(response => response.json())
+            .then(data => {
+                onboardingMethodDropdown.innerHTML = data.methods.map(method => `
+                    <option value="${method.value}">${method.label}</option>
+                `).join('');
+            })
+            .catch(error => console.error('Error fetching onboarding methods:', error));
+    }
+
+    domainModal.addEventListener('show.bs.modal', function (event) {
         const button = event.relatedTarget;
-        const domainId = button.getAttribute('data-domain-id');
-        const modalBody = domainModal.querySelector('.modal-body');
+        domainId = button.getAttribute('data-domain-id');
+        deviceId = button.getAttribute('data-device-id');
 
         loadDropdownOptions();
 
+        const modalBody = domainModal.querySelector('.modal-body');
         modalBody.innerHTML = '<p>Loading certificates...</p>';
 
         fetch(`/api/devices/domain-certificates/${domainId}/`)
-          .then(response => response.json())
-          .then(data => {
-            modalBody.innerHTML = `
-              <table class="table">
-                <thead>
-                  <tr>
-                    <th>Type</th>
-                    <th>Expiration Date</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${data.certificates.map(cert => `
-                    <tr>
-                      <td>${cert.type}</td>
-                      <td>${cert.expiration_date}</td>
-                      <td>${cert.status}</td>
-                      <td><a href="${cert.revoke_url}" class="btn btn-danger">Revoke</a></td>
-                    </tr>
-                  `).join('')}
-                </tbody>
-              </table>
-            `;
-          })
-          .catch(error => {
-            modalBody.innerHTML = '<p>Error loading certificates. Please try again later.</p>';
-            console.error('Error fetching certificates:', error);
-          });
-      });
-  
-      [certTypeDropdown, onboardingMethodDropdown].forEach(dropdown => {
-        dropdown.addEventListener('change', function () {
-          const certType = certTypeDropdown.value;
-          const onboardingMethod = onboardingMethodDropdown.value;
-  
-          if (certType && onboardingMethod) {
-            addCertificateButton.disabled = false;
-            addCertificateButton.setAttribute('data-cert-type', certType);
-            addCertificateButton.setAttribute('data-onboarding-method', onboardingMethod);
-          } else {
-            addCertificateButton.disabled = true;
-          }
-        });
-      });
-  
-      addCertificateButton.addEventListener('click', function () {
-        const certType = this.getAttribute('data-cert-type');
-        const onboardingMethod = this.getAttribute('data-onboarding-method');
-        const domainId = domainModal.querySelector('[data-domain-id]').getAttribute('data-domain-id');
-  
-        console.log(`Add Certificate: CertType=${certType}, Onboarding=${onboardingMethod}, DomainId=${domainId}`);
-        
-        window.location.href = `/devices/add-certificate/${domainId}/?certType=${certType}&onboarding=${onboardingMethod}`;
-      });
+            .then(response => response.json())
+            .then(data => {
+                modalBody.innerHTML = `
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Type</th>
+                                <th>Expiration Date</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${data.certificates.map(cert => `
+                                <tr>
+                                    <td>${cert.type}</td>
+                                    <td>${cert.expiration_date}</td>
+                                    <td>${cert.status}</td>
+                                    <td><a href="${cert.revoke_url}" class="btn btn-danger">Revoke</a></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            })
+            .catch(error => {
+                modalBody.innerHTML = '<p>Error loading certificates. Please try again later.</p>';
+                console.error('Error fetching certificates:', error);
+            });
     });
+
+    addCertificateButton.addEventListener('click', function () {
+        const certType = certTypeDropdown.value;
+        const onboardingMethod = onboardingMethodDropdown.value;
+
+        console.log("CertType:", certType);
+        console.log("OnboardingMethod:", onboardingMethod);
+        console.log("DomainId beim Klick:", domainId);
+
+        if (!certType || !onboardingMethod || !domainId) {
+            alert("Fehlende Daten für die Zertifikatserstellung!");
+            return;
+        }
+
+        window.location.href = `/onboarding/${deviceId}/${domainId}?certType=${certType}&onboarding=${onboardingMethod}&`;
+    });
+});
 </script>
 {% endblock content %}

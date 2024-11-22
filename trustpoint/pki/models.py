@@ -17,6 +17,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
+from devices import DeviceOnboardingStatus, OnboardingProtocol
 from devices.models import Device
 
 from . import CertificateTypes, ReasonCode, CertificateStatus, CaLocalization, TemplateName
@@ -729,10 +730,14 @@ class IssuedDeviceCertificateModel(models.Model):
     certificate_type = models.CharField(max_length=256, choices=CertificateTypes.choices)
     domain = models.ForeignKey('DomainModel', on_delete=models.CASCADE)
     template_name = models.CharField(max_length=256, choices=TemplateName.choices, null=True, blank=True)
-    protocol = models.CharField(max_length=256, default=None, null=True, blank=True)
     certificate = models.OneToOneField(
         'CertificateModel', on_delete=models.CASCADE, related_name='issued_device_certificate', null=True, blank=True)
-
+    onboarding_protocol: models.CharField = models.CharField(
+        _('Onboarding protocol'),
+        max_length=2,
+        choices=OnboardingProtocol,
+        blank=True,
+    )
 
 class CertificateModel(models.Model):
     """X509 Certificate Model.

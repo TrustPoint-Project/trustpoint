@@ -13,7 +13,7 @@ from django import forms
 from pki.models import DomainModel
 from taggit.models import Tag
 
-from devices import DeviceOnboardingStatus
+from devices import DeviceOnboardingStatus, OnboardingProtocol
 
 from .models import Device
 
@@ -44,7 +44,7 @@ class DeviceFilter(django_filters.FilterSet):
 
         onboarding_protocol (django_filters.ChoiceFilter):
             Filters devices by their onboarding protocol.
-            - Choices: Defined by `Device.OnboardingProtocol`
+            - Choices: Defined by `OnboardingProtocol`
             - Widget: `forms.Select`
 
         domain (django_filters.ModelChoiceFilter):
@@ -78,7 +78,7 @@ class DeviceFilter(django_filters.FilterSet):
     )
 
     onboarding_protocol = django_filters.ChoiceFilter(
-        choices=Device.OnboardingProtocol, widget=forms.Select(attrs={'class': 'form-select'})
+        choices=OnboardingProtocol, widget=forms.Select(attrs={'class': 'form-select'})
     )
 
     domain = django_filters.ModelChoiceFilter(

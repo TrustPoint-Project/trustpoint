@@ -55,7 +55,7 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
     """Device Create View."""
 
     model = Device
-    fields = ['device_name', 'onboarding_protocol', 'domain', 'tags']  # noqa: RUF012
+    fields = ['device_name', 'domains', 'tags']  # noqa: RUF012
     template_name = 'devices/add.html'
     success_url = reverse_lazy('devices:devices')
 
@@ -88,19 +88,19 @@ class ConfigDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
         context = super().get_context_data(**kwargs)
         device = self.get_object()
 
-        context['domains'] = device.domain.all()
+        context['domains'] = device.domains.all()
         context['add_domains_url'] = reverse('devices:add_domains', kwargs={'pk': device.pk})
         return context
 
     def post(self, request, *args, **kwargs):
-        device = self.get_object()
+        device: Device = self.get_object()
 
         # Handle domain deletion
         if 'delete_domain' in request.POST:
             domain_id = request.POST.get('delete_domain')
             try:
-                domain = device.domain.get(pk=domain_id)
-                device.domain.remove(domain)
+                domain = device.get_domain(domain_id)
+                device.domains.remove(domain)
                 messages.success(request, _(f'Domain {domain} successfully removed.'))
             except DomainModel.DoesNotExist:
                 messages.error(request, _('The domain does not exist or is not associated with this device.'))
@@ -145,7 +145,7 @@ class AddDomainsView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
         form_class = form_class or self.form_class
         device = self.get_object()
 
-        available_domains = DomainModel.objects.exclude(id__in=device.domain.values_list('id', flat=True))
+        available_domains = DomainModel.objects.exclude(id__in=device.domains.values_list('id', flat=True))
 
         form = form_class()
         form.fields['domains'].queryset = available_domains
@@ -157,7 +157,7 @@ class AddDomainsView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
         device = self.get_object()
 
         # Get the available domains
-        available_domains = DomainModel.objects.exclude(id__in=device.domain.values_list('id', flat=True))
+        available_domains = DomainModel.objects.exclude(id__in=device.domains.values_list('id', flat=True))
 
         # Add a flag to indicate if there are no domains available
         if not available_domains.exists():
@@ -180,7 +180,7 @@ class AddDomainsView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
         """Add selected domains to the device."""
         device = self.get_object()
         selected_domains = form.cleaned_data['domains']
-        device.domain.add(*selected_domains)
+        device.domains.add(*selected_domains)
         messages.success(self.request, _('Domains successfully added.'))
         return redirect(self.get_success_url())
 
@@ -212,7 +212,7 @@ class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
         context['onboarding_button'] = device.render_onboarding_action()
         certs_by_domain = {}
         if device.domain.exists():
-            for domain in device.domain.all():
+            for domain in device.domains.all():
                 domain_certs = device.get_all_active_certs_by_domain(domain)
                 if domain_certs:
                     certs_by_domain[domain] = {

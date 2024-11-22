@@ -42,7 +42,7 @@ class DeviceTable(tables.Table):
             'row_checkbox',
             'device_name',
             'device_serial_number',
-            'domain',
+            'domains',
             'details',
             'config',
             'delete',
@@ -54,7 +54,7 @@ class DeviceTable(tables.Table):
     device_serial_number = tables.Column(empty_values=(), orderable=True, verbose_name=_('Serial Number'))
     # onboarding_protocol = tables.Column(empty_values=(), orderable=True, verbose_name=_('Onboarding Protocol'))
     # device_onboarding_status = tables.Column(empty_values=(), orderable=True, verbose_name=_('Onboarding Status'))
-    domain = tables.Column(
+    domains = tables.Column(
         empty_values=(None, ''),
         orderable=False,
         verbose_name=_('Domains'),
@@ -210,15 +210,14 @@ class DeviceTable(tables.Table):
     #     return _('No Domains Assigned')
     
     @staticmethod
-    def render_domain(record: Device) -> str:
-        """Renders the domains as a vertical list."""
-        if hasattr(record, 'domain') and record.domain.exists():
+    def render_domains(record: Device) -> str:
+        """Rendert die Domains als Links mit Domain-ID und Device-ID."""
+        if hasattr(record, 'domains') and record.domains.exists():
             return format_html(
-                '<ul>{}</ul>',
                 format_html_join(
                     '',
-                    '<li><a href="#" data-bs-toggle="modal" data-bs-target="#domainModal" data-domain-id="{}">{}</a></li>',
-                    ((domain.id, domain.unique_name) for domain in record.domain.all())
+                    '<li><a href="#" data-bs-toggle="modal" data-bs-target="#domainModal" data-domain-id="{}" data-device-id="{}">{}</a></li>',
+                    ((domain.id, record.pk, domain.unique_name) for domain in record.domains.all())
                 )
             )
         return _('No Domain associated')

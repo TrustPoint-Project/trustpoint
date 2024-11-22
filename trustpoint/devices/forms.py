@@ -33,7 +33,7 @@ class DeviceForm(forms.ModelForm):
         Specifies the model and fields included in the form.
         """
         model = Device
-        fields: ClassVar[list[str]] = ['device_name', 'onboarding_protocol', 'domain', 'tags']
+        fields: ClassVar[list[str]] = ['device_name', 'domains', 'tags']
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         """Initialize the DeviceForm.
@@ -50,11 +50,8 @@ class DeviceForm(forms.ModelForm):
         if (
             self.instance
             and self.instance.pk
-            and self.instance.device_onboarding_status
-            in [DeviceOnboardingStatus.ONBOARDED, DeviceOnboardingStatus.ONBOARDING_RUNNING]
         ):
-            self.fields['onboarding_protocol'].disabled = True
-            self.fields['domain'].disabled = True
+            self.fields['domains'].disabled = True
 
 
 class DomainSelectionForm(forms.Form):

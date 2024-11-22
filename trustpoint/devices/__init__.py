@@ -32,3 +32,13 @@ class DeviceOnboardingStatus(models.TextChoices):
         if choice == cls.ONBOARDING_FAILED.value:
             return 'danger'
         raise UnknownOnboardingStatusError(choice)
+
+class OnboardingProtocol(models.TextChoices):
+    """Supported Onboarding Protocols."""
+
+    MANUAL = 'MA', _('Manual download')
+    BROWSER = 'BO', _('Browser download')
+    CLI = 'CI', _('Device CLI')
+    TP_CLIENT = 'TP', _('Trustpoint Client')
+    BRSKI = 'BR', _('BRSKI')
+    AOKI = 'AO', _('AOKI')

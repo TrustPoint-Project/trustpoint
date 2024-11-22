@@ -5,36 +5,36 @@ from __future__ import annotations
 
 import base64
 import logging
+from pathlib import Path
 
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
-from pki.util.keys import SignatureSuite, DigitalSignature
-
+from devices import OnboardingProtocol
 from devices.models import Device
 from django.http import HttpRequest, HttpResponse
 from ninja import Router, Schema
 from ninja.responses import Response, codes_4xx
-from pathlib import Path
+from pki import ReasonCode
+from pki.models import CertificateModel, DomainModel, TrustStoreModel
+from pki.util.keys import DigitalSignature, SignatureSuite
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
-from onboarding.crypto_backend import VerificationError, OnboardingError
+from onboarding.crypto_backend import OnboardingError, VerificationError
 from onboarding.models import (
+    AokiOnboardingProcess,
     DownloadOnboardingProcess,
     ManualOnboardingProcess,
-    AokiOnboardingProcess,
     OnboardingProcess,
     OnboardingProcessState,
 )
-from trustpoint.schema import ErrorSchema, SuccessSchema
 from onboarding.schema import (
+    AokiFinalizationMessageSchema,
+    AokiFinalizationResponseSchema,
     AokiInitMessageSchema,
     AokiInitResponseSchema,
-    AokiFinalizationMessageSchema,
-    AokiFinalizationResponseSchema
 )
-from pki import ReasonCode
-from pki.models import CertificateModel, TrustStoreModel, DomainModel
+from trustpoint.schema import ErrorSchema, SuccessSchema
 
 log = logging.getLogger('tp.onboarding')
 
@@ -203,7 +203,7 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
         aoki_device = Device(
             device_name=f'AOKI{idevid_subject_sn}', # temporary name until we know PK
             device_serial_number=idevid_subject_sn,
-            onboarding_protocol=Device.OnboardingProtocol.AOKI
+            onboarding_protocol=OnboardingProtocol.AOKI
         )
         # TODO (Air): set proper domain (this must be configurable per ownership certificate)
         aoki_device.domain = DomainModel.objects.first()
@@ -303,14 +303,14 @@ def start(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpRespon
         return 404, {'error': 'Device not found.'}
 
     ok, msg = Device.check_onboarding_prerequisites(device_id,
-                [Device.OnboardingProtocol.CLI,
-                 Device.OnboardingProtocol.TP_CLIENT,
-                 Device.OnboardingProtocol.MANUAL])
+                [OnboardingProtocol.CLI,
+                 OnboardingProtocol.TP_CLIENT,
+                 OnboardingProtocol.MANUAL])
 
     if not ok:
         return 422, {'error': msg}
 
-    if (device.onboarding_protocol == Device.OnboardingProtocol.MANUAL):
+    if (device.onboarding_protocol == OnboardingProtocol.MANUAL):
         onboarding_process = OnboardingProcess.make_onboarding_process(device, DownloadOnboardingProcess)
         response = HttpResponse(onboarding_process.get_pkcs12(), status=200, content_type='application/x-pkcs12')
         response['Content-Disposition'] = f'attachment; filename="{device.device_serial_number}.p12"'

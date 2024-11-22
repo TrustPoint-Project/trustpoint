@@ -3,6 +3,7 @@ import random
 import string
 from pathlib import Path
 from django.core.management.base import BaseCommand
+from devices import OnboardingProtocol
 from pki.models import DomainModel, IssuingCaModel
 from devices.models import Device
 from django.core.management import call_command
@@ -85,8 +86,8 @@ class Command(BaseCommand):
             ]
         }
 
-        # onboarding_protocols = [protocol.value for protocol in Device.OnboardingProtocol]
-        onboarding_protocols = [Device.OnboardingProtocol.TP_CLIENT.value, Device.OnboardingProtocol.MANUAL.value]
+        # onboarding_protocols = [protocol.value for protocol in OnboardingProtocol]
+        onboarding_protocols = [OnboardingProtocol.TP_CLIENT.value, OnboardingProtocol.MANUAL.value]
 
         print("Starting the process of adding domains and devices...\n")
 

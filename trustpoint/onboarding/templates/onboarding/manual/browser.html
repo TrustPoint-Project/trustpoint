@@ -4,7 +4,7 @@
 {% load i18n %}
 {% block head %}
     <link rel="stylesheet" href="{% static 'css/onboarding.css' %}">
-    <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:exit' device_id %}"</script>
+    <script>url = "{{ url }}"; icons = "{% static 'img/icons.svg' %}", parentUrl = "{% url 'onboarding:exit' onboarding_process_id %}"</script>
     <script src="{% url 'javascript-catalog' %}"></script>
     <script src="{% static 'js/onboarding.js' %}"></script>
 {% endblock head %}
@@ -18,8 +18,8 @@
                 <svg class="bi flex-shrink-0 tp-msg-icon-margin" width="20" height="20" fill="currentColor" role="img" aria-label="State: "><use xlink:href="{% static 'img/icons.svg' %}#icon-clock"/></svg>
                 <div>{% trans "Fetching state from server..." %}</div>                
             </div>
-            <h2>Device ID</h2>
-            {{ device_id }}
+            <h2>Onboarding ID</h2>
+            {{ onboarding_process_id }}
             <hr>
             <h2>OTP</h2>
             <div class="d-flex justify-content-center align-items-center">
@@ -33,7 +33,7 @@
                 </a>
             </div>
             <div class="text-center">
-              <!-- <a href="{% url 'onboarding:api-p12-download' device_id %}" download="{{ device_name }}.p12" class="btn btn-primary mt-2 w-50">{% trans "Download PKCS12" %}</a> -->
+              <!-- <a href="{% url 'onboarding:api-p12-download' onboarding_process_id %}" download="{{ device_name }}.p12" class="btn btn-primary mt-2 w-50">{% trans "Download PKCS12" %}</a> -->
             </div>
             <hr>
             <!-- <h2>{% trans "Keypair in PEM format" %}</h2>
@@ -43,7 +43,7 @@
         </div>
         <div class="card-footer text-body-secondary">
             <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans "Back" %}</a>
-            <a href="{% url 'onboarding:exit' device_id %}" class="btn btn-danger">{% trans "Cancel" %}</a>
+            <a href="{% url 'onboarding:exit' onboarding_process_id %}" class="btn btn-danger">{% trans "Cancel" %}</a>
         </div>
     </div>
 {% endblock content %}
