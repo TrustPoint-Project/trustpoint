@@ -77,6 +77,19 @@ async function fetchAndUpdateDashboardData(period) {
   }
 }
 
+function toggleChartButtons() {
+  const buttons = document.querySelectorAll(".chart-period");
+  console.log("buttons", buttons)
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      // Remove active class from all buttons
+      buttons.forEach((btn) => btn.classList.remove("active"));
+      // Add active class to the clicked button
+      button.classList.add("active");
+    });
+  });
+}
+
 async function fetchAndUpdateDashboardChartData(period) {
   const dashboardData = await fetchDashboardData(period);
   console.log("dashboard data", dashboardData);
@@ -87,6 +100,7 @@ async function fetchAndUpdateDashboardChartData(period) {
 
 // Funktion zum Abrufen und Anzeigen der Dashboard-Daten aufrufen
 fetchAndUpdateDashboardData("today");
+toggleChartButtons();
 // every 20 seconds
 //setInterval(fetchAndUpdateDashboardData, 1000*20);
 
