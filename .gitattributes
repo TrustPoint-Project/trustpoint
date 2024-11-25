@@ -1,0 +1,7 @@
+# Force LF line endings
+* text=auto eol=lf
+
+# Language-specific settings
+*.sh eol=lf
+*.py eol=lf
+*.bat eol=crlf
