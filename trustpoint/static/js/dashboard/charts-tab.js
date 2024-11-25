@@ -240,13 +240,13 @@ function updateDevicesByDomainDonutChart(deviceDomainCounts) {
 
 // Function to update the certs by status bar chart
 function updateCertsByStatusBarChart(certStatusCounts) {
+  certsByStatusLineChart != undefined ? certsByStatusLineChart.destroy() : "";
   const canvas = document.getElementById("certsByStatusLineChart");
   const certsByStatusLineChartEle = canvas.getContext("2d");
 
   if (!certStatusCounts) {
     return drawNoDataMessageOnCanvas(canvas);
   }
-  certsByStatusLineChart != undefined ? certsByStatusLineChart.destroy() : "";
   var chartLabels = [];
   var chartData = [];
   Object.entries(certStatusCounts).forEach(([key, value]) => {
@@ -297,12 +297,12 @@ function updateCertsByStatusBarChart(certStatusCounts) {
 
 // Function to update the certificates by domain pie chart
 function updateCertsByDomainPieChart(certDomainCounts) {
+  certsByDomainPieChart != undefined ? certsByDomainPieChart.destroy() : "";
   const canvas = document.getElementById("certsByDomainPieChart");
   var certsByDomainPieChartEle = canvas.getContext("2d");
   if (!certDomainCounts) {
     return drawNoDataMessageOnCanvas(canvas);
   }
-  certsByDomainPieChart != undefined ? certsByDomainPieChart.destroy() : "";
   var chartLabels = [];
   var chartData = [];
   certDomainCounts.forEach((item) => {
@@ -327,12 +327,12 @@ function updateCertsByDomainPieChart(certDomainCounts) {
 
 // Function to update the certy by template bar chart
 function updateCertsByTemplateBarChart(certsByTempateCounts) {
+  certsByTemplateBarChart != undefined ? certsByTemplateBarChart.destroy() : "";
   const canvas = document.getElementById("certsByTemplateBarChart");
   var certsByTemplateBarChartEle = canvas.getContext("2d");
   if (!certsByTempateCounts) {
     return drawNoDataMessageOnCanvas(canvas);
   }
-  certsByTemplateBarChart != undefined ? certsByTemplateBarChart.destroy() : "";
   var chartLabels = [];
   var chartData = [];
   Object.entries(certsByTempateCounts).forEach(([key, value]) => {
@@ -366,12 +366,12 @@ function updateCertsByTemplateBarChart(certsByTempateCounts) {
 
 // Function to update the issuing ca counts
 function updateCertsByIssuingCAChart(certIssuingCACounts) {
+  certsByIssuingCADonutChart != undefined ? certsByIssuingCADonutChart.destroy() : "";
   const canvas = document.getElementById("certsByIssuingCADonutChart");
   var certsByIssuingCADonutChartEle = canvas.getContext("2d");
   if (!certIssuingCACounts) {
     return drawNoDataMessageOnCanvas(canvas);
   }
-  certsByIssuingCADonutChart != undefined ? certsByIssuingCADonutChart.destroy() : "";
   var chartLabels = [];
   var chartData = [];
   certIssuingCACounts.forEach((item) => {
@@ -396,13 +396,12 @@ function updateCertsByIssuingCAChart(certIssuingCACounts) {
 
 // Function to update the issuing ca certificate stack chart
 function updateCertsByDateStackChart(certDateCounts) {
+  certsByDateStackChart != undefined ? certsByDateStackChart.destroy() : "";
   const canvas = document.getElementById("certsByDateStackChart");
   var certsByDateStackChartEle = canvas.getContext("2d");
   if (!certDateCounts) {
     return drawNoDataMessageOnCanvas(canvas);
   }
-  certsByDateStackChart != undefined ? certsByDateStackChart.destroy() : "";
-
   const chartLabels = [...new Set(certDateCounts.map((item) => item.issue_date))]; // Unique dates
   const datasets = {};
 
@@ -439,12 +438,12 @@ function updateCertsByDateStackChart(certDateCounts) {
 
 // Function to update the issuing ca pie chart
 function updateIssuingCAsByTypePieChart(issuingCaTypeCounts) {
+  issuingCAsByTypePieChart != undefined ? issuingCAsByTypePieChart.destroy() : "";
   const canvas = document.getElementById("issuingCAsByTypePieChart");
   var issuingCAsByTypePieChartEle = canvas.getContext("2d");
   if (!issuingCaTypeCounts) {
     return drawNoDataMessageOnCanvas(canvas);
   }
-  issuingCAsByTypePieChart != undefined ? issuingCAsByTypePieChart.destroy() : "";
   var chartLabels = [];
   var chartData = [];
   Object.entries(issuingCaTypeCounts).forEach(([key, value]) => {
