@@ -12,7 +12,9 @@ from trustpoint.schema import ErrorSchema, SuccessSchema
 from django.db.models import Count,F, Q,  Case, When, Value, IntegerField
 from django.db.models.functions import TruncDate
 from django.utils import timezone
-from datetime import timedelta
+from datetime import timedelta, datetime, date
+from typing import Optional
+from django.utils.dateparse import parse_date
 
 
 
@@ -20,12 +22,14 @@ log = logging.getLogger('tp.home')
 
 router = Router()
 
-def get_device_count_by_onboarding_status():
+def get_device_count_by_onboarding_status(start_date):
   """Get device count by onboarding status from database"""
   device_os_counts = {str(status): 0 for _, status in DeviceOnboardingStatus.choices}
   try:
-    device_os_qr = Device.objects.values('device_onboarding_status').annotate(
-      count=Count('device_onboarding_status')
+    device_os_qr = (Device.objects
+      .filter(created_at__gt=start_date)
+      .values('device_onboarding_status')
+      .annotate(count=Count('device_onboarding_status'))
     )
   except Exception as e:
     print(f"Error occurred in device count by onboarding protocol query: {e}")
@@ -152,12 +156,14 @@ def get_device_counts_by_date_and_status():
   #print("device_counts_by_date_and_os", device_counts_by_date_and_os)
   return device_counts_by_date_and_os
 
-def get_device_count_by_onboarding_protocol():
+def get_device_count_by_onboarding_protocol(start_date):
   """Get device count by onboarding protocol from database"""
   device_op_counts = {str(status): 0 for _, status in Device.OnboardingProtocol.choices}
   try:
-    device_op_qr = Device.objects.values('onboarding_protocol').annotate(
-      count=Count('onboarding_protocol')
+    device_op_qr = (Device.objects
+      .filter(created_at__gt=start_date)
+      .values('onboarding_protocol')
+      .annotate(count=Count('onboarding_protocol'))
     )
   except Exception as e:
     print(f"Error occurred in device count by onboarding protocol query: {e}")
@@ -171,12 +177,12 @@ def get_device_count_by_onboarding_protocol():
   #device_op_counts['total'] = sum(device_op_counts.values())
   return device_op_counts
 
-def get_device_count_by_domain():
+def get_device_count_by_domain(start_date):
   """Get count of onboarded devices by domain from the database."""
   try:
       device_domain_qr = (
           DomainModel.objects
-          .annotate(onboarded_device_count=Count('device', filter=Q(device__device_onboarding_status='O')))
+          .annotate(onboarded_device_count=Count('device', filter=Q(device__device_onboarding_status='O') & Q(device__created_at__gt=start_date)))
           .values('unique_name', 'onboarded_device_count')
       )
   except Exception as e:
@@ -278,13 +284,22 @@ def get_issuing_ca_counts_by_type():
 
 # --- PUBLIC HOME API ENDPOINTS ---
 @router.get('/dashboard_data', exclude_none=True)
-def dashboard_data(request: HttpRequest):
+def dashboard_data(request: HttpRequest, start_date: Optional[str] = None):
     """Get dashboard data for panels, tables and charts"""
+    start_date_object = None
+    # Parse the date string into a datetime.date object
+    if start_date:
+      start_date_object = parse_date(start_date)  # Returns a date object (not datetime)
+      if not start_date_object:
+        return Response({"error": "Invalid date format. Use YYYY-MM-DD."}, status=400)
+    else:
+      start_date_object = date.today()
+
     dashboard_data = {}
 
     ###### Get Device counts ######
     #device_counts = get_device_counts()
-    device_counts = get_device_count_by_onboarding_status()
+    device_counts = get_device_count_by_onboarding_status(parse_date("2023-01-01"))
     #print("device_counts", device_counts)
 
     dashboard_data["device_counts"] = device_counts
@@ -301,17 +316,22 @@ def dashboard_data(request: HttpRequest):
     if issuing_ca_counts:
       dashboard_data["issuing_ca_counts"] = issuing_ca_counts
 
+    ###### function calls to get chart data ######
+    device_counts_by_os = get_device_count_by_onboarding_status(start_date_object)
+    if device_counts_by_os:
+      dashboard_data["device_counts_by_os"] = device_counts_by_os
+    ###### Get device count by date and status ######
     device_counts_by_date_and_os = get_device_counts_by_date_and_status()
     if device_counts_by_date_and_os:
       dashboard_data["device_counts_by_date_and_os"] = device_counts_by_date_and_os
     
     ###### Get device count by onboarding protocol ######
-    device_counts_by_op = get_device_count_by_onboarding_protocol()
+    device_counts_by_op = get_device_count_by_onboarding_protocol(start_date_object)
     if device_counts_by_op:
       dashboard_data["device_counts_by_op"] = device_counts_by_op
 
     ###### Get device count by domain ######
-    device_counts_by_domain = get_device_count_by_domain()
+    device_counts_by_domain = get_device_count_by_domain(start_date)
     if device_counts_by_domain:
       dashboard_data["device_counts_by_domain"] = device_counts_by_domain
 
