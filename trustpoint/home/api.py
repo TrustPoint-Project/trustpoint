@@ -68,46 +68,47 @@ def get_cert_counts_by_status_and_date():
     """Get certificate counts grouped by issue date and certificate status."""
     cert_counts_by_status = []
     try:
-        cert_status_qr = (
-            CertificateModel.objects
-            .filter(certificate_status__in=['O', 'R'])  # Optional: Filter nach mehreren Statuswerten
-            .annotate(issue_date=TruncDate('not_valid_before'))
-            .values('issue_date', 'certificate_status')
-            .annotate(cert_count=Count('id'))
-            .order_by('issue_date', 'certificate_status')
-        )
-        # Mapping von Status-Code zu lesbarem Namen
-        status_mapping = dict(CertificateStatus.choices)
-        # Konvertiere das QuerySet in eine Liste und formatiere die Werte
-        cert_counts_by_status = [
-            {
-                'issue_date': item['issue_date'].strftime('%Y-%m-%d'),
-                'certificate_status': status_mapping.get(item['certificate_status'], item['certificate_status']),
-                'cert_count': item['cert_count']
-            }
-            for item in cert_status_qr
-        ]
+      cert_status_qr = (
+        CertificateModel.objects
+        .filter(certificate_status__in=['O', 'R'])  # Optional: Filter nach mehreren Statuswerten
+        .annotate(issue_date=TruncDate('not_valid_before'))
+        .values('issue_date', 'certificate_status')
+        .annotate(cert_count=Count('id'))
+        .order_by('issue_date', 'certificate_status')
+      )
+      # Mapping von Status-Code zu lesbarem Namen
+      status_mapping = dict(CertificateStatus.choices)
+      # Konvertiere das QuerySet in eine Liste und formatiere die Werte
+      cert_counts_by_status = [
+        {
+          'issue_date': item['issue_date'].strftime('%Y-%m-%d'),
+          'certificate_status': status_mapping.get(item['certificate_status'], item['certificate_status']),
+          'cert_count': item['cert_count']
+        }
+        for item in cert_status_qr
+      ]
     except Exception as e:
         print(f'Error occurred in certificate count by status query: {e}')
     return cert_counts_by_status
 
-def get_cert_counts_by_status():
+def get_cert_counts_by_status(start_date):
   """Get certs count by onboarding status from database"""
   cert_status_counts = {str(status): 0 for _, status in CertificateStatus.choices}
   try:
-    cert_status_qr = CertificateModel.objects.values('certificate_status').annotate(
-      count=Count('certificate_status')
+    cert_status_qr = (CertificateModel.objects
+      .filter(added_at__gt=start_date)
+      .values('certificate_status')
+      .annotate(count=Count('certificate_status'))
     )
+    # Mapping from short code to human-readable name
+    status_mapping = {key: str(value) for key, value in CertificateStatus.choices}
+    cert_status_counts = {
+      status_mapping[item['certificate_status']]: item['count']
+      for item in cert_status_qr
+    }
+    cert_status_counts['total'] = sum(cert_status_counts.values())
   except Exception as e:
     print(f"Error occurred in cert counts by status query: {e}")
-  # Mapping from short code to human-readable name
-  status_mapping = {key: str(value) for key, value in CertificateStatus.choices}
-  cert_status_counts = {
-    status_mapping[item['certificate_status']]: item['count']
-    for item in cert_status_qr
-  }
-
-  cert_status_counts['total'] = sum(cert_status_counts.values())
   return cert_status_counts
 
 def get_issuing_ca_counts():
@@ -194,15 +195,16 @@ def get_device_count_by_domain(start_date):
 
   return device_counts_by_domain
 
-def get_cert_counts_by_issuing_ca():
+def get_cert_counts_by_issuing_ca(start_date):
   """Get certificate count by issuing ca from database"""
   cert_counts_by_issuing_ca = {}
   try:
-    cert_issuing_ca_qr = CertificateModel.objects \
-      .annotate(cert_count=Count('issued_certificate_references')) \
-      .filter(issuing_ca_model__isnull=False) \
+    cert_issuing_ca_qr = (CertificateModel.objects
+      .filter(issuing_ca_model__isnull=False)
+      .filter(added_at__gt=start_date)
+      .annotate(cert_count=Count('issued_certificate_references'))
       .values('cert_count', ca_name=F('issuing_ca_model__unique_name'))
-
+    )
      # Convert the queryset to a list
     cert_counts_by_issuing_ca = list(cert_issuing_ca_qr)
   except Exception as e:
@@ -229,27 +231,30 @@ def get_cert_counts_by_issuing_ca_and_date():
 
   return cert_counts_by_issuing_ca_and_date
 
-def get_cert_counts_by_domain():
+def get_cert_counts_by_domain(start_date):
   """Get certificate count by domain from database"""
   cert_counts_by_domain = {}
   try:
-    cert_domain_qr = IssuedDeviceCertificateModel.objects \
-      .values(unique_name=F('domain__unique_name')) \
-      .annotate(cert_count=Count('domain')
+    cert_domain_qr = (IssuedDeviceCertificateModel.objects
+      .filter(certificate__added_at__gt=start_date)
+      .values(unique_name=F('domain__unique_name'))
+      .annotate(cert_count=Count('domain'))
     )
-    
-     # Convert the queryset to a list
+
+    # Convert the queryset to a list
     cert_counts_by_domain = list(cert_domain_qr)
   except Exception as e:
     print(f"Error occurred in certificate count by issuing ca query: {e}")
   return cert_counts_by_domain
 
-def get_cert_counts_by_template():
+def get_cert_counts_by_template(start_date):
   """Get certificate count by template from database"""
   cert_counts_by_template = {str(status): 0 for _, status in TemplateName.choices}
   try:
-    cert_template_qr = IssuedDeviceCertificateModel.objects.values('template_name').annotate(
-      count=Count('template_name')
+    cert_template_qr = (IssuedDeviceCertificateModel.objects
+      .filter(certificate__added_at__gt=start_date)
+      .values('template_name').annotate(
+      count=Count('template_name'))
     )
   except Exception as e:
     print(f"Error occurred in certificate count by template query: {e}")
@@ -262,23 +267,25 @@ def get_cert_counts_by_template():
 
   return cert_counts_by_template
 
-def get_issuing_ca_counts_by_type():
+def get_issuing_ca_counts_by_type(start_date):
   """Get issuing ca counts by type from database"""
   issuing_ca_type_counts = {str(type): 0 for _, type in CaLocalization.choices}
   try:
-    ca_type_qr = BaseCaModel.objects.values('ca_localization').annotate(
-      count=Count('ca_localization')
+    ca_type_qr = (BaseCaModel.objects
+      .filter(added_at__gt=start_date)
+      .values('ca_localization')
+      .annotate(count=Count('ca_localization'))
     )
+    # Mapping from short code to human-readable name
+    protocol_mapping = {key: str(value) for key, value in CaLocalization.choices}
+    issuing_ca_type_counts = {
+      protocol_mapping[item['ca_localization']]: item['count']
+      for item in ca_type_qr
+    }
+    #device_op_counts['total'] = sum(device_op_counts.values())
   except Exception as e:
     print(f"Error occurred in ca counts by type query: {e}")
-  # Mapping from short code to human-readable name
-  protocol_mapping = {key: str(value) for key, value in CaLocalization.choices}
-  issuing_ca_type_counts = {
-    protocol_mapping[item['ca_localization']]: item['count']
-    for item in ca_type_qr
-  }
 
-  #device_op_counts['total'] = sum(device_op_counts.values())
   return issuing_ca_type_counts
 
 
@@ -336,17 +343,17 @@ def dashboard_data(request: HttpRequest, start_date: Optional[str] = None):
       dashboard_data["device_counts_by_domain"] = device_counts_by_domain
 
     ###### Get certificate count by domain ######
-    cert_counts_by_domain = get_cert_counts_by_domain()
+    cert_counts_by_domain = get_cert_counts_by_domain(start_date)
     if cert_counts_by_domain:
       dashboard_data["cert_counts_by_domain"] = cert_counts_by_domain
 
     ###### Get certificate count by template ######
-    cert_counts_by_template = get_cert_counts_by_template()
+    cert_counts_by_template = get_cert_counts_by_template(start_date)
     if cert_counts_by_template:
       dashboard_data["cert_counts_by_template"] = cert_counts_by_template
 
     ###### Get certificate count by issuing ca ######
-    cert_counts_by_issuing_ca = get_cert_counts_by_issuing_ca()
+    cert_counts_by_issuing_ca = get_cert_counts_by_issuing_ca(start_date)
     if cert_counts_by_issuing_ca:
       dashboard_data["cert_counts_by_issuing_ca"] = cert_counts_by_issuing_ca
 
@@ -356,12 +363,12 @@ def dashboard_data(request: HttpRequest, start_date: Optional[str] = None):
       dashboard_data["cert_counts_by_issuing_ca_and_date"] = cert_counts_by_issuing_ca_and_date
 
     ###### Get issuing ca count by type ######
-    issuing_ca_counts_by_type = get_issuing_ca_counts_by_type()
+    issuing_ca_counts_by_type = get_issuing_ca_counts_by_type(start_date)
     #print("issuing ca count by type", issuing_ca_counts_by_type)
     if issuing_ca_counts_by_type:
       dashboard_data["ca_counts_by_type"] = issuing_ca_counts_by_type
 
-    cert_counts_by_status = get_cert_counts_by_status()
+    cert_counts_by_status = get_cert_counts_by_status(start_date)
     if cert_counts_by_status:
         dashboard_data["cert_counts_by_status"] = cert_counts_by_status
 
