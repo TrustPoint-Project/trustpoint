@@ -211,12 +211,12 @@ class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
 
         context['onboarding_button'] = device.render_onboarding_action()
         certs_by_domain = {}
-        if device.domain.exists():
+        if device.domains.exists():
             for domain in device.domains.all():
                 domain_certs = device.get_all_active_certs_by_domain(domain)
                 if domain_certs:
                     certs_by_domain[domain] = {
-                        'ldevid': domain_certs['ldevid'],
+                        'ldevids': domain_certs['ldevids'],
                         'other': domain_certs['other'],
                     }
 

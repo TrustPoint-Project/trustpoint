@@ -730,7 +730,7 @@ class IssuedDeviceCertificateModel(models.Model):
     certificate_type = models.CharField(max_length=256, choices=CertificateTypes.choices)
     domain = models.ForeignKey('DomainModel', on_delete=models.CASCADE)
     template_name = models.CharField(max_length=256, choices=TemplateName.choices, null=True, blank=True)
-    certificate = models.OneToOneField(
+    certificate: CertificateModel = models.OneToOneField(
         'CertificateModel', on_delete=models.CASCADE, related_name='issued_device_certificate', null=True, blank=True)
     onboarding_protocol: models.CharField = models.CharField(
         _('Onboarding protocol'),

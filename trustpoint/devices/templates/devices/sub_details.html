@@ -49,10 +49,14 @@
             <li>
                 <div>{% trans 'LDevID Certificate' %}</div>
                 <div>
-                    {% if certs.ldevid %}
-                        <a href="{% url 'pki:certificate-detail' pk=certs.ldevid.id %}">
-                            {{ certs.ldevid.common_name }}
-                        </a>
+                    {% if certs.ldevids %}
+                            {% for cert in certs.ldevids %}
+                                <a href="{% url 'pki:certificate-detail' pk=cert.certificate.id %}">
+                                    {{ cert.certificate.common_name }}
+                                </a>
+                                | {% trans 'expires at:' %} {{ cert.certificate.not_valid_after }}
+                                <br>
+                            {% endfor %}
                     {% else %}
                         {% trans 'No LDevID certificate associated with this domain.' %}
                     {% endif %}

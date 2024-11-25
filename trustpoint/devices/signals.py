@@ -8,7 +8,6 @@ from __future__ import annotations
 from django.db.models.signals import pre_delete
 from django.dispatch import receiver
 from pki import ReasonCode
-from pki.models import DomainModel
 
 from devices.models import Device
 
@@ -22,5 +21,5 @@ def device_pre_delete(sender: type[Device], instance: Device, **_: dict) -> None
         instance (Device): The instance of the model being deleted.
         **_ (dict): Additional keyword arguments provided by the signal.
     """
-    if isinstance(instance.domains, DomainModel) and instance.get_current_ldevid_by_domain(domain=instance.domains):
-        instance.revoke_ldevid(revocation_reason=ReasonCode.CESSATION)
+    for issued_device_certificate in instance.issued_device_certificates.all():
+        issued_device_certificate.certificate.revoke(revocation_reason=ReasonCode.CESSATION)

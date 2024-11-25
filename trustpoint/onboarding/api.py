@@ -344,6 +344,10 @@ def stop(request: HttpRequest, device_id: int) -> tuple[int, dict] | HttpRespons
     if not device:
         return 404, {'error': 'Device not found.'}
 
+
+    # @TODO: Stops and removes the onboarding process from onboarding_id 
+    return 500, {'error': f'No active onboarding process for device {device.device_name} found.'}
+
     state, onboarding_process = OnboardingProcess.cancel_for_device(device)
 
     if state == OnboardingProcessState.COMPLETED:

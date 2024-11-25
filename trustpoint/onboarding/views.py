@@ -143,7 +143,6 @@ class BrowserInitializationView(TpLoginRequiredMixin, OnboardingUtilMixin, Templ
                 'url': onboarding_process.url,
                 'sn': device.device_serial_number,
                 'device_name': device.device_name,
-                'device_id': device.pk,
                 'onboarding_process_id': onboarding_process.id,
                 'otp': otp,
                 'download_url': request.build_absolute_uri(reverse('onboarding:browser-login'))
@@ -172,6 +171,7 @@ class BrowserDownloadView(OnboardingUtilMixin, TemplateView):
                 'url': onboarding_process.url,
                 'device_name': onboarding_process.device.device_name,
                 'device_id': onboarding_process.device.pk,
+                'onboarding_process_id': onboarding_process.id,
                 'download_token': onboarding_process.download_token,
             }
             return render(request, self.template_name, context)
@@ -222,8 +222,6 @@ class P12DownloadView(OnboardingUtilMixin, View):
 
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:  # noqa: ARG002
         """GET method that returns the PKCS12 file of a device."""
-        print('P12 DOWNLOAD View')
-        print(self.kwargs)
         onboarding_process_id = self.kwargs.get('onboarding_process_id', '')
         onboarding_process = OnboardingProcess.get_by_id(onboarding_process_id)
         if not isinstance(onboarding_process, OnboardingProcess) and \
@@ -250,8 +248,6 @@ class PemDownloadView(OnboardingUtilMixin, View):
 
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         """GET method that returns the PEM file of a device."""
-        print('PEM DOWNLOAD View')
-        print(self.kwargs)
         onboarding_process_id = self.kwargs.get('onboarding_process_id', '')
         onboarding_process = OnboardingProcess.get_by_id(onboarding_process_id)
         if not isinstance(onboarding_process, OnboardingProcess) and \
@@ -299,6 +295,7 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
         if not isinstance(device, Device):
             raise KeyError
         onboarding_protocol = request.GET.get('onboarding', '')
+        cert_type = request.GET.get('certType', '')
         if onboarding_protocol == OnboardingProtocol.MANUAL:
             return ManualDownloadView.as_view()(request, *args, **kwargs)
 
@@ -424,26 +421,21 @@ class OnboardingRevocationView(TpLoginRequiredMixin, Detail404RedirectionMessage
     pk_url_kwarg = 'certificate_id'
 
     def get_context_data(self, **kwargs):
-        print('Hello')
         context = super().get_context_data(**kwargs)
         certificate = self.get_object()
-        print(certificate)
-        print(type(certificate))
-        print(certificate.issued_device_certificate)
-        print(certificate.issued_device_certificate.domain)
         context['form'] = RevokeCertificateForm()
 
         device = certificate.issued_device_certificate.device
-
         certs_by_domain = {}
         #TODO: Iterate through domains, if we have multiple domains associate with one device
         if certificate.issued_device_certificate.domain:
             domain_certs = device.get_all_active_certs_by_domain(certificate.issued_device_certificate.domain)
             if domain_certs:
                 certs_by_domain[certificate.issued_device_certificate.domain] = {
-                    'ldevid': domain_certs['ldevid'],
+                    'ldevid': domain_certs['ldevids'],
                     'other': domain_certs['other'],
                 }
+        context['device'] = certificate.issued_device_certificate.device
 
         context['certs_by_domain'] = certs_by_domain
 

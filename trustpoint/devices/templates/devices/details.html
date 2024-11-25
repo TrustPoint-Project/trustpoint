@@ -14,8 +14,8 @@
 
                 <div class="tp-form-btn-group tp-form-btn-group mt-3">
                     <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
-                    <a href="{% url 'devices:devices-edit' device.pk %}" class="btn btn-primary tp-table-btn">{% trans 'Edit' %}</a>
-                    {{ onboarding_button|safe }}
+                    <a href="{% url 'devices:devices-config' device.pk %}" class="btn btn-primary tp-table-btn">{% trans 'Edit' %}</a>
+                    <!-- {{ onboarding_button|safe }} -->
                 </div>
             </div>
         </div>

@@ -4,7 +4,7 @@ from __future__ import annotations
 from django.http import HttpRequest  # noqa: TCH002
 from django.shortcuts import get_object_or_404
 from ninja import Router, Schema
-from pki import CertificateTypes
+from pki import CertificateStatus, CertificateTypes
 from pki.models import DomainModel
 
 from devices import DeviceOnboardingStatus, OnboardingProtocol
@@ -56,23 +56,24 @@ def get_domain_certificates(request, domain_id: int):
     """Returns active certs for a domain ."""
     domain = get_object_or_404(DomainModel, id=domain_id)
     devices = domain.devices.all()
+    device: Device
 
     certificates = []
     for device in devices:
         certs = device.get_all_active_certs_by_domain(domain)
-        if certs['ldevid']:
+        for issued_cert in certs['ldevids']:
             certificates.append({
-                'type': 'LDevID',
-                'expiration_date': certs['ldevid'].not_valid_after.strftime('%Y-%m-%d %H:%M:%S'),
-                'status': certs['ldevid'].certificate_status,
-                'revoke_url': f"/onboarding/revoke/{certs['ldevid'].pk}/"
+                'type': issued_cert.certificate_type,
+                'expiration_date': issued_cert.certificate.not_valid_after.strftime('%Y-%m-%d %H:%M:%S'),
+                'status': CertificateStatus(issued_cert.certificate.certificate_status).label,
+                'revoke_url': f"/onboarding/revoke/{issued_cert.certificate.pk}/"
             })
         for issued_cert in certs['other']:
             certificates.append({
                 'type': issued_cert.certificate_type,
                 'expiration_date': issued_cert.certificate.not_valid_after.strftime('%Y-%m-%d %H:%M:%S'),
-                'status': issued_cert.certificate.certificate_status,
-                'revoke_url': f'/certificates/revoke/{issued_cert.certificate.pk}/'
+                'status': CertificateStatus(issued_cert.certificate.certificate_status).label,
+                'revoke_url': f'/onboarding/revoke/{issued_cert.certificate.pk}/'
             })
 
     return {'certificates': certificates}

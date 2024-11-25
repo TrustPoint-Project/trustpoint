@@ -13,7 +13,7 @@ from devices.models import Device
 from django.db import models
 from django.utils.translation import gettext as _
 from pki import ReasonCode
-from pki.models import DomainModel
+from pki.models import CertificateModel, DomainModel
 from pki.serializer import CredentialSerializer
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
@@ -83,6 +83,7 @@ class OnboardingProcess():
         self.active = True
         OnboardingProcess.id_counter += 1
         self.download_token = secrets.token_hex(32)
+        self.cert_model = None
         log.info(f'Onboarding process {self.id} started for device {self.device.device_name}.')
 
     def __str__(self) -> str:
@@ -109,20 +110,12 @@ class OnboardingProcess():
                 return process
         return None
 
-    @staticmethod
-    def get_by_device(device: Device) -> OnboardingProcess | None:
-        """Returns the onboarding process for a given device."""
-        for process in onboarding_processes:
-            if process.device == device:
-                return process
-        return None
-
     if TYPE_CHECKING:
         OnboardingProcessTypes = TypeVar('OnboardingProcessTypes', bound='OnboardingProcess')
 
     @staticmethod
     def make_onboarding_process(device: Device, domain_id: int, process_type: type[OnboardingProcessTypes], onboarding_protocol: str) -> OnboardingProcessTypes:
-        """Returns the onboarding process for the device, creates a new one if it does not exist.
+        """Creates a new one onboarding process.
 
         Args:
             device (Device): The device to create the onboarding process for.
@@ -131,49 +124,30 @@ class OnboardingProcess():
         Returns:
             OnboardingProcessTypes: The onboarding process instance for the device.
         """
-        # check if onboarding process for this device already exists
-        onboarding_process = OnboardingProcess.get_by_device(device)
         try:
             onboarding_protocol = OnboardingProtocol(onboarding_protocol)
         except ValueError:
             msg = f'{onboarding_protocol} No valid onboarding protocol found.'
             log.exception(_(msg))
 
-        if not onboarding_process:
-            onboarding_process = process_type(device, domain_id, onboarding_protocol)
-            onboarding_processes.append(onboarding_process)
-            # TODO(Air): very unnecessary save required to update onboarding status in table
-            # Problem: if server is restarted during onboarding, status is stuck at running
-            device.save()
+        onboarding_process = process_type(device, domain_id, onboarding_protocol)
+        onboarding_processes.append(onboarding_process)
+        # TODO(Air): very unnecessary save required to update onboarding status in table
+        # Problem: if server is restarted during onboarding, status is stuck at running
+        device.save()
 
         return onboarding_process
-
-    @staticmethod
-    def cancel_for_device(device: Device) -> tuple[OnboardingProcessState, OnboardingProcess | None]:
-        """Cancels the onboarding process for a given device."""
-        process = OnboardingProcess.get_by_device(device)
-        if process:
-            return process.cancel()
-        if device and device.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_RUNNING:
-            device.device_onboarding_status = DeviceOnboardingStatus.NOT_ONBOARDED
-            device.revoke_ldevid(ReasonCode.CESSATION)
-            device.save()
-            log.info(f'Request to cancel non-existing onboarding process for device {device.device_name}.')
-            return (OnboardingProcessState.CANCELED, None)
-
-        return (OnboardingProcessState.NO_SUCH_PROCESS, None)
 
     def cancel(self) -> tuple[OnboardingProcessState, OnboardingProcess]:
         """Cancels the onboarding process and removes it from the list."""
         self.active = False
         self.timer.cancel()
         onboarding_processes.remove(self)
-        if self.device and self.device.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_RUNNING:
+        # TODO: revoke cert
+        if self.state != OnboardingProcessState.COMPLETED and self.cert_model:
             # actual cancellation (cancel() may be called just to remove the process from onboarding_processes)
-            self.device.device_onboarding_status = DeviceOnboardingStatus.NOT_ONBOARDED
-            self.device.revoke_ldevid(ReasonCode.CESSATION)
-            self.device.save()
-            self.state = OnboardingProcessState.CANCELED
+            self. state = OnboardingProcessState.CANCELED
+            self.cert_model.revoke(ReasonCode.CESSATION)
             log.info(f'Onboarding process {self.id} for device {self.device.device_name} canceled.')
         else:
             log.info(f'Onboarding process {self.id} removed from list.')
@@ -199,7 +173,9 @@ class OnboardingProcess():
         try:
             if not self.device.device_serial_number:
                 self.device.device_serial_number = 'tpdl_' + secrets.token_urlsafe(12)
-            self.cred_serializer = CredentialSerializer(Crypt.gen_keypair_and_ldevid(self.device, self.domain_id, str(self)))
+            pki_response = Crypt.gen_keypair_and_ldevid(self.device, self.domain_id, str(self))
+            self.cert_model = pki_response.cert_model
+            self.cred_serializer = CredentialSerializer(pki_response.raw_response)
             self.state = OnboardingProcessState.LDEVID_SENT
             log.info(f'LDevID issued for device {self.device.device_name} in onboarding process {self.id}.')
         except Exception as e:  # noqa: BLE001
@@ -237,6 +213,8 @@ class OnboardingProcess():
 
 class LDevIDOnboardingProcessMixin():
     """Mixin that provides all methods required for onboarding process types using the /api/onboarding/ldevid endpoint"""
+
+    cert_model: CertificateModel
 
     def __init__(self, dev: Device):
         """Initializes the mixin"""
@@ -285,7 +263,9 @@ class LDevIDOnboardingProcessMixin():
         if self.state != OnboardingProcessState.DEVICE_VALIDATED:
             return None
         try:
-            ldevid = Crypt.sign_ldevid_from_csr(csr, self.device)
+            pki_response = Crypt.sign_ldevid_from_csr(csr, self.device)
+            self.cert_model = pki_response.cert_model
+            ldevid = pki_response.raw_response
         except Exception as e:
             self._fail(str(e))  # TODO(Air): is it safe to print exception messages to the user UI?
             log.exception('Error signing LDevID certificate.', exc_info=True)

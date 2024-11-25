@@ -18,6 +18,7 @@ from django.db import transaction
 from pki import CertificateTypes, TemplateName
 from pki.oid import NameOid
 from pki.models import CertificateModel
+from pki.pki.request.message import PkiResponseMessage
 from pki.util.keys import DigitalSignature
 from pki.pki.request.handler.factory import CaRequestHandlerFactory
 from pki.pki.request.message.rest import PkiRestCsrRequestMessage, PkiRestPkcs12RequestMessage
@@ -212,7 +213,7 @@ class CryptoBackend:
 
     @staticmethod
     @transaction.atomic
-    def gen_keypair_and_ldevid(device: Device, domain_id: int, onboarding_protocol: str) -> bytes:
+    def gen_keypair_and_ldevid(device: Device, domain_id: int, onboarding_protocol: str) -> PkiResponseMessage:
         """Generates a keypair and LDevID certificate for the device.
 
         Returns: The keypair and LDevID certificate as PKCS12 bytes.
@@ -242,9 +243,6 @@ class CryptoBackend:
             exc_msg = 'PKI response error: not a certificate: %s' % cert_model
             raise OnboardingError(exc_msg)
 
-
-        print('onboarding_protocol: ', onboarding_protocol)
-
         device.save_certificate(
             certificate=cert_model,
             certificate_type=CertificateTypes.LDEVID,
@@ -254,7 +252,7 @@ class CryptoBackend:
         )
         device.save()
         log.info('Issued and stored LDevID for device %s', device.device_name)
-        return pki_response.raw_response
+        return pki_response
 
     @staticmethod
     def get_nonce(nbytes: int = 16) -> str:

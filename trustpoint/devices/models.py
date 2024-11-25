@@ -53,7 +53,7 @@ class Device(models.Model):
         """
         return self.device_name
 
-    def get_current_ldevid_by_domain(self, domain: DomainModel) -> CertificateModel | None:
+    def get_ldevids_by_domain(self, domain: DomainModel) -> QuerySet | None:
         """Retrieves the current active LDevID certificate for a specified domain.
 
         Args:
@@ -66,11 +66,11 @@ class Device(models.Model):
             IssuedDeviceCertificateModel.ObjectDoesNotExist: If no active LDevID certificates are found.
         """
         try:
-            return self.issued_device_certificates.get(
+            return self.issued_device_certificates.filter(
                 certificate_type=CertificateTypes.LDEVID,
                 domain=domain,
                 certificate__certificate_status=CertificateStatus.OK,
-            ).certificate
+            )
         except ObjectDoesNotExist:
             return None
 
@@ -90,11 +90,11 @@ class Device(models.Model):
             domain=domain, certificate__certificate_status=CertificateStatus.OK
         ).exclude(certificate_type=CertificateTypes.LDEVID)
 
-        return {'domain': domain, 'ldevid': self.get_current_ldevid_by_domain(domain=domain), 'other': query_sets}
+        return {'domain': domain, 'ldevids': self.get_ldevids_by_domain(domain=domain), 'other': query_sets}
 
     def save_certificate(
         self,
-        certificate: IssuedDeviceCertificateModel,
+        certificate: CertificateModel,
         certificate_type: CertificateTypes,
         domain: DomainModel,
         template_name: str,

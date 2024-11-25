@@ -18,7 +18,7 @@ class ReasonCode(models.TextChoices):
 
 class CertificateStatus(models.TextChoices):
     """CertificateModel status"""
-    OK = 'O', _('OK')
+    OK = 'O', _('Ok')
     REVOKED = 'R', _('Revoked')
     # EXPIRED = 'E', _('Expired')
     # NOT_YET_VALID = 'N', _('Not Yet Valid')
