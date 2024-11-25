@@ -21,12 +21,34 @@
 
   <!-- chart Tab Content -->
   <div class="tab-content px-0">
-    
     <div class="text-end py-2">
-      <button class="btn btn-blue" onclick="fetchAndUpdateDashboardChartData('today')">Today</button>
-      <button class="btn btn-blue" onclick="fetchAndUpdateDashboardChartData('last_week')">Last Week</button>
-      <button class="btn btn-blue" onclick="fetchAndUpdateDashboardChartData('last_month')">Last Month</button>
-      <button class="btn btn-blue" onclick="fetchAndUpdateDashboardChartData('life')">Life</button>
+      <div class="btn-group" role="group" aria-label="Button group with active state">
+        <!-- Button List -->
+        <button
+          class="filter-button active chart-period"
+          onclick="fetchAndUpdateDashboardChartData('today')"
+        >
+          Today
+        </button>
+        <button
+          class="filter-button chart-period"
+          onclick="fetchAndUpdateDashboardChartData('last_week')"
+        >
+          Last Week
+        </button>
+        <button
+          class="filter-button chart-period"
+          onclick="fetchAndUpdateDashboardChartData('last_month')"
+        >
+          Last Month
+        </button>
+        <button
+          class="filter-button chart-period"
+          onclick="fetchAndUpdateDashboardChartData('life')"
+        >
+          Life
+        </button>
+      </div>
     </div>
     <!-- device chart tab content -->
     <div class="tab-pane fade show active" id="deviceChartTab">
@@ -37,11 +59,11 @@
         </div>
         <div class="col-3 px-3 shadow">
           <h2 class="p-2">Active devices by Domain</h2>
-          <canvas id="devicesByDomainDonutChart" class="pb-2"  width="200" height="200"></canvas>
+          <canvas id="devicesByDomainDonutChart" class="pb-2" width="200" height="200"></canvas>
         </div>
         <div class="col-4 shadow">
           <h2 class="p-2">devices by onboarding protocol</h2>
-          <canvas id="devicesByOPBarChart" class="pb-2"  width="400" height="200"></canvas>
+          <canvas id="devicesByOPBarChart" class="pb-2" width="400" height="200"></canvas>
         </div>
       </div>
     </div>
@@ -50,22 +72,23 @@
       <div class="row p-3">
         <div class="col-5 shadow">
           <h2 class="p-2">Certificates By Status</h2>
-          <canvas id="certsByStatusLineChart" class="pb-2"  width="400" height="200"></canvas>
+          <canvas id="certsByStatusLineChart" class="pb-2" width="400" height="200"></canvas>
         </div>
         <div class="col-3 shadow">
           <h2 class="p-2">Certificates By Domain</h2>
-          <canvas id="certsByDomainPieChart" class="pb-2"  width="200" height="200"></canvas>
+          <canvas id="certsByDomainPieChart" class="pb-2" width="200" height="200"></canvas>
         </div>
         <div class="col-4 shadow">
           <h2 class="p-2">Certificates By Template</h2>
-          <canvas id="certsByTemplateBarChart" class="pb-2"  width="400" height="200"></canvas>
+          <canvas id="certsByTemplateBarChart" class="pb-2" width="400" height="200"></canvas>
         </div>
       </div>
     </div>
     <!-- CA chart tab content -->
     <div class="tab-pane fade" id="caChartTab">
       <div class="row p-3">
-        {% comment %} <div class="col-3 shadow">
+        {% comment %}
+        <div class="col-3 shadow">
           <div class="row py-3">
             <div class="col-5"><h2>Issuing CA 1</h2></div>
             <div class="col-7">
@@ -108,18 +131,19 @@
               </div>
             </div>
           </div>
-        </div> {% endcomment %}
+        </div>
+        {% endcomment %}
         <div class="col-3 shadow">
           <h2 class="p-2">Certificates By Issuing CA</h2>
-          <canvas id="certsByIssuingCADonutChart" class="pb-2"  width="200" height="200"></canvas>
+          <canvas id="certsByIssuingCADonutChart" class="pb-2" width="200" height="200"></canvas>
         </div>
         <div class="col-6 shadow">
           <h2 class="p-2">Issued Certificates</h2>
-          <canvas id="certsByDateStackChart" class="pb-2"  width="400" height="200"></canvas>
+          <canvas id="certsByDateStackChart" class="pb-2" width="400" height="200"></canvas>
         </div>
         <div class="col-3 shadow">
           <h2 class="p-2">Issuing CAs By Type</h2>
-          <canvas id="issuingCAsByTypePieChart" class="pb-2"  width="200" height="200"></canvas>
+          <canvas id="issuingCAsByTypePieChart" class="pb-2" width="200" height="200"></canvas>
         </div>
       </div>
     </div>
