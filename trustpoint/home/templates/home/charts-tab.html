@@ -22,13 +22,12 @@
   <!-- chart Tab Content -->
   <div class="tab-content px-0">
     
-    {% comment %} disabling for now
     <div class="text-end py-2">
-      <button class="btn btn-blue">Today</button>
-      <button class="btn btn-blue">Last Week</button>
-      <button class="btn btn-blue">Last Month</button>
-      <button class="btn btn-blue">Life</button>
-    </div> {% endcomment %}
+      <button class="btn btn-blue" onclick="fetchAndUpdateDashboardChartData('today')">Today</button>
+      <button class="btn btn-blue" onclick="fetchAndUpdateDashboardChartData('last_week')">Last Week</button>
+      <button class="btn btn-blue" onclick="fetchAndUpdateDashboardChartData('last_month')">Last Month</button>
+      <button class="btn btn-blue" onclick="fetchAndUpdateDashboardChartData('life')">Life</button>
+    </div>
     <!-- device chart tab content -->
     <div class="tab-pane fade show active" id="deviceChartTab">
       <div class="row p-3">
