@@ -213,31 +213,31 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
         # TODO(AlexHx8472): Exception Handling
         match proc.returncode:
             case 1:
-                raise ValueError('Initial failed with 1')
+                raise ValueError('Credential apply failed with 1')
             case 2:
-                raise ValueError('Initial failed with 2')
+                raise ValueError('Credential apply failed with 2')
             case 3:
-                raise ValueError('Initial failed with 3')
+                raise ValueError('Credential apply failed with 3')
             case 4:
-                raise ValueError('Initial failed with 4')
+                raise ValueError('Credential apply failed with 4')
             case 5:
-                raise ValueError('Initial failed with 5')
+                raise ValueError('Credential apply failed with 5')
             case 6:
-                raise ValueError('Initial failed with 6')
+                raise ValueError('Credential apply failed with 6')
             case 7:
-                raise ValueError('Initial failed with 7')
+                raise ValueError('Credential apply failed with 7')
             case 8:
-                raise ValueError('Initial failed with 8')
+                raise ValueError('Credential apply failed with 8')
             case 9:
-                raise ValueError('Initial failed with 9')
+                raise ValueError('Credential apply failed with 9')
             case 10:
-                raise ValueError('Initial failed with 10')
+                raise ValueError('Credential apply failed with 10')
             case 11:
-                raise ValueError('Initial failed with 11')
+                raise ValueError('Credential apply failed with 11')
             case 12:
-                raise ValueError('Initial failed with 12')
+                raise ValueError('Credential apply failed with 12')
             case 13:
-                raise ValueError('Initial failed with 13')
+                raise ValueError('Credential apply failed with 13')
 
         return super().form_valid(form)
 
