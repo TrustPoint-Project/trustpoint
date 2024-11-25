@@ -12,7 +12,7 @@ function updateCharts(dashboardChartData) {
   updateCertsByDomainPieChart(dashboardChartData.cert_counts_by_domain);
   updateCertsByTemplateBarChart(dashboardChartData.cert_counts_by_template);
 
-  //updateCertsByStatusLineChart(dashboardData.cert_counts_by_status);
+  //updateCertsByStatusLineChart(dashboardChartData.cert_counts_by_status);
   updateCertsByStatusBarChart(dashboardChartData.cert_counts_by_status);
   updateCertsByIssuingCAChart(dashboardChartData.cert_counts_by_issuing_ca);
   updateIssuingCAsByTypePieChart(dashboardChartData.ca_counts_by_type);
