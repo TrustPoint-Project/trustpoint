@@ -1,5 +1,7 @@
 """Django management command for add notifications."""
 
+from typing import Any
+
 from devices.models import Device
 from django.core.management.base import BaseCommand
 from django.utils import timezone
@@ -16,7 +18,7 @@ class Command(BaseCommand):
 
     help = 'Creates 5 notifications for Systems, Domains, Devices, Issuing CAs, and Certificates.'
 
-    def handle(self, *args, **kwargs) -> None:
+    def handle(self, *args: Any, **options: Any) -> None:
         """The logic to query models and create 5 notifications for each type."""
         domains = DomainModel.objects.all()[:5]
         certificates = CertificateModel.objects.all()[:5]
