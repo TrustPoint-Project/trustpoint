@@ -1,3 +1,5 @@
+"""Defines URL patterns for routing API requests to corresponding views and endpoints."""
+
 from django.urls import path
 
 from . import views
