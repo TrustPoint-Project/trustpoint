@@ -7,7 +7,10 @@ from home.models import NotificationMessage, NotificationModel, NotificationStat
 
 
 class Command(BaseCommand):
-    """Django management command for adding 5 notifications for each system, domain, device, issuing CA, and certificate."""
+    """Django management command for adding 5 notifications.
+
+    The types are system, domain, device, issuing CA, and certificate.
+    """
 
     help = 'Creates 5 notifications for Systems, Domains, Devices, Issuing CAs, and Certificates.'
 
