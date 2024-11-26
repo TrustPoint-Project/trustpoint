@@ -1,40 +1,52 @@
-import json
-from django.views.generic.base import RedirectView, TemplateView
-from django.shortcuts import render, get_object_or_404, redirect
-from django_tables2 import RequestConfig
-from datetime import datetime, timedelta
-from trustpoint.views.base import TpLoginRequiredMixin, ContextDataMixin
-from .filters import NotificationFilter
-from django.core.management import call_command
+"""Views for the home application."""
+from __future__ import annotations
 
+from datetime import datetime, timedelta
+from typing import Any
+
+from django.core.management import call_command
+from django.db.models import QuerySet
+from django.http import HttpRequest, HttpResponse
+from django.shortcuts import get_object_or_404, render
+from django.utils import timezone
+from django.views.generic.base import RedirectView, TemplateView
+from django_tables2 import RequestConfig
+
+from trustpoint.views.base import TpLoginRequiredMixin
+
+from .filters import NotificationFilter
 from .models import NotificationModel, NotificationStatus
 from .tables import NotificationTable
 
 
 class IndexView(TpLoginRequiredMixin, RedirectView):
+    """Redirects authenticated users to the index page."""
     permanent = False
     pattern_name = 'home:dashboard'
 
 
 class DashboardView(TpLoginRequiredMixin, TemplateView):
+    """Renders the dashboard page for authenticated users."""
     template_name = 'home/dashboard.html'
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """Initializes a DashboardView object with optional and keyword arguments."""
         super().__init__(*args, **kwargs)
         self.last_week_dates = self.generate_last_week_dates()
 
-    def get_notifications(self):
+    def get_notifications(self) -> QuerySet[NotificationModel]:
         """Fetch notification data for the table."""
-        notifications = NotificationModel.objects.all()
-        return notifications
+        return NotificationModel.objects.all()
 
-    def generate_last_week_dates(self):
-        end_date = datetime.now().date()
+    def generate_last_week_dates(self) -> list[str]:
+        """Generates last week dates as list of string."""
+        tz = timezone.get_current_timezone()
+        end_date = datetime.now(tz).date()
         start_date = end_date - timedelta(days=6)
-        dates_as_strings = [(start_date + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
-        return dates_as_strings
+        return [(start_date + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: Any) -> HttpResponse:
+        """Returns context data."""
         context = super().get_context_data(**kwargs)
 
         context = self.handle_notifications(context)
@@ -43,7 +55,8 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         context['page_name'] = 'dashboard'
         return context
 
-    def handle_notifications(self, context):
+    def handle_notifications(self, context: dict[str, Any]) -> HttpResponse:
+        """Fetch notification data and filter them."""
         all_notifications = NotificationModel.objects.all()
 
         notification_filter = NotificationFilter(self.request.GET, queryset=all_notifications)
@@ -58,7 +71,8 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         return context
 
 
-def notification_details_view(request, pk):
+def notification_details_view(request: HttpRequest, pk: Any) -> HttpResponse:
+    """Get notification status and renders notification details"""
     notification = get_object_or_404(NotificationModel, pk=pk)
 
     notification_statuses = notification.statuses.values_list('status', flat=True)
@@ -80,7 +94,7 @@ def notification_details_view(request, pk):
     return render(request, 'home/notification_details.html', context)
 
 
-def mark_as_solved(request, pk):
+def mark_as_solved(request: HttpRequest, pk: Any) -> HttpResponse:
     """View to mark the notification as Solved."""
     notification = get_object_or_404(NotificationModel, pk=pk)
 
@@ -105,7 +119,8 @@ def mark_as_solved(request, pk):
 class AddDomainsAndDevicesView(TpLoginRequiredMixin, TemplateView):
     """View to execute the add_domains_and_devices management command and pass status to the template."""
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Executes the add_domains_and_devices management command and renders view"""
         context = {}
 
         try:
