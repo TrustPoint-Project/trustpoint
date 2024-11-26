@@ -189,6 +189,7 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
                 and dc_attr[0].value == 'Owner'
                 and serial_attr[0].value == idevid_subject_sn):
                 ownership_cert = candidate
+                ownership_truststore = ts
                 break
 
     if not ownership_cert:
@@ -200,13 +201,18 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
         log.warning(f'Onboarding existing AOKI device {aoki_device.pk} ({idevid_subject_sn})!')
         aoki_device.revoke_ldevid(ReasonCode.SUPERSEDED)
     else:
+        # onboard the device to the first domain the ownership cert truststore is added to
+        domain = ownership_truststore.domain_truststores.first()
+        if not domain:
+            return 403, {'error': 'Ownership certificate truststore not associated with a domain.'}
+        
         aoki_device = Device(
             device_name=f'AOKI{idevid_subject_sn}', # temporary name until we know PK
             device_serial_number=idevid_subject_sn,
             onboarding_protocol=Device.OnboardingProtocol.AOKI
         )
-        # TODO (Air): set proper domain (this must be configurable per ownership certificate)
-        aoki_device.domain = DomainModel.objects.first()
+
+        aoki_device.domain = domain
         aoki_device.save() # save to get PK assigned
         aoki_device.device_name = f'AOKI_Device_{aoki_device.pk}'
         aoki_device.save()
