@@ -4,20 +4,18 @@ from __future__ import annotations
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
 from devices import DeviceOnboardingStatus
 from devices.models import Device
 from django.db.models import Case, Count, F, IntegerField, Q, Value, When
 from django.db.models.functions import TruncDate
+from django.http import HttpRequest
 from django.utils import dateparse, timezone
 from ninja import Router
 from ninja.responses import Response
 from pki import CaLocalization, CertificateStatus, TemplateName
 from pki.models import BaseCaModel, CertificateModel, DomainModel, IssuedDeviceCertificateModel, IssuingCaModel
-
-if TYPE_CHECKING:
-    from django.http import HttpRequest
 
 logger = logging.getLogger('tp.home')
 router = Router()
@@ -274,7 +272,7 @@ def get_issuing_ca_counts_by_type(start_date: date) -> dict[str, Any]:
 
 # --- PUBLIC HOME API ENDPOINTS ---
 @router.get('/dashboard_data', exclude_none=True)
-def dashboard_data(request: HttpRequest, start_date: str | None) -> dict[str, Any]:
+def get_dashboard_data(request: HttpRequest, start_date: str | None) -> dict[str, Any]:
     """Get dashboard data for panels, tables and charts"""
     start_date_object = None
     # Parse the date string into a datetime.date object
