@@ -156,6 +156,7 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
     try:
         idevid_cert = x509.load_pem_x509_certificate(idevid)
         idevid_subject_sn = idevid_cert.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value
+        idevid_fingerprint = idevid_cert.fingerprint(hashes.SHA256()).hex()
     except (ValueError, IndexError):
         return 400, {'error': 'IDevID certificate not parsable.'}
     # verify IDevID against chains of trust stored in Trust stores
@@ -163,31 +164,52 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
     log.warning('AokiInit: IDevID verification not fully implemented.')
     idevid_cert_serial = format(idevid_cert.serial_number, 'X')
     log.debug(f'AokiInit: IDevID: {idevid_cert.subject} SN: {idevid_cert_serial}')
+    log.debug(f'Fingerprint: {idevid_fingerprint} Subj SN: {idevid_subject_sn}')
+
+    # TODO (Air): skipping IDevID chain verification for now, relying on the serial and fingerprint in the ownership cert
+    # this does imply trust in the CA that issued the ownership certificate and all IDevID certificates listed in it
+    # furthermore, revocation checks for individual IDevID certificates are not possible.
+    # The capability to add and verify IDevID certificates should be implemented at least optionally.
     # TODO (Air): Chain validation so that actual cert is not required in TS, only the root
-    idevid_cert_db = None
-    # TODO (Air): This loop is horribly inefficient
-    # consider adding a field to TrustStoreModel to store if an entry is for IDevID verification
-    for ts in TrustStoreModel.objects.all():
-        try:
-            idevid_cert_db = ts.certificates.get(serial_number=idevid_cert_serial)
-            break
-        except CertificateModel.DoesNotExist:
-            pass
+    # idevid_cert_db = None
+    # # TODO (Air): This loop is horribly inefficient
+    # # consider adding a field to TrustStoreModel to store if an entry is for IDevID verification
+    # for ts in TrustStoreModel.objects.all():
+    #     try:
+    #         idevid_cert_db = ts.certificates.get(serial_number=idevid_cert_serial)
+    #         break
+    #     except CertificateModel.DoesNotExist:
+    #         pass
 
-    if not idevid_cert_db:
-        return 403, {'error': 'Unauthorized.'}
+    # if not idevid_cert_db:
+    #     return 403, {'error': 'Unauthorized.'}
 
-    # TODO (Air): Even more inefficient
+    # TODO (Air): This is so inefficient, it may lead to significant slow down even with just a few Truststores
+    # TODO (Air): Consider adding an OwnershipCertificateModel to enable rapid lookup
     ownership_cert = None
     for ts in TrustStoreModel.objects.all():
         for cert in ts.certificates.all():
             candidate : x509.Certificate = cert.get_certificate_serializer().as_crypto()
-            dc_attr = candidate.subject.get_attributes_for_oid(x509.NameOID.DOMAIN_COMPONENT)
-            serial_attr = candidate.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)
-            
-            if (dc_attr and serial_attr
-                and dc_attr[0].value == 'Owner'
-                and serial_attr[0].value == idevid_subject_sn):
+            #dc_attr = candidate.subject.get_attributes_for_oid(x509.NameOID.DOMAIN_COMPONENT)
+            #serial_attr = candidate.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)
+
+            try:
+                san = candidate.extensions.get_extension_for_oid(x509.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+            except x509.ExtensionNotFound:
+                continue
+
+            names = san.value.get_values_for_type(x509.DNSName)
+            for name in names:
+                # DNSName pattern: aoki.owner.<idevid-serial>.<idevid-fingerprint>.alt
+                print(name)
+                c = name.split('.')
+                if len(c) != 5:
+                    continue
+                if c[0] != 'aoki' or c[1] != 'owner':
+                    continue
+                if c[2] != idevid_subject_sn or c[3] != idevid_fingerprint:
+                    continue
+
                 ownership_cert = candidate
                 ownership_truststore = ts
                 break
