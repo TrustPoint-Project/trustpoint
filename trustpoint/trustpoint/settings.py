@@ -178,3 +178,5 @@ DJANGO_LOG_LEVEL = 'INFO'
 LOGGING = logging_config
 
 TAGGIT_CASE_INSENSITIVE = True
+
+STATIC_ROOT = 'collected_static'

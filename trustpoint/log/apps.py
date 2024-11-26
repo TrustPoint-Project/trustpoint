@@ -15,7 +15,9 @@ class LogConfig(AppConfig):
         """Django startup hook, log startup and shutdown."""
         super().ready()
 
-        if not os.environ.get('RUN_MAIN') and not os.environ.get('WERKZEUG_RUN_MAIN'):
+        if not os.environ.get('TRUSTPOINT_RUNNING') and \
+                not os.environ.get('RUN_MAIN') and \
+                not os.environ.get('WERKZEUG_RUN_MAIN'):
             # Just helper process, not running startup code
             return
     

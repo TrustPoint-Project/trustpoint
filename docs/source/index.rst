@@ -24,6 +24,7 @@ Welcome to Trustpoint's documentation!
    quickstart_operate
    community_support
    usage_guide
+   development
 
 
 .. toctree::

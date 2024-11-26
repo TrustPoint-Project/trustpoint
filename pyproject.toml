@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "trustpoint"
-version = "0.1.0"
+version = "0.1.1"
 description = "Trustpoint Server Software"
 authors = ["TrustPoint-Project"]
 readme = "README.md"

@@ -45,7 +45,7 @@ class CaGenerator:
         ).add_extension(
             x509.BasicConstraints(ca=True, path_length=path_length), critical=True
         ).add_extension(
-            x509.KeyUsage(digital_signature=False, key_encipherment=False,
+            x509.KeyUsage(digital_signature=True, key_encipherment=False,
                           key_cert_sign=True, key_agreement=False,
                           content_commitment=False, data_encipherment=False,
                           crl_sign=True, encipher_only=False, decipher_only=False), critical=True

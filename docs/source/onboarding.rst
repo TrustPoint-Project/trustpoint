@@ -97,6 +97,34 @@ Requirements:
 
 - Network infrastructure to support automated onboarding.
 
+
+The Trustpoint beta release contains zero touch onboarding functionality for demonstration purposes only, based on the AOKI (Automated Onboarding Key Infrastructure) protocol.
+This is a simple protocol that uses mDNS to discover the Trustpoint server and then uses a simple REST API for mutual trust establishment.
+Afterwards, the device is in possession of a OTP it can use for LDevID provisioning via standard CMP.
+Before the device can be onboarded, it must possess a valid IDevID (Initial device identifier per IEEE 802.1AR) certificate.
+The Trustpoint needs to have a valid trust anchor certificate for the device's IDevID certificate added as a Truststore.
+It also needs an ownership certificate, which is issued by the manufacturer and verified by the device to authenticate the Trustpoint.
+
+This feature is not intended for production use.
+
+How to
+^^^^^^
+
+1. **(Optional) Generate IDevID and ownership certificates**
+
+2. **(Optional) Add IDevID to the device Trustpoint client**
+    Install the Trustpoint Client to the device. An example IDevID is provided in the ``demo-data`` directory.
+
+3. **Add Truststores in Trustpoint**
+    Two Truststores with arbitrary names need to be added, one containing the certificate chain of the IDevID and one containing the certificate chain of the ownership certificate.
+    Demo certificates are provided in the ``tests/data/aoki_zero_touch`` directory.
+
+4. **Configure mDNS address**
+    In ``settings.py`` set ``ADVERSISED_HOST`` to the Trustpoint server IP address as reachable by the device.
+
+5. **Onboard the device**
+    Execute ``trustpoint-client provision zero-touch`` command on the client to onboard the device.
+
 Summary
 -------
 Trustpoint offers a variety of mechanisms for device onboarding, ranging from user-driven methods with flexible options to future plans for automated zero-touch onboarding. Users can choose the method that best fits their needs, whether it's through the Trustpoint client, a web interface, or manual distribution.
