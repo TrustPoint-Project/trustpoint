@@ -10,7 +10,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # 80 will be redirected to 443 using TLS through the apache.
 EXPOSE 80 443
 
-RUN apt-get update && apt-get install -y apt-utils vim curl apache2 apache2-utils python3 libapache2-mod-wsgi-py3 python3-pip python3-venv
+RUN apt-get update && apt-get install -y apt-utils vim curl apache2 apache2-utils gettext python3 libapache2-mod-wsgi-py3 python3-pip python3-venv
 
 RUN a2enmod ssl
 RUN a2enmod rewrite
@@ -41,6 +41,8 @@ RUN chmod 664 db.sqlite3
 # collect static files
 RUN python manage.py collectstatic --noinput
 
+# compile messages (translations)
+RUN python manage.py compilemessages
 
 # Change owner and group
 RUN chown -R www-data:www-data .
