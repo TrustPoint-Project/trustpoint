@@ -2,7 +2,7 @@
 
 from django.contrib import admin
 
-from .models import NotificationMessage, NotificationModel, NotificationStatus
+from .models import NotificationMessageModel, NotificationModel, NotificationStatus
 
 
 class NotificationStatusAdmin(admin.ModelAdmin):
@@ -17,4 +17,4 @@ class NotificationMessageAdmin(admin.ModelAdmin):
 
 admin.site.register(NotificationStatus, NotificationStatusAdmin)
 admin.site.register(NotificationModel, NotificationModelAdmin)
-admin.site.register(NotificationMessage, NotificationMessageAdmin)
+admin.site.register(NotificationMessageModel, NotificationMessageAdmin)

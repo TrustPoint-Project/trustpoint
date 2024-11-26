@@ -4,12 +4,12 @@
 
 {% block content %}
     <div class="row py-3 px-0">
-        <h1>Notifications</h1>
+        <h1>{% trans 'Notifications' %}</h1>
     </div>
 
     <div class="filter-container d-flex align-items-center">
 
-        <span>Filter:</span>
+        <span>{% trans 'Filter' %}:</span>
 
         <!-- HTML Buttons for Filtering -->
         <div class="filter-buttons">
@@ -17,25 +17,25 @@
                 <svg class="icon" width="12" height="12" fill="currentColor">
                     <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
                 </svg>
-                Critical
+                {% trans 'Critical' %}
             </button>
             <button type="button" class="filter-button filter-button-war" onclick="toggleFilterType('WAR')">
                 <svg class="icon" width="12" height="12" fill="currentColor">
                     <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
                 </svg>
-                Warning
+                {% trans 'Warning' %}
             </button>
             <button type="button" class="filter-button filter-button-inf" onclick="toggleFilterType('INF')">
                 <svg class="icon" width="12" height="12" fill="currentColor">
                     <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
                 </svg>
-                Info
+                {% trans 'Info' %}
             </button>
             <button type="button" class="filter-button filter-button-set" onclick="toggleFilterType('SET')">
                 <svg class="icon" width="12" height="12" fill="currentColor">
                     <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
                 </svg>
-                Setup
+                {% trans 'Setup' %}
             </button>
         </div>
 
@@ -47,46 +47,47 @@
                 <svg class="icon" width="12" height="12" fill="currentColor">
                     <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
                 </svg>
-                System
+                {% trans 'System' %}
             </button>
             <button type="button" class="filter-button filter-button-d" onclick="toggleFilterSource('D')">
                 <svg class="icon" width="12" height="12" fill="currentColor">
                     <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
                 </svg>
-                Domain
+                {% trans 'Domain' %}
             </button>
             <button type="button" class="filter-button filter-button-e" onclick="toggleFilterSource('E')">
                 <svg class="icon" width="12" height="12" fill="currentColor">
                     <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
                 </svg>
-                Device
+                {% trans 'Device' %}
             </button>
             <button type="button" class="filter-button filter-button-i" onclick="toggleFilterSource('I')">
                 <svg class="icon" width="12" height="12" fill="currentColor">
                     <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
                 </svg>
-                Issuing CA
+                {% trans 'Issuing CA' %}
             </button>
             <button type="button" class="filter-button filter-button-c" onclick="toggleFilterSource('C')">
                 <svg class="icon" width="12" height="12" fill="currentColor">
                     <use xlink:href="{% static 'img/icons.svg' %}#icon-plus"/>
                 </svg>
-                Certificate
+                {% trans 'Certificate' %}
             </button>
         </div>
 
         <div class="vertical-separator"></div>
 
         <div class="filter-buttons" style="display: inline-block;">
-            <button type="button" class="filter-button filter-button-today" onclick="setDateRange('today')">Today
+            <button type="button" class="filter-button filter-button-today" onclick="setDateRange('today')">
+                {% trans 'Today' %}
             </button>
-            <button type="button" class="filter-button filter-button-last7days" onclick="setDateRange('last7days')">Last
-                7 Days
+            <button type="button" class="filter-button filter-button-last7days" onclick="setDateRange('last7days')">
+                {% trans 'Last 7 Days' %}
             </button>
             <button type="button" class="filter-button filter-button-last30days" onclick="setDateRange('last30days')">
-                Last 30 Days
+                {% trans 'Last 30 Days' %}
             </button>
-            <button type="button" class="filter-button filter-button-all" onclick="setDateRange('all')">All</button>
+            <button type="button" class="filter-button filter-button-all" onclick="setDateRange('all')">{% trans 'All' %}</button>
         </div>
     </div>
 

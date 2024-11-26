@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-11-12 10:09+0100\n"
-"PO-Revision-Date: 2024-10-28 15:27+0100\n"
+"POT-Creation-Date: 2024-11-15 14:14+0100\n"
+"PO-Revision-Date: 2024-11-15 14:15+0100\n"
 "Last-Translator: Christian Schwinne <christian.schwinne  AT hshl.de>\n"
 "Language-Team: \n"
 "Language: de\n"
@@ -19,7 +19,7 @@ msgstr ""
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.5\n"
 
-#: .\home\models.py:20
+#: .\home\models.py:20 .\home\tables.py:93
 msgid "New"
 msgstr "Neu"
 
@@ -75,41 +75,308 @@ msgstr "Abgelaufen"
 msgid "Pending"
 msgstr "Wartend"
 
-#: .\home\models.py:58
+#: .\home\models.py:82
 msgid "SETUP"
 msgstr "SETUP"
 
-#: .\home\models.py:60
+#: .\home\models.py:84
 msgid "INFO"
 msgstr "INFO"
 
-#: .\home\models.py:61
+#: .\home\models.py:85
 msgid "WARNING"
 msgstr "WARNUNG"
 
-#: .\home\models.py:62
+#: .\home\models.py:86
 msgid "CRITICAL"
 msgstr "KRITISCH"
 
-#: .\home\models.py:66
+#: .\home\models.py:90 .\home\templates\home\notifications-tab.html:50
 msgid "System"
 msgstr "System"
 
-#: .\home\models.py:67
+#: .\home\models.py:91 .\home\templates\home\notifications-tab.html:56
 msgid "Domain"
 msgstr "Domain"
 
-#: .\home\models.py:68
+#: .\home\models.py:92 .\home\templates\home\charts-tab.html:14
+#: .\home\templates\home\notifications-tab.html:62
 msgid "Device"
 msgstr "Gerät"
 
-#: .\home\models.py:69
+#: .\home\models.py:93 .\home\templates\home\notifications-tab.html:68
 msgid "Issuing CA"
 msgstr "Issuing CA"
 
-#: .\home\models.py:70
+#: .\home\models.py:94 .\home\templates\home\charts-tab.html:17
+#: .\home\templates\home\notifications-tab.html:74
 msgid "Certificate"
 msgstr "Zertifikat"
+
+#: .\home\models.py:128
+msgid "Custom Message"
+msgstr "Benutzerdefinierte Nachricht"
+
+#: .\home\models.py:132
+#, python-brace-format
+msgid "Test for Issuing CA: {ca}"
+msgstr "Ein Test für Issuing CA: {ca}"
+
+#: .\home\models.py:133
+#, python-brace-format
+msgid "Notification for Issuing CA: {ca}"
+msgstr "Benachrichtigung für Issuing CA: {ca}"
+
+#: .\home\models.py:136
+#, python-brace-format
+msgid "Test for Domain: {domain}"
+msgstr "Test für Domain: {domain}"
+
+#: .\home\models.py:137
+#, python-brace-format
+msgid "Notification for Domain: {domain}"
+msgstr "Benachrichtigung für Domain: {domain}"
+
+#: .\home\models.py:140
+#, python-brace-format
+msgid "Test for Certificate: {cn}"
+msgstr "Test für Zertifikat: {cn}"
+
+#: .\home\models.py:141
+#, python-brace-format
+msgid "Notification for Certificate: Common Name {cn} with Serial Number {sn}"
+msgstr ""
+"Benachrichtigung für Zertifikat: Common Name {cn} mit Seriennummer {sn}"
+
+#: .\home\models.py:144
+#, python-brace-format
+msgid "Test for Device: {device}"
+msgstr "Test für Gerät: {device}"
+
+#: .\home\models.py:145
+#, python-brace-format
+msgid "Notification for Device: {device}"
+msgstr "Benachrichtigung für Gerät: {device}"
+
+#: .\home\models.py:149
+msgid "Populate test data"
+msgstr "Testdaten einfügen"
+
+#: .\home\models.py:150
+#, python-brace-format
+msgid ""
+"Click <a href=\"{url}\">here</a> to add test issuing CAs, domains and "
+"devices."
+msgstr ""
+"Nutzen Sie diesen <a href=\"{url}\">Link</a>, um zu Testzwecken Issuing CAs, "
+"Domains und Geräte hinzuzufügen."
+
+#: .\home\models.py:153
+msgid "Access the Trustpoint Documentation"
+msgstr "Lesen Sie die Dokumentation von Trustpoint"
+
+#: .\home\models.py:154
+#, python-brace-format
+msgid "You can find the official Trustpoint documentation here: {link}"
+msgstr "Die offizielle Dokumentation für Trustpoint finden Sie hier: {link}"
+
+#: .\home\models.py:157
+msgid "Explore the Trustpoint project"
+msgstr "Entdecken Sie das Trustpoint-Forschungsprojekt"
+
+#: .\home\models.py:158
+#, python-brace-format
+msgid ""
+"Visit the Trustpoint GitHub repository for more information: <a "
+"href=\"{url_github}\" target=\"_blank\">Trustpoint GitHub</a><br>Learn more "
+"about industrial security and the Trustpoint project on our <a "
+"href=\"{url_homepage}\" target=\"_blank\">homepage</a>"
+msgstr ""
+"Besuchen Sie das Trustpoint GitHub-Repository für weitere Informationen: <a "
+"href=\"{url_github}\" target=\"_blank\">Trustpoint GitHub</a><br>\n"
+"Auf unserer <a href=\"{url_homepage}\" target=\"_blank\">Homepage</a> finden "
+"Sie mehr nützliche Infos über industrielle Sicherheit und das Truspoint-"
+"Forschungsprojekt"
+
+#: .\home\models.py:164
+msgid "Welcome to Trustpoint!"
+msgstr "Willkommen bei Trustpoint!"
+
+#: .\home\models.py:165
+msgid ""
+"Thank you for setting up Trustpoint. This system will help you manage your "
+"certificates and secure your environment."
+msgstr ""
+"Vielen Dank für die Installation von Trustpoint. Dieses System wird Ihnen "
+"helfen, Ihre Zertifikate zu verwalten und Ihre Umgebung abzusichern."
+
+#: .\home\models.py:170
+msgid "System health check failed"
+msgstr "Systemprüfung fehlgeschlagen"
+
+#: .\home\models.py:171
+msgid ""
+"The system health check detected an issue with one or more services. Please "
+"investigate immediately."
+msgstr ""
+"Bei der Überprüfung des Systemzustands wurde ein Problem mit einem oder "
+"mehreren Diensten festgestellt. Bitte gehen Sie diesem sofort nach."
+
+#: .\home\models.py:174
+msgid "Security vulnerability detected"
+msgstr "Sicherheitsschwachstelle entdeckt"
+
+#: .\home\models.py:175
+msgid ""
+"A security vulnerability affecting system components has been detected. "
+"Immediate attention required."
+msgstr ""
+"Es wurde eine Sicherheitslücke entdeckt, die Systemkomponenten betrifft. "
+"Sofortige Aufmerksamkeit ist erforderlich."
+
+#: .\home\models.py:178
+#, python-brace-format
+msgid "Certificate {common_name} is expiring soon"
+msgstr "Zertifikat {common_name} läuft bald aus"
+
+#: .\home\models.py:179
+#, python-brace-format
+msgid "The certificate {common_name} is set to expire on {not_valid_after}."
+msgstr "Das Zertifikat {common_name} wird am {not_valid_after} auslaufen."
+
+#: .\home\models.py:182
+#, python-brace-format
+msgid "Certificate {common_name} has expired"
+msgstr "Zertifikat {common_name} ist ausgelaufen"
+
+#: .\home\models.py:183
+#, python-brace-format
+msgid "The certificate {common_name} expired on {not_valid_after}."
+msgstr "Das Zertifikat {common_name} ist am {not_valid_after} ausgelaufen."
+
+#: .\home\models.py:186
+#, python-brace-format
+msgid "Issuing CA {unique_name} is expiring soon"
+msgstr "Issuing CA {unique_name} läuft bald aus"
+
+#: .\home\models.py:187
+#, python-brace-format
+msgid "The issuing CA {unique_name} is set to expire on {not_valid_after}."
+msgstr "Die Issuing CA {unique_name} wird am {not_valid_after} auslaufen."
+
+#: .\home\models.py:190
+#, python-brace-format
+msgid "Issuing CA {unique_name} has expired"
+msgstr "Issuing CA {unique_name} ist ausgelaufen"
+
+#: .\home\models.py:191
+#, python-brace-format
+msgid "The issuing CA {unique_name} expired on {not_valid_after}."
+msgstr "Die Issuing CA {unique_name} ist am {not_valid_after} ausgelaufen."
+
+#: .\home\models.py:194
+#, python-brace-format
+msgid "Domain {unique_name} has no Issuing CA assigned"
+msgstr "Domain {unique_name} ist keiner Issuing CA zugewiesen"
+
+#: .\home\models.py:195
+#, python-brace-format
+msgid "The domain {unique_name} currently has no Issuing CA assigned."
+msgstr "Die Domain {unique_name} ist momentan keiner Issuing CA zugewiesen."
+
+#: .\home\models.py:198
+#, python-brace-format
+msgid "Device {device} is not onboarded in {domain}"
+msgstr "Gerät {device} ist nicht in {domain} eingebunden"
+
+#: .\home\models.py:199
+#, python-brace-format
+msgid "The device {device} has not completed onboarding."
+msgstr "Das Gerät {device} hat den Onboarding-Prozess nicht abgeschlossen."
+
+#: .\home\models.py:202
+#, python-brace-format
+msgid "Device {device} onboarding failed"
+msgstr "Onboarding fehlgeschlagen für Gerät {device}"
+
+#: .\home\models.py:203
+#, python-brace-format
+msgid "The device {device} failed onboarding."
+msgstr "Der Onboarding-Prozess für das Gerät {device} ist fehlgeschlagen."
+
+#: .\home\models.py:206
+#, python-brace-format
+msgid "Device {device} certificate revoked"
+msgstr "Zertifikat von Gerät {device} widerrufen"
+
+#: .\home\models.py:207
+#, python-brace-format
+msgid ""
+"The device {device} has had its certificate revoked. The device may no "
+"longer be trusted."
+msgstr ""
+"Das Zertifikat des Geräts {device} ist widerrufen worden. Dem Gerät darf "
+"nicht mehr vertraut werden."
+
+#: .\home\models.py:210
+#, python-brace-format
+msgid "Certificate {common_name} uses a weak signature algorithm"
+msgstr "Zertifikat {common_name} verwendet einen schwachen Signaturalgorithmus"
+
+#: .\home\models.py:211
+#, python-brace-format
+msgid ""
+"The certificate {common_name} is signed using {signature_algorithm}, which "
+"is considered weak."
+msgstr ""
+"Das Zertifikat {common_name} ist mit {signature_algorithm} signiert, was als "
+"schwach angesehen wird."
+
+#: .\home\models.py:214
+#, python-brace-format
+msgid "Certificate {common_name} uses insufficient key length"
+msgstr "Zertifikat {common_name} verwendet zu geringe Schlüssellänge"
+
+#: .\home\models.py:215
+#, python-brace-format
+msgid ""
+"The certificate {common_name} uses an RSA key size of {spki_key_size} bits, "
+"which is less than the recommended 2048 bits."
+msgstr ""
+"Das Zertifikat {common_name} verwendet eine RSA-Schlüssellänge von "
+"{spki_key_size} Bits, weniger als die empfohlenen 2048 Bits."
+
+#: .\home\models.py:218
+#, python-brace-format
+msgid "Certificate {common_name} uses a weak ECC curve"
+msgstr "Zertifikat {common_name} nutzt eine schwache ECC-Kurve"
+
+#: .\home\models.py:219
+#, python-brace-format
+msgid ""
+"The certificate {common_name} is using the {spki_ec_curve} ECC curve, which "
+"is no longer recommended."
+msgstr ""
+"Das Zertifikat {common_name} verwendet die {spki_ec_curve} ECC-Kurve, die "
+"nicht mehr empfohlen wird."
+
+#: .\home\models.py:224
+msgid "Unknown Notification message string."
+msgstr "Unbekannter Benachrichtigungstext."
+
+#: .\home\models.py:225 .\home\models.py:315
+#, python-format
+msgid "Guess we messed up. Type of this notification is %(type)s"
+msgstr ""
+"Da ist etwas schiefgelaufen. Der Typ dieser Benachrichtigung ist %(type)s"
+
+#: .\home\models.py:290
+msgid "Created at"
+msgstr "Erstellt um"
+
+#: .\home\models.py:304
+msgid "Unknown Notification message type."
+msgstr "Unbekannte Benachrichtigungstextart."
 
 #: .\home\tables.py:31
 msgid "There are no Notifications available."
@@ -123,58 +390,173 @@ msgstr "Art"
 msgid "Source"
 msgstr "Quelle"
 
-#: .\home\tables.py:53
+#: .\home\tables.py:54
 msgid "Description"
 msgstr "Beschreibung"
 
-#: .\home\tables.py:59 .\home\tables.py:67
+#: .\home\tables.py:59 .\home\tables.py:71
 msgid "Details"
 msgstr "Details"
 
-#: .\home\templates\home\notification_details.html:8
+#: .\home\templates\home\charts-tab.html:7
+msgid "Charts"
+msgstr "Diagramme"
+
+#: .\home\templates\home\charts-tab.html:20
+msgid "CA"
+msgstr "CA"
+
+#: .\home\templates\home\charts-tab.html:39
+msgid "Devices by onboarding status"
+msgstr "Geräte nach Onboarding-Status"
+
+#: .\home\templates\home\charts-tab.html:43
+msgid "Active devices by Domain"
+msgstr "Aktive Geräte nach Domain"
+
+#: .\home\templates\home\charts-tab.html:47
+msgid "Devices by onboarding protocol"
+msgstr "Geräte nach Onboarding-Protokoll"
+
+#: .\home\templates\home\charts-tab.html:56
+msgid "Certificates By Status"
+msgstr "Zertifikate nach Status"
+
+#: .\home\templates\home\charts-tab.html:60
+msgid "Certificates By Domain"
+msgstr "Zertifikate nach Domain"
+
+#: .\home\templates\home\charts-tab.html:64
+msgid "Certificates By Template"
+msgstr "Zertifikate nach Vorlage"
+
+#: .\home\templates\home\charts-tab.html:118
+msgid "Certificates By Issuing CA"
+msgstr "Zertifikate nach Issuing CA"
+
+#: .\home\templates\home\charts-tab.html:122
+msgid "Issued Certificates"
+msgstr "Ausgestellte Zertifikate"
+
+#: .\home\templates\home\charts-tab.html:126
+msgid "Issuing CAs By Type"
+msgstr "Issuing CAs nach Art"
+
+#: .\home\templates\home\command_status.html:7
+msgid "Success"
+msgstr "Erfolg"
+
+#: .\home\templates\home\command_status.html:10
+msgid "Error"
+msgstr "Fehler"
+
+#: .\home\templates\home\counts-panel.html:6
+msgid "Summary"
+msgstr "Übersicht"
+
+#: .\home\templates\home\counts-panel.html:15
+#: .\trustpoint\templates\trustpoint\base.html:69
+msgid "Certificates"
+msgstr "Zertifikate"
+
+#: .\home\templates\home\counts-panel.html:38
+msgid "Expiring Certificates"
+msgstr "Ausgelaufene Zertifikate"
+
+#: .\home\templates\home\counts-panel.html:60
+#: .\trustpoint\templates\trustpoint\base.html:52
+msgid "Devices"
+msgstr "Geräte"
+
+#: .\home\templates\home\counts-panel.html:82
+#: .\trustpoint\templates\trustpoint\base.html:67
+msgid "Issuing CAs"
+msgstr "Issuing CAs"
+
+#: .\home\templates\home\notification_details.html:9
 msgid "Notification Details"
 msgstr "Benachrichtigungsdetails"
 
-#: .\home\templates\home\notification_details.html:15
+#: .\home\templates\home\notification_details.html:16
 msgid "Notification Type:"
 msgstr "Benachrichtigungsart:"
 
-#: .\home\templates\home\notification_details.html:36
+#: .\home\templates\home\notification_details.html:37
 msgid "Notification Source:"
 msgstr "Quelle der Benachrichtigung:"
 
-#: .\home\templates\home\notification_details.html:48
+#: .\home\templates\home\notification_details.html:49
 msgid "Domain:"
 msgstr "Domain:"
 
-#: .\home\templates\home\notification_details.html:58
+#: .\home\templates\home\notification_details.html:61
 msgid "Certificate:"
 msgstr "Zertifikat:"
 
-#: .\home\templates\home\notification_details.html:69
+#: .\home\templates\home\notification_details.html:73
 msgid "Device:"
 msgstr "Gerät:"
 
-#: .\home\templates\home\notification_details.html:79
+#: .\home\templates\home\notification_details.html:85
 msgid "Issuing CA:"
 msgstr "Issuing CA:"
 
-#: .\home\templates\home\notification_details.html:89
+#: .\home\templates\home\notification_details.html:97
 msgid "Message:"
 msgstr "Nachricht:"
 
-#: .\home\templates\home\notification_details.html:111
+#: .\home\templates\home\notification_details.html:119
 msgid "Created At:"
 msgstr "Erstellt um:"
 
-#: .\home\templates\home\notification_details.html:121
+#: .\home\templates\home\notification_details.html:128
 #: .\log\templates\log.html:17 .\log\templates\log_detail.html:12
 msgid "Back"
 msgstr "Zurück"
 
-#: .\home\templates\home\notification_details.html:127
+#: .\home\templates\home\notification_details.html:133
 msgid "Mark as Solved"
 msgstr "Als gelöst markieren"
+
+#: .\home\templates\home\notifications-tab.html:7
+msgid "Notifications"
+msgstr "Benachrichtigungen"
+
+#: .\home\templates\home\notifications-tab.html:12
+msgid "Filter"
+msgstr "Filter"
+
+#: .\home\templates\home\notifications-tab.html:20
+msgid "Critical"
+msgstr "Kritisch"
+
+#: .\home\templates\home\notifications-tab.html:26
+msgid "Warning"
+msgstr "Warnung"
+
+#: .\home\templates\home\notifications-tab.html:32
+msgid "Info"
+msgstr "Info"
+
+#: .\home\templates\home\notifications-tab.html:38
+msgid "Setup"
+msgstr "Einrichtung"
+
+#: .\home\templates\home\notifications-tab.html:82
+msgid "Today"
+msgstr "Heute"
+
+#: .\home\templates\home\notifications-tab.html:85
+msgid "Last 7 Days"
+msgstr "Letzte 7 Tage"
+
+#: .\home\templates\home\notifications-tab.html:88
+msgid "Last 30 Days"
+msgstr "Letzte 30 Tage"
+
+#: .\home\templates\home\notifications-tab.html:90
+msgid "All"
+msgstr "Alle"
 
 #: .\log\templates\log.html:11
 msgid "Logs"
@@ -232,10 +614,6 @@ msgstr "Englisch"
 msgid "Dashboard"
 msgstr "Übersicht"
 
-#: .\trustpoint\templates\trustpoint\base.html:52
-msgid "Devices"
-msgstr "Geräte"
-
 #: .\trustpoint\templates\trustpoint\base.html:60
 msgid "PKI"
 msgstr "PKI"
@@ -244,17 +622,9 @@ msgstr "PKI"
 msgid "Domains"
 msgstr "Domains"
 
-#: .\trustpoint\templates\trustpoint\base.html:67
-msgid "Issuing CAs"
-msgstr "Issuing CAs"
-
 #: .\trustpoint\templates\trustpoint\base.html:68
 msgid "Truststores"
 msgstr "Truststores"
-
-#: .\trustpoint\templates\trustpoint\base.html:69
-msgid "Certificates"
-msgstr "Zertifikate"
 
 #: .\trustpoint\templates\trustpoint\base.html:77
 msgid "Settings"
@@ -299,6 +669,44 @@ msgstr "Ausloggen"
 #: .\trustpoint\views\base.py:43
 msgid "Login required!"
 msgstr "Login erforderlich!"
+
+#, python-brace-format
+#~ msgid ""
+#~ "Visit the Trustpoint GitHub repository for more information: <a "
+#~ "href=\"{url_github}\" target=\"_blank\">Trustpoint GitHub</a>\n"
+#~ "Learn more about industrial security and the Trustpoint project on our <a "
+#~ "href=\"{url_homepage}\" target=\"_blank\">homepage</a>"
+#~ msgstr ""
+#~ "Besuchen Sie das Trustpoint GitHub-Repository für weitere Informationen: "
+#~ "<a href=\"{url_github}\" target=\"_blank\">Trustpoint GitHub</a>\n"
+#~ "Auf unserer <a href=\"{url_homepage}\" target=\"_blank\">Homepage</a> "
+#~ "finden Sie mehr nützliche Infos über industrielle Sicherheit und das "
+#~ "Truspoint-Forschungsprojekt"
+
+#, python-format
+#~ msgid "Device %(dev)s is not onboarded in %(domain)s."
+#~ msgstr "Das Gerät %(dev)s ist nicht in die Domain %(domain)s eingebunden."
+
+#, python-format
+#~ msgid "The device %(dev)s has not completed onboarding."
+#~ msgstr "Der Onboarding-Vorgang von Gerät %(dev)s ist nicht abgeschlossen."
+
+#, python-brace-format
+#~ msgid ""
+#~ "Visit the Trustpoint GitHub repository for more information: <a "
+#~ "href=\"{url_github}\" target=\"_blank\">Trustpoint GitHub</a>\n"
+#~ "Learn more about industrial security and the Trustpoint project on our <a "
+#~ "href=\"{url_homepage}\">homepage</a>"
+#~ msgstr ""
+#~ "Besuchen Sie das Trustpoint GitHub-Repository für weitere Informationen: "
+#~ "<a href=\"{url_github}\" target=\"_blank\">Trustpoint GitHub</a>\n"
+#~ "Auf unserer <a href=\"{url_homepage}\">Homepage</a> finden Sie mehr "
+#~ "nützliche Infos über industrielle Sicherheit und das Truspoint-"
+#~ "Forschungsprojekt"
+
+#, python-format
+#~ msgid "You can find the official Trustpoint documentation here: %(link)s"
+#~ msgstr "Die offizielle Trustpoint-Dokumentation finden Sie hier: %(link)s"
 
 #~ msgid "Delete"
 #~ msgstr "Entfernen"

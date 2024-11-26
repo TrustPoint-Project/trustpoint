@@ -56,7 +56,7 @@ class Device(models.Model):
         _('Onboarding protocol'), max_length=2, choices=OnboardingProtocol, default=OnboardingProtocol.MANUAL, blank=True
     )
     device_onboarding_status = models.CharField(verbose_name=_('Device onboarding status'),
-        max_length=1, choices=DeviceOnboardingStatus, default=DeviceOnboardingStatus.NOT_ONBOARDED, blank=True
+        max_length=16, choices=DeviceOnboardingStatus, default=DeviceOnboardingStatus.NOT_ONBOARDED, blank=True
     )
     domain = models.ForeignKey('pki.DomainModel', verbose_name=_('Domain'), on_delete=models.SET_NULL, blank=True, null=True)
     created_at = models.DateTimeField(default=timezone.now)

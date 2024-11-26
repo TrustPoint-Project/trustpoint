@@ -15,22 +15,24 @@ from django.utils import timezone
 from datetime import timedelta
 
 
-
 log = logging.getLogger('tp.home')
 
 router = Router()
 
 def get_device_count_by_onboarding_status():
   """Get device count by onboarding status from database"""
-  device_os_counts = {str(status): 0 for _, status in DeviceOnboardingStatus.choices}
+  device_os_counts = {str(status): 0 for status, _ in DeviceOnboardingStatus.choices}
   try:
     device_os_qr = Device.objects.values('device_onboarding_status').annotate(
       count=Count('device_onboarding_status')
     )
   except Exception as e:
     print(f"Error occurred in device count by onboarding protocol query: {e}")
+  
   # Mapping from short code to human-readable name
-  protocol_mapping = {key: str(value) for key, value in DeviceOnboardingStatus.choices}
+  #protocol_mapping = {key: str(value) for key, value in DeviceOnboardingStatus.choices}
+  # Just use key so that API is internationalization independent
+  protocol_mapping = {key: str(key) for key, _ in DeviceOnboardingStatus.choices}
   device_os_counts = {
     protocol_mapping[item['device_onboarding_status']]: item['count']
     for item in device_os_qr
@@ -97,11 +99,16 @@ def get_cert_counts_by_status():
   except Exception as e:
     print(f"Error occurred in cert counts by status query: {e}")
   # Mapping from short code to human-readable name
-  status_mapping = {key: str(value) for key, value in CertificateStatus.choices}
+  #status_mapping = {key: str(value) for key, value in CertificateStatus.choices}
+  # Just use key so that API is internationalization independent
+  status_mapping = {key: str(key) for key, _ in CertificateStatus.choices}
   cert_status_counts = {
     status_mapping[item['certificate_status']]: item['count']
     for item in cert_status_qr
   }
+
+  for _, status in status_mapping.items():
+    cert_status_counts.setdefault(status, 0)
 
   cert_status_counts['total'] = sum(cert_status_counts.values())
   return cert_status_counts
@@ -265,8 +272,8 @@ def get_issuing_ca_counts_by_type():
     )
   except Exception as e:
     print(f"Error occurred in ca counts by type query: {e}")
-  # Mapping from short code to human-readable name
-  protocol_mapping = {key: str(value) for key, value in CaLocalization.choices}
+  # Just use key so that API is internationalization independent
+  protocol_mapping = {key: str(key) for key, _ in CaLocalization.choices}
   issuing_ca_type_counts = {
     protocol_mapping[item['ca_localization']]: item['count']
     for item in ca_type_qr

@@ -1,10 +1,11 @@
 import datetime
 from django.utils import timezone
+from django.utils.translation import gettext_lazy as _
 
 from devices import DeviceOnboardingStatus
 from devices.models import Device
 from pki.models import CertificateModel, BaseCaModel, DomainModel
-from home.models import NotificationModel, NotificationMessage, NotificationStatus
+from home.models import NotificationModel, NotificationMessageModel, NotificationStatus
 import logging
 from django.urls import reverse
 
@@ -21,67 +22,54 @@ def setup_trustpoint_notifications():
     if not NotificationModel.objects.filter(event='EXECUTE_COMMAND_EVENT').exists():
         command_url = '/home/add-domains-and-devices/'
 
-        command_message = NotificationMessage.objects.create(
-            short_description='Populate test data',
-            long_description=f'Click <a href="{command_url}">here</a> to add test issuing CAs, domains and devices.'
-        )
-
         # Create the notification
         notification = NotificationModel.objects.create(
             event='EXECUTE_COMMAND_EVENT',
             created_at=timezone.now(),
             notification_source=NotificationModel.NotificationSource.SYSTEM,
             notification_type=NotificationModel.NotificationTypes.INFO,
-            message=command_message
+            message_type=NotificationModel.NotificationMessageType.WELCOME_POPULATE_TEST_DATA,
+            message_data={'url':command_url}
         )
 
         notification.statuses.add(new_status)
 
     if not NotificationModel.objects.filter(event='TRUSTPOINT_DOCUMENTATION').exists():
-        documentation_message = NotificationMessage.objects.create(
-            short_description='Access the Trustpoint Documentation',
-            long_description='You can find the official Trustpoint documentation here: '
-                             '<a href="https://trustpoint.readthedocs.io">Trustpoint Documentation</a>'
-        )
+        link = '<a href="https://trustpoint.readthedocs.io" target="_blank">Trustpoint Documentation</a>'
+
         notification = NotificationModel.objects.create(
             event='TRUSTPOINT_DOCUMENTATION',
             created_at=timezone.now(),
             notification_source=NotificationModel.NotificationSource.SYSTEM,
             notification_type=NotificationModel.NotificationTypes.INFO,
-            message=documentation_message
+            message_type=NotificationModel.NotificationMessageType.TRUSTPOINT_DOCUMENTATION,
+            message_data={'link': link}
         )
         notification.statuses.add(new_status)
 
     # Check if the GitHub and homepage links notification has already been created
     if not NotificationModel.objects.filter(event='TRUSTPOINT_PROJECT_INFO').exists():
-        project_info_message = NotificationMessage.objects.create(
-            short_description='Explore the Trustpoint project',
-            long_description='Visit the Trustpoint GitHub repository for more information: '
-                             '<a href="https://github.com/TrustPoint-Project">Trustpoint GitHub</a>\n'
-                             'Learn more about industrial security and the Trustpoint project on our '
-                             '<a href="https://industrial-security.io">homepage</a>'
-        )
+        url_github = 'https://github.com/TrustPoint-Project'
+        url_homepage = 'https://industrial-security.io'
+
         notification = NotificationModel.objects.create(
             event='TRUSTPOINT_PROJECT_INFO',
             created_at=timezone.now(),
             notification_source=NotificationModel.NotificationSource.SYSTEM,
             notification_type=NotificationModel.NotificationTypes.INFO,
-            message=project_info_message
+            message_type=NotificationModel.NotificationMessageType.TRUSTPOINT_PROJECT_INFO,
+            message_data={'url_github': url_github, 'url_homepage': url_homepage}
         )
         notification.statuses.add(new_status)
 
     # Check if the welcome notification has already been created
     if not NotificationModel.objects.filter(event='WELCOME_TRUSTPOINT').exists():
-        welcome_message = NotificationMessage.objects.create(
-            short_description='Welcome to Trustpoint!',
-            long_description='Thank you for setting up Trustpoint. This system will help you manage your certificates and secure your environment.'
-        )
         notification = NotificationModel.objects.create(
             event='WELCOME_TRUSTPOINT',
             created_at=timezone.now(),
             notification_source=NotificationModel.NotificationSource.SYSTEM,
             notification_type=NotificationModel.NotificationTypes.INFO,
-            message=welcome_message
+            message_type=NotificationModel.NotificationMessageType.WELCOME_MESSAGE
         )
         notification.statuses.add(new_status)
 
@@ -94,16 +82,12 @@ def check_system_health():
     # TODO (FHKatCSW): Implement logic for system health check
 
     if not system_healthy:
-        message = NotificationMessage.objects.create(
-            short_description=f'System health check failed',
-            long_description=f'The system health check detected an issue with one or more services. Please investigate immediately.'
-        )
         NotificationModel.objects.create(
             event='SYSTEM_NOT_HEALTHY',
             created_at=timezone.now(),
             notification_source=NotificationModel.NotificationSource.SYSTEM,
             notification_type=NotificationModel.NotificationTypes.CRITICAL,
-            message=message
+            message_type=NotificationModel.NotificationMessageType.SYSTEM_NOT_HEALTHY
         )
 
 
@@ -115,16 +99,12 @@ def check_for_security_vulnerabilities():
     # TODO (FHKatCSW): Implement logic for vulnerability check
 
     if vulnerabilities_detected:
-        message = NotificationMessage.objects.create(
-            short_description=f'Security vulnerability detected',
-            long_description=f'A security vulnerability affecting system components has been detected. Immediate attention required.'
-        )
         NotificationModel.objects.create(
             event='VULNERABILITY',
             created_at=timezone.now(),
             notification_source=NotificationModel.NotificationSource.SYSTEM,
             notification_type=NotificationModel.NotificationTypes.CRITICAL,
-            message=message
+            message_type=NotificationModel.NotificationMessageType.VULNERABILITY
         )
 
 
@@ -142,37 +122,34 @@ def check_certificate_validity():
                                                             not_valid_after__gt=current_time)
     expired_certificates = CertificateModel.objects.filter(not_valid_after__lte=current_time)
 
-    logger.info(f"Found {expiring_certificates.count()} expiring certificates.")
+    logger.info(f"Found {expiring_certificates.count()} expiring and {expired_certificates.count()} expired certificates.")
     for cert in expiring_certificates:
         if not NotificationModel.objects.filter(event='CERTIFICATE_EXPIRING', certificate=cert).exists():
-            message = NotificationMessage.objects.create(
-                short_description=f'Certificate {cert.common_name} is expiring soon',
-                long_description=f'The certificate {cert.common_name} is set to expire on {cert.not_valid_after}.'
-            )
+            message_data = {'common_name': cert.common_name, 'not_valid_after': cert.not_valid_after}
+
             notification = NotificationModel.objects.create(
                 certificate=cert,
                 created_at=timezone.now(),
                 notification_source=NotificationModel.NotificationSource.CERTIFICATE,
                 notification_type=NotificationModel.NotificationTypes.WARNING,
+                message_type=NotificationModel.NotificationMessageType.CERT_EXPIRING,
                 event='CERTIFICATE_EXPIRING',
-                message=message
+                message_data=message_data
             )
             notification.statuses.add(new_status)
 
-    logger.info(f"Found {expired_certificates.count()} expired certificates.")
     for cert in expired_certificates:
         if not NotificationModel.objects.filter(event='CERTIFICATE_EXPIRED', certificate=cert).exists():
-            message = NotificationMessage.objects.create(
-                short_description=f'Certificate {cert.common_name} has expired',
-                long_description=f'The certificate {cert.common_name} expired on {cert.not_valid_after}.'
-            )
+            message_data = {'common_name': cert.common_name, 'not_valid_after': cert.not_valid_after}
+
             notification = NotificationModel.objects.create(
                 certificate=cert,
                 created_at=timezone.now(),
                 notification_source=NotificationModel.NotificationSource.CERTIFICATE,
                 notification_type=NotificationModel.NotificationTypes.CRITICAL,
+                message_type=NotificationModel.NotificationMessageType.CERT_EXPIRED,
                 event='CERTIFICATE_EXPIRED',
-                message=message
+                message_data=message_data
             )
             notification.statuses.add(new_status)
 
@@ -196,33 +173,31 @@ def check_issuing_ca_validity():
 
     for ca in expiring_issuing_cas:
         if not NotificationModel.objects.filter(event='ISSUING_CA_EXPIRING', issuing_ca=ca).exists():
-            message = NotificationMessage.objects.create(
-                short_description=f'Issuing CA {ca.unique_name} is expiring soon',
-                long_description=f'The issuing CA {ca.unique_name} is set to expire on {ca.issuing_ca_certificate.not_valid_after}.'
-            )
+            message_data = {'unique_name': ca.unique_name, 'not_valid_after': ca.issuing_ca_certificate.not_valid_after}
+
             notification = NotificationModel.objects.create(
                 issuing_ca=ca,
                 created_at=timezone.now(),
                 notification_source=NotificationModel.NotificationSource.ISSUING_CA,
                 notification_type=NotificationModel.NotificationTypes.WARNING,
+                message_type=NotificationModel.NotificationMessageType.ISSUING_CA_EXPIRING,
                 event='ISSUING_CA_EXPIRING',
-                message=message
+                message_data=message_data
             )
             notification.statuses.add(new_status)
 
     for ca in expired_issuing_cas:
         if not NotificationModel.objects.filter(event='ISSUING_CA_EXPIRED', issuing_ca=ca).exists():
-            message = NotificationMessage.objects.create(
-                short_description=f'Issuing CA {ca.unique_name} has expired',
-                long_description=f'The issuing CA {ca.unique_name} expired on {ca.issuing_ca_certificate.not_valid_after}.'
-            )
+            message_data = {'unique_name': ca.unique_name, 'not_valid_after': ca.issuing_ca_certificate.not_valid_after}
+
             notification = NotificationModel.objects.create(
                 issuing_ca=ca,
                 created_at=timezone.now(),
                 notification_source=NotificationModel.NotificationSource.ISSUING_CA,
                 notification_type=NotificationModel.NotificationTypes.CRITICAL,
+                message_type=NotificationModel.NotificationMessageType.ISSUING_CA_EXPIRED,
                 event='ISSUING_CA_EXPIRED',
-                message=message
+                message_data=message_data
             )
             notification.statuses.add(new_status)
 
@@ -235,17 +210,14 @@ def check_domain_issuing_ca():
 
     for domain in domains_without_issuing_ca:
         if not NotificationModel.objects.filter(event='DOMAIN_NO_ISSUING_CA', domain=domain).exists():
-            message = NotificationMessage.objects.create(
-                short_description=f'Domain {domain.unique_name} has no Issuing CA assigned',
-                long_description=f'The domain {domain.unique_name} currently has no Issuing CA assigned.'
-            )
             notification = NotificationModel.objects.create(
                 domain=domain,
                 created_at=timezone.now(),
                 notification_source=NotificationModel.NotificationSource.DOMAIN,
                 notification_type=NotificationModel.NotificationTypes.INFO,
+                message_type=NotificationModel.NotificationMessageType.DOMAIN_NO_ISSUING_CA,
                 event='DOMAIN_NO_ISSUING_CA',
-                message=message
+                message_data={'unique_name': domain.unique_name}
             )
             notification.statuses.add(new_status)
 
@@ -258,17 +230,16 @@ def check_non_onboarded_devices():
 
     for device in non_onboarded_devices:
         if not NotificationModel.objects.filter(event='DEVICE_NOT_ONBOARDED', device=device).exists():
-            message = NotificationMessage.objects.create(
-                short_description=f'Device {device.device_name} is not onboarded in {device.domain}',
-                long_description=f'The device {device.device_name} has not completed onboarding.'
-            )
+            message_data = {'device': device.device_name, 'domain': device.domain.unique_name}
+
             notification = NotificationModel.objects.create(
                 device=device,
                 created_at=timezone.now(),
                 notification_source=NotificationModel.NotificationSource.DEVICE,
                 notification_type=NotificationModel.NotificationTypes.INFO,
+                message_type=NotificationModel.NotificationMessageType.DEVICE_NOT_ONBOARDED,
                 event='DEVICE_NOT_ONBOARDED',
-                message=message
+                message_data=message_data
             )
             notification.statuses.add(new_status)
 
@@ -282,17 +253,14 @@ def check_devices_with_failed_onboarding():
 
     for device in failed_onboarding_devices:
         if not NotificationModel.objects.filter(event='DEVICE_ONBOARDING_FAILED', device=device).exists():
-            message = NotificationMessage.objects.create(
-                short_description=f'Device {device.device_name} onboarding failed',
-                long_description=f'The device {device.device_name} failed onboarding.'
-            )
             notification = NotificationModel.objects.create(
                 device=device,
                 created_at=timezone.now(),
                 notification_source=NotificationModel.NotificationSource.DEVICE,
                 notification_type=NotificationModel.NotificationTypes.WARNING,
+                message_type=NotificationModel.NotificationMessageType.DEVICE_ONBOARDING_FAILED,
                 event='DEVICE_ONBOARDING_FAILED',
-                message=message
+                message_data={'device': device.device_name}
             )
             notification.statuses.add(new_status)
 
@@ -305,17 +273,14 @@ def check_devices_with_revoked_certificates():
 
     for device in revoked_devices:
         if not NotificationModel.objects.filter(event='DEVICE_CERTIFICATE_REVOKED', device=device).exists():
-            message = NotificationMessage.objects.create(
-                short_description=f'Device {device.device_name} certificate revoked',
-                long_description=f'The device {device.device_name} has had its certificate revoked. The device may no longer be trusted.'
-            )
             notification = NotificationModel.objects.create(
                 device=device,
                 created_at=timezone.now(),
                 notification_source=NotificationModel.NotificationSource.DEVICE,
                 notification_type=NotificationModel.NotificationTypes.INFO,
+                message_type=NotificationModel.NotificationMessageType.DEVICE_CERT_REVOKED,
                 event='DEVICE_CERTIFICATE_REVOKED',
-                message=message
+                message_data={'device': device.device_name}
             )
             notification.statuses.add(new_status)
 
@@ -330,17 +295,16 @@ def check_for_weak_signature_algorithms():
 
     for cert in weak_certificates:
         if not NotificationModel.objects.filter(event='WEAK_SIGNATURE_ALGORITHM', certificate=cert).exists():
-            message = NotificationMessage.objects.create(
-                short_description=f'Certificate {cert.common_name} uses a weak signature algorithm',
-                long_description=f'The certificate {cert.common_name} is signed using {cert.signature_algorithm}, which is considered weak.'
-            )
+            message_data = {'common_name': cert.common_name, 'signature_algorithm': cert.signature_algorithm}
+
             notification = NotificationModel.objects.create(
                 certificate=cert,
                 created_at=timezone.now(),
                 event='WEAK_SIGNATURE_ALGORITHM',
                 notification_source=NotificationModel.NotificationSource.CERTIFICATE,
                 notification_type=NotificationModel.NotificationTypes.WARNING,
-                message=message
+                message_type=NotificationModel.NotificationMessageType.WEAK_SIGNATURE_ALGORITHM,
+                message_data=message_data
             )
             notification.statuses.add(new_status)
 
@@ -357,17 +321,16 @@ def check_for_insufficient_key_length():
 
     for cert in insufficient_key_certificates:
         if not NotificationModel.objects.filter(event='INSUFFICIENT_KEY_LENGTH', certificate=cert).exists():
-            message = NotificationMessage.objects.create(
-                short_description=f'Certificate {cert.common_name} uses insufficient key length',
-                long_description=f'The certificate {cert.common_name} uses an RSA key size of {cert.spki_key_size} bits, which is less than the recommended 2048 bits.'
-            )
+            message_data = {'common_name': cert.common_name, 'spki_key_size': cert.spki_key_size}
+
             notification = NotificationModel.objects.create(
                 certificate=cert,
                 created_at=timezone.now(),
                 event='INSUFFICIENT_KEY_LENGTH',
                 notification_source=NotificationModel.NotificationSource.CERTIFICATE,
                 notification_type=NotificationModel.NotificationTypes.WARNING,
-                message=message
+                message_type=NotificationModel.NotificationMessageType.INSUFFICIENT_KEY_LENGTH,
+                message_data=message_data
             )
             notification.statuses.add(new_status)
 
@@ -382,16 +345,15 @@ def check_for_weak_ecc_curves():
 
     for cert in weak_ecc_certificates:
         if not NotificationModel.objects.filter(event='WEAK_ECC_CURVE', certificate=cert).exists():
-            message = NotificationMessage.objects.create(
-                short_description=f'Certificate {cert.common_name} uses a weak ECC curve',
-                long_description=f'The certificate {cert.common_name} is using the {cert.spki_ec_curve} ECC curve, which is no longer recommended.'
-            )
+            message_data = {'common_name': cert.common_name, 'spki_ec_curve': cert.spki_ec_curve}
+
             notification = NotificationModel.objects.create(
                 certificate=cert,
                 created_at=timezone.now(),
                 event='WEAK_ECC_CURVE',
                 notification_source=NotificationModel.NotificationSource.CERTIFICATE,
                 notification_type=NotificationModel.NotificationTypes.WARNING,
-                message=message
+                message_type=NotificationModel.NotificationMessageType.WEAK_ECC_CURVE,
+                message_data=message_data
             )
             notification.statuses.add(new_status)

@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-10-28 14:58+0100\n"
-"PO-Revision-Date: 2024-10-28 15:09+0100\n"
+"POT-Creation-Date: 2024-11-14 10:44+0100\n"
+"PO-Revision-Date: 2024-11-14 10:48+0100\n"
 "Last-Translator: Christian Schwinne <christian.schwinne  AT hshl.de>\n"
 "Language-Team: \n"
 "Language: de\n"
@@ -18,6 +18,89 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 "X-Generator: Poedit 3.5\n"
+
+#: .\static\js\dashboard\charts-tab.js:13
+msgid "No data available"
+msgstr "Keine Daten verfügbar"
+
+#: .\static\js\dashboard\charts-tab.js:18
+msgid "Total"
+msgstr "Gesamt"
+
+#: .\static\js\dashboard\charts-tab.js:20
+msgid "Pending"
+msgstr "Wartend"
+
+#: .\static\js\dashboard\charts-tab.js:21
+msgid "Running"
+msgstr "Aktiv"
+
+#: .\static\js\dashboard\charts-tab.js:22
+#: .\static\js\dashboard\counts-panel.js:4
+msgid "Onboarded"
+msgstr "Eingebunden"
+
+#: .\static\js\dashboard\charts-tab.js:23
+msgid "Failed"
+msgstr "Fehlgeschlagen"
+
+#: .\static\js\dashboard\charts-tab.js:24
+#: .\static\js\dashboard\charts-tab.js:27
+msgid "Revoked"
+msgstr "Widerrufen"
+
+#: .\static\js\dashboard\charts-tab.js:26
+msgid "OK"
+msgstr "OK"
+
+#: .\static\js\dashboard\charts-tab.js:28
+#: .\static\js\dashboard\counts-panel.js:20
+#: .\static\js\dashboard\counts-panel.js:57
+msgid "Expired"
+msgstr "Ausgelaufen"
+
+#: .\static\js\dashboard\charts-tab.js:29
+msgid "Not Yet Valid"
+msgstr "Noch nicht gültig"
+
+#: .\static\js\dashboard\charts-tab.js:31
+msgid "Local"
+msgstr "Lokal"
+
+#: .\static\js\dashboard\charts-tab.js:32
+msgid "Remote"
+msgstr "Extern"
+
+#: .\static\js\dashboard\charts-tab.js:33
+msgid "Auto-gen PKI"
+msgstr "Auto-Gen PKI"
+
+#: .\static\js\dashboard\charts-tab.js:155
+#: .\static\js\dashboard\charts-tab.js:211
+msgid "Number of Devices"
+msgstr "Anzahl Geräte"
+
+#: .\static\js\dashboard\charts-tab.js:288
+#: .\static\js\dashboard\charts-tab.js:374
+msgid "Number of Certificates"
+msgstr "Anzahl Zertifikate"
+
+#: .\static\js\dashboard\counts-panel.js:5
+msgid "Waiting"
+msgstr "Wartend"
+
+#: .\static\js\dashboard\counts-panel.js:19
+#: .\static\js\dashboard\counts-panel.js:54
+msgid "Active"
+msgstr "Aktiv"
+
+#: .\static\js\dashboard\counts-panel.js:35
+msgid "Next 24 hours"
+msgstr "Nächste 24 Stunden"
+
+#: .\static\js\dashboard\counts-panel.js:38
+msgid "Next 7 days"
+msgstr "Nächste 7 Tage"
 
 #: .\static\js\onboarding.js:53
 msgid "Waiting for browser client to connect..."
