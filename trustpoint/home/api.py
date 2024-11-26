@@ -1,28 +1,25 @@
 """API endpoints for the home app."""
 
+from __future__ import annotations
+from datetime import date, datetime, timedelta
+from typing import Any, TYPE_CHECKING
 import logging
-from ninja import Router, Schema
-from django.http import HttpRequest
-from ninja.responses import Response, codes_4xx
+from django.db.models import Case, Count, F, IntegerField, Q, Value, When
+from django.db.models.functions import TruncDate
+from django.utils import timezone, dateparse
+from ninja import Router
+from ninja.responses import Response
 from devices import DeviceOnboardingStatus
 from devices.models import Device
-from pki.models import CertificateModel, IssuingCaModel, DomainModel, BaseCaModel, IssuedDeviceCertificateModel
 from pki import CaLocalization, CertificateStatus, TemplateName
-from trustpoint.schema import ErrorSchema, SuccessSchema
-from django.db.models import Count, F, Q, Case, When, Value, IntegerField
-from django.db.models.functions import TruncDate
-from django.utils import timezone
-from datetime import timedelta, datetime, date
-from typing import Optional
-from django.utils.dateparse import parse_date
+from pki.models import BaseCaModel, CertificateModel, DomainModel, IssuedDeviceCertificateModel, IssuingCaModel
+if TYPE_CHECKING:
+    from django.http import HttpRequest
 
-
-log = logging.getLogger('tp.home')
-
+logger = logging.getLogger('tp.home')
 router = Router()
 
-
-def get_device_count_by_onboarding_status(start_date):
+def get_device_count_by_onboarding_status(start_date: date) -> dict[str, Any]:
     """Get device count by onboarding status from database"""
     device_os_counts = {str(status): 0 for _, status in DeviceOnboardingStatus.choices}
     try:
@@ -31,19 +28,19 @@ def get_device_count_by_onboarding_status(start_date):
             .values('device_onboarding_status')
             .annotate(count=Count('device_onboarding_status'))
         )
-    except Exception as e:
-        print(f'Error occurred in device count by onboarding protocol query: {e}')
+    except Exception:
+        logger.exception('Error occurred in device count by onboarding protocol query')
     # Mapping from short code to human-readable name
     protocol_mapping = {key: str(value) for key, value in DeviceOnboardingStatus.choices}
     device_os_counts = {protocol_mapping[item['device_onboarding_status']]: item['count'] for item in device_os_qr}
 
-    for _, protocol in protocol_mapping.items():
+    for protocol in protocol_mapping.values():
         device_os_counts.setdefault(protocol, 0)
     device_os_counts['total'] = sum(device_os_counts.values())
     return device_os_counts
 
 
-def get_cert_counts():
+def get_cert_counts() -> dict[str, Any]:
     """Get certificate counts from database"""
     cert_counts = {}
     # Get the current date and the dates for 7 days and 1 day ahead
@@ -58,12 +55,12 @@ def get_cert_counts():
             expiring_in_7_days=Count('id', filter=Q(not_valid_after__gt=now, not_valid_after__lte=next_7_days)),
             expiring_in_1_day=Count('id', filter=Q(not_valid_after__gt=now, not_valid_after__lte=next_1_day)),
         )
-    except Exception as e:
-        print(f'Error occurred in certificate count query: {e}')
+    except Exception:
+        logger.exception('Error occurred in certificate count query')
     return cert_counts
 
 
-def get_cert_counts_by_status_and_date():
+def get_cert_counts_by_status_and_date() -> dict[str, Any]:
     """Get certificate counts grouped by issue date and certificate status."""
     cert_counts_by_status = []
     try:
@@ -87,12 +84,12 @@ def get_cert_counts_by_status_and_date():
             }
             for item in cert_status_qr
         ]
-    except Exception as e:
-        print(f'Error occurred in certificate count by status query: {e}')
+    except Exception:
+        logger.exception('Error occurred in certificate count by status query')
     return cert_counts_by_status
 
 
-def get_cert_counts_by_status(start_date):
+def get_cert_counts_by_status(start_date: date) -> dict[str, Any]:
     """Get certs count by onboarding status from database"""
     cert_status_counts = {str(status): 0 for _, status in CertificateStatus.choices}
     try:
@@ -105,12 +102,12 @@ def get_cert_counts_by_status(start_date):
         status_mapping = {key: str(value) for key, value in CertificateStatus.choices}
         cert_status_counts = {status_mapping[item['certificate_status']]: item['count'] for item in cert_status_qr}
         cert_status_counts['total'] = sum(cert_status_counts.values())
-    except Exception as e:
-        print(f'Error occurred in cert counts by status query: {e}')
+    except Exception:
+        logger.exception('Error occurred in cert counts by status query')
     return cert_status_counts
 
 
-def get_issuing_ca_counts():
+def get_issuing_ca_counts() -> dict[str, Any]:
     """Get issuing CA counts from database"""
     # Current date
     today = timezone.now().date()
@@ -130,13 +127,13 @@ def get_issuing_ca_counts():
                 )
             ),
         )
-    except Exception as e:
-        print(f'Error occurred in issuing ca count query: {e}')
+    except Exception:
+        logger.exception('Error occurred in issuing ca count query')
 
     return issuing_ca_counts
 
 
-def get_device_counts_by_date_and_status():
+def get_device_counts_by_date_and_status() -> dict[str, Any]:
     """Get device count by date and onboarding status from database"""
     device_counts_by_date_and_os = {}
     try:
@@ -146,16 +143,13 @@ def get_device_counts_by_date_and_status():
             .annotate(device_count=Count('id'))
             .order_by('issue_date', 'device_onboarding_status')
         )
-    except Exception as e:
-        print(f'Error occurred in device count by domain query: {e}')
-
-    # Convert the queryset to a list
-    device_counts_by_date_and_os = list(device_date_os_qr)
-    # print("device_counts_by_date_and_os", device_counts_by_date_and_os)
+        # Convert the queryset to a list
+        device_counts_by_date_and_os = list(device_date_os_qr)
+    except Exception:
+        logger.exception('Error occurred in device count by domain query')
     return device_counts_by_date_and_os
 
-
-def get_device_count_by_onboarding_protocol(start_date):
+def get_device_count_by_onboarding_protocol(start_date: date) -> dict[str, Any]:
     """Get device count by onboarding protocol from database"""
     device_op_counts = {str(status): 0 for _, status in Device.OnboardingProtocol.choices}
     try:
@@ -164,17 +158,16 @@ def get_device_count_by_onboarding_protocol(start_date):
             .values('onboarding_protocol')
             .annotate(count=Count('onboarding_protocol'))
         )
-    except Exception as e:
-        print(f'Error occurred in device count by onboarding protocol query: {e}')
-    # Mapping from short code to human-readable name
-    protocol_mapping = {key: str(value) for key, value in Device.OnboardingProtocol.choices}
-    device_op_counts = {protocol_mapping[item['onboarding_protocol']]: item['count'] for item in device_op_qr}
+        # Mapping from short code to human-readable name
+        protocol_mapping = {key: str(value) for key, value in Device.OnboardingProtocol.choices}
+        device_op_counts = {protocol_mapping[item['onboarding_protocol']]: item['count'] for item in device_op_qr}
 
-    # device_op_counts['total'] = sum(device_op_counts.values())
+    except Exception:
+        logger.exception('Error occurred in device count by onboarding protocol query')
     return device_op_counts
 
 
-def get_device_count_by_domain(start_date):
+def get_device_count_by_domain(start_date: date) -> dict[str, Any]:
     """Get count of onboarded devices by domain from the database."""
     try:
         device_domain_qr = DomainModel.objects.annotate(
@@ -182,17 +175,13 @@ def get_device_count_by_domain(start_date):
                 'device', filter=Q(device__device_onboarding_status='O') & Q(device__created_at__gt=start_date)
             )
         ).values('unique_name', 'onboarded_device_count')
-    except Exception as e:
-        print(f'Error occurred in device count by domain query: {e}')
+        # Convert the queryset to a list
+        return list(device_domain_qr)
+    except Exception:
+        logger.exception('Error occurred in device count by domain query')
         return []
 
-    # Convert the queryset to a list
-    device_counts_by_domain = list(device_domain_qr)
-
-    return device_counts_by_domain
-
-
-def get_cert_counts_by_issuing_ca(start_date):
+def get_cert_counts_by_issuing_ca(start_date: date) -> dict[str, Any]:
     """Get certificate count by issuing ca from database"""
     cert_counts_by_issuing_ca = {}
     try:
@@ -204,13 +193,13 @@ def get_cert_counts_by_issuing_ca(start_date):
         )
         # Convert the queryset to a list
         cert_counts_by_issuing_ca = list(cert_issuing_ca_qr)
-    except Exception as e:
-        print(f'Error occurred in certificate count by issuing ca query: {e}')
+    except Exception:
+        logger.exception('Error occurred in certificate count by issuing ca query')
 
     return cert_counts_by_issuing_ca
 
 
-def get_cert_counts_by_issuing_ca_and_date():
+def get_cert_counts_by_issuing_ca_and_date() -> dict[str, Any]:
     """Get certificate count by issuing ca from database"""
     cert_counts_by_issuing_ca_and_date = {}
     try:
@@ -222,16 +211,14 @@ def get_cert_counts_by_issuing_ca_and_date():
             .filter(name__isnull=False)
             .order_by('added_at', 'name')
         )
-
         # Convert the queryset to a list
         cert_counts_by_issuing_ca_and_date = list(cert_issuing_ca_and_date_qr)
-    except Exception as e:
-        print(f'Error occurred in certificate count by issuing ca query: {e}')
-
+    except Exception:
+        logger.exception('Error occurred in certificate count by issuing ca query')
     return cert_counts_by_issuing_ca_and_date
 
 
-def get_cert_counts_by_domain(start_date):
+def get_cert_counts_by_domain(start_date: date) -> dict[str, Any]:
     """Get certificate count by domain from database"""
     cert_counts_by_domain = {}
     try:
@@ -243,12 +230,12 @@ def get_cert_counts_by_domain(start_date):
 
         # Convert the queryset to a list
         cert_counts_by_domain = list(cert_domain_qr)
-    except Exception as e:
-        print(f'Error occurred in certificate count by issuing ca query: {e}')
+    except Exception:
+        logger.exception('Error occurred in certificate count by issuing ca query')
     return cert_counts_by_domain
 
 
-def get_cert_counts_by_template(start_date):
+def get_cert_counts_by_template(start_date: date) -> dict[str, Any]:
     """Get certificate count by template from database"""
     cert_counts_by_template = {str(status): 0 for _, status in TemplateName.choices}
     try:
@@ -257,18 +244,17 @@ def get_cert_counts_by_template(start_date):
             .values('template_name')
             .annotate(count=Count('template_name'))
         )
-    except Exception as e:
-        print(f'Error occurred in certificate count by template query: {e}')
-    # Mapping from short code to human-readable name
-    template_mapping = {key: str(value) for key, value in TemplateName.choices}
-    cert_counts_by_template = {template_mapping[item['template_name']]: item['count'] for item in cert_template_qr}
-
+        # Mapping from short code to human-readable name
+        template_mapping = {key: str(value) for key, value in TemplateName.choices}
+        cert_counts_by_template = {template_mapping[item['template_name']]: item['count'] for item in cert_template_qr}
+    except Exception:
+        logger.exception('Error occurred in certificate count by template query')
     return cert_counts_by_template
 
 
-def get_issuing_ca_counts_by_type(start_date):
+def get_issuing_ca_counts_by_type(start_date: date) -> dict[str, Any]:
     """Get issuing ca counts by type from database"""
-    issuing_ca_type_counts = {str(type): 0 for _, type in CaLocalization.choices}
+    issuing_ca_type_counts = {str(cert_type): 0 for _, cert_type in CaLocalization.choices}
     try:
         ca_type_qr = (
             BaseCaModel.objects.filter(added_at__gt=start_date)
@@ -278,94 +264,76 @@ def get_issuing_ca_counts_by_type(start_date):
         # Mapping from short code to human-readable name
         protocol_mapping = {key: str(value) for key, value in CaLocalization.choices}
         issuing_ca_type_counts = {protocol_mapping[item['ca_localization']]: item['count'] for item in ca_type_qr}
-        # device_op_counts['total'] = sum(device_op_counts.values())
-    except Exception as e:
-        print(f'Error occurred in ca counts by type query: {e}')
 
+    except Exception:
+        logger.exception('Error occurred in ca counts by type query')
     return issuing_ca_type_counts
-
 
 # --- PUBLIC HOME API ENDPOINTS ---
 @router.get('/dashboard_data', exclude_none=True)
-def dashboard_data(request: HttpRequest, start_date: Optional[str] = None):
+def dashboard_data(request: HttpRequest, start_date: str | None) -> dict[str, Any]:
     """Get dashboard data for panels, tables and charts"""
     start_date_object = None
     # Parse the date string into a datetime.date object
     if start_date:
-        start_date_object = parse_date(start_date)  # Returns a date object (not datetime)
+        start_date_object = dateparse.parse_date(start_date)  # Returns a date object (not datetime)
         if not start_date_object:
             return Response({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
     else:
-        start_date_object = date.today()
+        tz = timezone.get_current_timezone()
+        start_date_object = datetime.now(tz).date()
 
     dashboard_data = {}
 
-    ###### Get Device counts ######
-    # device_counts = get_device_counts()
-    device_counts = get_device_count_by_onboarding_status(parse_date('2023-01-01'))
-    # print("device_counts", device_counts)
-
+    device_counts = get_device_count_by_onboarding_status(dateparse.parse_date('2023-01-01'))
     dashboard_data['device_counts'] = device_counts
 
-    ###### Get certificate counts ######
     cert_counts = get_cert_counts()
-    # print("certificate_counts", cert_counts)
     if cert_counts:
         dashboard_data['cert_counts'] = cert_counts
 
-    ###### Get Issuing CA counts ######
     issuing_ca_counts = get_issuing_ca_counts()
-    # print("issuing_CA", issuing_ca_counts)
     if issuing_ca_counts:
         dashboard_data['issuing_ca_counts'] = issuing_ca_counts
 
-    ###### function calls to get chart data ######
     device_counts_by_os = get_device_count_by_onboarding_status(start_date_object)
     if device_counts_by_os:
         dashboard_data['device_counts_by_os'] = device_counts_by_os
-    ###### Get device count by date and status ######
+
     device_counts_by_date_and_os = get_device_counts_by_date_and_status()
     if device_counts_by_date_and_os:
         dashboard_data['device_counts_by_date_and_os'] = device_counts_by_date_and_os
 
-    ###### Get device count by onboarding protocol ######
     device_counts_by_op = get_device_count_by_onboarding_protocol(start_date_object)
     if device_counts_by_op:
         dashboard_data['device_counts_by_op'] = device_counts_by_op
 
-    ###### Get device count by domain ######
-    device_counts_by_domain = get_device_count_by_domain(start_date)
+    device_counts_by_domain = get_device_count_by_domain(start_date_object)
     if device_counts_by_domain:
         dashboard_data['device_counts_by_domain'] = device_counts_by_domain
 
-    ###### Get certificate count by domain ######
-    cert_counts_by_domain = get_cert_counts_by_domain(start_date)
+    cert_counts_by_domain = get_cert_counts_by_domain(start_date_object)
     if cert_counts_by_domain:
         dashboard_data['cert_counts_by_domain'] = cert_counts_by_domain
 
-    ###### Get certificate count by template ######
-    cert_counts_by_template = get_cert_counts_by_template(start_date)
+    cert_counts_by_template = get_cert_counts_by_template(start_date_object)
     if cert_counts_by_template:
         dashboard_data['cert_counts_by_template'] = cert_counts_by_template
 
-    ###### Get certificate count by issuing ca ######
-    cert_counts_by_issuing_ca = get_cert_counts_by_issuing_ca(start_date)
+    cert_counts_by_issuing_ca = get_cert_counts_by_issuing_ca(start_date_object)
     if cert_counts_by_issuing_ca:
         dashboard_data['cert_counts_by_issuing_ca'] = cert_counts_by_issuing_ca
 
-    ###### Get certificate count by issuing ca and date ######
     cert_counts_by_issuing_ca_and_date = get_cert_counts_by_issuing_ca_and_date()
     if cert_counts_by_issuing_ca_and_date:
         dashboard_data['cert_counts_by_issuing_ca_and_date'] = cert_counts_by_issuing_ca_and_date
 
-    ###### Get issuing ca count by type ######
-    issuing_ca_counts_by_type = get_issuing_ca_counts_by_type(start_date)
-    # print("issuing ca count by type", issuing_ca_counts_by_type)
+    issuing_ca_counts_by_type = get_issuing_ca_counts_by_type(start_date_object)
     if issuing_ca_counts_by_type:
         dashboard_data['ca_counts_by_type'] = issuing_ca_counts_by_type
 
-    cert_counts_by_status = get_cert_counts_by_status(start_date)
+    cert_counts_by_status = get_cert_counts_by_status(start_date_object)
     if cert_counts_by_status:
         dashboard_data['cert_counts_by_status'] = cert_counts_by_status
-
+    logger.info('dashboard data %s', dashboard_data)
     return Response(dashboard_data)
