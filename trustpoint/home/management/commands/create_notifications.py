@@ -1,8 +1,9 @@
-from django.utils import timezone
-from django.core.management.base import BaseCommand
-from pki.models import DomainModel, CertificateModel, IssuingCaModel
 from devices.models import Device
-from home.models import NotificationModel, NotificationMessage, NotificationStatus
+from django.core.management.base import BaseCommand
+from django.utils import timezone
+from pki.models import CertificateModel, DomainModel, IssuingCaModel
+
+from home.models import NotificationMessage, NotificationModel, NotificationStatus
 
 
 class Command(BaseCommand):
@@ -12,7 +13,6 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs) -> None:
         """The logic to query models and create 5 notifications for each type."""
-
         domains = DomainModel.objects.all()[:5]
         certificates = CertificateModel.objects.all()[:5]
         issuing_cas = IssuingCaModel.objects.all()[:5]
