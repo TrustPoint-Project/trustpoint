@@ -17,6 +17,7 @@ class NotificationStatus(models.Model):
 
     class StatusChoices(models.TextChoices):
         """Status Types"""
+
         NEW = 'NEW', _('New')
         CONFIRMED = 'CONF', _('Confirmed')
         IN_PROGRESS = 'PROG', _('In Progress')
@@ -41,6 +42,7 @@ class NotificationStatus(models.Model):
 
 class NotificationMessage(models.Model):
     """Message Model for Notifications with Short and Optional Long Descriptions."""
+
     short_description = models.CharField(max_length=255)
     long_description = models.CharField(max_length=65536, default='No description provided')
 
@@ -56,13 +58,14 @@ class NotificationModel(models.Model):
         """Supported Notification Types."""
 
         SETUP = 'SET', _('SETUP')
-        #DEBUG = 'DEB', _('DEBUG')
+        # DEBUG = 'DEB', _('DEBUG')
         INFO = 'INF', _('INFO')
         WARNING = 'WAR', _('WARNING')
         CRITICAL = 'CRI', _('CRITICAL')
 
     class NotificationSource(models.TextChoices):
         """Origin of the Notification."""
+
         SYSTEM = 'S', _('System')
         DOMAIN = 'D', _('Domain')
         DEVICE = 'E', _('Device')
@@ -70,56 +73,32 @@ class NotificationModel(models.Model):
         CERTIFICATE = 'C', _('Certificate')
 
     notification_type = models.CharField(
-        max_length=3,
-        choices=NotificationTypes.choices,
-        default=NotificationTypes.INFO
+        max_length=3, choices=NotificationTypes.choices, default=NotificationTypes.INFO
     )
 
     notification_source = models.CharField(
-        max_length=1,
-        choices=NotificationSource.choices,
-        default=NotificationSource.SYSTEM
+        max_length=1, choices=NotificationSource.choices, default=NotificationSource.SYSTEM
     )
 
     domain = models.ForeignKey(
-        DomainModel,
-        on_delete=models.SET_NULL,
-        blank=True, null=True,
-        related_name='notifications')
+        DomainModel, on_delete=models.SET_NULL, blank=True, null=True, related_name='notifications'
+    )
 
     certificate = models.ForeignKey(
-        CertificateModel,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name='notifications')
+        CertificateModel, on_delete=models.SET_NULL, blank=True, null=True, related_name='notifications'
+    )
 
-    device = models.ForeignKey(
-        Device,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name='notifications')
+    device = models.ForeignKey(Device, on_delete=models.SET_NULL, blank=True, null=True, related_name='notifications')
 
     issuing_ca = models.ForeignKey(
-        IssuingCaModel,
-        on_delete=models.SET_NULL,
-        blank=True,
-        null=True,
-        related_name='notifications')
+        IssuingCaModel, on_delete=models.SET_NULL, blank=True, null=True, related_name='notifications'
+    )
 
-    event = models.CharField(max_length=255,
-                             blank=True,
-                             null=True)
+    event = models.CharField(max_length=255, blank=True, null=True)
 
-    message = models.ForeignKey(
-        NotificationMessage,
-        on_delete=models.CASCADE,
-        related_name='notifications')
+    message = models.ForeignKey(NotificationMessage, on_delete=models.CASCADE, related_name='notifications')
 
-    statuses = models.ManyToManyField(
-        NotificationStatus,
-        related_name='notifications')
+    statuses = models.ManyToManyField(NotificationStatus, related_name='notifications')
 
     created_at = models.DateTimeField(auto_now_add=True)
 

@@ -1,4 +1,5 @@
 """Django tables2 for the home application."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -18,6 +19,8 @@ if TYPE_CHECKING:
 from home.models import NotificationModel, NotificationStatus
 
 format_html_lazy = lazy(format_html, str)
+
+
 class NotificationTable(tables.Table):
     """Table representation of the Notification model."""
 
@@ -41,30 +44,23 @@ class NotificationTable(tables.Table):
             #'delete',
         )
 
-    notification_type = tables.Column(
-        verbose_name=_('Type')
-    )
+    notification_type = tables.Column(verbose_name=_('Type'))
 
-    notification_source = tables.Column(
-        verbose_name=_('Source')
-    )
+    notification_source = tables.Column(verbose_name=_('Source'))
 
-    message = tables.Column(
-        verbose_name=_('Description'),
-        accessor='message__short_description'
-    )
-
+    message = tables.Column(verbose_name=_('Description'), accessor='message__short_description')
 
     # row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)    # noqa: ERA001
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
-    #solve = tables.Column(empty_values=(), orderable=False, verbose_name=_('Solve'))
-    #delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
+    # solve = tables.Column(empty_values=(), orderable=False, verbose_name=_('Solve'))
+    # delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
 
     @staticmethod
     def render_details(record: NotificationModel) -> SafeString:
         """Creates the html hyperlink for the details-view."""
-        return format_html('<a href="../notification/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
-                           record.pk, _('Details'))
+        return format_html(
+            '<a href="../notification/{}/" class="btn btn-primary tp-table-btn"">{}</a>', record.pk, _('Details')
+        )
 
     # @staticmethod
     # def render_solve(record: NotificationModel) -> SafeString:
@@ -81,13 +77,10 @@ class NotificationTable(tables.Table):
     @staticmethod
     def render_created_at(record: NotificationModel) -> SafeString:
         """Render the created_at field with a badge if the status is 'New'."""
-        created_at_display = record.created_at.strftime("%Y-%m-%d %H:%M:%S")
+        created_at_display = record.created_at.strftime('%Y-%m-%d %H:%M:%S')
 
         if record.statuses.filter(status=NotificationStatus.StatusChoices.NEW).exists():
-            return format_html(
-                '{} <span class="badge bg-secondary">New</span>',
-                created_at_display
-            )
+            return format_html('{} <span class="badge bg-secondary">New</span>', created_at_display)
 
         return format_html('{}', created_at_display)
 

@@ -10,6 +10,7 @@ from django.core.management import call_command
 from .models import NotificationModel, NotificationStatus
 from .tables import NotificationTable
 
+
 class IndexView(TpLoginRequiredMixin, RedirectView):
     permanent = False
     pattern_name = 'home:dashboard'
@@ -30,7 +31,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
     def generate_last_week_dates(self):
         end_date = datetime.now().date()
         start_date = end_date - timedelta(days=6)
-        dates_as_strings = [(start_date + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
+        dates_as_strings = [(start_date + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
         return dates_as_strings
 
     def get_context_data(self, **kwargs):
@@ -49,12 +50,13 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         filtered_notifications = notification_filter.qs
 
         all_notifications_table = NotificationTable(filtered_notifications)
-        RequestConfig(self.request, paginate={"per_page": 5}).configure(all_notifications_table)
+        RequestConfig(self.request, paginate={'per_page': 5}).configure(all_notifications_table)
 
         context['all_notifications_table'] = all_notifications_table
         context['notification_filter'] = notification_filter
 
         return context
+
 
 def notification_details_view(request, pk):
     notification = get_object_or_404(NotificationModel, pk=pk)
@@ -72,7 +74,7 @@ def notification_details_view(request, pk):
         'notification': notification,
         'NotificationStatus': NotificationStatus,
         'notification_statuses': notification_statuses,
-        'is_solved': is_solved
+        'is_solved': is_solved,
     }
 
     return render(request, 'home/notification_details.html', context)
@@ -90,12 +92,11 @@ def mark_as_solved(request, pk):
 
     notification_statuses = notification.statuses.values_list('status', flat=True)
 
-
     context = {
         'notification': notification,
         'NotificationStatus': NotificationStatus,
         'notification_statuses': notification_statuses,
-        'is_solved': is_solved
+        'is_solved': is_solved,
     }
 
     return render(request, 'home/notification_details.html', context)

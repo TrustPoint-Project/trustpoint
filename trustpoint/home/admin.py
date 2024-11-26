@@ -8,8 +8,10 @@ from .models import NotificationMessage, NotificationModel, NotificationStatus
 class NotificationStatusAdmin(admin.ModelAdmin):
     """NotificationStatusAdmin registers all."""
 
+
 class NotificationModelAdmin(admin.ModelAdmin):
     """NotificationModelAdmin registers all."""
+
 
 class NotificationMessageAdmin(admin.ModelAdmin):
     """NotificationMessageAdmin registers all."""
