@@ -50,7 +50,7 @@ multiline-quotes = "double"
 select = ["ALL"]
 ignore = [
     "ANN101", "ANN102", "ANN401",
-    "ARG002",
+    "ARG001", "ARG002",
     "D203", "D213", "D415",
     "TD003",
     # TODO(Alex): FIX should be added again, after we are departing from the PoC phase
