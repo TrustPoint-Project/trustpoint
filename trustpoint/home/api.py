@@ -61,7 +61,7 @@ def get_cert_counts() -> dict[str, Any]:
     return cert_counts
 
 
-def get_cert_counts_by_status_and_date() -> dict[str, Any]:
+def get_cert_counts_by_status_and_date() -> list[dict[str, Any]]:
     """Get certificate counts grouped by issue date and certificate status."""
     cert_counts_by_status = []
     try:
@@ -134,9 +134,9 @@ def get_issuing_ca_counts() -> dict[str, Any]:
     return issuing_ca_counts
 
 
-def get_device_counts_by_date_and_status() -> dict[str, Any]:
+def get_device_counts_by_date_and_status() -> list[dict[str, Any]]:
     """Get device count by date and onboarding status from database"""
-    device_counts_by_date_and_os = {}
+    device_counts_by_date_and_os = []
     try:
         device_date_os_qr = (
             Device.objects.annotate(issue_date=TruncDate('created_at'))
@@ -168,7 +168,7 @@ def get_device_count_by_onboarding_protocol(start_date: date) -> dict[str, Any]:
     return device_op_counts
 
 
-def get_device_count_by_domain(start_date: date) -> dict[str, Any]:
+def get_device_count_by_domain(start_date: date) -> list[dict[str, Any]]:
     """Get count of onboarded devices by domain from the database."""
     try:
         device_domain_qr = DomainModel.objects.annotate(
@@ -182,9 +182,9 @@ def get_device_count_by_domain(start_date: date) -> dict[str, Any]:
         logger.exception('Error occurred in device count by domain query')
         return []
 
-def get_cert_counts_by_issuing_ca(start_date: date) -> dict[str, Any]:
+def get_cert_counts_by_issuing_ca(start_date: date) -> list[dict[str, Any]]:
     """Get certificate count by issuing ca from database"""
-    cert_counts_by_issuing_ca = {}
+    cert_counts_by_issuing_ca = []
     try:
         cert_issuing_ca_qr = (
             CertificateModel.objects.filter(issuing_ca_model__isnull=False)
@@ -200,9 +200,9 @@ def get_cert_counts_by_issuing_ca(start_date: date) -> dict[str, Any]:
     return cert_counts_by_issuing_ca
 
 
-def get_cert_counts_by_issuing_ca_and_date() -> dict[str, Any]:
+def get_cert_counts_by_issuing_ca_and_date() -> list[dict[str, Any]]:
     """Get certificate count by issuing ca from database"""
-    cert_counts_by_issuing_ca_and_date = {}
+    cert_counts_by_issuing_ca_and_date = []
     try:
         cert_issuing_ca_and_date_qr = (
             CertificateModel.objects.filter(issuer_references__issuing_ca_model__isnull=True)
@@ -219,9 +219,9 @@ def get_cert_counts_by_issuing_ca_and_date() -> dict[str, Any]:
     return cert_counts_by_issuing_ca_and_date
 
 
-def get_cert_counts_by_domain(start_date: date) -> dict[str, Any]:
+def get_cert_counts_by_domain(start_date: date) -> list[dict[str, Any]]:
     """Get certificate count by domain from database"""
-    cert_counts_by_domain = {}
+    cert_counts_by_domain = []
     try:
         cert_domain_qr = (
             IssuedDeviceCertificateModel.objects.filter(certificate__added_at__gt=start_date)
@@ -284,11 +284,11 @@ def get_dashboard_data(request: HttpRequest, start_date: str | None) -> dict[str
         tz = timezone.get_current_timezone()
         start_date_object = datetime.now(tz).date()
 
-    dashboard_data = {}
+    dashboard_data: dict[str, Any] = {}
 
     device_counts = get_device_count_by_onboarding_status(dateparse.parse_date('2023-01-01'))
     dashboard_data['device_counts'] = device_counts
-
+    logger.info('device counts %s', device_counts)
     cert_counts = get_cert_counts()
     if cert_counts:
         dashboard_data['cert_counts'] = cert_counts
@@ -336,5 +336,5 @@ def get_dashboard_data(request: HttpRequest, start_date: str | None) -> dict[str
     cert_counts_by_status = get_cert_counts_by_status(start_date_object)
     if cert_counts_by_status:
         dashboard_data['cert_counts_by_status'] = cert_counts_by_status
-    logger.info('dashboard data %s', dashboard_data)
+
     return Response(dashboard_data)
