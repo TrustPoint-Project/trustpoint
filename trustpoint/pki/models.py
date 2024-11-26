@@ -908,7 +908,7 @@ class CertificateModel(models.Model):
 
     # TODO: check order of chains
     def get_certificate_chains(self, include_self: bool = True) -> list[list[CertificateModel]]:
-        if self.is_root_ca:
+        if self.is_self_signed:
             if include_self:
                 return [[self]]
             else:
