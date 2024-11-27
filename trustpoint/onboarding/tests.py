@@ -8,11 +8,12 @@ from devices.models import Device
 from django.test import TestCase
 from pki.management.commands.reset_db import Command as ResetDBCommand
 from pki.management.commands.test_ts import Command as TestTSCommand
-from pki.models import DomainProfile
+from pki.models import DomainModel
+from pki.util.keys import KeyGenerator, SignatureSuite
 
 from onboarding.crypto_backend import CryptoBackend as Crypt
 from onboarding.crypto_backend import OnboardingError
-from onboarding.models import DownloadOnboardingProcess, ManualOnboardingProcess, OnboardingProcess, onboarding_processes
+from onboarding.models import DownloadOnboardingProcess, ManualCsrOnboardingProcess, OnboardingProcess, _onboarding_processes
 
 
 class CryptoBackendTests(TestCase):
@@ -58,7 +59,7 @@ class CryptoBackendTests(TestCase):
         device = Device() # no endpoint profile
         with self.assertRaises(OnboardingError):
             Crypt._get_ca(device)
-        ep = DomainProfile(unique_endpoint='test_endpoint')
+        ep = DomainModel(unique_name='test_endpoint')
         device.domain_profile = ep # endpoint profile without issuing CA
         with self.assertRaises(OnboardingError):
             Crypt._get_ca(device)
@@ -66,7 +67,7 @@ class CryptoBackendTests(TestCase):
     # def test__sign_ldevid_no_serialno(self):
     #     """Tests the _sign_ldevid method if the device has no serial number set."""
     #     device = Device()
-    #     device.domain_profile = DomainProfile(unique_endpoint='test_endpoint')
+    #     device.domain_profile = DomainModel(unique_name='test_endpoint')
     #     private_key = Crypt._gen_private_key()
     #     with self.assertRaises(OnboardingError):
     #         Crypt._sign_ldevid(private_key.public_key(), device)
@@ -74,7 +75,7 @@ class CryptoBackendTests(TestCase):
     # def test__sign_ldevid(self):
     #     """Tests the _sign_ldevid method."""
     #     device = Device(serial_number='1234567890abcdef')
-    #     device.domain_profile = DomainProfile.objects.get(unique_endpoint='default')
+    #     device.domain_profile = DomainModel.objects.get(unique_name='default')
     #     private_key = Crypt._gen_private_key()
     #     ldevid = Crypt._sign_ldevid(private_key.public_key(), device)
     #     self.assertIsInstance(ldevid, x509.Certificate, 'LDevID is not an instance of x509.Certificate.')
@@ -84,7 +85,7 @@ class CryptoBackendTests(TestCase):
     @staticmethod
     def _gen_test_csr(device: Device) -> x509.CertificateSigningRequest:
         """Generates a test CSR."""
-        private_key = Crypt._gen_private_key()
+        private_key = KeyGenerator(SignatureSuite.RSA2048).generate_key()
         return x509.CertificateSigningRequestBuilder().subject_name(x509.Name([
           x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, device.device_serial_number),
           x509.NameAttribute(x509.NameOID.COMMON_NAME, 'client.trustpoint.ldevid.local'),
@@ -93,7 +94,7 @@ class CryptoBackendTests(TestCase):
     def test_sign_ldevid_from_csr(self):
         """Tests the sign_ldevid_from_csr method."""
         device = Device(serial_number='1234567890abcdef')
-        device.domain_profile = DomainProfile.objects.get(unique_endpoint='default')
+        device.domain_profile = DomainModel.objects.get(unique_name='default')
         csr = self._gen_test_csr(device).public_bytes(serialization.Encoding.PEM)
         ldevid = Crypt.sign_ldevid_from_csr(csr, device)
         try :
@@ -113,14 +114,14 @@ class OnboardingProcessTests(TestCase):
         (instead of making a new one)
         """
         device = Device(serial_number='1234567890abcdef')
-        onboarding_process = ManualOnboardingProcess(device)
-        onboarding_processes.append(onboarding_process)
-        process = OnboardingProcess.make_onboarding_process(device, ManualOnboardingProcess)
+        onboarding_process = ManualCsrOnboardingProcess(device)
+        _onboarding_processes.append(onboarding_process)
+        process = ManualCsrOnboardingProcess.make_onboarding_process(device)
         self.assertIs(process, onboarding_process, 'make_onboarding_process did not return existing process.')
 
     def test_make_onboarding_process_new_process(self):
         """Tests that make_onboarding_process creates a new onboarding process for the device."""
         device = Device(serial_number='1234567890abcdef')
-        process = OnboardingProcess.make_onboarding_process(device, ManualOnboardingProcess)
+        process = ManualCsrOnboardingProcess.make_onboarding_process(device)
         self.assertIsInstance(process, OnboardingProcess, 'make_onboarding_process did not return new process.')
-        self.assertIn(process, onboarding_processes, 'New process not added to onboarding_processes.')
+        self.assertIn(process, _onboarding_processes, 'New process not added to _onboarding_processes.')

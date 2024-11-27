@@ -12,7 +12,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING
 
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec
 from django.db import transaction
 from pki import CertificateTypes, TemplateName
@@ -21,7 +20,6 @@ from pki.models import CertificateModel
 from pki.util.keys import DigitalSignature
 from pki.pki.request.handler.factory import CaRequestHandlerFactory
 from pki.pki.request.message.rest import PkiRestCsrRequestMessage, PkiRestPkcs12RequestMessage
-from util.strings import StringValidator
 
 if TYPE_CHECKING:
     from cryptography.hazmat.primitives.asymmetric.types import PrivateKeyTypes
@@ -197,18 +195,6 @@ class CryptoBackend:
 
         return ca_certificate.get_certificate_chain_serializers()[0].as_pem()
 
-    @staticmethod
-    def _gen_private_key() -> PrivateKeyTypes:
-        """Generates a keypair for the device.
-
-        Returns: The keypair as PrivateKeyType.
-        """
-        log.debug('Generating new private key for manual device')
-        # TODO (Air): Need to add configurable key type and size here
-        private_key = ec.generate_private_key(
-            ec.SECP256R1()
-        )
-        return private_key
 
     @staticmethod
     @transaction.atomic
@@ -258,7 +244,7 @@ class CryptoBackend:
 
 
     @staticmethod
-    def verify_signature(message: bytes, cert: bytes, signature: bytes) -> None:
+    def verify_signature(message: bytes, cert_bytes: bytes, signature: bytes) -> None:
         """Verifies the message was signed by the cert provided (e.g. IDevID).
         
         Raises: VerificationError if certificate could not be loaded.
@@ -266,14 +252,14 @@ class CryptoBackend:
         """
 
         log.debug('Verifying (client) signature...')
-        hash_ = hashes.Hash(hashes.SHA256())
-        hash_.update(message)
-        log.debug(f'SHA-256 hash of message: {hash_.finalize().hex()}')
+        # hash_ = hashes.Hash(hashes.SHA256())
+        # hash_.update(message)
+        # log.debug(f'SHA-256 hash of message: {hash_.finalize().hex()}')
 
         try:
-            cert = x509.load_pem_x509_certificate(cert)
+            cert = x509.load_pem_x509_certificate(cert_bytes)
             signer_public_key = cert.public_key()
-            print(f'Signer public key: {signer_public_key.public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()}')
+            #print(f'Signer public key: {signer_public_key.public_bytes(serialization.Encoding.PEM, serialization.PublicFormat.SubjectPublicKeyInfo).decode()}')
         except Exception as e:
             exc_msg = 'Failed to load public key from certificate.'
             raise VerificationError(exc_msg) from e
