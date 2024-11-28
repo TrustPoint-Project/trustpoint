@@ -238,6 +238,10 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
                 raise ValueError('Credential apply failed with 12')
             case 13:
                 raise ValueError('Credential apply failed with 13')
+            case 14:
+                raise ValueError('Credential apply failed with 14')
+            case 15:
+                raise ValueError('Credential apply failed with 15')
 
         return super().form_valid(form)
 

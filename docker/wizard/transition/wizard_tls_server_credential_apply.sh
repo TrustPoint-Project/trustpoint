@@ -76,23 +76,35 @@ then
     exit 10
 fi
 
+if ! a2enmod ssl
+then
+    echo "Failed to enable apache2 mod_ssl"
+    exit 11
+fi
+
+if ! a2enmod rewrite
+then
+    echo "Failed to enable apache2 mod_rewrite"
+    exit 12
+fi
+
 # Tries to gracefully restart and reload the apache2 webserver.
 if ! apache2ctl graceful
 then
     echo "Failed to gracefully restart and reload the apache2 webserver."
-    exit 11
+    exit 13
 fi
 
 # Removes the current WIZARD_TLS_SERVER_CREDENTIAL_APPLY state file.
 if ! rm "$WIZARD_TLS_SERVER_CREDENTIAL_APPLY"
 then
     echo "Failed to remove the WIZARD_TLS_SERVER_CREDENTIAL_APPLY state file."
-    exit 12
+    exit 14
 fi
 
 # Creates the WIZARD_DEMO_DATA state file.
 if ! touch "$WIZARD_DEMO_DATA"
 then
     echo "Failed to create WIZARD_DEMO_DATA state file."
-    exit 13
+    exit 15
 fi
