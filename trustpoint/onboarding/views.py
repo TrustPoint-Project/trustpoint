@@ -64,9 +64,6 @@ class OnboardingUtilMixin:
             messages.error(request, msg)
             return False
 
-        # TODO(Air): check that device is not already onboarded
-        # Re-onboarding might be a valid use case, e.g. to renew a certificate
-
         return True
 
 

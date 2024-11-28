@@ -187,10 +187,12 @@ class Device(models.Model):
 
             return False, f'Onboarding protocol {label} is not implemented.'
 
-        # TODO(Air): check that device is not already onboarded
+        # check that device is not already onboarded
         # Re-onboarding might be a valid use case, e.g. to renew a certificate
+        # TODO (Air): Consider allowing re-onboarding,
+        # but needs a way to handle multiple simultaneously active certificates
         if device.device_onboarding_status == DeviceOnboardingStatus.ONBOARDED:
-            log.warning('Re-onboarding device %s which is already onboarded.', device.device_name)
+            return False, (_('Device %s is already onboarded.') % device.device_name)
 
         return True, None
 
