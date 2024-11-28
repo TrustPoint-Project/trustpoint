@@ -1,12 +1,13 @@
 {% extends 'trustpoint/base.html' %}
+{% load i18n %}
 
 {% block content %}
     <div class="status-container">
         {% if status == 'success' %}
-            <h1>Success</h1>
+            <h1>{% trans 'Success' %}</h1>
             <p>{{ message }}</p>
         {% elif status == 'error' %}
-            <h1>Error</h1>
+            <h1>{% trans 'Error' %}</h1>
             <p>{{ message }}</p>
         {% endif %}
     </div>

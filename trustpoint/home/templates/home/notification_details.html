@@ -1,5 +1,6 @@
 {% extends 'trustpoint/base.html' %}
 {% load i18n %}
+{% load static %}
 {% load crispy_forms_filters %}
 
 {% block content %}
@@ -46,9 +47,11 @@
                 {% if notification.domain %}
                     <div class="mb-3">
                         <strong>{% trans "Domain:" %}</strong>
-                        <span>{{ notification.domain }}</span>
-                        <a href="/pki/domains/detail/{{ notification.domain.id }}/" class="btn btn-link">
-                            <i class="bi bi-arrow-up-right-square-fill"></i>
+                        <a href="/pki/domains/detail/{{ notification.domain.id }}/" class="btn-link">
+                            {{ notification.domain }}
+                            <svg class="bi" width="16" height="16" fill="currentColor">
+                                <use xlink:href="{% static 'img/icons.svg' %}#icon-arrow-up-right-square"/>
+                            </svg>
                         </a>
                     </div>
                 {% endif %}
@@ -56,20 +59,23 @@
                 {% if notification.certificate %}
                     <div class="mb-3">
                         <strong>{% trans "Certificate:" %}</strong>
-                        <span>{{ notification.certificate }}</span>
-                        <a href="/pki/certificates/detail/{{ notification.certificate.id }}/" class="btn btn-link">
-                            <i class="bi bi-arrow-up-right-square-fill"></i>
+                        <a href="/pki/certificates/detail/{{ notification.certificate.id }}/" class="btn-link">
+                            {{ notification.certificate }}
+                            <svg class="bi" width="16" height="16" fill="currentColor">
+                                <use xlink:href="{% static 'img/icons.svg' %}#icon-arrow-up-right-square"/>
+                            </svg>
                         </a>
                     </div>
                 {% endif %}
 
-
                 {% if notification.device %}
                     <div class="mb-3">
                         <strong>{% trans "Device:" %}</strong>
-                        <span>{{ notification.device }}</span>
-                        <a href="/devices/details/{{ notification.device.id }}/" class="btn btn-link">
-                            <i class="bi bi-arrow-up-right-square-fill"></i>
+                        <a href="/devices/details/{{ notification.device.id }}/" class="btn-link">
+                            {{ notification.device }}
+                            <svg class="bi" width="16" height="16" fill="currentColor">
+                                <use xlink:href="{% static 'img/icons.svg' %}#icon-arrow-up-right-square"/>
+                            </svg>
                         </a>
                     </div>
                 {% endif %}
@@ -77,9 +83,11 @@
                 {% if notification.issuing_ca %}
                     <div class="mb-3">
                         <strong>{% trans "Issuing CA:" %}</strong>
-                        <span>{{ notification.issuing_ca }}</span>
-                        <a href="/pki/issuing-cas/detail/{{ notification.issuing_ca.id }}/" class="btn btn-link">
-                            <i class="bi bi-arrow-up-right-square-fill"></i>
+                        <a href="/pki/issuing-cas/detail/{{ notification.issuing_ca.id }}/" class="btn-link">
+                            {{ notification.issuing_ca }}
+                            <svg class="bi" width="16" height="16" fill="currentColor">
+                                <use xlink:href="{% static 'img/icons.svg' %}#icon-arrow-up-right-square"/>
+                            </svg>
                         </a>
                     </div>
                 {% endif %}
@@ -87,9 +95,9 @@
 
                 <div class="mb-3">
                     <strong>{% trans "Message:" %}</strong>
-                    <span>{{ notification.message.short_description }}</span>
-                    {% if notification.message.long_description %}
-                        <p>{{ notification.message.long_description|safe }}</p>
+                    <span>{{ notification.short_translated }}</span>
+                    {% if notification.long_translated %}
+                        <p>{{ notification.long_translated|safe }}</p>
                     {% endif %}
                 </div>
 

@@ -125,6 +125,12 @@ configure two settings
 -  database type : SQLite
 -  database file path: path to ``db.sqlite3`` file in trustpoint folder
 
+Finally, compile the translation strings for non-English language support:
+
+.. code:: bash
+
+   python manage.py compilemsg
+
 Running the development server
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

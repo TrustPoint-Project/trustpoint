@@ -92,7 +92,7 @@ class OnboardingProcess():
     @staticmethod
     def get_by_id(process_id: int) -> OnboardingProcess | None:
         """Returns the onboarding process with a given ID."""
-        for process in onboarding_processes:
+        for process in _onboarding_processes:
             if process.id == process_id:
                 return process
         return None
@@ -100,7 +100,7 @@ class OnboardingProcess():
     @staticmethod
     def get_by_url_ext(url: str) -> OnboardingProcess | None:
         """Returns the onboarding process with a given URL extension."""
-        for process in onboarding_processes:
+        for process in _onboarding_processes:
             if process.url == url:
                 return process
         return None
@@ -108,7 +108,7 @@ class OnboardingProcess():
     @staticmethod
     def get_by_device(device: Device) -> OnboardingProcess | None:
         """Returns the onboarding process for a given device."""
-        for process in onboarding_processes:
+        for process in _onboarding_processes:
             if process.device == device:
                 return process
         return None
@@ -116,8 +116,8 @@ class OnboardingProcess():
     if TYPE_CHECKING:
         OnboardingProcessTypes = TypeVar('OnboardingProcessTypes', bound='OnboardingProcess')
 
-    @staticmethod
-    def make_onboarding_process(device: Device, process_type: type[OnboardingProcessTypes]) -> OnboardingProcessTypes:
+    @classmethod
+    def make_onboarding_process(cls: OnboardingProcessTypes, device: Device) -> OnboardingProcessTypes:
         """Returns the onboarding process for the device, creates a new one if it does not exist.
 
         Args:
@@ -131,8 +131,8 @@ class OnboardingProcess():
         onboarding_process = OnboardingProcess.get_by_device(device)
 
         if not onboarding_process:
-            onboarding_process = process_type(device)
-            onboarding_processes.append(onboarding_process)
+            onboarding_process = cls(device)
+            _onboarding_processes.append(onboarding_process)
             device.device_onboarding_status = DeviceOnboardingStatus.ONBOARDING_RUNNING
             # TODO(Air): very unnecessary save required to update onboarding status in table
             # Problem: if server is restarted during onboarding, status is stuck at running
@@ -159,9 +159,9 @@ class OnboardingProcess():
         """Cancels the onboarding process and removes it from the list."""
         self.active = False
         self.timer.cancel()
-        onboarding_processes.remove(self)
+        _onboarding_processes.remove(self)
         if self.device and self.device.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_RUNNING:
-            # actual cancellation (cancel() may be called just to remove the process from onboarding_processes)
+            # actual cancellation (cancel() may be called just to remove the process from _onboarding_processes)
             self.device.device_onboarding_status = DeviceOnboardingStatus.NOT_ONBOARDED
             self.device.revoke_ldevid(ReasonCode.CESSATION)
             self.device.save()
@@ -171,33 +171,6 @@ class OnboardingProcess():
             log.info(f'Onboarding process {self.id} removed from list.')
 
         return (self.state, self)
-
-    def get_pkcs12(self) -> bytes | None:
-        """Returns the keypair and LDevID certificate as PKCS12 serialized bytes and ends the onboarding process."""
-        log.debug(f'PKCS12 requested for onboarding process {self.id}.')
-        self.gen_thread.join()
-        self._success()
-        return self.cred_serializer.as_pkcs12()
-
-    def get_pem_zip(self) -> bytes | None:
-        """Returns the certificate, chain and key as PEM-formatted bytes in a zip file."""
-        log.debug(f'PKCS12 requested for onboarding process {self.id}.')
-        self.gen_thread.join()
-        self._success()
-        return self.cred_serializer.as_pem_zip()
-
-    def _gen_keypair_and_ldevid(self) -> None:
-        """Generates a keypair and LDevID certificate for the device."""
-        try:
-            if not self.device.device_serial_number:
-                self.device.device_serial_number = 'tpdl_' + secrets.token_urlsafe(12)
-            self.cred_serializer = CredentialSerializer(Crypt.gen_keypair_and_ldevid(self.device))
-            self.state = OnboardingProcessState.LDEVID_SENT
-            log.info(f'LDevID issued for device {self.device.device_name} in onboarding process {self.id}.')
-        except Exception as e:  # noqa: BLE001
-            msg = 'Error generating device key or LDevID.'
-            self._fail(msg)
-            raise OnboardingError(msg) from e
 
     def _fail(self, reason: str = '') -> None:
         """Cancels the onboarding process with a given reason."""
@@ -308,15 +281,12 @@ class LDevIDOnboardingProcessMixin():
         return chain
 
 
-class ManualOnboardingProcess(LDevIDOnboardingProcessMixin, OnboardingProcess):
+class ManualCsrOnboardingProcess(LDevIDOnboardingProcessMixin, OnboardingProcess):
     """Onboarding process for a device using the full manual onboarding with OTP and HMAC trust store verification."""
 
     def __init__(self, dev: Device) -> None:
         """Initializes a new manual onboarding process for a device."""
         super().__init__(dev)
-        print('init ManualOnboardingProcess')
-        self.tsotp = secrets.token_hex(8)
-        self.tssalt = secrets.token_hex(8)
         self.gen_thread = threading.Thread(target=self._calc_hmac, daemon=True)
         self.gen_thread.start()
         self.hmac = None
@@ -324,45 +294,72 @@ class ManualOnboardingProcess(LDevIDOnboardingProcessMixin, OnboardingProcess):
 
 class DownloadOnboardingProcess(OnboardingProcess):
     """Onboarding process for a device using the download onboarding method."""
-    #_device: Device
 
-    def __init__(self, dev: Device) -> None:
-        """Initializes a new download onboarding process for a device."""
-        super().__init__(dev)
-        #self._device = dev
+    def get_pkcs12(self) -> bytes | None:
+        """Returns the keypair and LDevID certificate as PKCS12 serialized bytes and ends the onboarding process."""
+        log.debug(f'PKCS12 requested for onboarding process {self.id}.')
+        self.gen_thread.join()
+        self._success()
+        return self.cred_serializer.as_pkcs12()
+
+    def get_pem_zip(self) -> bytes | None:
+        """Returns the certificate, chain and key as PEM-formatted bytes in a zip file."""
+        log.debug(f'PKCS12 requested for onboarding process {self.id}.')
+        self.gen_thread.join()
+        self._success()
+        return self.cred_serializer.as_pem_zip()
+    
+    def _gen_keypair_and_ldevid(self) -> None:
+        """Generates a keypair and LDevID certificate for the device."""
+        try:
+            if not self.device.device_serial_number:
+                self.device.device_serial_number = 'tpdl_' + secrets.token_urlsafe(12)
+            self.cred_serializer = CredentialSerializer(Crypt.gen_keypair_and_ldevid(self.device))
+            self.state = OnboardingProcessState.LDEVID_SENT
+            log.info(f'LDevID issued for device {self.device.device_name} in onboarding process {self.id}.')
+        except Exception as e:  # noqa: BLE001
+            msg = 'Error generating device key or LDevID.'
+            self._fail(msg)
+            raise OnboardingError(msg) from e
+
+    def _start_gen_keypair_and_ldevid(self):
+        """Starts the keypair and LDevID generation in a separate thread."""
         self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
         self.gen_thread.start()
         self.cred_serializer = None
 
+    def __init__(self, dev: Device) -> None:
+        """Initializes a new download onboarding process for a device."""
+        super().__init__(dev)
+        self._start_gen_keypair_and_ldevid()
 
-class BrowserOnboardingProcess(OnboardingProcess):
+
+class BrowserOnboardingProcess(DownloadOnboardingProcess):
     """Onboarding process for a device using the download onboarding method."""
-    MAXPWTRIES = 3
+    MAX_PW_TRIES = 3
 
     def __init__(self, dev: Device) -> None:
         """Initializes a new download onboarding process for a device."""
         super().__init__(dev)
         self._browser_otp = None
-        self.password_tries = 0
+        self._password_tries = 0
 
     def start_onboarding(self):
         self._browser_otp = None
-        self.gen_thread = threading.Thread(target=self._gen_keypair_and_ldevid)
-        self.gen_thread.start()
-        self.cred_serializer = None
+        self._start_gen_keypair_and_ldevid()
 
     def set_otp(self, otp: str) -> None:
         self._browser_otp = otp
 
     def check_otp(self, otp: str) -> tuple:
-        self.password_tries += 1
-        if self.password_tries < self.MAXPWTRIES:
+        self._password_tries += 1
+        if self._password_tries < self.MAX_PW_TRIES:
             if self._browser_otp  and self._browser_otp == otp:
                 return (True, None)
         else:
             self.cancel()
             self._fail()
-        return (False, self.MAXPWTRIES - self.password_tries)
+        return (False, self.MAX_PW_TRIES - self._password_tries)
 
 
 class ZeroTouchOnboardingProcess(OnboardingProcess):
@@ -392,7 +389,7 @@ class AokiOnboardingProcess(LDevIDOnboardingProcessMixin, ZeroTouchOnboardingPro
     def verify_client_signature(self, message: bytes, signature: bytes) -> None:
         """Verifies the client signature of the server nonce message"""
         try:
-            Crypt.verify_signature(message=message, cert=self._idevid_cert, signature=signature)
+            Crypt.verify_signature(message=message, cert_bytes=self._idevid_cert, signature=signature)
         except Exception as e:
             self._fail(str(e))
             self.cancel()
@@ -400,11 +397,11 @@ class AokiOnboardingProcess(LDevIDOnboardingProcessMixin, ZeroTouchOnboardingPro
 
     @staticmethod
     def get_by_nonce(server_nonce: str) -> AokiOnboardingProcess | None:
-        for op in onboarding_processes:
+        for op in _onboarding_processes:
             if (isinstance(op, AokiOnboardingProcess)
                 and op._server_nonce == server_nonce):
                     return op
         return None
 
 
-onboarding_processes = []
+_onboarding_processes = []

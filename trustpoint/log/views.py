@@ -14,10 +14,11 @@ from django.views import View
 from django.views.generic import TemplateView, View
 from django_tables2 import SingleTableView
 
+from trustpoint.views.base import TpLoginRequiredMixin
 from .tables import LogFileTable
 
 
-class LogTableView(SingleTableView):
+class LogTableView(TpLoginRequiredMixin, SingleTableView):
     template_name = 'log.html'
     table_class = LogFileTable
 
@@ -32,7 +33,7 @@ class LogTableView(SingleTableView):
         return logs
 
 
-class LogDetailView(TemplateView):
+class LogDetailView(TpLoginRequiredMixin, TemplateView):
     template_name = 'log_detail.html'
     log_directory = os.path.join(settings.MEDIA_ROOT, 'log')
 
@@ -51,7 +52,7 @@ class LogDetailView(TemplateView):
         return context
 
 
-class LogDownloadView(TemplateView):
+class LogDownloadView(TpLoginRequiredMixin, TemplateView):
     """View to download a single log file"""
     def get(self, request, filename):
         log_dir = 'media/log'
@@ -66,7 +67,7 @@ class LogDownloadView(TemplateView):
             return response
 
 
-class LogDownloadZipView(View):
+class LogDownloadZipView(TpLoginRequiredMixin, View):
 
     redirection_view = reverse_lazy('log:logs')
 

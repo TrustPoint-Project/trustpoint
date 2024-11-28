@@ -2,7 +2,7 @@ from django.utils import timezone
 from django.core.management.base import BaseCommand
 from pki.models import DomainModel, CertificateModel, IssuingCaModel
 from devices.models import Device
-from home.models import NotificationModel, NotificationMessage, NotificationStatus
+from home.models import NotificationModel, NotificationMessageModel, NotificationStatus
 
 
 class Command(BaseCommand):
@@ -23,15 +23,13 @@ class Command(BaseCommand):
 
         # Create 5 notifications for domains
         for domain in domains:
-            message = NotificationMessage.objects.create(
-                short_description=f'Domain: {domain.unique_name}',
-                long_description=f'Notification for Domain: {domain.unique_name}'
-            )
+            message_data = {'domain': domain.unique_name}
 
             notification = NotificationModel.objects.create(
                 notification_type=NotificationModel.NotificationTypes.INFO,  # Use TextChoices for notification type
                 notification_source=NotificationModel.NotificationSource.DOMAIN,
-                message=message,
+                message_type = NotificationModel.NotificationMessageType.DOMAIN_TEST,
+                message_data=message_data,
                 created_at=timezone.now(),
                 domain=domain
             )
@@ -41,15 +39,13 @@ class Command(BaseCommand):
 
         # Create 5 notifications for certificates
         for cert in certificates:
-            message = NotificationMessage.objects.create(
-                short_description=f'Certificate: {cert.serial_number}',
-                long_description=f'Notification for Certificate: {cert.serial_number}'
-            )
+            message_data = {'cn': cert.common_name, 'sn': cert.serial_number}
 
             NotificationModel.objects.create(
                 notification_type=NotificationModel.NotificationTypes.INFO,
                 notification_source=NotificationModel.NotificationSource.CERTIFICATE,
-                message=message,
+                message_type=NotificationModel.NotificationMessageType.CERT_TEST,
+                message_data=message_data,
                 created_at=timezone.now(),
                 certificate=cert
             )
@@ -57,15 +53,14 @@ class Command(BaseCommand):
 
         # Create 5 notifications for issuing CAs
         for ca in issuing_cas:
-            message = NotificationMessage.objects.create(
-                short_description=f'Issuing CA: {ca.unique_name}',
-                long_description=f'Notification for Issuing CA: {ca.unique_name}'
-            )
+            message_data = {'ca': ca.unique_name}
 
             NotificationModel.objects.create(
                 notification_type=NotificationModel.NotificationTypes.CRITICAL,
                 notification_source=NotificationModel.NotificationSource.ISSUING_CA,
-                message=message,
+                message_type=NotificationModel.NotificationMessageType.ISSUING_CA_TEST,
+                message_data=message_data,
+                #message=message,
                 created_at=timezone.now(),
                 issuing_ca=ca
             )
@@ -73,16 +68,28 @@ class Command(BaseCommand):
 
         # Create 5 notifications for devices
         for device in devices:
-            message = NotificationMessage.objects.create(
-                short_description=f'Device: {device.device_serial_number}',
-                long_description=f'Notification for Device: {device.device_serial_number}'
-            )
+            message_data = {'device': device.device_serial_number}
 
             NotificationModel.objects.create(
                 notification_type=NotificationModel.NotificationTypes.INFO,
                 notification_source=NotificationModel.NotificationSource.DEVICE,
-                message=message,
+                message_type=NotificationModel.NotificationMessageType.DEVICE_TEST,
+                message_data=message_data,
                 created_at=timezone.now(),
                 device=device
             )
             self.stdout.write(self.style.SUCCESS(f'Created notification for Device: {device.device_serial_number}'))
+
+
+        # Create a custom notification
+        message = NotificationMessageModel.objects.create(
+            short_description=f'Custom Notification',
+            long_description=f'This notification has no explicit NotificationMessageType set and can contain a custom (non-translatable) message.'
+        )
+
+        NotificationModel.objects.create(
+            notification_type=NotificationModel.NotificationTypes.INFO,
+            notification_source=NotificationModel.NotificationSource.SYSTEM,
+            message=message,
+            created_at=timezone.now()
+        )

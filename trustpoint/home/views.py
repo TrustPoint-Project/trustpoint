@@ -1,4 +1,5 @@
 import logging
+from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView, TemplateView
 from django.shortcuts import render, get_object_or_404, redirect
 from django_tables2 import RequestConfig
@@ -6,7 +7,7 @@ from datetime import datetime, timedelta
 
 from django.contrib import messages
 
-from trustpoint.views.base import TpLoginRequiredMixin, ContextDataMixin
+from trustpoint.views.base import TpLoginRequiredMixin
 from .filters import NotificationFilter
 from django.core.management import call_command
 
@@ -62,6 +63,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
 
         return context
 
+@login_required
 def notification_details_view(request, pk):
     notification = get_object_or_404(NotificationModel, pk=pk)
 
@@ -84,6 +86,7 @@ def notification_details_view(request, pk):
     return render(request, 'home/notification_details.html', context)
 
 
+@login_required
 def mark_as_solved(request, pk):
     """View to mark the notification as Solved."""
     notification = get_object_or_404(NotificationModel, pk=pk)

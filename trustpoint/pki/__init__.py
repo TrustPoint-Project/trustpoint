@@ -17,10 +17,10 @@ class ReasonCode(models.TextChoices):
 
 class CertificateStatus(models.TextChoices):
     """CertificateModel status"""
-    OK = 'O', _('OK')
-    REVOKED = 'R', _('Revoked')
-    # EXPIRED = 'E', _('Expired')
-    # NOT_YET_VALID = 'N', _('Not Yet Valid')
+    OK = 'OK', _('OK')
+    REVOKED = 'REV', _('Revoked')
+    EXPIRED = 'EXP', _('Expired')
+    NOT_YET_VALID = 'NYV', _('Not Yet Valid')
 
 
 class CaLocalization(models.TextChoices):
@@ -28,9 +28,9 @@ class CaLocalization(models.TextChoices):
 
     Auto-Gen PKI is a special case of the local CA, where the root CA is self-signed by the system.
     """
-    LOCAL = "L", _('Local')
-    REMOTE = "R", _('Remote')
-    AUTO_GEN_PKI = "A", _('AutoGenPKI')
+    LOCAL = "local", _('Local')
+    REMOTE = "remote", _('Remote')
+    AUTO_GEN_PKI = "autogen", _('AutoGenPKI')
 
 
 class CertificateTypes(models.TextChoices):

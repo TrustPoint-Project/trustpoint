@@ -10,7 +10,30 @@ function drawNoDataMessageOnCanvas(canvas) {
     context.textBaseline = "middle";
 
     // Display the "No Data Available" message at the center of the canvas
-    context.fillText("No Data Available", canvas.width / 2, canvas.height / 2);
+    context.fillText(gettext("No data available"), canvas.width / 2, canvas.height / 2);
+}
+
+function getFriendlyLabel(key) {
+    const labels = {
+        'total': gettext('Total'),
+        // Onboarding status
+        'pending': gettext('Pending'),
+        'running': gettext('Running'),
+        'onboarded': gettext('Onboarded'),
+        'failed': gettext('Failed'),
+        'revoked': gettext('Revoked'),
+        // Certificate status
+        'OK': gettext('OK'),
+        'REV': gettext('Revoked'),
+        'EXP': gettext('Expired'),
+        'NYV': gettext('Not Yet Valid'),
+        // CA localizations
+        'local': gettext('Local'),
+        'remote': gettext('Remote'),
+        'autogen': gettext('Auto-gen PKI'),
+    }
+
+    return labels[key] || key;
 }
 
 function updateCertsByStatusLineChart(certStatusCounts) {
@@ -27,6 +50,8 @@ function updateCertsByStatusLineChart(certStatusCounts) {
 
     // Extrahiere einzigartige Datumswerte für die X-Achse
     const chartLabels = [...new Set(certStatusCounts.map(item => item.issue_date))];
+
+    
 
     // Gruppiere die Daten nach Zertifikatsstatus
     const datasets = {};
@@ -45,10 +70,13 @@ function updateCertsByStatusLineChart(certStatusCounts) {
 
     const chartDatasets = Object.values(datasets);
 
+    const friendlyLabels = chartDatasets.map(dataset => getFriendlyLabel(dataset.label));
+    console.log(friendlyLabels);
+
     certsByStatusLineChart = new Chart(certsByStatusLineChartEle, {
         type: "line",
         data: {
-            labels: chartLabels,
+            labels: friendlyLabels,
             datasets: chartDatasets,
         },
         options: {
@@ -115,7 +143,7 @@ function updateDeviceByOSBarChart(deviceOSCounts) {
   var chartLabels = [];
   var chartData = [];
   Object.entries(deviceOSCounts).forEach(([key, value]) => {
-    chartLabels.push(key);
+    chartLabels.push(getFriendlyLabel(key));
     chartData.push(value);
   });
   devicesByOSLineChart = new Chart(devicesByOSLineChartEle, {
@@ -124,7 +152,7 @@ function updateDeviceByOSBarChart(deviceOSCounts) {
       labels: chartLabels,
       datasets: [
         {
-          label: "Number of Devices",
+          label: gettext("Number of Devices"),
           data: chartData,
           //borderColor: "#0d6efd",
           //backgroundColor: "#0d6efd",
@@ -152,6 +180,7 @@ function updateDeviceByOSBarChart(deviceOSCounts) {
     options: {
       indexAxis: "y",
       scales: {
+        x: {ticks: {precision: 0}},
         y: {
           beginAtZero: "true",
         },
@@ -180,7 +209,7 @@ function updateDeviceByOPLineChart(deviceOPCounts) {
         labels: chartLabels,
         datasets: [
             {
-            label: "Number of Devices",
+            label: gettext("Number of Devices"),
             data: chartData,
             borderColor: "#0d6efd",
             backgroundColor: "#0d6efd",
@@ -248,7 +277,7 @@ function updateCertsByStatusBarChart(certStatusCounts) {
   var chartLabels = [];
   var chartData = [];
   Object.entries(certStatusCounts).forEach(([key, value]) => {
-    chartLabels.push(key);
+    chartLabels.push(getFriendlyLabel(key));
     chartData.push(value);
   });
   certsByStatusLineChart = new Chart(certsByStatusLineChartEle, {
@@ -257,7 +286,7 @@ function updateCertsByStatusBarChart(certStatusCounts) {
       labels: chartLabels,
       datasets: [
         {
-          label: "Number of Certificates",
+          label: gettext("Number of Certificates"),
           data: chartData,
           //borderColor: "#0d6efd",
           //backgroundColor: "#0d6efd",
@@ -285,6 +314,7 @@ function updateCertsByStatusBarChart(certStatusCounts) {
     options: {
       indexAxis: "y",
       scales: {
+        x: {ticks: {precision: 0}},
         y: {
           beginAtZero: "true",
         },
@@ -343,7 +373,7 @@ function updateCertsByTemplateBarChart(certsByTempateCounts) {
         labels: chartLabels,
         datasets: [
             {
-            label: "Number of Certificates",
+            label: gettext("Number of Certificates"),
             data: chartData,
             borderColor: "#0d6efd",
             backgroundColor: "#0d6efd",
@@ -389,6 +419,9 @@ function updateCertsByIssuingCAChart(certIssuingCACounts) {
             },
         ],
         },
+        options: {  
+            scales: {y: {ticks: {precision: 0}}}
+        }
     });
 }
 
@@ -428,7 +461,8 @@ function updateCertsByDateStackChart(certDateCounts) {
         options: {
         scales: {
             y: {
-            beginAtZero: "true",
+                beginAtZero: "true",
+                ticks: {precision: 0}
             },
         },
         },
@@ -446,7 +480,7 @@ function updateIssuingCAsByTypePieChart(issuingCaTypeCounts) {
     var chartLabels = [];
     var chartData = [];
     Object.entries(issuingCaTypeCounts).forEach(([key, value]) => {
-        chartLabels.push(key);
+        chartLabels.push(getFriendlyLabel(key));
         chartData.push(value);
     });
     issuingCAsByTypePieChart = new Chart(issuingCAsByTypePieChartEle, {

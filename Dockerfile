@@ -7,8 +7,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # 80 will be redirected to 443 using TLS through the apache.
 EXPOSE 80 443
 
+
 # Update apt repository and install required dependencies from apt
-RUN apt update -y && apt install -y sudo apt-utils apache2 apache2-utils python3 python3-venv libapache2-mod-wsgi-py3 python3-pip sed
+RUN apt update -y && apt install -y sudo apt-utils apache2 apache2-utils gettext python3 python3-venv libapache2-mod-wsgi-py3 python3-pip sed
+
 
 # Enable apache2 ssl and rewrite modules
 RUN a2enmod ssl
@@ -56,6 +58,9 @@ RUN yes | python trustpoint/manage.py reset_db --no-user
 
 # collect static files
 RUN python trustpoint/manage.py collectstatic --noinput
+
+# compile messages (translations)
+RUN python manage.py compilemessages
 
 # Remove any enabled apache2 sites, if any.
 RUN rm -f /etc/apache2/sites-enabled/*

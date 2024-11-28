@@ -1,8 +1,9 @@
 {% load static %}
+{% load i18n %}
 <script src="{% static 'js/dashboard/counts-panel.js' %}"></script>
 
 <div class="row py-3 px-0">
-  <h1>Summary</h1>
+  <h1>{% trans 'Summary' %}</h1>
 </div>
 <!-- Number panels row -->
 <div class="row py-3">
@@ -11,7 +12,7 @@
     <div class="row p-2">
       <div class="card count bg-gray shadow">
         <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
-        <h2 class="text-center pb-4 pt-2">Certificates</h2>
+        <h2 class="text-center pb-4 pt-2">{% trans 'Certificates' %}</h2>
         <p style="font-size: 40px" class="text-center font-weight-bold" id="total-cert-count">
         </p>
         <div class="row px-3">
@@ -34,7 +35,7 @@
     <div class="row p-2">
       <div class="card count bg-gray shadow">
         <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
-        <h2 class="text-center pb-4 pt-2">Expiring Certificates</h2>
+        <h2 class="text-center pb-4 pt-2">{% trans 'Expiring Certificates' %}</h2>
         <p style="font-size: 40px" class="text-center font-weight-bold" id="total-expiring-cert-count"></p>
         <div class="row p-0 px-3">
           <div class="col-6 small p-0" id="expiring-1day-cert-count"></div>
@@ -56,7 +57,7 @@
     <div class="row p-2">
       <div class="card count bg-gray shadow">
         <!-- <h2 class="text-center pb-4"><i class="bi bi-key"></i></h2> -->
-        <h2 class="text-center pb-4 pt-2">Devices</h2>
+        <h2 class="text-center pb-4 pt-2">{% trans 'Devices' %}</h2>
         <p style="font-size: 40px" class="text-center font-weight-bold"  id="total-device-count"></p>
         <div class="row p-0 px-3">
           <div class="col-6 small p-0" id="onboared-device-count"></div>
@@ -78,7 +79,7 @@
     <div class="row p-2">
       <div class="card count bg-gray shadow">
         <!-- <h2 class="text-center pb-4"><i class="bi bi-cpu"></i></h2> -->
-        <h2 class="text-center pb-4 pt-2">Issuing Cas</h2>
+        <h2 class="text-center pb-4 pt-2">{% trans 'Issuing CAs' %}</h2>
         <p style="font-size: 40px" class="text-center font-weight-bold" id="total-issuing-ca-count"></p>
         <div class="row p-0 px-3">
           <div class="col-6 small p-0" id="active-issuing-ca-count"></div>

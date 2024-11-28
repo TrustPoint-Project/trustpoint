@@ -764,7 +764,7 @@ class CertificateModel(models.Model):
 
     # ----------------------------------------------- Custom Data Fields -----------------------------------------------
 
-    certificate_status = models.CharField(verbose_name=_('Status'), max_length=2, choices=CertificateStatus,
+    certificate_status = models.CharField(verbose_name=_('Status'), max_length=4, choices=CertificateStatus,
                                           editable=False, default=CertificateStatus.OK)
 
     revocation_reason = models.CharField(
@@ -908,7 +908,7 @@ class CertificateModel(models.Model):
 
     # TODO: check order of chains
     def get_certificate_chains(self, include_self: bool = True) -> list[list[CertificateModel]]:
-        if self.is_root_ca:
+        if self.is_self_signed:
             if include_self:
                 return [[self]]
             else:
@@ -1304,7 +1304,7 @@ class BaseCaModel(models.Model):
         editable=False
     )
 
-    ca_localization = models.CharField(max_length=2, choices=CaLocalization, default=CaLocalization.LOCAL)
+    ca_localization = models.CharField(max_length=8, choices=CaLocalization, default=CaLocalization.LOCAL)
 
     root_ca_certificate = models.ForeignKey(
         to=CertificateModel,

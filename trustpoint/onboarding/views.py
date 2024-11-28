@@ -22,7 +22,7 @@ from .forms import BrowserLoginForm, RevokeCertificateForm
 from .models import (
     BrowserOnboardingProcess,
     DownloadOnboardingProcess,
-    ManualOnboardingProcess,
+    ManualCsrOnboardingProcess,
     OnboardingProcess,
     OnboardingProcessState,
 )
@@ -86,7 +86,7 @@ class ManualDownloadView(TpLoginRequiredMixin, OnboardingUtilMixin, TemplateView
 
         device = self.device
 
-        onboarding_process = OnboardingProcess.make_onboarding_process(device, DownloadOnboardingProcess)
+        onboarding_process = DownloadOnboardingProcess.make_onboarding_process(device)
 
         messages.warning(request, _('Keep the PKCS12 file secure! It contains the private key of the device.'))
 
@@ -119,7 +119,7 @@ class BrowserInitializationView(TpLoginRequiredMixin, OnboardingUtilMixin, Templ
 
         device = self.device
 
-        onboarding_process = OnboardingProcess.make_onboarding_process(device, BrowserOnboardingProcess)
+        onboarding_process = BrowserOnboardingProcess.make_onboarding_process(device)
 
         otp = secrets.token_hex(8)
         onboarding_process.set_otp(otp)
@@ -215,7 +215,8 @@ class P12DownloadView(OnboardingUtilMixin, View):
         device = self.device
         download_token = request.GET.get('token')
         onboarding_process = OnboardingProcess.get_by_device(device)
-        if not onboarding_process or not onboarding_process.cred_serializer or not download_token:
+        if (not onboarding_process or not isinstance(onboarding_process, DownloadOnboardingProcess)
+            or not onboarding_process.cred_serializer or not download_token):
             return HttpResponse('Not found.', status=404)
 
         if download_token == onboarding_process.download_token:
@@ -239,7 +240,8 @@ class PemDownloadView(OnboardingUtilMixin, View):
         device = self.device
         download_token = request.GET.get('token')
         onboarding_process = OnboardingProcess.get_by_device(device)
-        if not onboarding_process or not onboarding_process.cred_serializer or not download_token:
+        if (not onboarding_process or not isinstance(onboarding_process, DownloadOnboardingProcess)
+            or not onboarding_process.cred_serializer or not download_token):
             return HttpResponse('Not found.', status=404)
 
         if download_token == onboarding_process.download_token:
@@ -297,7 +299,7 @@ class ManualOnboardingView(TpLoginRequiredMixin, OnboardingUtilMixin, View):
         if device.onboarding_protocol == Device.OnboardingProtocol.BROWSER:
             return BrowserInitializationView.as_view()(request, *args, **kwargs)
 
-        onboarding_process = OnboardingProcess.make_onboarding_process(device, ManualOnboardingProcess)
+        onboarding_process = ManualCsrOnboardingProcess.make_onboarding_process(device)
 
         issuing_ca_cert = device.domain.issuing_ca.issuing_ca_certificate
         signature_suite = SignatureSuite.get_signature_suite_from_cert_type(issuing_ca_cert)

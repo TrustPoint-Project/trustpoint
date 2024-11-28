@@ -10,11 +10,11 @@ from devices.exceptions import UnknownOnboardingStatusError
 class DeviceOnboardingStatus(models.TextChoices):
     """Device Onboarding Status."""
 
-    NOT_ONBOARDED = 'P', _('Pending')
-    ONBOARDING_RUNNING = 'R', _('Running')
-    ONBOARDED = 'O', _('Onboarded')
-    ONBOARDING_FAILED = 'F', _('Failed')
-    REVOKED = 'D', _('Revoked')
+    NOT_ONBOARDED = 'pending', _('Pending')
+    ONBOARDING_RUNNING = 'running', _('Running')
+    ONBOARDED = 'onboarded', _('Onboarded')
+    ONBOARDING_FAILED = 'failed', _('Failed')
+    REVOKED = 'revoked', _('Revoked')
 
     @classmethod
     def get_color(cls: DeviceOnboardingStatus, choice: DeviceOnboardingStatus | str) -> str:
