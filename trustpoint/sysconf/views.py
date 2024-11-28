@@ -3,6 +3,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+import struct
+import time
+import json
+import socket
+from django.http import JsonResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
@@ -11,6 +16,8 @@ from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
 from django.views.generic.base import RedirectView
 from django.views.generic.edit import FormView
+from django.views.decorators.csrf import csrf_exempt
+
 
 from trustpoint.views.base import (
     TpLoginRequiredMixin,
@@ -177,31 +184,67 @@ def network(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
-def ntp(request: HttpRequest) -> HttpResponse:
-    """Handle ntp Configuration
-
-    Returns: HTTPResponse
-    """
-    context = {'page_category': 'sysconf', 'page_name': 'ntp'}
-    # Try to read the configuration
-    try:
-        ntp_config = NTPConfig.objects.get(id=1)
-    except ObjectDoesNotExist:
-        # create an empty configuration
-        ntp_config = NTPConfig()
+def ntp_configuration_view(request):
+    ntp_config, created = NTPConfig.objects.get_or_create(id=1)
 
     if request.method == 'POST':
-        ntp_configuration_form = NTPConfigForm(request.POST, instance=ntp_config)
-        if ntp_configuration_form.is_valid():
-            ntp_configuration_form.save()
-            messages.success(request, _('Your changes were saved successfully.'))
-        else:
-            messages.error(request, _('Error saving the configuration'))
-        context['ntp_config_form'] = ntp_configuration_form
-        return render(request, 'sysconf/ntp.html', context=context)
+        form = NTPConfigForm(request.POST, instance=ntp_config)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "NTP configuration updated successfully.")
+            return redirect('sysconf:ntp')
+    else:
+        form = NTPConfigForm(instance=ntp_config)
 
-    context['ntp_config_form'] = NTPConfigForm(instance=ntp_config)
-    return render(request, 'sysconf/ntp.html', context=context)
+    return render(request, 'sysconf/ntp.html', {
+        'ntp_config_form': form,
+        'last_sync_time': ntp_config.last_sync_time,
+    })
+
+@csrf_exempt
+def test_ntp_connection(request):
+    """Test the connection to the specified NTP server."""
+    if request.method == 'POST':
+        try:
+            data = json.loads(request.body)
+            ntp_server = data.get('ntp_server')
+            server_port = data.get('server_port', 123)
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'failure', 'message': 'Invalid JSON payload'})
+
+        if not ntp_server:
+            return JsonResponse({'status': 'failure', 'message': 'NTP server address is required.'})
+        try:
+            port = int(server_port)
+        except ValueError:
+            return JsonResponse({'status': 'failure', 'message': 'Invalid port number.'})
+
+        NTP_EPOCH = 2208988800  # Seconds between 1900-01-01 and 1970-01-01
+
+        try:
+            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+                s.settimeout(5)  # Set a timeout for the connection
+
+                request_packet = b'\x1b' + 47 * b'\0'  # NTP mode 3 (client), 48 bytes
+
+                s.sendto(request_packet, (ntp_server, port))
+
+                response, _ = s.recvfrom(1024)
+
+                transmit_timestamp = struct.unpack('!12I', response)[10]
+                unix_time = transmit_timestamp - NTP_EPOCH
+
+                current_time = time.strftime('%Y-%m-%d %H:%M:%S', time.gmtime(unix_time))
+
+                return JsonResponse({
+                    'status': 'success',
+                    'message': f"Connection successful. Current UTC time: {current_time}"
+                })
+        except socket.timeout:
+            return JsonResponse({'status': 'failure', 'message': 'Connection timed out.'})
+        except Exception as e:
+            return JsonResponse({'status': 'failure', 'message': f"Error: {e}"})
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'}, status=400)
 
 
 @login_required

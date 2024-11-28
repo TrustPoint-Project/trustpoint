@@ -10,15 +10,14 @@ from .security import SecurityModeChoices
 
 
 class NTPConfigForm(forms.ModelForm):
-    """NTP configuration form"""
     class Meta:
-        """Meta class"""
         model = NTPConfig
-        fields = ['ntp_server_address']
-        labels = {
-            'ntp_server_address': _('NTP Server Address'),
+        fields = ['ntp_server_address', 'server_port', 'sync_interval', 'enabled']
+        widgets = {
+            'ntp_server_address': forms.TextInput(attrs={'placeholder': 'Enter NTP server (e.g., pool.ntp.org)'}),
+            'server_port': forms.NumberInput(attrs={'min': 1, 'max': 65535}),
+            'sync_interval': forms.NumberInput(attrs={'min': 1}),
         }
-
 
 class NetworkConfigForm(forms.ModelForm):
     """Network configuration model form"""

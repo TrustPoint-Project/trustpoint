@@ -1,23 +1,80 @@
 {% extends 'trustpoint/base.html' %}
 {% load i18n %}
 {% load crispy_forms_filters %}
+
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h1>{% trans "NTP Configuration" %}</h1>
+    <div class="card">
+        <div class="card-header">
+            <h1 class="card-title">{% trans "NTP Configuration" %}</h1>
+        </div>
+        <div class="card-body pt-4 pb-4">
+            <p>
+                <strong>{% trans "Last Synchronization Time:" %}</strong>
+                {% if last_sync_time %}
+                    {{ last_sync_time|date:"DATETIME_FORMAT" }}
+                {% else %}
+                    {% trans "Never" %}
+                {% endif %}
+            </p>
+            <form method="POST" enctype="multipart/form-data" id="ntp_configuration">
+                {% csrf_token %}
+                <fieldset class="form-group tp-form-group">
+                    {{ ntp_config_form|crispy }}
+                </fieldset>
+                {% if messages %}
+                    <div class="alert-container">
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }}">
+                                {{ message }}
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </form>
+            <button id="test-connection-btn" class="btn btn-secondary mt-3">
+                {% trans "Test Connection" %}
+            </button>
+            <div id="test-connection-result" class="mt-2"></div>
+        </div>
+        <div class="card-footer text-body-secondary">
+            <button class="btn btn-primary ms-3 float-end" type="submit" form="ntp_configuration">
+                {% trans "Save" %}
+            </button>
+        </div>
     </div>
-    <div class="card-body pt-4 pb-4">
-        <form method="POST" enctype="multipart/form-data" id="ntp_configuration">
-            {% csrf_token %}
-            <fieldset class="form-group tp-form-group">
-                {{ ntp_config_form|crispy }}
-            </fieldset>
-        </form>
-    </div>
-    <div class="card-footer text-body-secondary">
-        <button class="btn btn-primary ms-3 float-end" type="submit" form="ntp_configuration">
-            {% trans "Save" %}
-        </button>
-    </div>
-</div>
+    <script>
+        document.getElementById('test-connection-btn').addEventListener('click', function () {
+            const ntpServer = document.querySelector('input[name="ntp_server_address"]').value;
+            const serverPort = document.querySelector('input[name="server_port"]').value;
+
+            if (!ntpServer || !serverPort) {
+                alert("Please fill in both the NTP Server Address and Port.");
+                return;
+            }
+
+            fetch("{% url 'sysconf:test_ntp_connection' %}", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": "{{ csrf_token }}",
+                },
+                body: JSON.stringify({ntp_server: ntpServer, server_port: serverPort})
+            })
+                .then(response => response.json())
+                .then(data => {
+                    console.log("Response received:", data); // Log the response for debugging
+                    const resultDiv = document.getElementById('test-connection-result');
+                    if (data.status === "success") {
+                        resultDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+                    } else {
+                        resultDiv.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                    }
+                })
+                .catch(error => {
+                    console.error("Error testing connection:", error); // Log any errors
+                    const resultDiv = document.getElementById('test-connection-result');
+                    resultDiv.innerHTML = `<div class="alert alert-danger">Error testing connection</div>`;
+                });
+        });
+    </script>
 {% endblock content %}

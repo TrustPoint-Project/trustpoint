@@ -1,6 +1,6 @@
 """Model definitions"""
 from typing import Any
-from django.core.validators import MaxValueValidator, MinValueValidator
+from django.core.validators import MaxValueValidator, MinValueValidator, RegexValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from pki.util.keys import AutoGenPkiKeyAlgorithm
@@ -11,12 +11,56 @@ from sysconf.security.manager import SecurityManager
 
 # class SystemConfig(models.Model):
 class NTPConfig(models.Model):
-    """NTP Configuration model"""
-    ntp_server_address = models.GenericIPAddressField(protocol='both')
+    """Enhanced NTP Configuration model"""
+    ntp_server_address = models.CharField(
+        max_length=255,
+        validators=[
+            RegexValidator(
+                regex=r'^([a-zA-Z0-9.-]+|\d{1,3}(\.\d{1,3}){3})$',
+                message="Enter a valid IPv4/IPv6 address or hostname."
+            )
+        ],
+        help_text="IP address or hostname of the NTP server"
+    )
+    server_port = models.PositiveIntegerField(
+        default=123,
+        help_text="Port used to connect to the NTP server (default is 123)."
+    )
+    sync_interval = models.PositiveIntegerField(
+        default=60,
+        help_text="Interval in minutes at which the system synchronizes with the NTP server."
+    )
+    timezone = models.CharField(
+        max_length=64,
+        default='UTC',
+        help_text="Timezone to apply when displaying synchronized time (default is UTC)."
+    )
+    enabled = models.BooleanField(
+        default=False,
+        help_text="Enable or disable NTP synchronization for this configuration."
+    )
+    last_sync_time = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="The timestamp of the last successful synchronization with the NTP server."
+    )
+    sync_status = models.CharField(
+        max_length=32,
+        choices=[
+            ('success', 'Success'),
+            ('failure', 'Failure'),
+            ('pending', 'Pending'),
+        ],
+        default='pending',
+        help_text="The status of the last synchronization attempt ('Success', 'Failure', or 'Pending')."
+    )
 
-    def __str__(self) -> str:
-        """Output as string"""
-        return f'{self.ntp_server_address}'
+    class Meta:
+        verbose_name = "NTP Configuration"
+        verbose_name_plural = "NTP Configurations"
+
+    def __str__(self):
+        return f"{self.ntp_server_address} (Enabled: {self.enabled})"
 
 
 class LoggingConfig(models.Model):
