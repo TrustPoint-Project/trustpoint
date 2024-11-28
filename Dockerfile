@@ -28,6 +28,9 @@ WORKDIR /var/www/html/trustpoint/
 # Sets DEBUG = False in the Django settings
 RUN sed -i '/DEBUG = True/s/True/False/' trustpoint/trustpoint/settings.py
 
+# Sets DOCKER_CONTAINER = True
+RUN sed -i '/DOCKER_CONTAINER = False/s/False/True/' trustpoint/trustpoint/settings.py
+
 # Install dependencies (we do not need venv in the container)
 RUN $POETRY_HOME/bin/poetry config virtualenvs.create false && $POETRY_HOME/bin/poetry install --no-interaction
 
