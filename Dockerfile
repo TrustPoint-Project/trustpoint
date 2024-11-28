@@ -60,7 +60,7 @@ RUN yes | python trustpoint/manage.py reset_db --no-user
 RUN python trustpoint/manage.py collectstatic --noinput
 
 # compile messages (translations)
-RUN python manage.py compilemessages
+RUN python trustpoint/manage.py compilemessages
 
 # Remove any enabled apache2 sites, if any.
 RUN rm -f /etc/apache2/sites-enabled/*
