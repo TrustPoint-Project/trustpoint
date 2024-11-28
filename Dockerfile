@@ -20,6 +20,7 @@ RUN python -m venv $POETRY_HOME && $POETRY_HOME/bin/pip install poetry==1.8.2
 
 # Copy the current directory contents into the container
 COPY ./ /var/www/html/trustpoint/
+RUN rm -f /var/www/html/trustpoint/trustpoint/db.sqlite3
 
 # Sets the current WORKDIR for the following commands
 WORKDIR /var/www/html/trustpoint/
