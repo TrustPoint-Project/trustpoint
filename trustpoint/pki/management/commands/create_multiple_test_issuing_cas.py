@@ -1,4 +1,4 @@
-"""Something."""
+"""Django management command for adding issuing CA test data."""
 
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448Pri
 class Command(CertificateCreationCommandMixin, BaseCommand):
     """Django management command for adding issuing CA test data."""
 
-    help = 'Removes all migrations, deletes db and runs makemigrations and migrate afterwards.'
+    help = 'Adds a Root CA and three issuing CAs to the database.'
 
     def handle(self, *args, **kwargs) -> None:
 
@@ -26,8 +26,6 @@ class Command(CertificateCreationCommandMixin, BaseCommand):
         issuing_2, issuing_2_key = self.create_issuing_ca(root_1_key, 'Root CA', 'Issuing CA B')
         issuing_3, issuing_3_key = self.create_issuing_ca(root_1_key, 'Root CA', 'Issuing CA C')
 
-        self.store_issuing_ca(issuing_1, [root_1], issuing_1_key, 'A.p12')
-        self.store_issuing_ca(issuing_2, [root_1], issuing_2_key, 'B.p12')
-        self.store_issuing_ca(issuing_3, [root_1], issuing_3_key, 'C.p12')
-
-        self.store_issuing_ca(root_1, [], root_1_key, 'D_Root.p12')
+        self.save_issuing_ca(issuing_1, root_1, [], issuing_1_key, 'issuing-ca-a')
+        self.save_issuing_ca(issuing_2, root_1, [], issuing_2_key, 'issuing-ca-b')
+        self.save_issuing_ca(issuing_3, root_1, [], issuing_3_key, 'issuing-ca-c')

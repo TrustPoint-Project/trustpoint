@@ -9,8 +9,10 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
+from django.core.management.utils import get_random_secret_key
 
 from log.config import logging_config
 
@@ -21,13 +23,16 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
-# SECURITY WARNING: keep the secret key used in production secret!
-# TODO(Alex): Secret key management
-with (Path(__file__).resolve().parent / Path('dev_secret_key.txt')).open('r') as f:
-    SECRET_KEY = f.read()
-
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+ADMIN_ENABLED = True if DEBUG else False
+
+# SECURITY WARNING: keep the secret key used in production secret!
+if DEBUG:
+    SECRET_KEY = 'DEV-ENVIRON-SECRET-KEY-lh2rw0b0z$s9e=!4see)@_8ta_up&ad&m01$i+g5z@nz5u$0wi'
+else:
+    # TODO(AlexHx8472): Use proper docker secrets handling.
+    SECRET_KEY = Path('/etc/trustpoint/secrets/django_secret_key.env').read_text()
 
 ALLOWED_HOSTS = ['*']
 
@@ -38,6 +43,7 @@ ADVERTISED_PORT = 443
 # Application definition
 
 INSTALLED_APPS = [
+    'setup_wizard.apps.SetupWizardConfig',
     'users.apps.UsersConfig',
     'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
@@ -63,6 +69,7 @@ INSTALLED_APPS = [
     # note: replaces default exception debug page with worse one
     'taggit',
     'django_filters',
+    # ensure startup is the last app in the list so that ready() is called after all other apps are initialized
 ]
 
 MIDDLEWARE = [
@@ -104,6 +111,9 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
         'NAME': BASE_DIR / 'db.sqlite3',
+        'OPTIONS': {
+            'timeout': 20
+        }
     },
 }
 
@@ -179,4 +189,4 @@ LOGGING = logging_config
 
 TAGGIT_CASE_INSENSITIVE = True
 
-STATIC_ROOT = 'collected_static'
+STATIC_ROOT = Path(__file__).parent.parent / Path('collected_static')

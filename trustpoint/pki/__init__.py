@@ -1,7 +1,6 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-
 class ReasonCode(models.TextChoices):
     """Revocation reasons per RFC 5280"""
     UNSPECIFIED = 'unspecified', _('Unspecified')

@@ -99,18 +99,18 @@ class CertificateCreationCommandMixin:
         )
         return certificate, private_key
 
-
-    @staticmethod
+    @classmethod
     def store_issuing_ca(
+            cls,
             issuing_ca_cert: x509.Certificate,
             chain: list[x509.Certificate],
             private_key: rsa.RSAPrivateKey,
             filename: str) -> None:
+
         tests_data_path = Path(__file__).parent.parent.parent.parent.parent / Path('tests/data/issuing_cas')
         issuing_ca_path = tests_data_path / Path(filename)
         # shutil.rmtree(tests_data_path, ignore_errors=True)
         tests_data_path.mkdir(exist_ok=True)
-
         print('\nSaving Issuing CA and Certificates\n')
 
         p12 = pkcs12.serialize_key_and_certificates(
@@ -131,16 +131,17 @@ class CertificateCreationCommandMixin:
             issuing_ca_cert: x509.Certificate,
             root_ca_cert: x509.Certificate,
             chain: list[x509.Certificate],
-            private_key: rsa.RSAPrivateKey) -> None:
+            private_key: rsa.RSAPrivateKey,
+            unique_name: str ='issuing_ca') -> None:
         issuing_ca_cert_model = CertificateModel.save_certificate(issuing_ca_cert)
-        root_ca_cert_model = CertificateModel.save_certificate(root_ca_cert)
+        root_ca_cert_model = CertificateModel.save_certificate(root_ca_cert, exist_ok=True)
 
         intermediate_ca_certs = []
         for cert in chain:
             intermediate_ca_certs.append(CertificateModel.save_certificate(cert))
 
         issuing_ca_model = IssuingCaModel()
-        issuing_ca_model.unique_name = 'issuing_ca'
+        issuing_ca_model.unique_name = unique_name
         issuing_ca_model.issuing_ca_certificate = issuing_ca_cert_model
         issuing_ca_model.root_ca_certificate = root_ca_cert_model
         issuing_ca_model.private_key_pem = private_key.private_bytes(

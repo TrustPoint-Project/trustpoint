@@ -30,6 +30,7 @@ PBKDF2_DKLEN = 32
 
 log = logging.getLogger('tp.onboarding')
 
+CONTAINER_HTTPS_SERVER_CERT_PATH = Path('/etc/ssl/certs/apache-selfsigned.crt')
 HTTPS_SERVER_CERT_PATH = Path(__file__).parent.parent.parent / 'tests/data/x509/https_server.crt'
 
 class OnboardingError(Exception):
@@ -81,6 +82,10 @@ class CryptoBackend:
         Raises:
             FileNotFoundError: If the TLS certificate file is not found.
         """
+        if CONTAINER_HTTPS_SERVER_CERT_PATH.exists() and CONTAINER_HTTPS_SERVER_CERT_PATH.is_file():
+            with CONTAINER_HTTPS_SERVER_CERT_PATH.open() as certfile:
+                return certfile.read()
+
         with HTTPS_SERVER_CERT_PATH.open() as certfile:
             return certfile.read()
 

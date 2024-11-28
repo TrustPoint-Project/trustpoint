@@ -18,7 +18,8 @@ class Command(BaseCommand):
     help = 'Removes all migrations, deletes db and runs makemigrations and migrate afterwards.'
 
     def add_arguments(self, parser: CommandParser) -> None:
-        parser.add_argument('--force', action=argparse.BooleanOptionalAction, default=False)
+        parser.add_argument('--force', action='store_true', default=False)
+        parser.add_argument('--no-user', action='store_true', default=False)
 
     def handle(self, *args, **options) -> None:
         # Explicit user confirmation for deleting the database
@@ -45,13 +46,14 @@ class Command(BaseCommand):
         print('Migrating db...')
         call_command('migrate')
 
-        print('Creating superuser...')
-        call_command('createsuperuser', interactive=False, username='admin', email='')
-        user = User.objects.get(username='admin')
-        user.set_password('testing321')
-        user.save()
+        if not options.get('no_user'):
+            print('Creating superuser...')
+            call_command('createsuperuser', interactive=False, username='admin', email='')
+            user = User.objects.get(username='admin')
+            user.set_password('testing321')
+            user.save()
 
-        print('\nSuperuser: admin')
-        print('Password: testing321')
+            print('\nSuperuser: admin')
+            print('Password: testing321')
 
         print('\nDONE\n')

@@ -30,10 +30,18 @@ from .views import base
 
 last_modified_date = timezone.now()
 
-urlpatterns = [
-    path('admin/', admin.site.urls),
+
+if  settings.DEBUG:
+    urlpatterns = [
+        path('admin/', admin.site.urls)
+    ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+else:
+    urlpatterns = []
+
+urlpatterns += [
     path('api/', api.api.urls),
     path('users/', include('users.urls')),
+    path('setup-wizard/', include('setup_wizard.urls')),
     path('pki/', include('pki.urls.pki')),
     path('.well-known/est/', include('pki.urls.est')),
     path('.well-known/cmp/', include('pki.urls.cmp')),
@@ -50,9 +58,6 @@ urlpatterns = [
         )),
         name='javascript-catalog'
     ),
-    path('', base.IndexView.as_view()),
     path('logs/', include("log.urls")),
+    path('', base.IndexView.as_view()),
 ]
-
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

@@ -1,15 +1,21 @@
-import json
+import logging
 from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView, TemplateView
 from django.shortcuts import render, get_object_or_404, redirect
 from django_tables2 import RequestConfig
 from datetime import datetime, timedelta
-from trustpoint.views.base import TpLoginRequiredMixin, ContextDataMixin
+
+from django.contrib import messages
+
+from trustpoint.views.base import TpLoginRequiredMixin
 from .filters import NotificationFilter
 from django.core.management import call_command
 
 from .models import NotificationModel, NotificationStatus
 from .tables import NotificationTable
+
+SUCCESS = 25
+ERROR = 40
 
 class IndexView(TpLoginRequiredMixin, RedirectView):
     permanent = False
@@ -107,20 +113,24 @@ def mark_as_solved(request, pk):
 class AddDomainsAndDevicesView(TpLoginRequiredMixin, TemplateView):
     """View to execute the add_domains_and_devices management command and pass status to the template."""
 
+    _logger = logging.getLogger(__name__)
+
     def get(self, request, *args, **kwargs):
-        context = {}
 
         try:
-            # Call the management command
             call_command('add_domains_and_devices')
 
-            # Define success message
-            context['status'] = 'success'
-            context['message'] = 'The add_domains_and_devices command has been executed successfully.'
+            messages.add_message(
+                request,
+                SUCCESS,
+                'Successfully added test data.'
+            )
         except Exception as e:
-            # Define error message
-            context['status'] = 'error'
-            context['message'] = f'Error executing command: {e}'
+            # TODO(AlexHx8472): Catch the correct and proper error messages.
+            messages.add_message(
+                request,
+                ERROR,
+                f'Test data already available in the Database.'
+            )
 
-        # Render the template with the context
-        return render(request, 'home/command_status.html', context)
+        return redirect('home:dashboard')

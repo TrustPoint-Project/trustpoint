@@ -9,7 +9,7 @@ from pki.initializer import (
     UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer,
     UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer,
 )
-from pki.models import CMPModel, DomainModel, ESTModel, IssuingCaModel, TrustStoreModel
+from pki.models import CMPModel, DomainModel, ESTModel, IssuingCaModel
 from pki.validator.field import UniqueNameValidator
 
 

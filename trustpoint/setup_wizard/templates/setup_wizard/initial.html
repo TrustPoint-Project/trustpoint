@@ -17,7 +17,7 @@
                     {% endif %} d-flex" role="alert">
 
                     <svg class="bi flex-shrink-0 tp-msg-icon-margin" width="20" height="20" fill="currentColor" role="img" aria-label="{{ message.tags }}:">
-                        <use xlink:href="{% static 'img/icons.svg' %}#icon-{{ message.tags }}"/></svg>
+                        <use xlink:href="{% static 'img/icons.svg' %}#icon-{{ message.tags }}"></use></svg>
                     <div>
                         {{ message }}
                     </div>
@@ -26,22 +26,16 @@
         </div>
     {% endif %}
 
-    <div class="card tp-card-users text-center">
+    <div class="card tp-card-setup-wizard text-center">
         <div class="card-header">
-            <h1>{% trans "Trustpoint - Login" %}</h1>
+            <h1>{% trans "Trustpoint - Setup Wizard" %}</h1>
         </div>
         <div class="card-body pt-3 pb-4">
-
-            <form method="POST" class="text-start">
-                {% csrf_token %}
-                <fieldset class="form-group tp-form-group">
-                    {{ form|crispy }}
-                </fieldset>
-                <hr>
-                <div class="tp-form-btn-group tp-form-btn-group">
-                    <button class="btn btn-primary w-100 mt-1" type="submit">{% trans "Login" %}</button>
-                </div>
-            </form>
+            <h2>{% trans 'Configure TLS-Server Credential' %}</h2>
+            <hr class="mb-4">
+            <a href="{% url 'setup_wizard:generate_tls_server_credential' %}" class="btn btn-primary d-flex justify-content-center">{% trans 'Generate Self-Signed TLS-Server Credential' %}</a>
+            <br>
+            <a href="{% url 'setup_wizard:import_tls_server_credential' %}" class="btn btn-primary d-flex justify-content-center">{% trans 'Import TLS-Server Credential From File' %}</a>
         </div>
     </div>
 

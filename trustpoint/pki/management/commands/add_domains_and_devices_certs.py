@@ -10,33 +10,15 @@ from pki import CertificateTypes, TemplateName
 from django.core.management import call_command
 from pki.initializer import UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer
 
-BASE_DIR = Path(__file__).parent.parent.parent.parent.parent / 'tests/data/issuing_cas'
-ISSUING_CA_A_FILE_PATH = BASE_DIR / 'A.p12'
-ISSUING_CA_B_FILE_PATH = BASE_DIR / 'B.p12'
-ISSUING_CA_C_FILE_PATH = BASE_DIR / 'C.p12'
-P12_PW = b'testing321'
-
 
 class Command(BaseCommand):
     help = 'Add domains, associated device names with random onboarding protocol and serial \
     number, and their certificates. make sure you have certificates added in the CertificateModel'
 
-    @staticmethod
-    def _save_issuing_ca(unique_name: str, file_path: Path) -> None:
-        initializer = UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(
-            unique_name=unique_name,
-            p12=file_path.read_bytes(),
-            password=P12_PW,
-            auto_crl=True)
-        initializer.initialize()
-        initializer.save()
 
     def handle(self, *args, **kwargs):
-        call_command('create_multiple_issuing_ca_files')
+        call_command('create_multiple_test_issuing_cas')
 
-        self._save_issuing_ca('issuing-ca-a', ISSUING_CA_A_FILE_PATH)
-        self._save_issuing_ca('issuing-ca-b', ISSUING_CA_B_FILE_PATH)
-        self._save_issuing_ca('issuing-ca-c', ISSUING_CA_C_FILE_PATH)
         certificates = CertificateModel.objects.all()
         certificate_list = list(certificates)
         certificate_types = [choice.value for choice in CertificateTypes]
