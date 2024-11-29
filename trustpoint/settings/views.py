@@ -19,14 +19,13 @@ import tarfile
 from django.contrib import messages
 from django.http import Http404, HttpResponse
 from django.shortcuts import redirect
-from django.urls import reverse_lazy
 from django.views.generic import TemplateView, View
 from django_tables2 import SingleTableView
 
 from trustpoint.settings import LOG_DIR_PATH, DATE_FORMAT
 
 from .tables import LogFileTable
-from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, LoggerMixin
+from trustpoint.views.base import TpLoginRequiredMixin, LoggerMixin
 
 from .forms import SecurityConfigForm
 from .models import SecurityConfig
@@ -174,7 +173,6 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
             first_line = file.readline().strip()
             if first_line:
                 try:
-
                     first_date = datetime.datetime.strptime(
                         first_line.split()[0] + " " + first_line.split()[1], DATE_FORMAT)
                 except (ValueError, IndexError):
