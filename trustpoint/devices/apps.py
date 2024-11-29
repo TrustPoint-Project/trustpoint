@@ -11,5 +11,4 @@ class DevicesConfig(AppConfig):
 
     def ready(self) -> None:
         """Django startup hook"""
-
-        import devices.signals
+        import devices.signals  # noqa: F401

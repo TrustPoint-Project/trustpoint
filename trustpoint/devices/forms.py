@@ -11,8 +11,6 @@ from typing import Any, ClassVar
 from django import forms
 from pki.models import DomainModel
 
-from devices import DeviceOnboardingStatus
-
 from .models import Device
 
 
@@ -55,7 +53,12 @@ class DeviceForm(forms.ModelForm):
 
 
 class DomainSelectionForm(forms.Form):
-    """Form to select multiple domains."""
+    """Form for selecting multiple domains.
+
+    Attributes:
+        domains (ModelMultipleChoiceField): A multiple-choice field allowing
+            selection of one or more domains from the `DomainModel`.
+    """
     domains = forms.ModelMultipleChoiceField(
         queryset=DomainModel.objects.all(),
         widget=forms.CheckboxSelectMultiple(),
@@ -66,8 +69,13 @@ class DomainSelectionForm(forms.Form):
 class DeviceConfigForm(forms.ModelForm):
     """Form to configure the device."""
     class Meta:
+        """Metadata for the `DeviceConfigForm`.
+
+        Specifies the associated model and the fields included in the form, as
+        well as custom widgets for certain fields.
+        """
         model = Device
-        fields = ['device_serial_number']
-        widgets = {
+        fields: ClassVar[list[str]]= ['device_serial_number']
+        widgets: ClassVar[dict] = {
             'device_serial_number': forms.TextInput(),
         }

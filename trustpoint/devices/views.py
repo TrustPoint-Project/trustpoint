@@ -6,20 +6,18 @@ import logging
 from typing import TYPE_CHECKING
 
 from django.contrib import messages
-from django.http import HttpResponseRedirect, JsonResponse
-from django.shortcuts import get_object_or_404, redirect
+from django.shortcuts import redirect
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
-from django.views import View
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, FormView, UpdateView
+from django.views.generic.edit import CreateView, UpdateView
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django_filters.views import FilterView
 from django_tables2 import SingleTableView
 from pki.models import DomainModel
 from pki.validator.field import UniqueNameValidator
 
-from devices.forms import DeviceConfigForm, DeviceForm, DomainSelectionForm
+from devices.forms import DeviceConfigForm, DomainSelectionForm
 from trustpoint.views.base import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
 
 from .filters import DeviceFilter
@@ -79,11 +77,11 @@ class ConfigDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
     success_url = reverse_lazy('devices:devices')
     form_class = DeviceConfigForm
 
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request, *args, **kwargs):  # noqa: ANN001, ANN002, ANN003
         self.object = self.get_object()
         return super().dispatch(request, *args, **kwargs)
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:  # noqa: ANN003
         """Adds domains and additional actions to the context."""
         context = super().get_context_data(**kwargs)
         device = self.get_object()
@@ -92,16 +90,16 @@ class ConfigDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
         context['add_domains_url'] = reverse('devices:add_domains', kwargs={'pk': device.pk})
         return context
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs): # noqa: ANN001, ANN002, ANN003
+        """Handle POST requests to update device configuration or manage domains."""
         device: Device = self.get_object()
 
-        # Handle domain deletion
         if 'delete_domain' in request.POST:
             domain_id = request.POST.get('delete_domain')
             try:
                 domain = device.get_domain(domain_id)
                 device.domains.remove(domain)
-                messages.success(request, _(f'Domain {domain} successfully removed.'))
+                messages.success(request, _('Domain %s successfully removed.') % domain)
             except DomainModel.DoesNotExist:
                 messages.error(request, _('The domain does not exist or is not associated with this device.'))
             return redirect(self.get_success_url())

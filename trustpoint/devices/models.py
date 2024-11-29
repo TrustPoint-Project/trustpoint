@@ -6,7 +6,7 @@ import logging
 from typing import TYPE_CHECKING
 
 from django.core.exceptions import ObjectDoesNotExist
-from django.db import models, transaction
+from django.db import models
 from django.db.models import Count, QuerySet
 from django.urls import reverse
 from django.utils import timezone
@@ -16,11 +16,10 @@ from pki import CertificateStatus, CertificateTypes, ReasonCode
 from pki.validator.field import UniqueNameValidator
 from taggit.managers import TaggableManager
 
-from . import DeviceOnboardingStatus, OnboardingProtocol
-from .exceptions import UnknownOnboardingStatusError
-
 if TYPE_CHECKING:
     from pki.models import CertificateModel, DomainModel, IssuedDeviceCertificateModel
+
+    from . import OnboardingProtocol
 
 log = logging.getLogger('tp.devices')
 
@@ -29,15 +28,12 @@ class Device(models.Model):
     """Device Model."""
 
     issued_device_certificates: models.Manager[IssuedDeviceCertificateModel]
-
-
-
     device_name: models.CharField = models.CharField(
         _('Device name'), max_length=100, unique=True, default='test', validators=[UniqueNameValidator()]
     )
     device_serial_number: models.CharField = models.CharField(_('Serial number'), max_length=100, blank=True)
 
-    domains: DomainModel | models.ManyToManyField | None = models.ManyToManyField(
+    domains: models.ManyToManyField = models.ManyToManyField(
         'pki.DomainModel',
         verbose_name=_('Domains'),
         related_name='devices',
@@ -103,11 +99,11 @@ class Device(models.Model):
         """Saves a certificate for the device.
 
         Args:
-            certificate (IssuedDeviceCertificateModel): The certificate to save.
+            certificate (CertificateModel): The certificate to save.
             certificate_type (CertificateTypes): The type of the certificate.
             domain (DomainModel): The associated domain.
-            template_name (str): The name of the certificate template.
-            protocol (str): The protocol used to issue the certificate.
+            template_name (str): Name of the certificate template.
+            onboarding_protocol (str): The onboarding protocol used.
         """
         self.issued_device_certificates.create(
             certificate=certificate,
@@ -153,7 +149,14 @@ class Device(models.Model):
 
     @classmethod
     def get_by_id(cls: type[Device], device_id: int) -> Device | None:
-        """Returns the device with a given ID."""
+        """Retrieve a device by its ID.
+
+        Args:
+            device_id (int): The ID of the device.
+
+        Returns:
+            Device | None: The device if found, otherwise None.
+        """
         try:
             return cls.objects.get(pk=device_id)
         except cls.DoesNotExist:
@@ -162,21 +165,44 @@ class Device(models.Model):
 
     @classmethod
     def get_by_name(cls: type[Device], device_name: str) -> Device | None:
-        """Returns the device with a given name."""
+        """Retrieve a device by its name.
+
+        Args:
+            device_name (str): The name of the device.
+
+        Returns:
+            Device | None: The device if found, otherwise None.
+        """
         try:
             return cls.objects.get(device_name=device_name)
         except cls.DoesNotExist:
             return None
 
     def get_domain(self, domain_id: int) -> DomainModel:
-        """Returns domain if selected"""
+        """Retrieve a domain by its ID.
+
+        Args:
+            domain_id (int): The ID of the domain.
+
+        Returns:
+            DomainModel: The domain associated with the given ID.
+        """
         return self.domains.get(pk=domain_id)
 
     @classmethod
     def check_onboarding_prerequisites(
         cls: type[Device], device_id: int, domain_id: int, allowed_onboarding_protocols: list[OnboardingProtocol]
     ) -> tuple[bool, str | None]:
-        """Checks if criteria for starting the onboarding process are met."""
+        """Check if the prerequisites for onboarding are met.
+
+        Args:
+            device_id (int): The ID of the device.
+            domain_id (int): The ID of the domain.
+            allowed_onboarding_protocols (list[OnboardingProtocol]): List of allowed protocols.
+
+        Returns:
+            tuple[bool, str | None]: A boolean indicating success and an optional error message.
+        """
         device = cls.get_by_id(device_id)
 
         if not device:
@@ -238,6 +264,7 @@ class Device(models.Model):
             UnknownOnboardingProtocolError:
                 Raised when an unknown onboarding protocol was found and thus cannot be rendered appropriately.
         """
+        return ''
         # if not self.domains:
         #     return ''
         # is_manual = self.onboarding_protocol == OnboardingProtocol.MANUAL
@@ -326,15 +353,13 @@ class Device(models.Model):
 
     @staticmethod
     def count_devices_by_domain_and_status(domain: DomainModel) -> QuerySet:
-        """Returns the number of devices for a given domain, grouped by onboarding status.
+        """Count devices by their onboarding status for a specific domain.
 
         Args:
-            domain (DomainModel): The domain for which devices should be counted.
+            domain (DomainModel): The domain for which to count devices.
 
         Returns:
-            QuerySet: A QuerySet containing dictionaries with keys:
-                - 'device_onboarding_status' (str): The onboarding status of the devices.
-                - 'count' (int): The number of devices with the corresponding status.
+            QuerySet: A queryset with onboarding statuses and counts.
         """
         return (
             Device.objects.filter(domain=domain)

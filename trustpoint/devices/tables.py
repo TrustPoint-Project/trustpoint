@@ -6,13 +6,9 @@ import logging
 from typing import TYPE_CHECKING
 
 import django_tables2 as tables
-from django.urls import reverse
 from django.utils.html import format_html, format_html_join
 from django.utils.translation import gettext_lazy as _
 
-from devices import DeviceOnboardingStatus
-
-from .exceptions import UnknownOnboardingStatusError
 from .models import Device
 
 if TYPE_CHECKING:
@@ -27,10 +23,23 @@ log = logging.getLogger('tp.devices')
 
 
 class DeviceTable(tables.Table):
-    """Table representation of the Device model."""
+    """Table representation of the `Device` model.
+
+    This table is used to display devices with associated actions such as details,
+    configuration, and deletion. Custom rendering methods are defined for specific fields.
+    """
 
     class Meta:
-        """Table meta class configurations."""
+        """Table meta class configurations.
+
+        Attributes:
+            model (Device): The model associated with the table.
+            template_name (str): Template to be used for rendering the table.
+            order_by (str): Default ordering of table rows.
+            empty_values (tuple): Values that are treated as empty.
+            empty_text (SafeString): Message displayed when no records are available.
+            fields (tuple): Fields to be displayed in the table.
+        """
 
         model = Device
         template_name = 'django_tables2/bootstrap5.html'
@@ -208,10 +217,17 @@ class DeviceTable(tables.Table):
     #         return format_html(''.join([f'<li>{domain.unique_name}</li>' for domain in record.domain.all()])
     #         )
     #     return _('No Domains Assigned')
-    
+
     @staticmethod
     def render_domains(record: Device) -> str:
-        """Rendert die Domains als Links mit Domain-ID und Device-ID."""
+        """Render domains as hyperlinks with domain ID and device ID.
+
+        Args:
+            record (Device): The current record of the Device model.
+
+        Returns:
+            str: HTML rendering of the domains as links.
+        """
         if hasattr(record, 'domains') and record.domains.exists():
             return format_html(
                 format_html_join(
@@ -220,18 +236,18 @@ class DeviceTable(tables.Table):
                     ((domain.id, record.pk, domain.unique_name) for domain in record.domains.all())
                 )
             )
-        return _('No Domain associated')
+        return str(_('No Domain associated'))
 
 
     @staticmethod
     def render_details(record: Device) -> SafeString:
-        """Creates the html hyperlink for the details-view.
+        """Create the hyperlink for the details view.
 
         Args:
             record (Device): The current record of the Device model.
 
         Returns:
-            SafeString: The html hyperlink for the details-view.
+            SafeString: The HTML hyperlink for the details view.
         """
         return format_html(
             '<a href="details/{}/" class="btn btn-primary tp-table-btn"">{}</a>', record.pk, _('Details')

@@ -132,7 +132,7 @@
         const modalBody = domainModal.querySelector('.modal-body');
         modalBody.innerHTML = '<p>Loading certificates...</p>';
 
-        fetch(`/api/devices/domain-certificates/${domainId}/`)
+        fetch(`/api/devices/domain-certificates/${deviceId}/${domainId}/`)
             .then(response => response.json())
             .then(data => {
                 modalBody.innerHTML = `

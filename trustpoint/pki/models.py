@@ -1261,7 +1261,8 @@ class CertificateModel(models.Model):
     def revoke(self, revocation_reason: ReasonCode) -> bool:
         """Revokes the certificate.
 
-        Returns: True if the certificate was successfully scheduled to be added to at least one CRL."""
+        Returns: True if the certificate was successfully scheduled to be added to at least one CRL.
+        """
         if self.certificate_status == CertificateStatus.REVOKED:
             return True # already revoked, prevent duplicate addition to CRL
 

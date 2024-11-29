@@ -1,17 +1,19 @@
 """API endpoints for the devices app."""
 from __future__ import annotations
 
+import logging
+
 from django.http import HttpRequest  # noqa: TCH002
-from django.shortcuts import get_object_or_404
+from django.utils.translation import gettext_lazy as _
 from ninja import Router, Schema
 from pki import CertificateStatus, CertificateTypes
-from pki.models import DomainModel
 
-from devices import DeviceOnboardingStatus, OnboardingProtocol
+from devices import OnboardingProtocol
 from devices.models import Device
 from trustpoint.schema import ErrorSchema, SuccessSchema
 
 router = Router()
+log = logging.getLogger('tp.devices')
 
 
 class DeviceInfoSchema(Schema):
@@ -47,53 +49,82 @@ def device_api_dict(dev: Device) -> dict:
         'serial_number': dev.device_serial_number,
         # TODO(Air): Prefer using the enum key instead of the label
         # (e.g. so that we can change the label for i18n without breaking the API)
-        'onboarding_protocol': str(OnboardingProtocol(dev.onboarding_protocol).label),
-        'onboarding_status': str(DeviceOnboardingStatus(dev.device_onboarding_status).label),
     }
 
-@router.get('/domain-certificates/{domain_id}/', summary='Get domain certificates')
-def get_domain_certificates(request, domain_id: int):
-    """Returns active certs for a domain ."""
-    domain = get_object_or_404(DomainModel, id=domain_id)
-    devices = domain.devices.all()
-    device: Device
 
-    certificates = []
-    for device in devices:
-        certs = device.get_all_active_certs_by_domain(domain)
-        for issued_cert in certs['ldevids']:
-            certificates.append({
-                'type': issued_cert.certificate_type,
-                'expiration_date': issued_cert.certificate.not_valid_after.strftime('%Y-%m-%d %H:%M:%S'),
-                'status': CertificateStatus(issued_cert.certificate.certificate_status).label,
-                'revoke_url': f"/onboarding/revoke/{issued_cert.certificate.pk}/"
-            })
-        for issued_cert in certs['other']:
-            certificates.append({
-                'type': issued_cert.certificate_type,
-                'expiration_date': issued_cert.certificate.not_valid_after.strftime('%Y-%m-%d %H:%M:%S'),
-                'status': CertificateStatus(issued_cert.certificate.certificate_status).label,
-                'revoke_url': f'/onboarding/revoke/{issued_cert.certificate.pk}/'
-            })
+@router.get('/domain-certificates/{device_id}/{domain_id}/', summary='Get domain certificates')
+def get_domain_certificates(request, device_id: int, domain_id: int) -> dict:
+    """Retrieve active certificates for a specific domain and device.
+
+    Args:
+        request: HTTP request object.
+        device_id (int): ID of the device.
+        domain_id (int): ID of the domain.
+
+    Returns:
+        dict: A dictionary containing active certificates.
+    """
+    device = Device.get_by_id(device_id)
+    if not isinstance(device, Device):
+        msg = _('No device with id %s found') % device_id
+        log.info(msg)
+        return {'certificates': []}
+
+    domain = device.get_domain(domain_id)
+    certs = device.get_all_active_certs_by_domain(domain)
+
+    certificates = [
+        {
+            'type': issued_cert.certificate_type,
+            'expiration_date': issued_cert.certificate.not_valid_after.strftime('%Y-%m-%d %H:%M:%S'),
+            'status': CertificateStatus(issued_cert.certificate.certificate_status).label,
+            'revoke_url': f'/onboarding/revoke/{issued_cert.certificate.pk}/'
+        }
+        for category in ['ldevids', 'other']
+        for issued_cert in certs.get(category, [])
+    ]
 
     return {'certificates': certificates}
 
 
 @router.get('/certificate-types/', summary='Get certificate types')
-def get_certificate_types(request):
-    """Returns all available certificate types."""
+def get_certificate_types(request) -> dict:
+    """Retrieve all available certificate types.
+
+    Args:
+        request: HTTP request object.
+
+    Returns:
+        dict: A dictionary containing available certificate types.
+    """
+    _ = request
     return {'types': [{'value': ct.value, 'label': ct.label} for ct in CertificateTypes]}
 
 
 @router.get('/onboarding-methods/', summary='Get onboarding methods')
 def get_onboarding_methods(request):
-    """Returns all supported onboarding procedures."""
+    """Retrieve all supported onboarding procedures.
+
+    Args:
+        request: HTTP request object.
+
+    Returns:
+        dict: A dictionary containing supported onboarding methods.
+    """
+    _ = request
     return {'methods': [{'value': op.value, 'label': op.label} for op in OnboardingProtocol]}
 
 
 @router.get('/', response=list[DeviceInfoSchema], exclude_none=True)
 def devices(request: HttpRequest) -> list[dict]:
-    """Get a list of all devices."""
+    """Retrieve a list of all devices.
+
+    Args:
+        request (HttpRequest): HTTP request object.
+
+    Returns:
+        list[dict]: A list of dictionaries containing device details.
+    """
     _ = request
     qs = Device.objects.all()
     return [device_api_dict(dev) for dev in qs]
@@ -101,7 +132,15 @@ def devices(request: HttpRequest) -> list[dict]:
 
 @router.get('/{device_id}', response={200: DeviceInfoSchema, 404: ErrorSchema}, exclude_none=True)
 def device(request: HttpRequest, device_id: int) -> tuple[int, dict]:
-    """Returns details about a device with a given ID."""
+    """Retrieve details about a specific device by ID.
+
+    Args:
+        request (HttpRequest): HTTP request object.
+        device_id (int): ID of the device.
+
+    Returns:
+        tuple[int, dict]: HTTP status code and device details or an error message.
+    """
     _ = request
     dev = Device.get_by_id(device_id)
     if not dev:
