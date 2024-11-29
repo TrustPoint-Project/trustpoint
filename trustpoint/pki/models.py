@@ -17,10 +17,9 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
-from devices.models import Device
+from devices.models import DeviceModel
 
-from . import CertificateTypes, ReasonCode, CertificateStatus, CaLocalization, TemplateName
-
+from . import ReasonCode, CertificateStatus, CaLocalization
 from .issuing_ca import UnprotectedLocalIssuingCa
 from .oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
 from .serializer import CertificateCollectionSerializer, CertificateSerializer, PublicKeySerializer
@@ -30,10 +29,8 @@ if TYPE_CHECKING:
     from typing import Union
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
-    from django.db.models import QuerySet
 
 log = logging.getLogger('tp.pki')
-
 
 class AttributeTypeAndValue(models.Model):
     """AttributeTypeAndValue Model.
@@ -724,25 +721,11 @@ class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExten
 #     pass
 
 
-class IssuedDeviceCertificateModel(models.Model):
-    device = models.ForeignKey(Device, on_delete=models.CASCADE, editable=False, null=True, blank=True, related_name='issued_device_certificates')
-    certificate_type = models.CharField(max_length=256, choices=CertificateTypes.choices)
-    domain = models.ForeignKey('DomainModel', on_delete=models.CASCADE)
-    template_name = models.CharField(max_length=256, choices=TemplateName.choices, null=True, blank=True)
-    protocol = models.CharField(max_length=256, default=None, null=True, blank=True)
-    certificate = models.OneToOneField(
-        'CertificateModel', on_delete=models.CASCADE, related_name='issued_device_certificate', null=True, blank=True)
-
-
 class CertificateModel(models.Model):
     """X509 Certificate Model.
 
     See RFC5280 for more information.
     """
-
-    # ------------------------------------ Reference Counter for delete operations  ------------------------------------
-
-    # TODO
 
     # ------------------------------------------------- Django Choices -------------------------------------------------
 
@@ -892,9 +875,6 @@ class CertificateModel(models.Model):
     added_at = models.DateTimeField(verbose_name=_('Added at'), auto_now_add=True)
 
     # --------------------------------------------- Data Retrieval Methods ---------------------------------------------
-
-    def get_subject_attributes_for_oid(self, oid: NameOid) -> QuerySet[AttributeTypeAndValue]:
-        return self.subject.filter(oid=oid.value)
     
     def get_certificate_serializer(self) -> CertificateSerializer:
         return CertificateSerializer(self.cert_pem)
@@ -902,9 +882,9 @@ class CertificateModel(models.Model):
     def get_public_key_serializer(self) -> PublicKeySerializer:
         return PublicKeySerializer(self.public_key_pem)
     
-    def get_certificate_status(self):
-        status_mapping = dict(CertificateStatus.choices)
-        return status_mapping.get(self.certificate_status)
+    # def get_certificate_status(self):
+    #     status_mapping = dict(CertificateStatus.choices)
+    #     return status_mapping.get(self.certificate_status)
 
     # TODO: check order of chains
     def get_certificate_chains(self, include_self: bool = True) -> list[list[CertificateModel]]:
@@ -1285,8 +1265,17 @@ class CertificateModel(models.Model):
         self.private_key = None
         self._save()
 
-
 # ------------------------------------------------- Issuing CA Models --------------------------------------------------
+
+
+class CertificateAuthority(models.Model):
+
+    class CaType(models.TextChoices):
+        ROOT_CA = 'ROOT_CA'
+        INTERMEDIATE_CA = 'INTERMEDIATE_CA'
+        ISSUING_CA = 'ISSUING_CA'
+
+
 
 class ProxyManager(models.Manager):
     def get_queryset(self):

@@ -5,7 +5,7 @@ from pathlib import Path
 from django.core.management.base import BaseCommand
 
 from pki.models import DomainModel, IssuingCaModel
-from devices.models import Device
+from devices_deprecated.models import Device
 from django.core.management import call_command
 from pki.initializer import UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer
 

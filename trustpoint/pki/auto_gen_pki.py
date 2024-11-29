@@ -6,8 +6,8 @@ from __future__ import annotations
 import logging
 import threading
 
-from sysconf.security import SecurityFeatures
-from sysconf.security.decorators import security_level
+from settings.security import SecurityFeatures
+from settings.security.decorators import security_level
 
 from pki.initializer.issuing_ca.key_gen import (
     UnprotectedKeyGenLocalIssuingCaInitializer,

@@ -1,7 +1,7 @@
 from django.utils import timezone
 from django.core.management.base import BaseCommand
 from pki.models import DomainModel, CertificateModel, IssuingCaModel
-from devices.models import Device
+from devices_deprecated.models import Device
 from home.models import NotificationModel, NotificationMessageModel, NotificationStatus
 
 

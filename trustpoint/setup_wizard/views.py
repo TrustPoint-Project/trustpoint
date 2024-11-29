@@ -14,7 +14,6 @@ from django.urls import reverse_lazy
 from setup_wizard.forms import EmptyForm ,StartupWizardTlsCertificateForm
 from setup_wizard.tls_credential import Generator
 from setup_wizard import SetupWizardState
-from setup_wizard.startup import StartupTaskManager
 
 from pki.initializer import TrustStoreInitializer
 from pki.models import CertificateModel, TrustpointTlsServerCredentialModel, TrustStoreModel, \
@@ -23,6 +22,8 @@ from pki.download.trust_store import TrustStoreDownloadResponseBuilder
 
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+
+from trustpoint.settings import DOCKER_CONTAINER
 
 
 APACHE_PATH = Path(__file__).parent.parent.parent / 'docker/apache/tls'
@@ -60,7 +61,7 @@ class SetupWizardInitialView(TemplateView):
     template_name = 'setup_wizard/initial.html'
 
     def get(self, *args, **kwargs):
-        if StartupTaskManager.running_dev_server():
+        if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()
@@ -77,7 +78,7 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
     success_url = reverse_lazy('setup_wizard:tls_server_credential_apply')
 
     def get(self, *args, **kwargs):
-        if StartupTaskManager.running_dev_server():
+        if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()
@@ -87,7 +88,7 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
         return super().get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        if StartupTaskManager.running_dev_server():
+        if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()
@@ -143,7 +144,7 @@ class SetupWizardImportTlsServerCredentialView(View):
     http_method_names = ['get']
 
     def get(self, *args, **kwargs):
-        if StartupTaskManager.running_dev_server():
+        if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()
@@ -164,7 +165,7 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
     success_url = reverse_lazy('setup_wizard:demo_data')
 
     def get(self, *args, **kwargs):
-        if StartupTaskManager.running_dev_server():
+        if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()
@@ -182,7 +183,7 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
         return TrustStoreDownloadResponseBuilder(trust_store.id, file_format).as_django_http_response()
 
     def post(self, *args, **kwargs):
-        if StartupTaskManager.running_dev_server():
+        if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()
@@ -250,7 +251,7 @@ class SetupWizardTlsServerCredentialApplyCancelView(View):
     http_method_names = ['get']
 
     def get(self, *args, **kwargs):
-        if StartupTaskManager.running_dev_server():
+        if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()
@@ -290,7 +291,7 @@ class SetupWizardDemoDataView(FormView):
     success_url = reverse_lazy('setup_wizard:create_super_user')
 
     def get(self, *args, **kwargs):
-        if StartupTaskManager.running_dev_server():
+        if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()
@@ -300,7 +301,7 @@ class SetupWizardDemoDataView(FormView):
         return super().get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        if StartupTaskManager.running_dev_server():
+        if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()
@@ -352,7 +353,7 @@ class SetupWizardCreateSuperUserView(FormView):
 
 
     def get(self, *args, **kwargs):
-        if StartupTaskManager.running_dev_server():
+        if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()
@@ -362,7 +363,7 @@ class SetupWizardCreateSuperUserView(FormView):
         return super().get(*args, **kwargs)
 
     def post(self, *args, **kwargs):
-        if StartupTaskManager.running_dev_server():
+        if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
         wizard_state = SetupWizardState.get_current_state()

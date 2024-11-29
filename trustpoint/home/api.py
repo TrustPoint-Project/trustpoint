@@ -4,8 +4,7 @@ import logging
 from ninja import Router, Schema
 from django.http import HttpRequest
 from ninja.responses import Response, codes_4xx
-from devices import DeviceOnboardingStatus
-from devices.models import Device
+from devices.models import DeviceModel
 from pki.models import CertificateModel, IssuingCaModel, DomainModel, BaseCaModel, IssuedDeviceCertificateModel
 from pki import CaLocalization, CertificateStatus, TemplateName
 from trustpoint.schema import ErrorSchema, SuccessSchema

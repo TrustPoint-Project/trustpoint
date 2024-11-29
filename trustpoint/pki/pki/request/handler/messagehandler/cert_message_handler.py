@@ -13,7 +13,7 @@ import datetime
 import logging
 from pyasn1.error import PyAsn1Error
 
-from devices.models import Device
+from devices.models import DeviceModel
 from pki import CertificateTypes, TemplateName
 from pki.models import CertificateModel
 from pki.pki.cmp.builder import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts
@@ -663,7 +663,7 @@ class CertMessageHandler:
 
         qs = cert_model.get_subject_attributes_for_oid(NameOid.PSEUDONYM)
         for attr_value in qs:
-            device: Device = Device.get_by_name(attr_value.value)
+            device: DeviceModel = DeviceModel.get_by_name(attr_value.value)
             if device:
                 device.save_certificate(
                     certificate=cert_model,

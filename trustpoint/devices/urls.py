@@ -1,24 +1,11 @@
-"""URL configuration for the devices application."""
+"""URL configuration for the application devices."""
 
+from django.urls import path
 
-from django.urls import path, re_path
-
-from . import views
+from .views import DeviceListView, CreateDeviceView
 
 app_name = 'devices'
 urlpatterns = [
-    path('', views.DeviceListView.as_view(), name='devices'),
-    path('add/', views.CreateDeviceView.as_view(), name='devices-add'),
-    path('edit/<int:pk>/', views.EditDeviceView.as_view(), name='devices-edit'),
-    path('details/<int:pk>/', views.DeviceDetailView.as_view()),
-    re_path(
-        r'^delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
-        views.DevicesBulkDeleteView.as_view(),
-        name='devices-delete',
-    ),
-    re_path(
-        r'^delete/',
-        views.DeviceListView.as_view(),
-        name='devices-redirect',
-    ),
+    path('', DeviceListView.as_view(), name='devices'),
+    path('add/', CreateDeviceView.as_view(), name='devices-add'),
 ]

@@ -1,0 +1,33 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load render_table from django_tables2 %}
+{% load static %}
+
+{% block content %}
+
+    <div class="card" style="max-height: 100%; display: flex; flex-direction: column;">
+    <div class="card-header">
+        <h1>{% trans 'Devices' %}</h1>
+    </div>
+
+    <div class="card-body text-start" style="overflow: auto; flex-grow: 1; max-height: 90%;">
+        {% render_table table %}
+    </div>
+    <div>
+        <div class="card-footer d-flex justify-content-between tp-sticky-footer">
+            <div>
+                <button type="button" class="btn btn-secondary tp-table-select-btn" data-tp-url="delete">{% trans "Delete selected" %}</button>
+            </div>
+            <div>
+{#                <a class="btn btn-primary" href="{% url 'devices:devices-add' %}">#}
+{#                    {% trans "Add new Device" %}#}
+{#                </a>#}
+                <a class="btn btn-primary" href="#">
+                    {% trans "Add new Device" %}
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock content %}

@@ -83,11 +83,11 @@ urlpatterns = [
         'domains/detail/<int:pk>/',
         domains.DomainDetailView.as_view(),
         name='domains-detail'),
-    re_path(
-        r'^domains/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
-        domains.DomainBulkDeleteConfirmView.as_view(),
-        name='domains-delete_confirm',
-    ),
+    # re_path(
+    #     r'^domains/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
+    #     domains.DomainBulkDeleteConfirmView.as_view(),
+    #     name='domains-delete_confirm',
+    # ),
     path('truststores/', trust_stores.TrustStoresTableView.as_view(), name='truststores'),
     path(
         'truststores/add/',

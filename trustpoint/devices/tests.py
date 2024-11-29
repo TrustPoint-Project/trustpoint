@@ -1,1 +1,3 @@
-"""Module that contains all tests corresponding to the devices application."""
+from django.test import TestCase
+
+# Create your tests here.

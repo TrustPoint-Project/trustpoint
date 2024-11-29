@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 
-from devices.models import Device
+from devices.models import DeviceModel
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from pki.models import CertificateModel, DomainModel, IssuingCaModel
@@ -260,7 +260,7 @@ class NotificationModel(models.Model):
         related_name='notifications')
 
     device = models.ForeignKey(
-        Device,
+        DeviceModel,
         on_delete=models.SET_NULL,
         blank=True,
         null=True,

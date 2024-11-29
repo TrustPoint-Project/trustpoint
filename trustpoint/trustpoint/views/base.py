@@ -7,6 +7,8 @@ which can be used within the apps.
 from __future__ import annotations
 
 from typing import Any, Callable
+import logging
+import functools
 
 from django import forms as dj_forms
 from django.contrib import messages
@@ -21,6 +23,7 @@ from django.views.generic.list import BaseListView, MultipleObjectTemplateRespon
 from django.db.models import QuerySet
 
 from typing import TYPE_CHECKING
+import types
 
 
 if TYPE_CHECKING:
@@ -162,3 +165,36 @@ class PrimaryKeyFromUrlToQuerysetMixin:
 
 class BulkDeleteView(MultipleObjectTemplateResponseMixin, PrimaryKeyFromUrlToQuerysetMixin, BaseBulkDeleteView):
     pass
+
+
+class LoggerMixin:
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        super().__init_subclass__(**kwargs)
+
+
+
+        cls._logger = logging.getLogger('trustpoint').getChild(cls.__module__).getChild(cls.__name__)
+
+        def get_logger(cls):
+            return cls._logger
+
+        cls.logger = property(fget=get_logger)
+
+        for attr_name, attr_value in cls.__dict__.items():
+            if isinstance(attr_value, (types.FunctionType, types.MethodType)):
+                setattr(cls, attr_name, cls._log_exceptions(attr_value))
+
+    @classmethod
+    def _log_exceptions(cls, function):
+
+        @functools.wraps(function)
+        def wrapper(*args, **kwargs):
+            try:
+                return function(*args, **kwargs)
+            except Exception as exception:
+                cls.logger.error(f'Exception in {function.__name__}: {exception}', exc_info=True)
+                raise
+
+        return wrapper

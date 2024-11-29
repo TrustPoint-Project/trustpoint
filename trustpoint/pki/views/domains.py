@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import enum
 
-from devices import DeviceOnboardingStatus
-from devices.models import Device
 from django.contrib import messages
 from django.db import transaction
 from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
@@ -17,7 +15,7 @@ from django_tables2 import RequestConfig, SingleTableView
 
 from pki import ReasonCode
 from pki.forms import CMPForm, DomainCreateForm, DomainUpdateForm, ESTForm
-from pki.models import DomainModel, IssuedDeviceCertificateModel, TrustStoreModel
+from pki.models import DomainModel, TrustStoreModel
 from pki.tables import DomainTable, TrustStoreConfigFromDomainTable
 from trustpoint.views.base import BulkDeleteView, ContextDataMixin, TpLoginRequiredMixin
 
@@ -86,9 +84,6 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
         RequestConfig(self.request).configure(trust_store_table)
         context['trust_store_table'] = trust_store_table
 
-        devices_count = Device.count_devices_by_domain_and_status(domain=domain)
-        context['devices_count'] = {item['device_onboarding_status']: item['count'] for item in devices_count}
-
         return context
 
     def post(self, request, *args, **kwargs):
@@ -141,26 +136,26 @@ class DomainDetailView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
     context_object_name = 'domain'
 
 
-class DomainBulkDeleteConfirmView(DomainContextMixin, TpLoginRequiredMixin, BulkDeleteView):
-
-    model = DomainModel
-    success_url = reverse_lazy('pki:domains')
-    ignore_url = reverse_lazy('pki:domains')
-    template_name = 'pki/domains/confirm_delete.html'
-    context_object_name = 'domains'
-
-
-    @transaction.atomic
-    def post(self, *args, **kwargs):
-        for domain_id in kwargs:
-            domain = DomainModel.objects.get(pk=self.kwargs.get(domain_id))
-            query_sets = IssuedDeviceCertificateModel.objects.filter(domain=domain)
-
-            for query_set in query_sets:
-                query_set.certificate.revoke(ReasonCode.CESSATION)
-                query_set.device.device_onboarding_status = DeviceOnboardingStatus.REVOKED
-                query_set.device.save()
-        return super().post(*args, **kwargs)
+# class DomainBulkDeleteConfirmView(DomainContextMixin, TpLoginRequiredMixin, BulkDeleteView):
+#
+#     model = DomainModel
+#     success_url = reverse_lazy('pki:domains')
+#     ignore_url = reverse_lazy('pki:domains')
+#     template_name = 'pki/domains/confirm_delete.html'
+#     context_object_name = 'domains'
+#
+#
+#     @transaction.atomic
+#     def post(self, *args, **kwargs):
+#         for domain_id in kwargs:
+#             domain = DomainModel.objects.get(pk=self.kwargs.get(domain_id))
+#             query_sets = IssuedDeviceCertificateModel.objects.filter(domain=domain)
+#
+#             for query_set in query_sets:
+#                 query_set.certificate.revoke(ReasonCode.CESSATION)
+#                 query_set.device.device_onboarding_status = DeviceOnboardingStatus.REVOKED
+#                 query_set.device.save()
+#         return super().post(*args, **kwargs)
 
 
 class ProtocolConfigView(DomainContextMixin, View):
