@@ -13,6 +13,7 @@ import os
 from pathlib import Path
 import datetime
 import io
+import re
 import zipfile
 import tarfile
 
@@ -169,24 +170,19 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
 
     @staticmethod
     @LoggerMixin.log_exceptions
-    def _get_first_and_last_entry_date(log_file_path: Path) -> tuple[datetime.datetime, datetime.datetime]:
-        with log_file_path.open('r') as file:
-            first_line = file.readline().strip()
-            if first_line:
-                try:
-                    first_date = datetime.datetime.strptime(
-                        first_line.split()[0] + " " + first_line.split()[1], DATE_FORMAT)
-                except (ValueError, IndexError):
-                    pass
+    def _get_first_and_last_entry_date(
+            log_file_path: Path
+    ) -> tuple[None | datetime.datetime, None | datetime.datetime]:
+        log_file = log_file_path.read_text()
 
-            for line in file:
-                pass
-
-            if line.strip():
-                try:
-                    last_date = datetime.datetime.strptime(line.split()[0] + " " + line.split()[1], DATE_FORMAT)
-                except (ValueError, IndexError):
-                    pass
+        date_regex = re.compile(r'\b\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\b')
+        matches = re.findall(date_regex, log_file)
+        if matches:
+            first_date = datetime.datetime.strptime(matches[0], DATE_FORMAT)
+            last_date = datetime.datetime.strptime(matches[-1], DATE_FORMAT)
+        else:
+            first_date = None
+            last_date = None
 
         return first_date, last_date
 
@@ -198,11 +194,21 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
             return {}
 
         first_date, last_date = cls._get_first_and_last_entry_date(log_file_path)
+        if isinstance(first_date, datetime.datetime):
+            created_at = first_date.strftime(f'{DATE_FORMAT} UTC')
+        else:
+            created_at = _('None')
+
+        if isinstance(last_date, datetime.datetime):
+            updated_at = last_date.strftime(f'{DATE_FORMAT} UTC')
+        else:
+            updated_at = _('None')
+
 
         return {
             'filename': log_filename,
-            'created_at': first_date.strftime(f'{DATE_FORMAT} UTC'),
-            'updated_at': last_date.strftime(f'{DATE_FORMAT} UTC'),
+            'created_at': created_at,
+            'updated_at': updated_at
         }
 
     @LoggerMixin.log_exceptions
