@@ -22,7 +22,6 @@ from django.views.generic.base import RedirectView
 from django.views.generic.edit import FormMixin
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django.db.models import QuerySet
-import types
 
 from typing import TYPE_CHECKING
 
