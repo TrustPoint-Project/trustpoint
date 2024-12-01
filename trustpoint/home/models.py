@@ -7,7 +7,9 @@ import logging
 from devices.models import DeviceModel
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from pki.models import CertificateModel, DomainModel, IssuingCaModel
+from pki.models.certificate import CertificateModel
+from pki.models.ca import IssuingCaModel
+from pki.models.domain import DomainModel
 
 log = logging.getLogger('tp.home')
 

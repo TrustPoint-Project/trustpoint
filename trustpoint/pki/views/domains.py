@@ -13,7 +13,7 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
 from django_tables2 import RequestConfig, SingleTableView
 
-from pki import ReasonCode
+from pki.models.text_choice import ReasonCode
 from pki.forms import CMPForm, DomainCreateForm, DomainUpdateForm, ESTForm
 from pki.models import DomainModel, TrustStoreModel
 from pki.tables import DomainTable, TrustStoreConfigFromDomainTable

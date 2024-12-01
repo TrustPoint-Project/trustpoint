@@ -10,7 +10,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from django.db import transaction
 
 from .serializer import CertificateCollectionSerializer, PrivateKeySerializer
-from . import CertificateStatus, ReasonCode
+from .models.text_choice import CertificateStatus, ReasonCode
 from .util.keys import SignatureSuite
 
 if TYPE_CHECKING:

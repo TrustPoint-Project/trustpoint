@@ -3,7 +3,7 @@ from pyasn1_modules import rfc4210, rfc2511
 import logging
 import traceback
 
-from pki import CertificateStatus
+from pki.models.text_choice import CertificateStatus
 from pki.models import CertificateModel
 from pki.pki.request.message import HttpStatusCode
 
