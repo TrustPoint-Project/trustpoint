@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 from cryptography import x509
-
+import re
 from pki.models import DomainModel
 from pki.pki.request.message import (
     PkiRequestMessage,
     PkiResponseMessage,
     MimeType,
     HttpStatusCode)
-
-from util.strings import StringValidator
 
 from typing import TYPE_CHECKING
 
@@ -21,6 +19,16 @@ if TYPE_CHECKING:
     from typing import Union
     from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
+
+
+class StringValidator:
+    """Contains utility functions for string validation"""
+
+    @staticmethod
+    def is_urlsafe(string: str) -> bool:
+        """Returns True if string only contains alphanumeric characters and '-' or '_'"""
+        p = re.compile(r'[^a-zA-Z0-9\-_]')
+        return p.search(string) is None
 
 
 class PkiRestRequestMessage(PkiRequestMessage):
