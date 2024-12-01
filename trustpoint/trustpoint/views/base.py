@@ -8,6 +8,7 @@ from __future__ import annotations
 
 from typing import Any, Callable
 import logging
+import traceback
 import functools
 
 from django import forms as dj_forms
@@ -21,9 +22,9 @@ from django.views.generic.base import RedirectView
 from django.views.generic.edit import FormMixin
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
 from django.db.models import QuerySet
+import types
 
 from typing import TYPE_CHECKING
-import types
 
 
 if TYPE_CHECKING:
@@ -168,33 +169,49 @@ class BulkDeleteView(MultipleObjectTemplateResponseMixin, PrimaryKeyFromUrlToQue
 
 
 class LoggerMixin:
+    """Mixin that adds log features to the subclass."""
+
+    logger: logging.Logger
 
     @classmethod
     def __init_subclass__(cls, **kwargs: Any) -> None:
+        """Adds an appropriate logger to the subclass and makes it available through cls.logger."""
         super().__init_subclass__(**kwargs)
 
+        cls.logger = logging.getLogger('trustpoint').getChild(cls.__module__).getChild(cls.__name__)
 
 
-        cls._logger = logging.getLogger('trustpoint').getChild(cls.__module__).getChild(cls.__name__)
+    @staticmethod
+    def log_exceptions(function):
+        """
+        Decorator that gets an appropriate logger and logs any unhandled exception.
 
-        def get_logger(cls):
-            return cls._logger
+        Logs the type and message to both levels error and debug.
+        Also adds the traceback to the debug level log.
 
-        cls.logger = property(fget=get_logger)
-
-        for attr_name, attr_value in cls.__dict__.items():
-            if isinstance(attr_value, (types.FunctionType, types.MethodType)):
-                setattr(cls, attr_name, cls._log_exceptions(attr_value))
-
-    @classmethod
-    def _log_exceptions(cls, function):
+        Args:
+            function: The decorated method or function.
+        """
 
         @functools.wraps(function)
-        def wrapper(*args, **kwargs):
+        def _wrapper(*args, **kwargs):
             try:
                 return function(*args, **kwargs)
             except Exception as exception:
-                cls.logger.error(f'Exception in {function.__name__}: {exception}', exc_info=True)
+                logger = logging.getLogger('trustpoint').getChild(function.__module__).getChild(function.__qualname__)
+                print(logger)
+
+                logger.error(
+                    f'Exception in {function.__name__}. '
+                    f'Type: {type(exception)}, '
+                    f'Message: {exception}'
+                )
+                logger.debug(
+                    f'Exception in {function.__name__}. '
+                    f'Type: {type(exception)}, '
+                    f'Message: {exception}, '
+                    f'Traceback: {traceback.format_exc()}'
+                )
                 raise
 
-        return wrapper
+        return _wrapper

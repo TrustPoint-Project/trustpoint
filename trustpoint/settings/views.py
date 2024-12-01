@@ -168,6 +168,7 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
     table_class = LogFileTable
 
     @staticmethod
+    @LoggerMixin.log_exceptions
     def _get_first_and_last_entry_date(log_file_path: Path) -> tuple[datetime.datetime, datetime.datetime]:
         with log_file_path.open('r') as file:
             first_line = file.readline().strip()
@@ -190,6 +191,7 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
         return first_date, last_date
 
     @classmethod
+    @LoggerMixin.log_exceptions
     def _get_log_file_data(cls, log_filename: str) -> dict[str, str]:
         log_file_path = LOG_DIR_PATH / Path(log_filename)
         if not log_file_path.exists() or not log_file_path.is_file():
@@ -203,6 +205,7 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
             'updated_at': last_date.strftime(f'{DATE_FORMAT} UTC'),
         }
 
+    @LoggerMixin.log_exceptions
     def get_queryset(self) -> list[dict[str, str]]:
         return [self._get_log_file_data(log_file_name) for log_file_name in os.listdir(LOG_DIR_PATH)]
 
@@ -213,6 +216,7 @@ class LoggingFilesDetailsView(LoggerMixin, LoggingContextMixin, TpLoginRequiredM
     template_name = 'settings/logging/logging_files_details.html'
     log_directory = LOG_DIR_PATH
 
+    @LoggerMixin.log_exceptions
     def get_context_data(self, **kwargs) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         log_filename = self.kwargs.get('filename')
@@ -231,7 +235,8 @@ class LoggingFilesDownloadView(LoggerMixin, LoggingContextMixin, TpLoginRequired
     """View to download a single log file"""
     http_method_names = ['get']
 
-    def get(self, request, *args, **kwargs):
+    @LoggerMixin.log_exceptions
+    def get(self, *args, **kwargs):
         filename = kwargs.get('filename')
         log_file_path = LOG_DIR_PATH / Path(filename)
 
@@ -246,8 +251,9 @@ class LoggingFilesDownloadView(LoggerMixin, LoggingContextMixin, TpLoginRequired
 class LoggingFilesDownloadMultipleView(LoggerMixin, LoggingContextMixin, TpLoginRequiredMixin, View):
     http_method_names = ['get']
 
-    @staticmethod
-    def get(*args, **kwargs) -> HttpResponse:
+    @classmethod
+    @LoggerMixin.log_exceptions
+    def get(cls, *args, **kwargs) -> HttpResponse:
         archive_format = kwargs.get('archive_format')
         filenames = kwargs.get('filenames')
 

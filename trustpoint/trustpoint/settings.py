@@ -211,12 +211,12 @@ LOGGING = {
     },
     'handlers': {
         'console': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
             'formatter': 'defaultFormatter',
         },
         'rotatingFile': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'class': 'logging.handlers.RotatingFileHandler',
             'formatter': 'defaultFormatter',
             'filename': LOG_FILE_PATH,
@@ -227,7 +227,7 @@ LOGGING = {
     },
     'loggers': {
         '': {
-            'level': 'INFO',
+            'level': 'DEBUG',
             'handlers': ['console', 'rotatingFile'],
         },
     },
