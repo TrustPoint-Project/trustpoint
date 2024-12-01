@@ -9,8 +9,8 @@ from pki.initializer import (
     UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer,
     UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer,
 )
-from pki.models import CMPModel, DomainModel, ESTModel, IssuingCaModel
-from pki.validator.field import UniqueNameValidator
+from pki.models import DomainModel, IssuingCaModel
+from core.validator.field import UniqueNameValidator
 
 
 class CertificateDownloadForm(forms.Form):
@@ -88,8 +88,6 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
         label=_('[Optional] PKCS#12 password'),
         required=False)
 
-    auto_crl = forms.BooleanField(label=_('Generate CRL upon certificate revocation.'), initial=True, required=False)
-
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']
         if IssuingCaModel.objects.filter(unique_name=unique_name).exists():
@@ -99,7 +97,6 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         unique_name = cleaned_data.get('unique_name')
-        auto_crl = cleaned_data.get('auto_crl')
         if unique_name is None:
             raise ValidationError('No Unique Name was specified.')
 
@@ -124,8 +121,7 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
             initializer = UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(
                 unique_name=cleaned_data['unique_name'],
                 p12=pkcs12_raw,
-                password=pkcs12_password,
-                auto_crl=auto_crl)
+                password=pkcs12_password)
         except Exception as exception:
             raise ValidationError(
                 'Failed to load PKCS#12 file. Either malformed file or wrong password.',
@@ -154,8 +150,6 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
         required=True)
     certificate_chain = forms.FileField(
         label=_('[Optional] Certificate Chain (.pem, .p7b, .p7c) '), required=False)
-    
-    auto_crl = forms.BooleanField(label=_('Generate CRL upon certificate revocation.'), initial=True, required=False)
 
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']
@@ -166,7 +160,6 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         unique_name = cleaned_data.get('unique_name')
-        auto_crl = cleaned_data.get('auto_crl')
         if unique_name is None:
             return
 
@@ -197,7 +190,6 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
         try:
             initializer = UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer(
                 unique_name=cleaned_data['unique_name'],
-                auto_crl=auto_crl,
                 private_key_raw=private_key_file_raw,
                 password=private_key_file_password,
                 issuing_ca_certificate_raw=issuing_ca_cert_raw,
@@ -209,21 +201,6 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
 
         initializer.initialize()
         initializer.save()
-
-
-class CRLGenerationTimeDeltaForm(forms.ModelForm):
-
-    class Meta:
-        model = IssuingCaModel
-        fields = ['next_crl_generation_time',]
-        labels = {'next_crl_generation_time': '',}
-
-
-class CRLAutoGenerationForm(forms.ModelForm):
-
-    class Meta:
-        model = IssuingCaModel
-        fields = ['auto_crl']
 
 
 class DomainBaseForm(forms.ModelForm):
@@ -328,50 +305,3 @@ class TruststoresDownloadForm(forms.Form):
         ],
         initial='pem',
         required=True)
-
-
-class CMPForm(forms.ModelForm):
-    class Meta:
-        model = CMPModel
-        fields = ['operation_modes']
-
-    operation_modes = forms.MultipleChoiceField(
-        choices=CMPModel.Operations.choices,
-        widget=forms.CheckboxSelectMultiple,
-        required=False,
-        label="Select Operations"
-    )
-
-    def clean(self):
-        cleaned_data = super().clean()
-
-    def save(self, commit=True):
-        """Override save to store the operations as a comma-separated string."""
-        instance = super().save(commit=False)
-        operations_list = self.cleaned_data['operation_modes']
-        instance.set_operation_list(operations_list)
-        if commit:
-            instance.save()
-        return instance
-
-
-class ESTForm(forms.ModelForm):
-    class Meta:
-        model = ESTModel
-        fields = ['operation_modes']
-
-    operation_modes = forms.MultipleChoiceField(
-        choices=ESTModel.Operations.choices,
-        widget=forms.CheckboxSelectMultiple,
-        required=False,
-        label="Select Operations"
-    )
-
-    def save(self, commit=True):
-        """Override save to store the operations as a comma-separated string."""
-        instance = super().save(commit=False)
-        operations_list = self.cleaned_data['operation_modes']
-        instance.set_operation_list(operations_list)
-        if commit:
-            instance.save()
-        return instance

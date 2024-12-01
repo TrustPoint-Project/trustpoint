@@ -14,10 +14,10 @@ from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
 
-from pki.oid import SignatureAlgorithmOid, PublicKeyAlgorithmOid, EllipticCurveOid, CertificateExtensionOid, NameOid
-from pki.serializer import CertificateSerializer, PublicKeySerializer, CertificateCollectionSerializer
+from core.oid import SignatureAlgorithmOid, PublicKeyAlgorithmOid, EllipticCurveOid, CertificateExtensionOid, NameOid
+from core.serializer import CertificateSerializer, PublicKeySerializer, CertificateCollectionSerializer
 
-from pki.models.text_choice import CertificateStatus, ReasonCode
+from pki.models.text_choice import CertificateStatus
 from pki.models.extension import (
     AttributeTypeAndValue,
     BasicConstraintsExtension,
@@ -36,8 +36,6 @@ log = logging.getLogger('tp.pki')
 
 __all__ = [
     'CertificateModel',
-    'CMPModel',
-    'ESTModel'
 ]
 
 class CertificateModel(models.Model):
@@ -68,13 +66,6 @@ class CertificateModel(models.Model):
 
     certificate_status = models.CharField(verbose_name=_('Status'), max_length=4, choices=CertificateStatus,
                                           editable=False, default=CertificateStatus.OK)
-
-    revocation_reason = models.CharField(
-        verbose_name=_('Revocation reason'),
-        max_length=30,
-        choices=ReasonCode,
-        editable=True,
-        default=ReasonCode.UNSPECIFIED)
 
     # TODO: This is kind of a hack.
     # TODO: This information is already available through the subject relation
@@ -551,91 +542,3 @@ class CertificateModel(models.Model):
             trustpoint.pki.models.Certificate: The certificate object that has just been saved.
         """
         return cls._save_certificate(certificate=certificate, exist_ok=exist_ok)
-
-    # @transaction.atomic
-    # def revoke(self, revocation_reason: ReasonCode) -> bool:
-    #     """Revokes the certificate.
-    #
-    #     Returns: True if the certificate was successfully scheduled to be added to at least one CRL."""
-    #     if self.certificate_status == CertificateStatus.REVOKED:
-    #         return True  # already revoked, prevent duplicate addition to CRL
-    #
-    #     self.revocation_reason = revocation_reason
-    #     added_to_crl = False
-    #     qs = self.issuer_references.all()
-    #     if qs:
-    #         for entry in qs:
-    #             try:
-    #                 issuing_ca = entry.issuing_ca_model
-    #                 rc = RevokedCertificate(cert=self)
-    #                 rc.issuing_ca = issuing_ca
-    #                 rc.save()
-    #                 added_to_crl = True
-    #                 if issuing_ca.auto_crl:
-    #                     issuing_ca.get_issuing_ca().generate_crl()
-    #             except ObjectDoesNotExist:
-    #                 pass
-    #     if added_to_crl:
-    #         self.certificate_status = CertificateStatus.REVOKED
-    #         self._save()
-    #         return True
-    #     return False
-    #
-    # def remove_private_key(self):
-    #     self.private_key = None
-    #     self._save()
-
-
-class CMPModel(models.Model):
-    """CMP Protocol Model for managing CMP-specific settings."""
-
-    class Operations(models.TextChoices):
-        IR = 'ir', 'Initial Request'
-        CR = 'cr', 'Certificate Request'
-        P10CR = 'p10cr', 'PKCS#10 Certificate Request'
-        CERTCONF = 'certConf', 'Certificate Confirmation'
-        RR = 'rr', 'Revocation Request'
-        NESTED = 'nested', 'Nested Message'
-        KUR = 'kur', 'Key Update Request'
-
-    domain = models.OneToOneField('DomainModel', on_delete=models.CASCADE, related_name='cmp_protocol')
-    status = models.BooleanField(default=True)
-    url_path = models.URLField(max_length=1024, verbose_name='CMP URL Path')
-    operation_modes = models.TextField(blank=True, verbose_name="Selected Operations")
-
-    def get_operation_list(self):
-        """Convert the comma-separated string to a list."""
-        if self.operation_modes:
-            return self.operation_modes.split(',')
-        return []
-
-    def set_operation_list(self, operations):
-        """Convert a list of operations to a comma-separated string."""
-        self.operation_modes = ','.join(operations)
-
-
-class ESTModel(models.Model):
-    """CMP Protocol Model for managing CMP-specific settings."""
-
-    class Operations(models.TextChoices):
-        CACERTS = 'cacerts', 'Distribution of CA Certificates'
-        SIMPLEENROLL = 'simpleenroll', 'Enrollment of Clients'
-        SIMPLEREENROLL = 'simplereenroll', 'Re-enrollment of Clients'
-        FULLCMC = 'fullcmc', 'Full CMC'
-        SERVERKEYGEN = 'serverkeygen', 'Server-Side Key Generation'
-        CSRATTRS = 'csrattrs', 'CSR Attributes'
-
-    domain = models.OneToOneField('DomainModel', on_delete=models.CASCADE, related_name='est_protocol')
-    status = models.BooleanField(default=False)
-    url_path = models.URLField(max_length=1024, verbose_name='CMP URL Path')
-    operation_modes = models.TextField(blank=True, verbose_name="Selected Operations")
-
-    def get_operation_list(self):
-        """Convert the comma-separated string to a list."""
-        if self.operation_modes:
-            return self.operation_modes.split(',')
-        return []
-
-    def set_operation_list(self, operations):
-        """Convert a list of operations to a comma-separated string."""
-        self.operation_modes = ','.join(operations)

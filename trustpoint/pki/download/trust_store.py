@@ -6,15 +6,10 @@ import tarfile
 import zipfile
 
 from django.http import HttpResponse, Http404
-from docutils.nodes import field
 
 from pki.models import CertificateModel, TrustStoreModel
-from pki.serializer import CertificateSerializer, CertificateCollectionSerializer
 
 from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    from pki.serializer import CertificateSerializer, CertificateCollectionSerializer
 
 
 class CertificateFileFormat(enum.Enum):

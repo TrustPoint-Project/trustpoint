@@ -12,9 +12,9 @@ from django.utils.translation import gettext_lazy as _
 
 from pki.models.text_choice import CaLocalization
 
-from pki.validator.field import UniqueNameValidator
+from core.validator.field import UniqueNameValidator
 from pki.models.certificate import CertificateModel
-from pki.serializer import PublicKeySerializer, CertificateCollectionSerializer, CertificateSerializer
+from core.serializer import PublicKeySerializer, CertificateCollectionSerializer, CertificateSerializer
 from pki.issuing_ca import UnprotectedLocalIssuingCa
 
 if TYPE_CHECKING:
@@ -30,8 +30,6 @@ __all__ = [
     'IssuingCaModel',
     'RootCaModel',
     'CertificateChainOrderModel',
-    'RevokedCertificate',
-    'CRLStorage'
 ]
 
 
@@ -90,14 +88,6 @@ class BaseCaModel(models.Model):
         unique=True)
 
     added_at = models.DateTimeField(verbose_name=_('Added at'), auto_now_add=True)
-
-    # TODO: pkcs11_private_key_access -> Foreignkey
-
-    # TODO: remote_ca_config -> ForeignKey
-
-    auto_crl = models.BooleanField(default=True, verbose_name=_('Generate CRL upon certificate revocation.'))
-
-    next_crl_generation_time = models.IntegerField(default=(24*60))
 
     issued_certificates_count = models.PositiveIntegerField(default=0, editable=False)
 
@@ -174,62 +164,3 @@ class CertificateChainOrderModel(models.Model):
 
     def __str__(self):
         return f'CertificateChainOrderModel({self.certificate.common_name})'
-
-
-class RevokedCertificate(models.Model):
-    """Certificate Revocation model."""
-    cert = models.ForeignKey(CertificateModel, on_delete=models.PROTECT)
-    revocation_datetime = models.DateTimeField(auto_now_add=True, help_text='Timestamp when certificate was revoked.')
-    issuing_ca = models.ForeignKey(
-        BaseCaModel, on_delete=models.PROTECT, related_name='revoked_certificates', help_text='Name of Issuing CA.')
-
-    def __str__(self) -> str:
-        """Human-readable string when Certificate got revoked
-
-        Returns:
-            str:
-                CRL as PEM String
-        """
-        return f"{self.cert.serial_number} - Revoked on {self.revocation_datetime.strftime('%Y-%m-%d %H:%M:%S')}"
-
-
-class CRLStorage(models.Model):
-    """Storage of CRLs."""
-    # crl = models.CharField(max_length=4294967296)
-    crl = models.TextField(editable=False)
-    created_at = models.DateTimeField(editable=False)
-    ca = models.ForeignKey(BaseCaModel, on_delete=models.CASCADE)
-
-    def __str__(self) -> str:
-        """PEM representation of CRL
-
-        Returns:
-            str:
-                CRL as PEM String
-        """
-        return f'CrlStorage(IssuingCa({self.ca.unique_name}))'
-
-    def save_crl_in_db(self, crl: str, ca):
-        """Saving crl in Database
-
-        Returns:
-            bool:
-                True
-        """
-        self.crl = crl
-        self.ca = ca
-        self.save()
-
-    @staticmethod
-    def get_crl(ca) -> None | str:
-        result = CRLStorage.get_crl_object(ca)
-        if result:
-            return result.crl
-        return None
-
-    @staticmethod
-    def get_crl_object(ca) -> None | CRLStorage:
-        try:
-            return CRLStorage.objects.filter(ca=ca).latest('created_at')
-        except CRLStorage.DoesNotExist:
-            return None

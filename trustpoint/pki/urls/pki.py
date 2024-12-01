@@ -123,5 +123,4 @@ urlpatterns = [
         name='truststores-delete_confirm',
     ),
     path('truststores/detail/<pk>/', trust_stores.TrustStoresDetailView.as_view(), name='truststore_details'),
-    path('domains/protocol-config/<str:protocol_name>/<int:domain_id>', domains.ProtocolConfigView.as_view(), name='protocol-config'),
 ]

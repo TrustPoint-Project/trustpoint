@@ -6,15 +6,12 @@ from .models import (
     BasicConstraintsExtension,
     CertificateChainOrderModel,
     CertificateModel,
-    CRLStorage,
     DomainModel,
     IssuerAlternativeNameExtension,
     IssuingCaModel,
     KeyUsageExtension,
     SubjectAlternativeNameExtension,
     TrustStoreModel,
-    ESTModel,
-    CMPModel
 )
 
 
@@ -123,19 +120,11 @@ class CertificateAdmin(admin.ModelAdmin):
 
         'cert_pem',
         'public_key_pem',
-        'issuing_ca_model',
 
         'key_usage_extension',
         'subject_alternative_name_extension',
         'issuer_alternative_name_extension',
         'basic_constraints_extension'
-    )
-
-class CRLStorageAdmin(admin.ModelAdmin):
-    readonly_fields = (
-        'crl',
-        'created_at',
-        'ca'
     )
 
 class DomainModelAdmin(admin.ModelAdmin):
@@ -160,7 +149,5 @@ admin.site.register(BasicConstraintsExtension, BasicConstraintsExtensionAdmin)
 admin.site.register(KeyUsageExtension, KeyUsageExtensionAdmin)
 admin.site.register(CertificateModel, CertificateAdmin)
 admin.site.register(CertificateChainOrderModel, CertificateChainOrderModelAdmin)
-admin.site.register(CRLStorage, CRLStorageAdmin)
 admin.site.register(DomainModel, DomainModelAdmin)
-admin.site.register(ESTModel, EstModelAdmin)
-admin.site.register(CMPModel, CmpModelAdmin)
+

@@ -6,8 +6,8 @@ from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from pki.validator.field import UniqueNameValidator
-from . import TrustStoreModel, IssuingCaModel, CMPModel, ESTModel
+from core.validator.field import UniqueNameValidator
+from . import TrustStoreModel, IssuingCaModel
 
 if TYPE_CHECKING:
     from typing import Union
@@ -53,18 +53,6 @@ class DomainModel(models.Model):
         """
         return self.unique_name
 
-    def save(self, *args, **kwargs) -> None:
-        self.full_clean()
-        super().save(*args, **kwargs)
-
-        # TODO: this is not save -> error handling still required. -> undo everything if something fails below
-        cmp_path = '/.well-known/cmp/p/' + self.get_url_path_segment()
-        CMPModel.objects.get_or_create(domain=self, url_path=cmp_path)
-
-        est_path = '/.well-known/est/' + self.get_url_path_segment()
-        ESTModel.objects.get_or_create(domain=self, url_path=est_path)
-
-
     def get_url_path_segment(self):
         """@BytesWelder: I don't know what we need this for. @Alex mentioned this in his doc.
 
@@ -73,12 +61,3 @@ class DomainModel(models.Model):
                 URL path segment.
         """
         return self.unique_name.lower().replace(' ', '-')
-
-    def get_protocol_object(self, protocol):
-        """Get corresponding CMP object"""
-        if protocol == 'cmp':
-            return self.cmp_protocol
-        if protocol == 'est':
-            return self.est_protocol
-        # msg = f'Unknown protocol: {protocol}.'
-        # raise ValueError(msg)

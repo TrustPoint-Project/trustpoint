@@ -10,7 +10,7 @@ from django.db import transaction
 from django.utils.translation import gettext_lazy as _
 
 from pki.models import CertificateChainOrderModel, CertificateModel, IssuingCaModel
-from pki.serializer import CertificateCollectionSerializer, CredentialSerializer, PrivateKeySerializer
+from core.serializer import CertificateCollectionSerializer, CredentialSerializer, PrivateKeySerializer
 from pki.util import Sha256Fingerprint
 
 from . import IssuingCaInitializer, IssuingCaInitializerError
@@ -54,8 +54,6 @@ class IssuingCaAlreadyExistsError(LocalIssuingCaInitializerError):
 class LocalIssuingCaInitializer(IssuingCaInitializer, abc.ABC):
     """Abstract base class for the local issuing CA initializer."""
 
-    _auto_crl: bool
-
     _credential_serializer: CredentialSerializer
     _private_key_serializer: PrivateKeySerializer
     _certificate_collection_serializer: CertificateCollectionSerializer
@@ -97,7 +95,6 @@ class LocalIssuingCaInitializer(IssuingCaInitializer, abc.ABC):
 
             issuing_ca_model = self._issuing_ca_model_class(
                 unique_name=self._unique_name,
-                auto_crl=self._auto_crl,
                 private_key_pem=self._credential_serializer.credential_private_key.as_pkcs1_pem(None).decode('utf-8')
             )
 

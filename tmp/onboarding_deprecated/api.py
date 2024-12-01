@@ -33,7 +33,7 @@ from onboarding_deprecated.schema import (
     AokiFinalizationMessageSchema,
     AokiFinalizationResponseSchema
 )
-from pki import ReasonCode
+
 from pki.models import CertificateModel, TrustStoreModel, DomainModel
 
 log = logging.getLogger('tp.onboarding')
@@ -221,7 +221,6 @@ def aoki_init(request: HttpRequest, data: AokiInitMessageSchema):
 
     if aoki_device:
         log.warning(f'Onboarding existing AOKI device {aoki_device.pk} ({idevid_subject_sn})!')
-        aoki_device.revoke_ldevid(ReasonCode.SUPERSEDED)
     else:
         # onboard the device to the first domain the ownership cert truststore is added to
         domain = ownership_truststore.domain_truststores.first()

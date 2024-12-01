@@ -73,47 +73,7 @@
                             </div>
                         </div>
                     </div>
-
-                    <div class="tp-card-centered-content">
-                        <div class="card-body">
-                            <h3>{% trans 'CRL' %}</h3>
-                            <hr>
-                        <div class="tp-card-split">
-                            <div>{% trans 'CRL' %}</div>
-                            <div>
-                                <a href="{% url 'pki:download-ca-crl' ca_id=issuing_ca.pk %}" class="btn btn-sm btn-primary">
-                                    {% trans "Download CRL" %}
-                                </a>
-                            </div>
-                        </div>
-                        <div class="tp-card-split">
-                            <div>{% trans 'Generate CRL' %}</div>
-                            <div>
-                                <a href="{% url 'pki:generate-ca-crl' ca_id=issuing_ca.pk %}" class="btn btn-sm btn-primary">
-                                    {% trans "Generate CRL" %}
-                                </a>
-                            </div>
-                        </div>
-                        <div class="tp-card-split">
-                            <div>{% trans 'Last CRL generated' %}</div>
-                            <div>
-                                {{ crl.created_at }}
-                            </div>
-                        </div>
-                        <div class="tp-card-split">
-                            <div>{% trans 'Next CRL Generation Time (minutes)' %}</div>
-                            <div>
-                                {{ form|crispy }}
-                            </div>
-                        </div>
-                        <div class="tp-card-split">
-                            <div>{% trans 'Auto CRL' %}</div>
-                            <div>
-                                {{ form_auto_crl|crispy }}
-                            </div>
-                        </div>
-                    </div>
-                    <hr>
+                
                     <div class="tp-card-btn-footer">
                         <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
                         <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>

@@ -3,8 +3,8 @@ from __future__ import annotations
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from .certificate import CertificateModel
-from pki.serializer import CertificateCollectionSerializer
-from pki.validator.field import UniqueNameValidator
+from core.serializer import CertificateCollectionSerializer
+from core.validator.field import UniqueNameValidator
 
 
 __all__ = [

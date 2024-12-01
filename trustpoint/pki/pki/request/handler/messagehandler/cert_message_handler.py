@@ -4,7 +4,6 @@ import ipaddress
 from cryptography import x509
 from cryptography.hazmat.primitives.serialization import Encoding, load_der_public_key
 from cryptography.x509 import ObjectIdentifier
-from cryptography.hazmat.primitives import hashes
 from cryptography.x509 import Certificate
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type import univ
@@ -18,7 +17,7 @@ from pki.models.text_choice import CertificateTypes, TemplateName
 from pki.models import CertificateModel
 from pki.pki.cmp.builder import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts
 from pki.pki.cmp.validator import ExtraCertsValidator, InitializationReqValidator
-from pki.oid import CertificateExtensionOid, NameOid
+from core.oid import CertificateExtensionOid, NameOid
 from pki.util.keys import SignatureSuite
 
 

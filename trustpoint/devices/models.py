@@ -4,7 +4,7 @@ import logging
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from pki.validator.field import UniqueNameValidator
+from core.validator.field import UniqueNameValidator
 
 class IssuedDeviceCertificateModel(models.Model):
     """Issued device certificates model."""

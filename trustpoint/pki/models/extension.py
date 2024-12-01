@@ -13,7 +13,7 @@ from cryptography.x509.extensions import ExtensionNotFound
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-from pki.oid import NameOid, CertificateExtensionOid
+from core.oid import NameOid, CertificateExtensionOid
 
 
 if TYPE_CHECKING:

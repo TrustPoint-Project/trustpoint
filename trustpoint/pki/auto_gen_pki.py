@@ -13,7 +13,7 @@ from pki.initializer.issuing_ca.key_gen import (
     UnprotectedKeyGenLocalIssuingCaInitializer,
     UnprotectedKeyGenLocalRootCaInitializer,
 )
-from pki.models import DomainModel, IssuingCaModel, ReasonCode, RootCaModel
+from pki.models import DomainModel, IssuingCaModel, RootCaModel
 from pki.util.keys import AutoGenPkiKeyAlgorithm
 
 log = logging.getLogger('tp.pki')
@@ -51,7 +51,7 @@ class AutoGenPki:
             log.info('Using existing local auto-generated PKI Root CA')
         except RootCaModel.DoesNotExist:
             log.info('Creating local auto-generated PKI Root CA')
-            root_ca_initializer = UnprotectedKeyGenLocalRootCaInitializer(root_ca_name, key_algorithm, auto_crl=True)
+            root_ca_initializer = UnprotectedKeyGenLocalRootCaInitializer(root_ca_name, key_algorithm)
             root_ca_initializer.initialize()
             root_ca_initializer.save()
 
@@ -69,7 +69,7 @@ class AutoGenPki:
             log.info('Creating local auto-generated PKI Issuing CA')
             root_ca_instance = root_ca.get_issuing_ca()
             issuing_ca_initializer = UnprotectedKeyGenLocalIssuingCaInitializer(
-                'AutoGenPKI_Issuing_CA', key_algorithm, root_ca = root_ca_instance, auto_crl=True)
+                'AutoGenPKI_Issuing_CA', key_algorithm, root_ca = root_ca_instance)
             issuing_ca_initializer.initialize()
             issuing_ca_initializer.save()
 
@@ -103,9 +103,6 @@ class AutoGenPki:
             AutoGenPki._lock.release()
             return
 
-        issuing_ca_instance = issuing_ca.get_issuing_ca()
-        issuing_ca_instance.revoke_all_certificates()
-        issuing_ca_instance.get_issuing_ca_certificate().revoke(revocation_reason=ReasonCode.CESSATION)
         issuing_ca.delete()
         log.warning('Auto-generated PKI disabled.')
         AutoGenPki._lock.release()

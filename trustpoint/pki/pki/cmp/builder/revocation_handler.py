@@ -65,7 +65,7 @@ class RevocationHandler:
         if len(certificate_query) > 1:
             raise BadRequest("Several certificates for serial number found")
 
-        revocation_status =  certificate_query[0].revoke(revocation_reason=reason_code)
+        # revocation_status =  certificate_query[0].revoke(revocation_reason=reason_code)
 
     def _parse_issuer(self, issuer: univ.Sequence) -> str:
         """

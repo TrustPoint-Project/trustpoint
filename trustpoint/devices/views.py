@@ -7,7 +7,7 @@ from django.urls import reverse_lazy
 from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin
 from devices.models import DeviceModel
 from devices.tables import DeviceTable
-from pki.validator.field import UniqueNameValidator
+from core.validator.field import UniqueNameValidator
 
 
 class DeviceContextMixin(TpLoginRequiredMixin, ContextDataMixin):

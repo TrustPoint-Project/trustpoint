@@ -4,13 +4,11 @@ import datetime
 import abc
 
 from cryptography import x509
-from cryptography.hazmat.primitives import hashes
 
 from pki.pki.request.message import PkiResponseMessage, HttpStatusCode, MimeType
 from pki.pki.request.handler import CaRequestHandler
 from pki.models import CertificateModel
-from pki.serializer.certificate import CertificateSerializer
-from pki.serializer.credential import CredentialSerializer
+from core.serializer import CertificateSerializer, CredentialSerializer
 from pki.util.keys import KeyGenerator, SignatureSuite
 
 from typing import TYPE_CHECKING
