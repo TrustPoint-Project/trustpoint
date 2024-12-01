@@ -42,7 +42,7 @@ class TpLoginRequiredMixin(LoginRequiredMixin):
     """LoginRequiredMixin that adds a warning message if the user is not logged in."""
     request: HttpRequest
 
-    def handle_no_permission(self) -> str:
+    def handle_no_permission(self) -> HttpResponseRedirect:
         """Redirects to the login page with a warning message if the user is not logged in."""
         messages.add_message(self.request, messages.WARNING, message=_('Login required!'))
         return super().handle_no_permission()
