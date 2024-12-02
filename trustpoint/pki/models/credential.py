@@ -11,9 +11,9 @@ from core.serializer import (
     PrivateKeySerializer,
 )
 from core.util.x509 import CredentialNormalizer
-from django.core.exceptions import ValidationError
-from django.db import models, transaction
-from django.utils.translation import gettext_lazy as _
+from django.core.exceptions import ValidationError          # type: ignore
+from django.db import models, transaction                   # type: ignore
+from django.utils.translation import gettext_lazy as _      # type: ignore
 
 from pki.models import CertificateModel
 
@@ -21,9 +21,9 @@ if TYPE_CHECKING:
     from typing import Any, ClassVar, Union
 
     from cryptography import x509
-    from cryptography.hazmat.primitives.asymmetric import ec, rsa
+    from cryptography.hazmat.primitives.asymmetric import ec, rsa, ed448, ed25519
 
-    PrivateKey = Union[ec.EllipticCurvePrivateKey, rsa.RSAPrivateKey]
+    PrivateKey = Union[ec.EllipticCurvePrivateKey, rsa.RSAPrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
 __all__ = ['CredentialModel']
