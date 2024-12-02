@@ -26,15 +26,6 @@ class NTPConfig(models.Model):
         default=123,
         help_text="Port used to connect to the NTP server (default is 123)."
     )
-    sync_interval = models.PositiveIntegerField(
-        default=60,
-        help_text="Interval in minutes at which the system synchronizes with the NTP server."
-    )
-    timezone = models.CharField(
-        max_length=64,
-        default='UTC',
-        help_text="Timezone to apply when displaying synchronized time (default is UTC)."
-    )
     enabled = models.BooleanField(
         default=False,
         help_text="Enable or disable NTP synchronization for this configuration."

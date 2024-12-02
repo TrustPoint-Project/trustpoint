@@ -14,3 +14,8 @@ www-data ALL=(root) NOPASSWD: /etc/trustpoint/wizard/transition/wizard_tls_serve
 www-data ALL=(root) NOPASSWD: /etc/trustpoint/wizard/transition/wizard_tls_server_credential_apply_cancel.sh
 www-data ALL=(root) NOPASSWD: /etc/trustpoint/wizard/transition/wizard_demo_data.sh
 www-data ALL=(root) NOPASSWD: /etc/trustpoint/wizard/transition/wizard_create_super_user.sh
+
+www-data ALL=(root) NOPASSWD: /etc/trustpoint/ntp/ntpd_status.sh
+www-data ALL=(root) NOPASSWD: /etc/trustpoint/ntp/start_ntpd.sh
+www-data ALL=(root) NOPASSWD: /etc/trustpoint/ntp/stop_ntpd.sh
+www-data ALL=(root) NOPASSWD: /etc/trustpoint/ntp/update_ntpd_config.sh
