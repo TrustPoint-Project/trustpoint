@@ -13,7 +13,7 @@ import logging
 from pyasn1.error import PyAsn1Error
 
 from devices.models import DeviceModel
-from pki.models.text_choice import CertificateTypes, TemplateName
+from devices import CertificateTypes, TemplateName
 from pki.models import CertificateModel
 from pki.pki.cmp.builder import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts
 from pki.pki.cmp.validator import ExtraCertsValidator, InitializationReqValidator

@@ -15,10 +15,8 @@ from setup_wizard.forms import EmptyForm ,StartupWizardTlsCertificateForm
 from setup_wizard.tls_credential import Generator
 from setup_wizard import SetupWizardState
 
-from pki.initializer import TrustStoreInitializer
-from pki.models import CertificateModel, TrustpointTlsServerCredentialModel, TrustStoreModel, \
-    ActiveTrustpointTlsServerCredentialModel
-from pki.download.trust_store import TrustStoreDownloadResponseBuilder
+from pki.models import CertificateModel
+from pki.models.truststore import TrustpointTlsServerCredentialModel, ActiveTrustpointTlsServerCredentialModel
 
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User

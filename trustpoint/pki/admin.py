@@ -11,7 +11,6 @@ from .models import (
     IssuingCaModel,
     KeyUsageExtension,
     SubjectAlternativeNameExtension,
-    TrustStoreModel,
 )
 
 
@@ -31,12 +30,6 @@ class CertificateChainOrderModelAdmin(admin.ModelAdmin):
         'order',
         'certificate',
         'issuing_ca'
-    ]
-
-
-class TrustStoreAdmin(admin.ModelAdmin):
-    readonly_fields = [
-        'unique_name'
     ]
 
 
@@ -140,7 +133,6 @@ class CmpModelAdmin(admin.ModelAdmin):
     pass
 
 
-admin.site.register(TrustStoreModel, TrustStoreAdmin)
 admin.site.register(IssuingCaModel, IssuingCaAdmin)
 admin.site.register(SubjectAlternativeNameExtension, AlternativeNameExtensionAdmin)
 admin.site.register(IssuerAlternativeNameExtension, AlternativeNameExtensionAdmin)

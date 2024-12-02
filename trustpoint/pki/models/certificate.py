@@ -17,7 +17,6 @@ from django.utils.translation import gettext_lazy as _
 from core.oid import SignatureAlgorithmOid, PublicKeyAlgorithmOid, EllipticCurveOid, CertificateExtensionOid, NameOid
 from core.serializer import CertificateSerializer, PublicKeySerializer, CertificateCollectionSerializer
 
-from pki.models.text_choice import CertificateStatus
 from pki.models.extension import (
     AttributeTypeAndValue,
     BasicConstraintsExtension,
@@ -43,6 +42,13 @@ class CertificateModel(models.Model):
 
     See RFC5280 for more information.
     """
+
+    class CertificateStatus(models.TextChoices):
+        """CertificateModel status"""
+        OK = 'OK', _('OK')
+        REVOKED = 'REV', _('Revoked')
+        EXPIRED = 'EXP', _('Expired')
+        NOT_YET_VALID = 'NYV', _('Not Yet Valid')
 
     # ------------------------------------------------- Django Choices -------------------------------------------------
 

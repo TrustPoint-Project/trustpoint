@@ -7,7 +7,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from core.validator.field import UniqueNameValidator
-from . import TrustStoreModel, IssuingCaModel
+from . import IssuingCaModel
 
 if TYPE_CHECKING:
     from typing import Union
@@ -36,12 +36,6 @@ class DomainModel(models.Model):
         null=True,
         verbose_name=_('Issuing CA'),
         related_name='domain',
-    )
-
-    truststores = models.ManyToManyField(
-        to=TrustStoreModel,
-        verbose_name=_('Truststores'),
-        related_name='domain_truststores'
     )
 
     def __str__(self) -> str:

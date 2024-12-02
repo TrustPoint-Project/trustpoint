@@ -7,7 +7,7 @@ from django.utils.functional import lazy
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from .models import CertificateModel, DomainModel, IssuingCaModel, TrustStoreModel
+from .models import CertificateModel, DomainModel, IssuingCaModel
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
@@ -248,97 +248,3 @@ class ProtocolConfigTable(tables.Table):
 
     class Meta:
         template_name = 'django_tables2/bootstrap4.html'
-
-
-class TrustStoreConfigFromDomainTable(tables.Table):
-    """Table representation of the Trust Store config for assigning to a Domain."""
-
-    row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
-
-    details = tables.TemplateColumn(
-        '<a href="{% url "pki:truststore_details" pk=record.pk %}" class="btn btn-secondary tp-table-btn">Details</a>',
-        orderable=False
-    )
-
-    class Meta:
-        model = TrustStoreModel
-        template_name = 'django_tables2/bootstrap5.html'
-        fields = ('row_checkbox', 'unique_name', 'url_path')
-
-    def render_row_checkbox(self, record: TrustStoreModel):
-        """Render the checkbox reflecting whether the trust store is assigned to the domain."""
-        domain = self.context['domain']
-        is_checked = record in domain.truststores.all()
-
-        return format_html(
-            '<input type="checkbox" name="truststores" value="{}" {}>',
-            record.pk,
-            'checked' if is_checked else ''
-        )
-
-
-class TrustStoreTable(tables.Table):
-    """Table representation of the TrustStoreModel."""
-
-    class Meta:
-        """Table meta class configurations."""
-
-        model = TrustStoreModel
-        template_name = 'django_tables2/bootstrap5.html'
-        # order_by = '-created_at'
-        empty_values = ()
-        _msg = _('No Truststores have been added yet.')
-        empty_text = format_html_lazy('<div class="text-center">{}</div>', _msg)
-
-        fields = (
-            'row_checkbox',
-            'unique_name',
-            'number_of_certificates',
-            'details',
-            'download',
-            'delete'
-        )
-
-    row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
-    details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
-    download = tables.Column(empty_values=(), orderable=False, verbose_name=_('Download'))
-    delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
-
-    @staticmethod
-    def render_details(record: CertificateModel) -> SafeString:
-        """Creates the html hyperlink for the details-view.
-
-        Args:
-            record (Truststore): The current record of the RootCa model.
-
-        Returns:
-            SafeString: The html hyperlink for the details-view.
-        """
-        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn">{}</a>',
-                           record.pk, _('Details'))
-
-    @staticmethod
-    def render_download(record: CertificateModel) -> SafeString:
-        """Creates the html hyperlink for the delete-view.
-
-        Args:
-            record (Truststore): The current record of the RootCa model.
-
-        Returns:
-            SafeString: The html hyperlink for the delete-view.
-        """
-        return format_html('<a href="download/{}/" class="btn btn-primary tp-table-btn">{}</a>',
-                           record.pk, _('Download'))
-
-    @staticmethod
-    def render_delete(record: CertificateModel) -> SafeString:
-        """Creates the html hyperlink for the delete-view.
-
-        Args:
-            record (Truststore): The current record of the RootCa model.
-
-        Returns:
-            SafeString: The html hyperlink for the delete-view.
-        """
-        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
-                           record.pk, _('Delete'))

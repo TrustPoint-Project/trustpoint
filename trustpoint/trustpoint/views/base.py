@@ -198,8 +198,6 @@ class LoggerMixin:
                 return function(*args, **kwargs)
             except Exception as exception:
                 logger = logging.getLogger('trustpoint').getChild(function.__module__).getChild(function.__qualname__)
-                print(logger)
-
                 logger.error(
                     f'Exception in {function.__name__}. '
                     f'Type: {type(exception)}, '

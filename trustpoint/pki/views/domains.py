@@ -8,11 +8,11 @@ from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, UpdateView
-from django_tables2 import RequestConfig, SingleTableView
+from django_tables2 import SingleTableView
 
 from pki.forms import DomainCreateForm, DomainUpdateForm
-from pki.models import DomainModel, TrustStoreModel
-from pki.tables import DomainTable, TrustStoreConfigFromDomainTable
+from pki.models import DomainModel
+from pki.tables import DomainTable
 from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin
 
 
@@ -76,18 +76,10 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
             'rest': domain.rest_protocol if hasattr(domain, 'rest_protocol') else None
         }
 
-        trust_store_table = TrustStoreConfigFromDomainTable(TrustStoreModel.objects.all())
-        RequestConfig(self.request).configure(trust_store_table)
-        context['trust_store_table'] = trust_store_table
-
         return context
 
     def post(self, request, *args, **kwargs):
         domain = self.get_object()
-
-        selected_truststore_ids = request.POST.getlist('truststores')
-        selected_truststores = TrustStoreModel.objects.filter(pk__in=selected_truststore_ids)
-        domain.truststores.set(selected_truststores)
 
         active_protocols = request.POST.getlist('protocols')
 

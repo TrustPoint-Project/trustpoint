@@ -9,9 +9,6 @@ from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-
-from pki.models.text_choice import CaLocalization
-
 from core.validator.field import UniqueNameValidator
 from pki.models.certificate import CertificateModel
 from core.serializer import PublicKeySerializer, CertificateCollectionSerializer, CertificateSerializer
@@ -47,6 +44,16 @@ class ProxyManager(models.Manager):
 
 class BaseCaModel(models.Model):
     """Base CA model for both Issuing and local Root CAs."""
+
+    class CaLocalization(models.TextChoices):
+        """The localization of the CA.
+
+        Auto-Gen PKI is a special case of the local CA, where the root CA is self-signed by the system.
+        """
+        LOCAL = "local", _('Local')
+        REMOTE = "remote", _('Remote')
+        AUTO_GEN_PKI = "autogen", _('AutoGenPKI')
+
     proxy_name = models.CharField(max_length=20) # to distinguish between Issuing and Root CA classes
 
     unique_name = models.CharField(

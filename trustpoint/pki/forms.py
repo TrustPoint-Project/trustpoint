@@ -5,7 +5,6 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from pki.initializer import (
-    TrustStoreInitializer,
     UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer,
     UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer,
 )
@@ -236,72 +235,3 @@ class DomainUpdateForm(DomainBaseForm):
 
     class Meta(DomainBaseForm.Meta):
         fields = DomainBaseForm.Meta.fields
-
-
-class TrustStoreAddForm(forms.Form):
-
-    unique_name = forms.CharField(
-        max_length=256,
-        label=_('Unique Name') + ' ' + UniqueNameValidator.form_label,
-        widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
-        required=True,
-        validators=[UniqueNameValidator()])
-
-    trust_store_file = forms.FileField(label=_('PEM or PKCS#7 File'), required=True)
-
-    def clean_unique_name(self) -> str:
-        unique_name = self.cleaned_data['unique_name']
-        if IssuingCaModel.objects.filter(unique_name=unique_name).exists():
-            raise ValidationError('Unique name is already taken. Choose another one.')
-        return unique_name
-
-    def clean(self):
-        cleaned_data = super().clean()
-        unique_name = cleaned_data.get('unique_name')
-        if unique_name is None:
-            return
-
-        try:
-            # This should not throw any exceptions, even if invalid data was sent via HTTP POST request.
-            # However, just in case.
-            trust_store_file = cleaned_data.get('trust_store_file').read()
-        except Exception:
-            raise ValidationError(
-                _('Unexpected error occurred while trying to get file contents. Please see logs for further details.'),
-                code='unexpected-error')
-
-        try:
-            initializer = TrustStoreInitializer(
-                unique_name=cleaned_data['unique_name'],
-                trust_store=trust_store_file)
-        except Exception as e:
-            raise ValidationError(
-                'Failed to load file. Seems to be malformed.',
-                code='trust-store-file-loading-failed')
-        try:
-            initializer.save()
-        except Exception:
-            raise ValidationError('Unexpected Error. Failed to save validated Trust Store in DB.')
-
-
-class TruststoresDownloadForm(forms.Form):
-    cert_file_container = forms.ChoiceField(
-        label=_('Select Truststore Container Type'),
-        choices=[
-            ('single_file', _('Single File')),
-            ('zip', _('Separate Certificate Files (as .zip file)')),
-            ('tar_gz', _('Separate Certificate Files (as .tar.gz file)'))
-        ],
-        initial='single_file',
-        required=True)
-
-    cert_file_format = forms.ChoiceField(
-        label=_('Select Truststore File Format'),
-        choices=[
-            ('pem', _('PEM (.pem, .crt, .ca-bundle)')),
-            ('der', _('DER (.der, .cer)')),
-            ('pkcs7_pem', _('PKCS#7 (PEM) (.p7b, .p7c, .keystore)')),
-            ('pkcs7_der', _('PKCS#7 (DER) (.p7b, .p7c, .keystore)'))
-        ],
-        initial='pem',
-        required=True)
