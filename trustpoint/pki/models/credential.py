@@ -36,7 +36,7 @@ class CredentialModel(models.Model):
     """The CredentialModel that holds all local credentials used by the Trustpoint.
 
     This model holds both local unprotected credentials, for which the keys and certificates are stored
-    in the DB, but also credentials that are stored within a HSM or TPM utilizing PKCS#11.
+    in the DB, but also credentials that are stored within an HSM or TPM utilizing PKCS#11.
 
     PKCS#11 credentials are not yet supported.
     """
