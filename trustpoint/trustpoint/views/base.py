@@ -34,7 +34,7 @@ class IndexView(RedirectView):
     """View that redirects to the index home page."""
 
     permanent: bool = False
-    pattern_name: str = 'home:dashboard'
+    pattern_name: str = 'pki:certificates'
 
 
 class TpLoginRequiredMixin(LoginRequiredMixin):

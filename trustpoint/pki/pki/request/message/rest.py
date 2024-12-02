@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from cryptography import x509
 import re
-from pki.models import DomainModel
+# from pki.models import DomainModel
 from pki.pki.request.message import (
     PkiRequestMessage,
     PkiResponseMessage,
@@ -47,14 +47,14 @@ class PkiRestCsrRequestMessage(PkiRestRequestMessage):
     _device_name: str
 
     def __init__(self,
-                 domain_model: DomainModel,
+                 # domain_model: DomainModel,
                  raw_content: bytes,
                  device_name: str,
                  serial_number_expected: str | None = None):
         self._serial_number = serial_number_expected
         self._device_name = device_name
         super().__init__(
-            domain_model=domain_model,
+            # domain_model=domain_model,
             raw_content=raw_content,
             received_mimetype=MimeType.APPLICATION_PKCS10,
             received_content_transfer_encoding=None)
@@ -119,13 +119,13 @@ class PkiRestPkcs12RequestMessage(PkiRestRequestMessage):
     _device_name = str
 
     def __init__(self,
-                 domain_model: DomainModel,
+                 # domain_model: DomainModel,
                  serial_number: str,
                  device_name: str):
         self._serial_number = serial_number
         self._device_name = device_name
         super().__init__(
-            domain_model=domain_model,
+            # domain_model=domain_model,
             raw_content=None,
             received_mimetype=None,
             received_content_transfer_encoding=None)

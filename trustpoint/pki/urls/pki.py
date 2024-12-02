@@ -40,47 +40,47 @@ urlpatterns = [
         name='certificate-file-download',
     ),
     path('certificates/detail/<int:pk>/', certificates.CertificateDetailView.as_view(), name='certificate-detail'),
-    path('issuing-cas/', issuing_cas.IssuingCaTableView.as_view(), name='issuing_cas'),
-    path(
-        'issuing-cas/add/method-select/',
-        issuing_cas.IssuingCaAddMethodSelectView.as_view(),
-        name='issuing_cas-add-method_select'),
-    path(
-        'issuing-cas/add/file-import/pkcs12',
-        issuing_cas.IssuingCaAddFileImportPkcs12View.as_view(),
-        name='issuing_cas-add-file_import-pkcs12'
-    ),
-    path(
-        'issuing-cas/add/file-import/separate-files',
-        issuing_cas.IssuingCaAddFileImportSeparateFilesView.as_view(),
-        name='issuing_cas-add-file_import-separate_files'
-    ),
-    path('issuing-cas/detail/<int:pk>/', issuing_cas.IssuingCaDetailView.as_view(), name='issuing_cas-detail'),
-    path('issuing-cas/config/<int:pk>/', issuing_cas.IssuingCaConfigView.as_view(), name='issuing_cas-config'),
-    re_path(
-        r'^issuing-cas/delete/(?P<pks>([0-9]+/)+[0-9]*)/?$',
-        issuing_cas.IssuingCaBulkDeleteConfirmView.as_view(),
-        name='issuing_cas-delete_confirm',
-    ),
-    path('ca-crl/<int:ca_id>/',
-         crls.CRLDownloadView.download_ca_crl,
-         name='download-ca-crl'),
-    path('generate-ca-crl/<int:ca_id>/',
-         crls.CRLDownloadView.generate_ca_crl,
-         name='generate-ca-crl'),
-    path('domains/', domains.DomainTableView.as_view(), name='domains'),
-    path(
-        'domains/add/',
-        domains.DomainCreateView.as_view(),
-        name='domains-add'
-    ),
-    path(
-        'domains/config/<int:pk>/',
-        domains.DomainConfigView.as_view(),
-        name='domains-config'
-    ),
-    path(
-        'domains/detail/<int:pk>/',
-        domains.DomainDetailView.as_view(),
-        name='domains-detail'),
+    # path('issuing-cas/', issuing_cas.IssuingCaTableView.as_view(), name='issuing_cas'),
+    # path(
+    #     'issuing-cas/add/method-select/',
+    #     issuing_cas.IssuingCaAddMethodSelectView.as_view(),
+    #     name='issuing_cas-add-method_select'),
+    # path(
+    #     'issuing-cas/add/file-import/pkcs12',
+    #     issuing_cas.IssuingCaAddFileImportPkcs12View.as_view(),
+    #     name='issuing_cas-add-file_import-pkcs12'
+    # ),
+    # path(
+    #     'issuing-cas/add/file-import/separate-files',
+    #     issuing_cas.IssuingCaAddFileImportSeparateFilesView.as_view(),
+    #     name='issuing_cas-add-file_import-separate_files'
+    # ),
+    # path('issuing-cas/detail/<int:pk>/', issuing_cas.IssuingCaDetailView.as_view(), name='issuing_cas-detail'),
+    # path('issuing-cas/config/<int:pk>/', issuing_cas.IssuingCaConfigView.as_view(), name='issuing_cas-config'),
+    # re_path(
+    #     r'^issuing-cas/delete/(?P<pks>([0-9]+/)+[0-9]*)/?$',
+    #     issuing_cas.IssuingCaBulkDeleteConfirmView.as_view(),
+    #     name='issuing_cas-delete_confirm',
+    # ),
+    # path('ca-crl/<int:ca_id>/',
+    #      crls.CRLDownloadView.download_ca_crl,
+    #      name='download-ca-crl'),
+    # path('generate-ca-crl/<int:ca_id>/',
+    #      crls.CRLDownloadView.generate_ca_crl,
+    #      name='generate-ca-crl'),
+    # path('domains/', domains.DomainTableView.as_view(), name='domains'),
+    # path(
+    #     'domains/add/',
+    #     domains.DomainCreateView.as_view(),
+    #     name='domains-add'
+    # ),
+    # path(
+    #     'domains/config/<int:pk>/',
+    #     domains.DomainConfigView.as_view(),
+    #     name='domains-config'
+    # ),
+    # path(
+    #     'domains/detail/<int:pk>/',
+    #     domains.DomainDetailView.as_view(),
+    #     name='domains-detail'),
 ]
