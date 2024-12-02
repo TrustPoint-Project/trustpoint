@@ -26,7 +26,10 @@ if TYPE_CHECKING:
     PrivateKey = Union[ec.EllipticCurvePrivateKey, rsa.RSAPrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
-__all__ = ['CredentialModel']
+__all__ = [
+    'CredentialModel',
+    'CertificateChainOrderModel'
+]
 
 
 class CredentialModel(models.Model):
