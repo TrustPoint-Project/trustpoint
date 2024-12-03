@@ -147,11 +147,12 @@ LANGUAGES = [
     ("en", _("English")),
 ]
 
-TIME_ZONE = 'UTC'
+
 
 USE_I18N = True
 
 USE_TZ = True
+TIME_ZONE = 'UTC'
 
 LOCALE_PATHS = [BASE_DIR / Path('trustpoint/locale')]
 

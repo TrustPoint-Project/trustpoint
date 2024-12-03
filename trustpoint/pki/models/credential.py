@@ -1,8 +1,10 @@
-"""Django Models that hold and store X.509 Credentials."""
+"""Module that contains the CredentialModel."""
 
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
+
+from django.db.models import QuerySet
 
 from core.serializer import (
     CertificateCollectionSerializer,
@@ -10,26 +12,22 @@ from core.serializer import (
     CredentialSerializer,
     PrivateKeySerializer,
 )
+from django.core.exceptions import ValidationError  # type: ignore[import-untyped]
+from django.db import models, transaction  # type: ignore[import-untyped]
+from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
 from core.util.x509 import CredentialNormalizer
-from django.core.exceptions import ValidationError          # type: ignore
-from django.db import models, transaction                   # type: ignore
-from django.utils.translation import gettext_lazy as _      # type: ignore
-
 from pki.models import CertificateModel
 
 if TYPE_CHECKING:
     from typing import Any, ClassVar, Union
 
     from cryptography import x509
-    from cryptography.hazmat.primitives.asymmetric import ec, rsa, ed448, ed25519
+    from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 
     PrivateKey = Union[ec.EllipticCurvePrivateKey, rsa.RSAPrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
-__all__ = [
-    'CredentialModel',
-    'CertificateChainOrderModel'
-]
+__all__ = ['CredentialModel', 'CertificateChainOrderModel']
 
 
 class CredentialModel(models.Model):
@@ -41,20 +39,22 @@ class CredentialModel(models.Model):
     PKCS#11 credentials are not yet supported.
     """
 
-    class CredentialAllowedUsageChoice(models.IntegerChoices):
-        """The CredentialAllowedUsageChoice defines the allowed usage of the credential.
+    class CredentialTypeChoice(models.IntegerChoices):
+        """The CredentialTypeChoice defines the type of the credential and thus implicitly restricts its usage.
 
         It is intended to limit the credential usage to specific cases, e.g. usage as Issuing CA.
         The abstractions using the CredentialModel are responsible to check that the credential has
-        the correct and expected CredentialAllowedUsageChoice.
+        the correct and expected CredentialTypeChoice.
         """
 
         TRUSTPOINT_TLS_SERVER = 0, _('Trustpoint TLS Server')
         ROOT_CA = 1, _('Root CA')
         ISSUING_CA = 2, _('Issuing CA')
+        AUTOGEN_ROOT_CA = 3, _('Auto-Generated Root CA')
+        AUTOGEN_ISSUING_CA = 4, _('Auto-Generated ISSUING CA')
 
-    credential_allowed_usage = models.IntegerField(
-        verbose_name=_('Credential Allowed Usages'), choices=CredentialAllowedUsageChoice
+    credential_type = models.IntegerField(
+        verbose_name=_('Credential Type'), choices=CredentialTypeChoice
     )
     private_key = models.CharField(verbose_name='Private key (PEM)', max_length=65536, editable=False)
     certificate = models.ForeignKey(
@@ -64,48 +64,52 @@ class CredentialModel(models.Model):
         CertificateModel, blank=True, through='CertificateChainOrderModel', related_name='credential_certificate_chains'
     )
 
+    created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
+
+    def __repr__(self) -> str:
+        return (
+            f'CredentialModel(credential_type={self.credential_type}, '
+            f'certificate={self.certificate})'
+        )
     def __str__(self) -> str:
         """Returns a human-readable string that represents this CertificateChainOrderModel entry.
 
         Returns:
             str: Human-readable string that represents this CertificateChainOrderModel entry.
         """
-        return (
-            f'CredentialModel(credential_allowed_usage={self.credential_allowed_usage}, '
-            f'certificate={self.certificate})'
-        )
-
-    def save(self, *_: tuple[Any], **__: dict[str, Any]) -> None:
-        """Overwrites the save method such that always a NotImplementedError will be raised.
-
-        Use the save_credential_serializer() method to store credentials.
-
-        Returns:
-            None
-
-        Raises:
-            NotImplementedError: Will always be raised.
-        """
-        err_msg = 'You cannot save credentials directly. Use the save_credential_serializer() method.'
-        raise NotImplementedError(err_msg)
+        return self.__repr__()
 
     @classmethod
-    def save_credential_serializer(cls, credential_serializer: CredentialSerializer) -> CredentialModel:
+    def save_credential_serializer(
+            cls, credential_serializer: CredentialSerializer,
+            credential_type: CredentialModel.CredentialTypeChoice
+    ) -> CredentialModel:
         """This method will try to normalize the credential_serializer and then save it to the database.
 
         Args:
             credential_serializer: The credential serializer to store in the database.
+            credential_type: The credential type to set.
 
         Returns:
             CredentialModel: The stored credential model.
         """
-        normalized_credential = CredentialNormalizer(credential_serializer).normalized_credential
-        return cls._save_normalized_credential_serializer(normalized_credential)
+        normalized_credential_serializer = CredentialNormalizer(credential_serializer).normalized_credential
+        return cls._save_normalized_credential_serializer(
+            normalized_credential_serializer=normalized_credential_serializer,
+            credential_type=credential_type
+        )
+
+    @property
+    def ordered_certificate_chain_queryset(self) -> QuerySet:
+        return self.certificatechainordermodel_set.order_by('order')
 
     @classmethod
     @transaction.atomic
     def _save_normalized_credential_serializer(
-        cls, normalized_credential_serializer: CredentialSerializer
+            cls,
+            normalized_credential_serializer: CredentialSerializer,
+            credential_type: CredentialModel.CredentialTypeChoice
     ) -> CredentialModel:
         """This method will store a credential that is expected to be normalized..
 
@@ -115,13 +119,21 @@ class CredentialModel(models.Model):
         Returns:
             CredentialModel: The stored credential model.
         """
+
+        certificate = CertificateModel.save_certificate(
+            normalized_credential_serializer.credential_certificate
+        )
+
+        # TODO(AlexHx8472): Verify that the credential is valid in respect to the credential_type!!!
+
         credential_model = cls.objects.create(
+            credential_type=credential_type,
             private_key=normalized_credential_serializer.credential_private_key.as_pkcs8_pem().decode(),
-            certifciate=normalized_credential_serializer.credential_certificate.as_pem().decode(),
+            certificate=certificate
         )
 
         for order, certificate in enumerate(normalized_credential_serializer.additional_certificates.as_crypto()):
-            certificate_model = CertificateModel.save_certificate(certificate, exist_ok=True)
+            certificate_model = CertificateModel.save_certificate(certificate)
             CertificateChainOrderModel.objects.create(
                 certificate=certificate_model, credential=credential_model, order=order
             )
@@ -185,6 +197,8 @@ class CredentialModel(models.Model):
         )
 
 
+
+
 class CertificateChainOrderModel(models.Model):
     """This Model is used to preserve the order of certificates in credential certificate chains."""
 
@@ -202,17 +216,20 @@ class CertificateChainOrderModel(models.Model):
         ordering: ClassVar = ['order']
         constraints: ClassVar = [models.UniqueConstraint(fields=['credential', 'order'], name='unique_group_order')]
 
+    def __repr__(self) -> str:
+        return (
+            f'CertificateChainOrderModel(credential={self.credential}, '
+            f'certificate={self.certificate}, '
+            f'order={self.order})'
+        )
+
     def __str__(self) -> str:
         """Returns a human-readable string that represents this CertificateChainOrderModel entry.
 
         Returns:
             str: Human-readable string that represents this CertificateChainOrderModel entry.
         """
-        return (
-            f'CertificateChainOrderModel(credential={self.credential}, '
-            f'certificate={self.certificate}, '
-            f'order={self.order})'
-        )
+        return self.__repr__()
 
     # TODO(AlexHx8472): Validate certificate chain!
     def save(self, *args: tuple[Any], **kwargs: dict[str, Any]) -> None:
@@ -233,7 +250,7 @@ class CertificateChainOrderModel(models.Model):
             ValueError:
                 If the CertificateChainOrderModel entry to be stored does not have the correct order.
         """
-        max_order = self.get_max_order()
+        max_order = self._get_max_order()
 
         if self.order != max_order + 1:
             err_msg = f'Cannot add Membership with order {self.order}. Expected {max_order + 1}.'
@@ -258,7 +275,7 @@ class CertificateChainOrderModel(models.Model):
                 If the CertificateChainOrderModel entry does not have the highest order in the corresponding
                 credential certificate chain.
         """
-        max_order = self.get_max_order()
+        max_order = self._get_max_order()
 
         if self.order != max_order:
             err_msg = (
@@ -269,7 +286,7 @@ class CertificateChainOrderModel(models.Model):
 
         super().delete(*args, **kwargs)
 
-    def get_max_order(self) -> int:
+    def _get_max_order(self) -> int:
         """Gets highest order of a certificate of a credential certificate chain.
 
         Returns:

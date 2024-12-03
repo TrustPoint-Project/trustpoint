@@ -1,9 +1,6 @@
-"""Module that contains all models corresponding to the PKI app."""
-
-
+"""Module that contains the CertificateModel."""
 from __future__ import annotations
 
-import logging
 from typing import TYPE_CHECKING
 
 from cryptography import x509
@@ -15,7 +12,8 @@ from django.utils.translation import gettext_lazy as _
 
 
 from core.oid import SignatureAlgorithmOid, PublicKeyAlgorithmOid, EllipticCurveOid, CertificateExtensionOid, NameOid
-from core.serializer import CertificateSerializer, PublicKeySerializer, CertificateCollectionSerializer
+from core.serializer import CertificateSerializer, PublicKeySerializer
+from trustpoint.views.base import LoggerMixin
 
 from pki.models.extension import (
     AttributeTypeAndValue,
@@ -30,14 +28,12 @@ if TYPE_CHECKING:
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
     PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
 
-log = logging.getLogger('tp.pki')
-
 
 __all__ = [
     'CertificateModel',
 ]
 
-class CertificateModel(models.Model):
+class CertificateModel(LoggerMixin, models.Model):
     """X509 Certificate Model.
 
     See RFC5280 for more information.
@@ -72,6 +68,8 @@ class CertificateModel(models.Model):
 
     certificate_status = models.CharField(verbose_name=_('Status'), max_length=4, choices=CertificateStatus,
                                           editable=False, default=CertificateStatus.OK)
+
+    is_self_signed = models.BooleanField(verbose_name=_('Self-Signed'), null=False, blank=False)
 
     # TODO: This is kind of a hack.
     # TODO: This information is already available through the subject relation
@@ -119,12 +117,6 @@ class CertificateModel(models.Model):
     # X.509 Certificate Serial Number (RFC5280)
     # This is not part of the subject. It is the serial number of the certificate itself.
     serial_number = models.CharField(verbose_name=_('Serial Number'), max_length=256, editable=False)
-
-    issuer_references = models.ManyToManyField(
-        'self',
-        verbose_name=_('Issuers'),
-        symmetrical=False,
-        related_name='issued_certificate_references')
 
     issuer = models.ManyToManyField(
         AttributeTypeAndValue,
@@ -188,9 +180,9 @@ class CertificateModel(models.Model):
     cert_pem = models.CharField(verbose_name=_('Certificate (PEM)'), max_length=65536, editable=False, unique=True)
     public_key_pem = models.CharField(verbose_name=_('Public Key (PEM, SPKI)'), max_length=65536, editable=False)
 
-    # ------------------------------------------ Trustpoint Creation Data ------------------------------------------
+    # ----------------------------------------- CertificateModel Creation Data -----------------------------------------
 
-    added_at = models.DateTimeField(verbose_name=_('Added at'), auto_now_add=True)
+    created_at = models.DateTimeField(verbose_name=_('Created-At'), auto_now_add=True)
 
     # --------------------------------------------- Data Retrieval Methods ---------------------------------------------
 
@@ -199,36 +191,6 @@ class CertificateModel(models.Model):
 
     def get_public_key_serializer(self) -> PublicKeySerializer:
         return PublicKeySerializer(self.public_key_pem)
-
-    # def get_certificate_status(self):
-    #     status_mapping = dict(CertificateStatus.choices)
-    #     return status_mapping.get(self.certificate_status)
-
-    # TODO: check order of chains
-    def get_certificate_chains(self, include_self: bool = True) -> list[list[CertificateModel]]:
-        if self.is_self_signed:
-            if include_self:
-                return [[self]]
-            else:
-                return [[]]
-
-        cert_chains = []
-        for issuer_reference in self.issuer_references.all():
-            cert_chains.extend(issuer_reference.get_certificate_chains())
-
-        if include_self:
-            for cert_chain in cert_chains:
-                cert_chain.append(self)
-
-        return cert_chains
-
-    # TODO: check order of chains
-    def get_certificate_chain_serializers(self, include_self: bool = True) -> list[CertificateCollectionSerializer]:
-        certificate_chain_serializers = []
-        for cert_chain in self.get_certificate_chains(include_self=include_self):
-            certificate_chain_serializers.append(CertificateCollectionSerializer(
-                [cert.get_certificate_serializer().as_crypto() for cert in cert_chain]))
-        return certificate_chain_serializers
 
     # --------------------------------------------------- Extensions ---------------------------------------------------
     # order of extensions follows RFC5280
@@ -292,18 +254,6 @@ class CertificateModel(models.Model):
     # --------------------------------------------------- Properties ---------------------------------------------------
 
     @property
-    def is_cross_signed(self) -> bool:
-        if len(self.issuer_references.all()) > 1:
-            return True
-        return False
-
-    @property
-    def is_self_signed(self) -> bool:
-        if len(self.issuer_references.all()) == 1 and self.issuer_references.first() == self:
-            return True
-        return False
-
-    @property
     def is_ca(self) -> bool:
         if self.basic_constraints_extension and self.basic_constraints_extension.ca:
             return True
@@ -319,8 +269,11 @@ class CertificateModel(models.Model):
     def is_end_entity(self) -> bool:
         return not self.is_ca
 
-    def __str__(self) -> str:
+    def __repr__(self) -> str:
         return f'Certificate(CN={self.common_name})'
+
+    def __str__(self) -> str:
+        return self.common_name
 
     @classmethod
     def _get_cert_by_sha256_fingerprint(cls, sha256_fingerprint: str) -> None | CertificateModel:
@@ -366,17 +319,15 @@ class CertificateModel(models.Model):
         return super().save(*args, **kwargs)
 
     @classmethod
-    def _save_certificate(cls, certificate: x509.Certificate, exist_ok: bool = False) -> 'CertificateModel':
+    def _save_certificate(cls, certificate: x509.Certificate | CertificateSerializer) -> CertificateModel:
+        if isinstance(certificate, CertificateSerializer):
+            certificate = certificate.as_crypto()
 
         # ------------------------------------------------ Exist Checks ------------------------------------------------
 
-        # Handles the case in which the certificate is already stored in the database
-        cert_in_db = cls._get_cert_by_sha256_fingerprint(certificate.fingerprint(algorithm=hashes.SHA256()).hex())
-        if cert_in_db and exist_ok:
-            return cert_in_db
-        if cert_in_db and not exist_ok:
-            log.error(f'Attempted to save certificate {cert_in_db.common_name} already stored in the database.')
-            raise ValueError('Certificate already stored in the database.')
+        certificate_in_db = cls._get_cert_by_sha256_fingerprint(certificate.fingerprint(algorithm=hashes.SHA256()).hex())
+        if certificate_in_db:
+            return certificate_in_db
 
         # --------------------------------------------- Custom Data Fields ---------------------------------------------
 
@@ -402,6 +353,12 @@ class CertificateModel(models.Model):
         subject_public_bytes = certificate.subject.public_bytes().hex().upper()
 
         spki_algorithm_oid, spki_key_size, spki_ec_curve_oid = cls._get_spki_info(certificate)
+
+        try:
+            certificate.verify_directly_issued_by(certificate)
+            is_self_signed = True
+        except (ValueError, TypeError, InvalidSignature):
+            is_self_signed = False
 
         # -------------------------------------------------- Raw Data --------------------------------------------------
 
@@ -430,36 +387,37 @@ class CertificateModel(models.Model):
             spki_ec_curve=spki_ec_curve_oid.verbose_name,
             cert_pem=cert_pem,
             public_key_pem=public_key_pem,
+            is_self_signed=is_self_signed
         )
 
         # --------------------------------------------- Store in DataBase ----------------------------------------------
 
         return cls._atomic_save(cert_model=cert_model, certificate=certificate, subject=subject, issuer=issuer)
 
-    # TODO: remove code duplication
     @staticmethod
-    def _save_subject(cert_model: CertificateModel, subject: list[tuple[str, str]]) -> None:
+    def _save_attribute_and_value_pairs(oid: str, value: str) -> AttributeTypeAndValue:
+        existing_attr_type_and_val = AttributeTypeAndValue.objects.filter(oid=oid, value=value).first()
+        if existing_attr_type_and_val:
+            return existing_attr_type_and_val
+
+        attr_type_and_val = AttributeTypeAndValue(oid=oid, value=value)
+        attr_type_and_val.save()
+        return attr_type_and_val
+
+    @classmethod
+    def _save_subject(cls, cert_model: CertificateModel, subject: list[tuple[str, str]]) -> None:
         for entry in subject:
             oid, value = entry
-            existing_attr_type_and_val = AttributeTypeAndValue.objects.filter(oid=oid, value=value).first()
-            if existing_attr_type_and_val:
-                cert_model.subject.add(existing_attr_type_and_val)
-            else:
-                attr_type_and_val = AttributeTypeAndValue(oid=oid, value=value)
-                attr_type_and_val.save()
-                cert_model.subject.add(attr_type_and_val)
+            attr_type_and_val = cls._save_attribute_and_value_pairs(oid=oid, value=value)
+            cert_model.subject.add(attr_type_and_val)
 
-    @staticmethod
-    def _save_issuer(cert_model: CertificateModel, issuer: list[tuple[str, str]]) -> None:
+    @classmethod
+    def _save_issuer(cls, cert_model: CertificateModel, issuer: list[tuple[str, str]]) -> None:
         for entry in issuer:
             oid, value = entry
-            existing_attr_type_and_val = AttributeTypeAndValue.objects.filter(oid=oid, value=value).first()
-            if existing_attr_type_and_val:
-                cert_model.issuer.add(existing_attr_type_and_val)
-            else:
-                attr_type_and_val = AttributeTypeAndValue(oid=oid, value=value)
-                attr_type_and_val.save()
-                cert_model.issuer.add(attr_type_and_val)
+            attr_type_and_val = cls._save_attribute_and_value_pairs(oid=oid, value=value)
+            cert_model.issuer.add(attr_type_and_val)
+
 
     @staticmethod
     def _save_extensions(cert_model: CertificateModel, cert: x509.Certificate) -> None:
@@ -496,32 +454,6 @@ class CertificateModel(models.Model):
         cls._save_extensions(cert_model, certificate)
         cert_model._save()  # noqa: SLF001
 
-        # ------------------------------------------ Adding issuer references ------------------------------------------
-
-        issuer_candidates = cls.objects.filter(subject_public_bytes=cert_model.issuer_public_bytes)
-
-        for issuer_candidate in issuer_candidates:
-            try:
-                certificate.verify_directly_issued_by(
-                    issuer_candidate.get_certificate_serializer().as_crypto())
-                cert_model.issuer_references.add(issuer_candidate)
-                if hasattr(issuer_candidate, 'issuing_ca_model'):
-                    issuer_candidate.issuing_ca_model.increment_issued_certificates_count()
-            except (ValueError, TypeError, InvalidSignature):
-                pass
-
-        # ------------------------------------ Adding issuer references on children ------------------------------------
-
-        issued_candidates = cls.objects.filter(issuer_public_bytes=cert_model.subject_public_bytes)
-
-        for issued_candidate in issued_candidates:
-            try:
-                issued_candidate.get_certificate_serializer().as_crypto().verify_directly_issued_by(certificate)
-                issued_candidate.issuer_references.add(cert_model)
-            except (ValueError, TypeError, InvalidSignature):
-                pass
-
-        log.info(f'Saved certificate {cert_model.common_name} in the database.')
         return cert_model
 
     # ---------------------------------------------- Public save methods -----------------------------------------------
@@ -541,10 +473,10 @@ class CertificateModel(models.Model):
         )
 
     @classmethod
-    def save_certificate(cls, certificate: x509.Certificate, exist_ok: bool = False) -> CertificateModel:
+    def save_certificate(cls, certificate: x509.Certificate | CertificateSerializer) -> CertificateModel:
         """Store the certificate in the database.
 
         Returns:
             trustpoint.pki.models.Certificate: The certificate object that has just been saved.
         """
-        return cls._save_certificate(certificate=certificate, exist_ok=exist_ok)
+        return cls._save_certificate(certificate=certificate)

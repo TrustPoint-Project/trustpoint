@@ -1,4 +1,4 @@
-"""Module that contains all models corresponding to the PKI app."""
+"""Module that contains X.509 Extension Models."""
 
 
 from __future__ import annotations

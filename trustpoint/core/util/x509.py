@@ -3,7 +3,6 @@ from __future__ import annotations
 from cryptography.exceptions import InvalidSignature
 
 from core.serializer import CertificateSerializer, CertificateCollectionSerializer, CredentialSerializer
-from cryptography import x509
 from trustpoint.views.base import LoggerMixin
 
 
@@ -73,9 +72,9 @@ class CertificateChainExtractor(LoggerMixin):
             if len(issuers) == 0:
                 break
             elif len(issuers) == 1:
-                certificate_chain.append(issuers[0])
                 if current_certificate == issuers[0]:
                     break
+                certificate_chain.append(issuers[0])
                 current_certificate = issuers[0]
                 continue
             else:
@@ -156,7 +155,7 @@ class CredentialNormalizer(LoggerMixin):
             (
                 credential_serializer.credential_private_key,
                 credential_serializer.credential_certificate,
-                normalized_additional_certificates
+                normalized_additional_certificates.certificate_chain
             )
         )
 

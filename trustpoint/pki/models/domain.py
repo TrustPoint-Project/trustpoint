@@ -1,3 +1,4 @@
+"""Module that contains the DomainModel."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -7,7 +8,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from core.validator.field import UniqueNameValidator
-# from . import IssuingCaModel
+from . import IssuingCaModel
 
 if TYPE_CHECKING:
     from typing import Union
@@ -16,42 +17,36 @@ if TYPE_CHECKING:
 
 
 __all__ = [
-    # 'DomainModel'
+    'DomainModel'
 ]
 
 
-# class DomainModel(models.Model):
-#     """Endpoint Profile model."""
-#
-#     unique_name = models.CharField(
-#         _('Unique Name'),
-#         max_length=100,
-#         unique=True,
-#         validators=[UniqueNameValidator()])
-#
-#     issuing_ca = models.ForeignKey(
-#         IssuingCaModel,
-#         on_delete=models.CASCADE,
-#         blank=True,
-#         null=True,
-#         verbose_name=_('Issuing CA'),
-#         related_name='domain',
-#     )
-#
-#     def __str__(self) -> str:
-#         """Human-readable representation of the Domain model instance.
-#
-#         Returns:
-#             str:
-#                 Human-readable representation of the EndpointProfile model instance.
-#         """
-#         return self.unique_name
-#
-#     def get_url_path_segment(self):
-#         """@BytesWelder: I don't know what we need this for. @Alex mentioned this in his doc.
-#
-#         Returns:
-#             str:
-#                 URL path segment.
-#         """
-#         return self.unique_name.lower().replace(' ', '-')
+class DomainModel(models.Model):
+    """Domain Model."""
+
+    unique_name = models.CharField(
+        _('Domain Name'),
+        max_length=100,
+        unique=True,
+        validators=[UniqueNameValidator()])
+
+    issuing_ca = models.ForeignKey(
+        IssuingCaModel,
+        on_delete=models.CASCADE,
+        blank=True,
+        null=True,
+        verbose_name=_('Issuing CA'),
+        related_name='domains',
+    )
+
+    def __repr(self) -> str:
+        return f'DomainModel(unique_name={self.unique_name})'
+
+    def __str__(self) -> str:
+        """Human-readable representation of the Domain model instance.
+
+        Returns:
+            str:
+                Human-readable representation of the EndpointProfile model instance.
+        """
+        return self.unique_name

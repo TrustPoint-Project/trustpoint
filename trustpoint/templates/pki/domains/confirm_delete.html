@@ -36,9 +36,9 @@
                                 <div>{% trans 'Issuing CA Certificate' %}</div>
                                 <div>
                                     {% if domain.issuing_ca %}
-                                    <a href="{% url 'pki:certificate-detail' pk=domain.issuing_ca.issuing_ca_certificate.id %}">
-                                        {% if domain.issuing_ca.issuing_ca_certificate.common_name %}
-                                            CN: {{ domain.issuing_ca.issuing_ca_certificate.common_name }}
+                                    <a href="{% url 'pki:certificate-detail' pk=domain.issuing_ca.credential.certificate.id %}">
+                                        {% if domain.issuing_ca.credential.certificate.common_name %}
+                                            CN: {{ domain.issuing_ca.credential.certificate.common_name }}
                                         {% else %}
                                             {% trans 'Issuing CA Certificate' %}
                                         {% endif %}
