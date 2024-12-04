@@ -3,15 +3,13 @@
 from __future__ import annotations
 
 from cryptography import x509
-
-from pki.models import DomainModel
+import re
+# from pki.models import DomainModel
 from pki.pki.request.message import (
     PkiRequestMessage,
     PkiResponseMessage,
     MimeType,
     HttpStatusCode)
-
-from util.strings import StringValidator
 
 from typing import TYPE_CHECKING
 
@@ -21,6 +19,16 @@ if TYPE_CHECKING:
     from typing import Union
     from cryptography.hazmat.primitives.asymmetric import rsa, ec, ed448, ed25519
     PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
+
+
+class StringValidator:
+    """Contains utility functions for string validation"""
+
+    @staticmethod
+    def is_urlsafe(string: str) -> bool:
+        """Returns True if string only contains alphanumeric characters and '-' or '_'"""
+        p = re.compile(r'[^a-zA-Z0-9\-_]')
+        return p.search(string) is None
 
 
 class PkiRestRequestMessage(PkiRequestMessage):
@@ -39,14 +47,14 @@ class PkiRestCsrRequestMessage(PkiRestRequestMessage):
     _device_name: str
 
     def __init__(self,
-                 domain_model: DomainModel,
+                 # domain_model: DomainModel,
                  raw_content: bytes,
                  device_name: str,
                  serial_number_expected: str | None = None):
         self._serial_number = serial_number_expected
         self._device_name = device_name
         super().__init__(
-            domain_model=domain_model,
+            # domain_model=domain_model,
             raw_content=raw_content,
             received_mimetype=MimeType.APPLICATION_PKCS10,
             received_content_transfer_encoding=None)
@@ -111,13 +119,13 @@ class PkiRestPkcs12RequestMessage(PkiRestRequestMessage):
     _device_name = str
 
     def __init__(self,
-                 domain_model: DomainModel,
+                 # domain_model: DomainModel,
                  serial_number: str,
                  device_name: str):
         self._serial_number = serial_number
         self._device_name = device_name
         super().__init__(
-            domain_model=domain_model,
+            # domain_model=domain_model,
             raw_content=None,
             received_mimetype=None,
             received_content_transfer_encoding=None)

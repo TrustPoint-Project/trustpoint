@@ -2,7 +2,7 @@
 
 from django.urls import path, re_path
 
-from pki.views import certificates, crls, domains, issuing_cas, trust_stores
+from pki.views import certificates, issuing_cas, domains
 
 app_name = 'pki'
 
@@ -62,12 +62,6 @@ urlpatterns = [
         issuing_cas.IssuingCaBulkDeleteConfirmView.as_view(),
         name='issuing_cas-delete_confirm',
     ),
-    path('ca-crl/<int:ca_id>/',
-         crls.CRLDownloadView.download_ca_crl,
-         name='download-ca-crl'),
-    path('generate-ca-crl/<int:ca_id>/',
-         crls.CRLDownloadView.generate_ca_crl,
-         name='generate-ca-crl'),
     path('domains/', domains.DomainTableView.as_view(), name='domains'),
     path(
         'domains/add/',
@@ -84,44 +78,8 @@ urlpatterns = [
         domains.DomainDetailView.as_view(),
         name='domains-detail'),
     re_path(
-        r'^domains/delete/(?P<pks>[1-9][0-9]*(?:/[1-9][0-9]*)*)/?$',
-        domains.DomainBulkDeleteConfirmView.as_view(),
+        r'^domains/delete/(?P<pks>([0-9]+/)+[0-9]*)/?$',
+        domains.DomainCaBulkDeleteConfirmView.as_view(),
         name='domains-delete_confirm',
     ),
-    path('truststores/', trust_stores.TrustStoresTableView.as_view(), name='truststores'),
-    path(
-        'truststores/add/',
-        trust_stores.TrustStoreAddView.as_view(),
-        name='truststores-add'
-    ),
-    re_path(
-        r'^truststores/download/(?P<pks>([0-9]+/)+[0-9]+)/?$',
-        trust_stores.TrustStoresMultipleDownloadView.as_view(),
-        name='truststores-download'
-    ),
-    re_path(
-        r'^truststores/download/multiple/'
-        r'(?P<file_format>[a-zA-Z0-9_]+)/'
-        r'(?P<archive_format>[a-zA-Z0-9_]+)/'
-        r'(?P<pks>([0-9]+/)+[0-9]+)/?$',
-        trust_stores.TrustStoresMultipleDownloadView.as_view(),
-        name='truststores-file-download'
-    ),
-    re_path(
-        r'^truststores/download/(?P<pk>[0-9]+)/?$',
-        trust_stores.TrustStoresDownloadView.as_view(),
-        name='truststore-download',
-    ),
-    re_path(
-        r'^truststores/download/(?P<file_format>[a-zA-Z0-9_]+)/(?P<pk>[0-9]+)/?',
-        trust_stores.TrustStoresDownloadView.as_view(),
-        name='truststore-file-download',
-    ),
-    re_path(
-        r'^truststores/delete/(?P<pks>([0-9]+/)+[0-9]*)/?$',
-        trust_stores.TrustStoresBulkDeleteConfirmView.as_view(),
-        name='truststores-delete_confirm',
-    ),
-    path('truststores/detail/<pk>/', trust_stores.TrustStoresDetailView.as_view(), name='truststore_details'),
-    path('domains/protocol-config/<str:protocol_name>/<int:domain_id>', domains.ProtocolConfigView.as_view(), name='protocol-config'),
 ]

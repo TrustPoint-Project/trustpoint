@@ -1,13 +1,13 @@
 """URL configuration for the PKI application."""
 
-from django.urls import path, re_path
-
-from ..views.pki_endpoints import cmp
+# from django.urls import path, re_path
+#
+# from ..views.pki_endpoints import cmp
 
 app_name = 'cmp'
 
 urlpatterns = [
-    re_path(r'^p/(?P<domain>\w+)/initialization/?$', cmp.CmpInitializationRequestView.as_view()),
+    # re_path(r'^p/(?P<domain>\w+)/initialization/?$', cmp.CmpInitializationRequestView.as_view()),
     # path('p/<str:domain>/initialization/', cmp.CmpInitializationRequestView.as_view())
     # path('p/<str:domain>/certification/', cmp.CmpCertificationRequestView.as_view()),
     # path('p/<str:domain>/keyupdate/', cmp.CmpKeyUpdateRequestView.as_view()),

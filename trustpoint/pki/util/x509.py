@@ -8,7 +8,7 @@ from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives.hashes import SHA256
 
 
-from pki.serializer import (
+from core.serializer import (
     PublicKeySerializer,
     PrivateKeySerializer,
     CertificateCollectionSerializer,

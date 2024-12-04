@@ -7,7 +7,7 @@ from django.utils.functional import lazy
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from .models import CertificateModel, DomainModel, IssuingCaModel, TrustStoreModel
+from .models import CertificateModel, IssuingCaModel, DomainModel
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
@@ -22,7 +22,7 @@ class CertificateTable(tables.Table):
     """Table representation of the Certificate model."""
 
     class Meta:
-        """Table meta class configurations."""
+        """Table metaclass configurations."""
 
         model = CertificateModel
         template_name = 'django_tables2/bootstrap5.html'
@@ -39,9 +39,8 @@ class CertificateTable(tables.Table):
             'spki_key_size',
             'spki_ec_curve',
             'certificate_status',
-            'added_at',
+            'created_at',
             'is_self_signed',
-            'is_root_ca',
             'details',
             'download',
         )
@@ -81,25 +80,35 @@ class IssuingCaTable(tables.Table):
     """Table representation of the Issuing CA model."""
 
     common_name = tables.Column(
-        verbose_name=_('Issuing CA - Common Name'),
-        accessor='issuing_ca_certificate__common_name')
+        verbose_name=_('Common Name'),
+        accessor='credential__certificate__common_name')
 
     not_valid_after = tables.Column(
-        verbose_name=_('Issuing CA - Not Valid After'),
-        accessor='issuing_ca_certificate__not_valid_after'
+        verbose_name=_('Not Valid After'),
+        accessor='credential__certificate__not_valid_after'
     )
 
     signature_algorithm = tables.Column(
-        verbose_name=_('Issuing CA - Signature Algorithm'),
-        accessor='issuing_ca_certificate__signature_algorithm'
+        verbose_name=_('Signature-Suite'),
+        accessor='credential__certificate__signature_algorithm'
+    )
+
+    updated_at = tables.Column(
+        verbose_name=_('Updated'),
+        accessor='credential__certificate__created_at'
+    )
+
+    created_at = tables.Column(
+        verbose_name=_('Created'),
+        accessor='credential__certificate__created_at'
     )
 
     class Meta:
-        """Table meta class configurations."""
+        """Table metaclass configurations."""
 
         model = IssuingCaModel
         template_name = 'django_tables2/bootstrap5.html'
-        # order_by = '-created_at'
+        order_by = '-created_at'
         empty_values = ()
         _msg = _('There are no Issuing CAs available.')
         empty_text = format_html_lazy('<div class="text-center">{}</div>', _msg)
@@ -110,6 +119,8 @@ class IssuingCaTable(tables.Table):
             'common_name',
             'not_valid_after',
             'signature_algorithm',
+            'updated_at',
+            'created_at',
             'details',
             'config',
             'delete',
@@ -164,15 +175,15 @@ class DomainTable(tables.Table):
     """Table representation of the Domain model."""
 
     issuing_ca = tables.Column(
-        verbose_name=_('Issuing CA - Common Name'),
-        accessor='issuing_ca__issuing_ca_certificate__common_name')
+        verbose_name=_('Issuing CA Name'),
+        accessor='issuing_ca__unique_name')
 
     class Meta:
-        """Table meta class configurations."""
+        """Table metaclass configurations."""
 
         model = DomainModel
         template_name = 'django_tables2/bootstrap5.html'
-        # order_by = '-created_at'
+        order_by = '-created_at'
         empty_values = ()
         _msg = _('There are no Domain available.')
         empty_text = format_html_lazy('<div class="text-center">{}</div>', _msg)
@@ -208,127 +219,6 @@ class DomainTable(tables.Table):
     def render_config(record: CertificateModel) -> SafeString:
         return format_html('<a href="config/{}/" class="btn btn-primary tp-table-btn">{}</a>',
                            record.pk, _('Config'))
-
-    @staticmethod
-    def render_delete(record: CertificateModel) -> SafeString:
-        """Creates the html hyperlink for the delete-view.
-
-        Args:
-            record (Truststore): The current record of the RootCa model.
-
-        Returns:
-            SafeString: The html hyperlink for the delete-view.
-        """
-        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
-                           record.pk, _('Delete'))
-
-
-class ProtocolConfigTable(tables.Table):
-    """Table representation of the different protocols."""
-    protocol = tables.Column(verbose_name='Protocol')
-    status = tables.Column(verbose_name='Status')
-    operation = tables.Column(verbose_name='Operation')
-    action = tables.Column(verbose_name='Action')
-    url_path = tables.Column(verbose_name='URL Path')
-    details = tables.Column(verbose_name='Details', accessor='get_details_link', orderable=False)
-    configure = tables.Column(verbose_name='Configure', accessor='get_configure_link', orderable=False)
-
-    def render_status(self, value):
-        """Color status based on its value"""
-        if value == "Enabled":
-            return format_html('<span class="text-success">{}</span>', value)
-        elif value == "Disabled":
-            return format_html('<span class="text-muted">{}</span>', value)
-        elif value == "Limited":
-            return format_html('<span class="text-warning">{}</span>', value)
-
-    def render_action(self, value):
-        """Render action buttons"""
-        return format_html('<button class="btn btn-secondary">{}</button>', value)
-
-    class Meta:
-        template_name = 'django_tables2/bootstrap4.html'
-
-
-class TrustStoreConfigFromDomainTable(tables.Table):
-    """Table representation of the Trust Store config for assigning to a Domain."""
-
-    row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
-
-    details = tables.TemplateColumn(
-        '<a href="{% url "pki:truststore_details" pk=record.pk %}" class="btn btn-secondary tp-table-btn">Details</a>',
-        orderable=False
-    )
-
-    class Meta:
-        model = TrustStoreModel
-        template_name = 'django_tables2/bootstrap5.html'
-        fields = ('row_checkbox', 'unique_name', 'url_path')
-
-    def render_row_checkbox(self, record: TrustStoreModel):
-        """Render the checkbox reflecting whether the trust store is assigned to the domain."""
-        domain = self.context['domain']
-        is_checked = record in domain.truststores.all()
-
-        return format_html(
-            '<input type="checkbox" name="truststores" value="{}" {}>',
-            record.pk,
-            'checked' if is_checked else ''
-        )
-
-
-class TrustStoreTable(tables.Table):
-    """Table representation of the TrustStoreModel."""
-
-    class Meta:
-        """Table meta class configurations."""
-
-        model = TrustStoreModel
-        template_name = 'django_tables2/bootstrap5.html'
-        # order_by = '-created_at'
-        empty_values = ()
-        _msg = _('No Truststores have been added yet.')
-        empty_text = format_html_lazy('<div class="text-center">{}</div>', _msg)
-
-        fields = (
-            'row_checkbox',
-            'unique_name',
-            'number_of_certificates',
-            'details',
-            'download',
-            'delete'
-        )
-
-    row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
-    details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
-    download = tables.Column(empty_values=(), orderable=False, verbose_name=_('Download'))
-    delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
-
-    @staticmethod
-    def render_details(record: CertificateModel) -> SafeString:
-        """Creates the html hyperlink for the details-view.
-
-        Args:
-            record (Truststore): The current record of the RootCa model.
-
-        Returns:
-            SafeString: The html hyperlink for the details-view.
-        """
-        return format_html('<a href="detail/{}/" class="btn btn-primary tp-table-btn">{}</a>',
-                           record.pk, _('Details'))
-
-    @staticmethod
-    def render_download(record: CertificateModel) -> SafeString:
-        """Creates the html hyperlink for the delete-view.
-
-        Args:
-            record (Truststore): The current record of the RootCa model.
-
-        Returns:
-            SafeString: The html hyperlink for the delete-view.
-        """
-        return format_html('<a href="download/{}/" class="btn btn-primary tp-table-btn">{}</a>',
-                           record.pk, _('Download'))
 
     @staticmethod
     def render_delete(record: CertificateModel) -> SafeString:

@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import enum
 
-from pki.models import DomainModel
+# from pki.models import DomainModel
 from pki.pki.request.message import PkiResponseMessage, HttpStatusCode, MimeType
 
 class PkiProtocol(enum.Enum):
@@ -20,7 +20,7 @@ class DomainHandler:
 
     _unique_name: str
     _pki_protocol: PkiProtocol
-    _domain_model: None | DomainModel = None
+    # _domain_model: None | DomainModel = None
 
     _is_valid: bool = False
     _error_response: None | PkiResponseMessage = None
@@ -29,10 +29,10 @@ class DomainHandler:
         self._unique_name = unique_name
         self._pki_protocol = pki_protocol
 
-        self._domain_model = DomainModel.objects.filter(unique_name=unique_name).first()
-        if self._domain_model is None:
-            self._set_does_not_exist_response()
-            return
+        # self._domain_model = DomainModel.objects.filter(unique_name=unique_name).first()
+        # if self._domain_model is None:
+        #     self._set_does_not_exist_response()
+        #     return
 
         if pki_protocol == PkiProtocol.NONE:
             self._is_valid = True
@@ -58,9 +58,9 @@ class DomainHandler:
     def pki_protocol(self) -> PkiProtocol:
         return self._pki_protocol
 
-    @property
-    def domain_model(self) -> None | DomainModel:
-        return self._domain_model
+    # @property
+    # def domain_model(self) -> None | DomainModel:
+    #     return self._domain_model
 
     def is_valid(self) -> bool:
         return self._is_valid

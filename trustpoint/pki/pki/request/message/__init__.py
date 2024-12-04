@@ -6,7 +6,8 @@ from typing import TYPE_CHECKING, Annotated
 
 from django.http import HttpResponse
 
-from pki.models import CertificateModel, DomainModel
+from pki.models import CertificateModel
+# from pki.models import DomainModel
 
 if TYPE_CHECKING:
     from typing import Union
@@ -47,7 +48,7 @@ class HttpStatusCode(enum.Enum):
 
 
 class PkiRequestMessage(abc.ABC):
-    _domain_model: DomainModel
+    # _domain_model: DomainModel
     _raw_content: None | bytes
     _parsed_content: Any
 
@@ -60,12 +61,12 @@ class PkiRequestMessage(abc.ABC):
 
     def __init__(
             self,
-            domain_model: DomainModel,
+            # domain_model: DomainModel,
             raw_content: None | bytes,
             received_mimetype: None | str | MimeType = None,
             received_content_transfer_encoding: None | str | ContentTransferEncoding = None) -> None:
 
-        self._domain_model = domain_model
+        # self._domain_model = domain_model
         self._raw_content = raw_content
 
         try:
@@ -100,9 +101,9 @@ class PkiRequestMessage(abc.ABC):
         else:
             return len(self.raw_content)
 
-    @property
-    def domain_model(self) -> DomainModel:
-        return self._domain_model
+    # @property
+    # def domain_model(self) -> DomainModel:
+    #     return self._domain_model
 
     @property
     def raw_content(self) -> None | bytes:

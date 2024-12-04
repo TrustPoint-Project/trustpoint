@@ -1,0 +1,80 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load crispy_forms_filters %}
+{% load django_tables2 %}
+{% block content %}
+{% load static %}
+    <script src="{% static 'js/domains.js' %}"></script>
+    <div class="card">
+        <div class="card-header">
+            <h1>{{ domain.unique_name }} {% trans "Configuration" %}</h1>
+        </div>
+    
+        <div class="card">
+            <div class="card-body">
+                <div class="tp-card-centered-content">
+                    <h2>General</h2>
+                    <hr class="hr-m">
+                    <div class="tp-kvp-list">
+                        <div>
+                            <div>{% trans 'Unique Name' %}</div>
+                            <div> {{ domain.unique_name }} </div>
+                        </div>
+                        <div>
+                            <div>{% trans 'URL Path Segment' %}</div>
+                            <div> {{ domain.unique_name.lower }} </div>
+                        </div>
+                    </div>
+                    <h5 class="mb-2 ms-2">{% trans 'Devices in Domain' %}</h5>
+                    <div class="tp-kvp-list">
+                        <div>
+                            <div>{% trans 'Pending devices' %}</div>
+                            <div> {{ devices_count.P|default:0 }} </div>
+                        </div>
+                        <div>
+                            <div>{% trans 'Running devices' %}</div>
+                            <div> {{ devices_count.R|default:0 }} </div>
+                        </div>
+                        <div>
+                            <div>{% trans 'Onboarded devices' %}</div>
+                            <div> {{ devices_count.O|default:0 }} </div>
+                        </div>
+                        <div>
+                            <div>{% trans 'Failed devices' %}</div>
+                            <div> {{ devices_count.F|default:0 }} </div>
+                        </div>
+                        <div>
+                            <div>{% trans 'Revoked devices' %}</div>
+                            <div> {{ devices_count.D|default:0 }} </div>
+                        </div>
+                    </div>
+                    <h2>{% trans 'Issuing CA' %}</h2>
+                    <hr class="hr-m">
+                    <div class="tp-kvp-list">
+                        <div>
+                            <div>{% trans 'Issuing CA' %}</div>
+                            <div> {{ domain.issuing_ca.unique_name }} </div>
+                        </div>
+                        <div>
+                            <div>{% trans 'Expiry Date' %}</div>
+                            <div> {{ domain.issuing_ca.credential.certificate.not_valid_after }} </div>
+                        </div>
+                        <div>
+                            <div>{% trans 'Certificates Issued:' %}</div>
+                            <div></div>
+                        </div>
+                    </div>
+
+
+
+                <div class="tp-form-btn-group">
+                    <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                    <a href="{% url 'pki:domains' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                    <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+{% endblock content %}
+

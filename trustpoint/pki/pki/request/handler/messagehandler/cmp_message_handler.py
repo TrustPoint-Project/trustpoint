@@ -3,7 +3,6 @@ from pyasn1_modules import rfc4210, rfc2511
 import logging
 import traceback
 
-from pki import CertificateStatus
 from pki.models import CertificateModel
 from pki.pki.request.message import HttpStatusCode
 
@@ -193,7 +192,7 @@ class CMPMessageHandler:
         if not issuer_public_bytes_hex == certificate_query[0].issuer_public_bytes:
             raise BadRequest("Certificate serial number found but was not issued by associated Issuing CA")
         
-        if certificate_query[0].certificate_status != CertificateStatus.OK:
+        if certificate_query[0].certificate_status != CertificateModel.CertificateStatus.OK:
             raise BadRequest("Certificate is not valid (e.g. revoked)")
 
         # TODO: Expiry check and policy for renewing expired certificates

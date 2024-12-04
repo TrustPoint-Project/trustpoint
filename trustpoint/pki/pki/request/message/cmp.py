@@ -3,7 +3,7 @@ from __future__ import annotations
 from pyasn1_modules import rfc4210
 import logging
 
-from pki.models import DomainModel
+# from pki.models import DomainModel
 from pki.pki.request.message import PkiRequestMessage, MimeType, ContentTransferEncoding
 
 from typing import TYPE_CHECKING
@@ -25,13 +25,13 @@ class PkiCmpInitializationRequestMessage(PkiRequestMessage):
 
     def __init__(
             self,
-            domain_model: DomainModel,
+            # domain_model: DomainModel,
             raw_content: None | bytes,
             received_mimetype: None | MimeType,
             received_content_transfer_encoding: None | str | ContentTransferEncoding) -> None:
 
         super().__init__(
-            domain_model=domain_model,
+            # domain_model=domain_model,
             raw_content=raw_content,
             received_mimetype=received_mimetype,
             received_content_transfer_encoding=received_content_transfer_encoding)

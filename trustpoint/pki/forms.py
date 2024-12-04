@@ -4,13 +4,13 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
+from core.serializer import CredentialSerializer
 from pki.initializer import (
-    TrustStoreInitializer,
-    UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer,
     UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer,
 )
-from pki.models import CMPModel, DomainModel, ESTModel, IssuingCaModel
-from pki.validator.field import UniqueNameValidator
+from trustpoint.views.base import LoggerMixin
+from pki.models import IssuingCaModel, DomainModel
+from core.validator.field import UniqueNameValidator
 
 
 class CertificateDownloadForm(forms.Form):
@@ -45,7 +45,6 @@ class CertificateDownloadForm(forms.Form):
         initial='pem',
         required=True)
 
-
 class IssuingCaAddMethodSelectForm(forms.Form):
 
     method_select = forms.ChoiceField(
@@ -72,7 +71,7 @@ class IssuingCaFileTypeSelectForm(forms.Form):
         required=True)
 
 
-class IssuingCaAddFileImportPkcs12Form(forms.Form):
+class IssuingCaAddFileImportPkcs12Form(LoggerMixin, forms.Form):
 
     unique_name = forms.CharField(
         max_length=256,
@@ -88,18 +87,16 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
         label=_('[Optional] PKCS#12 password'),
         required=False)
 
-    auto_crl = forms.BooleanField(label=_('Generate CRL upon certificate revocation.'), initial=True, required=False)
-
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']
         if IssuingCaModel.objects.filter(unique_name=unique_name).exists():
             raise ValidationError('Unique name is already taken. Choose another one.')
         return unique_name
 
+    @LoggerMixin.log_exceptions
     def clean(self):
         cleaned_data = super().clean()
         unique_name = cleaned_data.get('unique_name')
-        auto_crl = cleaned_data.get('auto_crl')
         if unique_name is None:
             raise ValidationError('No Unique Name was specified.')
 
@@ -121,18 +118,21 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
             pkcs12_password = None
 
         try:
-            initializer = UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(
-                unique_name=cleaned_data['unique_name'],
-                p12=pkcs12_raw,
-                password=pkcs12_password,
-                auto_crl=auto_crl)
+            credential_serializer = CredentialSerializer(pkcs12_raw, pkcs12_password)
         except Exception as exception:
             raise ValidationError(
-                'Failed to load PKCS#12 file. Either malformed file or wrong password.',
-                code='pkcs12-loading-failed') from exception
+                _('Failed to parse and load the uploaded file. Either wrong password or corrupted file.')
+            ) from exception
 
-        initializer.initialize()
-        initializer.save()
+        try:
+            IssuingCaModel.create_new_issuing_ca(
+                unique_name=unique_name,
+                credential_serializer=credential_serializer,
+                issuing_ca_type=IssuingCaModel.IssuingCaTypeChoice.LOCAL_UNPROTECTED
+            )
+        except Exception as exception:
+            err_msg = str(exception)
+            raise ValidationError(err_msg) from exception
 
 
 class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
@@ -154,8 +154,6 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
         required=True)
     certificate_chain = forms.FileField(
         label=_('[Optional] Certificate Chain (.pem, .p7b, .p7c) '), required=False)
-    
-    auto_crl = forms.BooleanField(label=_('Generate CRL upon certificate revocation.'), initial=True, required=False)
 
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']
@@ -166,7 +164,6 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
     def clean(self):
         cleaned_data = super().clean()
         unique_name = cleaned_data.get('unique_name')
-        auto_crl = cleaned_data.get('auto_crl')
         if unique_name is None:
             return
 
@@ -197,7 +194,6 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
         try:
             initializer = UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer(
                 unique_name=cleaned_data['unique_name'],
-                auto_crl=auto_crl,
                 private_key_raw=private_key_file_raw,
                 password=private_key_file_password,
                 issuing_ca_certificate_raw=issuing_ca_cert_raw,
@@ -209,169 +205,3 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
 
         initializer.initialize()
         initializer.save()
-
-
-class CRLGenerationTimeDeltaForm(forms.ModelForm):
-
-    class Meta:
-        model = IssuingCaModel
-        fields = ['next_crl_generation_time',]
-        labels = {'next_crl_generation_time': '',}
-
-
-class CRLAutoGenerationForm(forms.ModelForm):
-
-    class Meta:
-        model = IssuingCaModel
-        fields = ['auto_crl']
-
-
-class DomainBaseForm(forms.ModelForm):
-    """Base form for DomainModel, containing shared logic and fields."""
-    class Meta:
-        model = DomainModel
-        fields = ['unique_name', 'issuing_ca']  # Base fields
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['unique_name'].label += UniqueNameValidator.form_label
-        self.fields['issuing_ca'].required = True
-
-    def save(self, commit=True):
-        domain_instance = super().save(commit=False)
-
-        if commit:
-            domain_instance.save()
-
-        return domain_instance
-
-
-class DomainCreateForm(DomainBaseForm):
-    """Form for creating DomainModel instances, includes additional fields."""
-    # TODO: validate url_path_segment
-
-    class Meta(DomainBaseForm.Meta):
-        fields = DomainBaseForm.Meta.fields
-
-
-class DomainUpdateForm(DomainBaseForm):
-    """Form for updating DomainModel instances."""
-
-    class Meta(DomainBaseForm.Meta):
-        fields = DomainBaseForm.Meta.fields
-
-
-class TrustStoreAddForm(forms.Form):
-
-    unique_name = forms.CharField(
-        max_length=256,
-        label=_('Unique Name') + ' ' + UniqueNameValidator.form_label,
-        widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
-        required=True,
-        validators=[UniqueNameValidator()])
-
-    trust_store_file = forms.FileField(label=_('PEM or PKCS#7 File'), required=True)
-
-    def clean_unique_name(self) -> str:
-        unique_name = self.cleaned_data['unique_name']
-        if IssuingCaModel.objects.filter(unique_name=unique_name).exists():
-            raise ValidationError('Unique name is already taken. Choose another one.')
-        return unique_name
-
-    def clean(self):
-        cleaned_data = super().clean()
-        unique_name = cleaned_data.get('unique_name')
-        if unique_name is None:
-            return
-
-        try:
-            # This should not throw any exceptions, even if invalid data was sent via HTTP POST request.
-            # However, just in case.
-            trust_store_file = cleaned_data.get('trust_store_file').read()
-        except Exception:
-            raise ValidationError(
-                _('Unexpected error occurred while trying to get file contents. Please see logs for further details.'),
-                code='unexpected-error')
-
-        try:
-            initializer = TrustStoreInitializer(
-                unique_name=cleaned_data['unique_name'],
-                trust_store=trust_store_file)
-        except Exception as e:
-            raise ValidationError(
-                'Failed to load file. Seems to be malformed.',
-                code='trust-store-file-loading-failed')
-        try:
-            initializer.save()
-        except Exception:
-            raise ValidationError('Unexpected Error. Failed to save validated Trust Store in DB.')
-
-
-class TruststoresDownloadForm(forms.Form):
-    cert_file_container = forms.ChoiceField(
-        label=_('Select Truststore Container Type'),
-        choices=[
-            ('single_file', _('Single File')),
-            ('zip', _('Separate Certificate Files (as .zip file)')),
-            ('tar_gz', _('Separate Certificate Files (as .tar.gz file)'))
-        ],
-        initial='single_file',
-        required=True)
-
-    cert_file_format = forms.ChoiceField(
-        label=_('Select Truststore File Format'),
-        choices=[
-            ('pem', _('PEM (.pem, .crt, .ca-bundle)')),
-            ('der', _('DER (.der, .cer)')),
-            ('pkcs7_pem', _('PKCS#7 (PEM) (.p7b, .p7c, .keystore)')),
-            ('pkcs7_der', _('PKCS#7 (DER) (.p7b, .p7c, .keystore)'))
-        ],
-        initial='pem',
-        required=True)
-
-
-class CMPForm(forms.ModelForm):
-    class Meta:
-        model = CMPModel
-        fields = ['operation_modes']
-
-    operation_modes = forms.MultipleChoiceField(
-        choices=CMPModel.Operations.choices,
-        widget=forms.CheckboxSelectMultiple,
-        required=False,
-        label="Select Operations"
-    )
-
-    def clean(self):
-        cleaned_data = super().clean()
-
-    def save(self, commit=True):
-        """Override save to store the operations as a comma-separated string."""
-        instance = super().save(commit=False)
-        operations_list = self.cleaned_data['operation_modes']
-        instance.set_operation_list(operations_list)
-        if commit:
-            instance.save()
-        return instance
-
-
-class ESTForm(forms.ModelForm):
-    class Meta:
-        model = ESTModel
-        fields = ['operation_modes']
-
-    operation_modes = forms.MultipleChoiceField(
-        choices=ESTModel.Operations.choices,
-        widget=forms.CheckboxSelectMultiple,
-        required=False,
-        label="Select Operations"
-    )
-
-    def save(self, commit=True):
-        """Override save to store the operations as a comma-separated string."""
-        instance = super().save(commit=False)
-        operations_list = self.cleaned_data['operation_modes']
-        instance.set_operation_list(operations_list)
-        if commit:
-            instance.save()
-        return instance
