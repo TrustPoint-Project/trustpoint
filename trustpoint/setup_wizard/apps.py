@@ -1,7 +1,9 @@
+import logging
+import os
+import signal
+
 from django.apps import AppConfig
 
-import logging
-import signal
 
 class SetupWizardConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
@@ -29,26 +31,28 @@ class SetupWizardConfig(AppConfig):
         env = 'wsgi' if wsgi else 'dev'
         self.logger.info(f'--- Trustpoint Server Startup ({env}) ---')
 
-        original_sigint_handler = signal.getsignal(signal.SIGINT)
+        # Register signal handler only if mod_wsgi is not active
+        if 'mod_wsgi' not in os.environ.get('SERVER_SOFTWARE', ''):
+            original_sigint_handler = signal.getsignal(signal.SIGINT)
 
-        def handle_exit(signum, frame):
-            self.logger.info("--- Trustpoint Server Shutdown (SIGINT) ---")
-            StartupTaskManager.handle_shutdown_tasks()
+            def handle_exit(signum, frame):
+                self.logger.info("--- Trustpoint Server Shutdown (SIGINT) ---")
+                StartupTaskManager.handle_shutdown_tasks()
 
-            if callable(original_sigint_handler):
-                original_sigint_handler(signum, frame)
+                if callable(original_sigint_handler):
+                    original_sigint_handler(signum, frame)
 
-        signal.signal(signal.SIGINT, handle_exit)
+            signal.signal(signal.SIGINT, handle_exit)
 
-        original_sigterm_handler = signal.getsignal(signal.SIGTERM)
+            original_sigterm_handler = signal.getsignal(signal.SIGTERM)
 
-        def handle_term(signum, frame):
-            self.logger.info("--- Trustpoint Server Shutdown (SIGTERM) ---")
-            StartupTaskManager.handle_shutdown_tasks()
+            def handle_term(signum, frame):
+                self.logger.info("--- Trustpoint Server Shutdown (SIGTERM) ---")
+                StartupTaskManager.handle_shutdown_tasks()
 
-            if callable(original_sigterm_handler):
-                original_sigterm_handler(signum, frame)
+                if callable(original_sigterm_handler):
+                    original_sigterm_handler(signum, frame)
 
-        signal.signal(signal.SIGTERM, handle_term)
+            signal.signal(signal.SIGTERM, handle_term)
 
         StartupTaskManager.handle_startup_tasks()

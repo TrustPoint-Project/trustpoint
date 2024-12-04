@@ -10,15 +10,33 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 import os
+import socket
 from pathlib import Path
-from django.utils.translation import gettext_lazy as _
-from django.core.management.utils import get_random_secret_key
 
+from django.core.management.utils import get_random_secret_key
+from django.utils.translation import gettext_lazy as _
 from log.config import logging_config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Settings for postgresql database
+POSTGRES = False
+DATABASE_ENGINE = 'django.db.backends.postgresql'
+DATABASE_HOST = 'localhost'
+DATABASE_PORT = '5432'
+DATABASE_NAME = 'trustpoint_db'
+DATABASE_USER = 'admin'
+DATABASE_PASSWORD = 'testing321'  # noqa: S105
+
+def is_postgres_available():
+    try:
+        host = os.environ.get('DATABASE_HOST', DATABASE_HOST)
+        port = int(os.environ.get('DATABASE_PORT', DATABASE_PORT))
+        with socket.create_connection((host, port), timeout=1):
+            return True
+    except Exception:
+        return False
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -109,15 +127,30 @@ WSGI_APPLICATION = 'trustpoint.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        'OPTIONS': {
-            'timeout': 20
+
+if (POSTGRES or DEBUG is False) and is_postgres_available():
+    DATABASES = {
+        'default': {
+            'ENGINE': os.environ.get('DATABASE_ENGINE', DATABASE_ENGINE),
+            'NAME': os.environ.get('DATABASE_NAME', DATABASE_NAME),
+            'USER': os.environ.get('DATABASE_USER', DATABASE_USER),
+            'PASSWORD': os.environ.get('DATABASE_PASSWORD', DATABASE_PASSWORD),
+            'HOST': os.environ.get('DATABASE_HOST', DATABASE_HOST),
+            'PORT': os.environ.get('DATABASE_PORT', DATABASE_PORT),
         }
-    },
-}
+    }
+else:
+    # TODO(): Use logging after refactoring
+    print('No postgres found. Using sqlite')
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+            'OPTIONS': {
+                'timeout': 20
+            }
+        },
+    }
 
 
 # Password validation
