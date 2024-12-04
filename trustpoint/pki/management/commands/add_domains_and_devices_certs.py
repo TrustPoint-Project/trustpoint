@@ -3,9 +3,9 @@ import random
 import string
 from pathlib import Path
 from django.core.management.base import BaseCommand
-from devices import DeviceOnboardingStatus
+from devices_deprecated import DeviceOnboardingStatus
 from pki.models import DomainModel, IssuingCaModel, IssuedDeviceCertificateModel, CertificateModel
-from devices.models import Device
+from devices_deprecated.models import Device
 from pki import CertificateTypes, TemplateName
 from django.core.management import call_command
 from pki.initializer import UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer

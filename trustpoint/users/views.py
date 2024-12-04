@@ -4,10 +4,9 @@ from __future__ import annotations
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
 
-
 from setup_wizard import SetupWizardState
 from setup_wizard.views import StartupWizardRedirect
-from setup_wizard.startup import StartupTaskManager
+from trustpoint.settings import DOCKER_CONTAINER
 
 
 class TrustpointLoginView(LoginView):
@@ -18,7 +17,7 @@ class TrustpointLoginView(LoginView):
         for _ in messages.get_messages(self.request):
             pass
 
-        if StartupTaskManager.running_dev_server():
+        if not DOCKER_CONTAINER:
             return super().get(*args, **kwargs)
 
         wizard_state = SetupWizardState.get_current_state()
@@ -32,7 +31,7 @@ class TrustpointLoginView(LoginView):
         for _ in messages.get_messages(self.request):
             pass
 
-        if StartupTaskManager.running_dev_server():
+        if not DOCKER_CONTAINER:
             return super().post(*args, **kwargs)
 
         wizard_state = SetupWizardState.get_current_state()

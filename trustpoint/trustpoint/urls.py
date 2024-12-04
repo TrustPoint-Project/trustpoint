@@ -25,7 +25,6 @@ from django.views.decorators.http import last_modified
 from django.views.decorators.vary import vary_on_cookie
 from django.views.i18n import JavaScriptCatalog
 
-from . import api
 from .views import base
 
 last_modified_date = timezone.now()
@@ -39,16 +38,15 @@ else:
     urlpatterns = []
 
 urlpatterns += [
-    path('api/', api.api.urls),
     path('users/', include('users.urls')),
     path('setup-wizard/', include('setup_wizard.urls')),
     path('pki/', include('pki.urls.pki')),
     path('.well-known/est/', include('pki.urls.est')),
     path('.well-known/cmp/', include('pki.urls.cmp')),
-    path('home/', include('home.urls')),
-    path('devices/', include('devices.urls')),
-    path('onboarding/', include('onboarding.urls')),
-    path('sysconf/', include('sysconf.urls')),
+    # path('home/', include('home.urls')),
+    # path('devices/', include('devices.urls')),
+    # path('onboarding/', include('onboarding_deprecated.urls')),
+    path('settings/', include('settings.urls')),
     path('i18n/', include("django.conf.urls.i18n")),
     path(
         'jsi18n/',
@@ -58,6 +56,5 @@ urlpatterns += [
         )),
         name='javascript-catalog'
     ),
-    path('logs/', include("log.urls")),
     path('', base.IndexView.as_view()),
 ]

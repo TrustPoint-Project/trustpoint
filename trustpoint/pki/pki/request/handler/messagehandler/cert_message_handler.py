@@ -4,7 +4,6 @@ import ipaddress
 from cryptography import x509
 from cryptography.hazmat.primitives.serialization import Encoding, load_der_public_key
 from cryptography.x509 import ObjectIdentifier
-from cryptography.hazmat.primitives import hashes
 from cryptography.x509 import Certificate
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type import univ
@@ -13,12 +12,12 @@ import datetime
 import logging
 from pyasn1.error import PyAsn1Error
 
-from devices.models import Device
-from pki import CertificateTypes, TemplateName
+from devices.models import DeviceModel
+from devices import CertificateTypes, TemplateName
 from pki.models import CertificateModel
 from pki.pki.cmp.builder import PkiBodyCreator, PKIMessageCreator, PKIHeaderCreator, ExtraCerts
 from pki.pki.cmp.validator import ExtraCertsValidator, InitializationReqValidator
-from pki.oid import CertificateExtensionOid, NameOid
+from core.oid import CertificateExtensionOid, NameOid
 from pki.util.keys import SignatureSuite
 
 
@@ -663,7 +662,7 @@ class CertMessageHandler:
 
         qs = cert_model.get_subject_attributes_for_oid(NameOid.PSEUDONYM)
         for attr_value in qs:
-            device: Device = Device.get_by_name(attr_value.value)
+            device: DeviceModel = DeviceModel.get_by_name(attr_value.value)
             if device:
                 device.save_certificate(
                     certificate=cert_model,

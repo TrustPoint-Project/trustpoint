@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-from pki.serializer import CertificateCollectionSerializer, PrivateKeySerializer
+from core.serializer import CertificateCollectionSerializer, PrivateKeySerializer
 from pki.util import CredentialExtractor
 
 from .local import (
@@ -106,11 +106,10 @@ class UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(FileImportLocalIs
 
     _p12: bytes
 
-    def __init__(self, unique_name: str, p12: bytes, auto_crl: bool, password: None | bytes = None) -> None:
+    def __init__(self, unique_name: str, p12: bytes, password: None | bytes = None) -> None:
 
         self.password = password
         self._unique_name = unique_name
-        self._auto_crl = auto_crl
         self._p12 = p12
 
     def _serialize_raw_data(self) -> None:
@@ -128,7 +127,6 @@ class UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer(FileImport
     def __init__(
             self,
             unique_name: str,
-            auto_crl: bool,
             private_key_raw: bytes,
             password: None | bytes,
             issuing_ca_certificate_raw: bytes,
@@ -137,7 +135,6 @@ class UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer(FileImport
         self.password = password
 
         self._unique_name = unique_name
-        self._auto_crl = auto_crl
         self._private_key = private_key_raw
         self._issuing_ca_certificate = issuing_ca_certificate_raw
         self._additional_certificates = additional_certificates_raw

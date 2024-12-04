@@ -7,21 +7,17 @@ from django.utils.translation import gettext as _
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormView
 from django_tables2 import SingleTableView
-from sysconf.security import SecurityFeatures
-
 from pki.forms import (
-    CRLAutoGenerationForm,
-    CRLGenerationTimeDeltaForm,
     IssuingCaAddFileImportPkcs12Form,
     IssuingCaAddFileImportSeparateFilesForm,
     IssuingCaAddMethodSelectForm,
 )
-from pki.models import CertificateModel, CRLStorage, IssuingCaModel
+from pki.models import IssuingCaModel
 from pki.tables import IssuingCaTable
 from trustpoint.views.base import (
+    LoggerMixin,
     BulkDeleteView,
     ContextDataMixin,
-    PrimaryKeyFromUrlToQuerysetMixin,
     TpLoginRequiredMixin,
 )
 
@@ -78,49 +74,15 @@ class IssuingCaDetailView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailVie
     template_name = 'pki/issuing_cas/details.html'
     context_object_name = 'issuing_ca'
 
-class IssuingCaConfigView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+
+class IssuingCaConfigView(LoggerMixin, IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):
 
     model = IssuingCaModel
-    form_class = CRLGenerationTimeDeltaForm
-    second_form_class = CRLAutoGenerationForm
     success_url = reverse_lazy('pki:issuing_cas')
     ignore_url = reverse_lazy('pki:issuing_cas')
     template_name = 'pki/issuing_cas/config.html'
     context_object_name = 'issuing_ca'
 
-    def get_form_kwargs(self):
-        """Pass the instance to the ModelForm."""
-        kwargs = super().get_form_kwargs()
-        kwargs['instance'] = self.get_object()
-        return kwargs
-
-    def get_second_form_kwargs(self):
-        """Pass the instance to the second ModelForm."""
-        return {
-            'instance': self.get_object()
-        }
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if 'form' not in context:
-            context['form'] = self.get_form(self.get_form_class())
-        if 'form_auto_crl' not in context:
-            context['form_auto_crl'] = self.second_form_class(**self.get_second_form_kwargs())
-        context['crl'] = CRLStorage.get_crl_object(context.get('issuing_ca'))
-        return context
-
-    def post(self, request, *args, **kwargs):
-        """Handle the two forms."""
-        form = self.get_form(self.get_form_class())
-        form_auto_crl = self.second_form_class(request.POST, **self.get_second_form_kwargs())
-
-        if form.is_valid() and form_auto_crl.is_valid():
-            form.save()
-            form_auto_crl.save()
-            messages.success(request, _("Settings updated successfully."))
-            return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
 
 class IssuingCaBulkDeleteConfirmView(IssuingCaContextMixin, TpLoginRequiredMixin, BulkDeleteView):
 

@@ -7,6 +7,9 @@ which can be used within the apps.
 from __future__ import annotations
 
 from typing import Any, Callable
+import logging
+import traceback
+import functools
 
 from django import forms as dj_forms
 from django.contrib import messages
@@ -31,14 +34,14 @@ class IndexView(RedirectView):
     """View that redirects to the index home page."""
 
     permanent: bool = False
-    pattern_name: str = 'home:dashboard'
+    pattern_name: str = 'pki:certificates'
 
 
 class TpLoginRequiredMixin(LoginRequiredMixin):
     """LoginRequiredMixin that adds a warning message if the user is not logged in."""
     request: HttpRequest
 
-    def handle_no_permission(self) -> str:
+    def handle_no_permission(self) -> HttpResponseRedirect:
         """Redirects to the login page with a warning message if the user is not logged in."""
         messages.add_message(self.request, messages.WARNING, message=_('Login required!'))
         return super().handle_no_permission()
@@ -162,3 +165,50 @@ class PrimaryKeyFromUrlToQuerysetMixin:
 
 class BulkDeleteView(MultipleObjectTemplateResponseMixin, PrimaryKeyFromUrlToQuerysetMixin, BaseBulkDeleteView):
     pass
+
+
+class LoggerMixin:
+    """Mixin that adds log features to the subclass."""
+
+    logger: logging.Logger
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """Adds an appropriate logger to the subclass and makes it available through cls.logger."""
+        super().__init_subclass__(**kwargs)
+
+        cls.logger = logging.getLogger('trustpoint').getChild(cls.__module__).getChild(cls.__name__)
+
+
+    @staticmethod
+    def log_exceptions(function):
+        """
+        Decorator that gets an appropriate logger and logs any unhandled exception.
+
+        Logs the type and message to both levels error and debug.
+        Also adds the traceback to the debug level log.
+
+        Args:
+            function: The decorated method or function.
+        """
+
+        @functools.wraps(function)
+        def _wrapper(*args, **kwargs):
+            try:
+                return function(*args, **kwargs)
+            except Exception as exception:
+                logger = logging.getLogger('trustpoint').getChild(function.__module__).getChild(function.__qualname__)
+                logger.error(
+                    f'Exception in {function.__name__}. '
+                    f'Type: {type(exception)}, '
+                    f'Message: {exception}'
+                )
+                logger.debug(
+                    f'Exception in {function.__name__}. '
+                    f'Type: {type(exception)}, '
+                    f'Message: {exception}, '
+                    f'Traceback: {traceback.format_exc()}'
+                )
+                raise
+
+        return _wrapper
