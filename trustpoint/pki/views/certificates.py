@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from core.file_builder.certificate import CertificateArchiveFileBuilder, CertificateFileBuilder
 from core.file_builder.enum import ArchiveFormat, CertificateFileFormat
 from django.http import Http404, HttpRequest, HttpResponse  # type: ignore[import-untyped]
@@ -10,9 +12,13 @@ from django.views.generic.base import RedirectView  # type: ignore[import-untype
 from django.views.generic.detail import DetailView  # type: ignore[import-untyped]
 from django.views.generic.list import ListView  # type: ignore[import-untyped]
 from django_tables2 import SingleTableView  # type: ignore[import-untyped]
+
 from pki.models import CertificateModel
 from pki.tables import CertificateTable
 from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, TpLoginRequiredMixin
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 
 class CertificatesRedirectView(TpLoginRequiredMixin, RedirectView):
@@ -22,14 +28,13 @@ class CertificatesRedirectView(TpLoginRequiredMixin, RedirectView):
     pattern_name = 'pki:certificates'
 
 
-class PkiCertificatesContextMixin:
+class CertificatesContextMixin:
     """Mixin which adds some extra context for the PKI Views."""
 
-    context_page_category = 'pki'
-    context_page_name = 'certificates'
+    extra_context: ClassVar = {'page_category': 'pki', 'page_name': 'certificates'}
 
 
-class CertificateTableView(PkiCertificatesContextMixin, TpLoginRequiredMixin, SingleTableView):
+class CertificateTableView(CertificatesContextMixin, TpLoginRequiredMixin, SingleTableView):
     """Certificates Table View."""
 
     model = CertificateModel
@@ -38,7 +43,7 @@ class CertificateTableView(PkiCertificatesContextMixin, TpLoginRequiredMixin, Si
     context_object_name = 'certificates'
 
 
-class CertificateDetailView(PkiCertificatesContextMixin, TpLoginRequiredMixin, DetailView):
+class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
     """The certificate detail view."""
 
     model = CertificateModel
@@ -48,7 +53,7 @@ class CertificateDetailView(PkiCertificatesContextMixin, TpLoginRequiredMixin, D
     context_object_name = 'cert'
 
 
-class CertificateDownloadView(PkiCertificatesContextMixin, TpLoginRequiredMixin, DetailView):
+class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
     """View for downloading a single certificate."""
 
     model = CertificateModel
@@ -101,7 +106,7 @@ class CertificateDownloadView(PkiCertificatesContextMixin, TpLoginRequiredMixin,
 
 
 class CertificateMultipleDownloadView(
-    PkiCertificatesContextMixin, TpLoginRequiredMixin, PrimaryKeyListFromPrimaryKeyString, ListView
+    CertificatesContextMixin, TpLoginRequiredMixin, PrimaryKeyListFromPrimaryKeyString, ListView
 ):
     """View for downloading multiple certificates at once as archived files."""
 
