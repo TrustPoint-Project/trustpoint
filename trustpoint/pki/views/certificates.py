@@ -12,12 +12,11 @@ from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from django_tables2 import SingleTableView
 
-from pki.file_builder.certificate import CertificateFileBuilder
-from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, PrimaryKeyFromUrlToQuerysetMixin
-from pki.download.certificate import CertificateDownloadResponseBuilder, MultiCertificateDownloadResponseBuilder
+from core.file_builder.enum import ArchiveFormat, CertificateFileFormat
+from core.file_builder.certificate import CertificateFileBuilder, CertificateArchiveFileBuilder
+from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, PrimaryKeyListFromPrimaryKeyString
 from pki.models import CertificateModel
 from pki.tables import CertificateTable
-from pki.file_builder import CertificateFileFormat
 
 
 if TYPE_CHECKING:
@@ -102,7 +101,8 @@ class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, De
         except Exception:
             raise Http404
 
-        file_bytes = CertificateFileBuilder.build(pk, file_format=file_format)
+        certificate_serializer = CertificateModel.objects.get(pk=pk).get_certificate_serializer()
+        file_bytes = CertificateFileBuilder.build(certificate_serializer, file_format=file_format)
 
         response = HttpResponse(file_bytes, content_type=file_format.mime_type)
         response['Content-Disposition'] = f'attachment; filename="certificate{file_format.file_extension}"'
@@ -113,7 +113,7 @@ class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, De
 class CertificateMultipleDownloadView(
     CertificatesContextMixin,
     TpLoginRequiredMixin,
-    PrimaryKeyFromUrlToQuerysetMixin,
+    PrimaryKeyListFromPrimaryKeyString,
     ListView):
 
     model = CertificateModel
@@ -122,19 +122,46 @@ class CertificateMultipleDownloadView(
     template_name = 'pki/certificates/download_multiple.html'
     context_object_name = 'certificates'
 
-    def get(self, *args, **kwargs):
-        self.extra_context = {'pks_url_path': self.get_pks_path()}
-        pks = self.get_pks()
-        file_format = self.kwargs.get('file_format')
-        archive_format = self.kwargs.get('archive_format')
+    def get_context_data(self, **kwargs: dict) -> dict:
+        context = super().get_context_data()
+        context['pks_path'] = self.kwargs.get('pks')
+        return context
 
-
-        if file_format is None and archive_format is None:
-            return super().get(*args, **kwargs)
-
-        if file_format is None or archive_format is None:
+    def get(self, *args, **kwargs) -> HttpResponse:
+        pks = self.kwargs.get('pks')
+        if not pks:
             raise Http404
 
+        file_format = self.kwargs.get('file_format')
+        archive_format = self.kwargs.get('archive_format')
+        if not file_format and not archive_format:
+            return super().get(*args, **kwargs)
 
+        try:
+            file_format = CertificateFileFormat(file_format)
+        except Exception:
+            raise Http404
 
+        try:
+            archive_format = ArchiveFormat(archive_format)
+        except Exception:
+            raise Http404
 
+        pks_list = self.get_pks_as_list(pks=pks)
+        queryset = self.model.objects.filter(pk__in=pks_list)
+
+        if len(pks_list) != len(queryset):
+            raise Http404
+
+        file_bytes = CertificateArchiveFileBuilder.build(
+            certificate_serializers=[
+                certificate_model.get_certificate_serializer() for certificate_model in queryset
+            ],
+            file_format=file_format,
+            archive_format=archive_format,
+        )
+
+        response = HttpResponse(file_bytes, content_type=archive_format.mime_type)
+        response['Content-Disposition'] = f'attachment; filename="certificates{archive_format.file_extension}"'
+
+        return response

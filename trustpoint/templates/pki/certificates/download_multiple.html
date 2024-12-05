@@ -21,7 +21,7 @@
                     <hr>
 
                     {% for certificate in certificates %}
-                        <h2 class="mb-2 ms-2">{% trans 'Certificate' %} {{ forloop.counter }}</h2>
+                        <h2 class="ms-2">{% trans 'Certificate' %} {{ forloop.counter }}</h2>
                         <hr>
                         <div class="tp-kvp-list mb-0">
                             {% if certificate.common_name %}
@@ -44,7 +44,7 @@
                                 <div>{{ certificate.serial_number }}</div>
                             </div>
                         </div>
-                         <a class="btn btn-primary min-width-15 my-2" href="{% url 'pki:certificate-details' pk=certificate.id %}">Certificate Details</a><br>
+                         <a class="btn btn-primary min-width-15 mt-2" href="{% url 'pki:certificate-details' pk=certificate.id %}">Certificate Details</a><br>
                         {% if not forloop.last %}
                             <hr>
                         {% endif %}
@@ -54,19 +54,19 @@
                     <h2>{% trans "Download Selected Certificates" %}</h2>
                     <hr>
                     <div>
-                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pem' archive_format='zip' %}">Download as PEM (ZIP)</a>
-                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pem' archive_format='tar_gz' %}">Download as PEM (TAR.GZ)</a><br>
-                        
-                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='der' archive_format='zip' %}">Download as DER (ZIP)</a>
-                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='der' archive_format='tar_gz' %}">Download as DER (TAR.GZ)</a><br>
-                        
-                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pkcs7_pem' archive_format='zip' %}">Download as PKCS#7-PEM (ZIP)</a>
-                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pkcs7_pem' archive_format='tar_gz' %}">Download as PKCS#7-PEM (TAR.GZ)</a><br>
-                        
-                        <a class="btn btn-primary min-width-20 me-2" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pkcs7_der' archive_format='zip' %}">Download as PKCS#7-DER (ZIP)</a>
-                        <a class="btn btn-primary min-width-20 me-2" href="{% url 'pki:certificates-file-download' pks=pks_url_path file_format='pkcs7_der' archive_format='tar_gz' %}">Download as PKCS#7-DER (TAR.GZ)</a><br>
+                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:certificates-file-download' pks=pks_path file_format='pem' archive_format='zip' %}">Download as PEM (ZIP)</a>
+                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:certificates-file-download' pks=pks_path file_format='pem' archive_format='tar_gz' %}">Download as PEM (TAR.GZ)</a><br>
+
+                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:certificates-file-download' pks=pks_path file_format='der' archive_format='zip' %}">Download as DER (ZIP)</a>
+                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:certificates-file-download' pks=pks_path file_format='der' archive_format='tar_gz' %}">Download as DER (TAR.GZ)</a><br>
+
+                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:certificates-file-download' pks=pks_path file_format='pkcs7_pem' archive_format='zip' %}">Download as PKCS#7-PEM (ZIP)</a>
+                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:certificates-file-download' pks=pks_path file_format='pkcs7_pem' archive_format='tar_gz' %}">Download as PKCS#7-PEM (TAR.GZ)</a><br>
+
+                        <a class="btn btn-primary min-width-20 me-2" href="{% url 'pki:certificates-file-download' pks=pks_path file_format='pkcs7_der' archive_format='zip' %}">Download as PKCS#7-DER (ZIP)</a>
+                        <a class="btn btn-primary min-width-20 me-2" href="{% url 'pki:certificates-file-download' pks=pks_path file_format='pkcs7_der' archive_format='tar_gz' %}">Download as PKCS#7-DER (TAR.GZ)</a><br>
                     </div>
-                
+
                 </div>
             </div>
 

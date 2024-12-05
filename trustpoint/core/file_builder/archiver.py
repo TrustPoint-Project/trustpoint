@@ -1,16 +1,11 @@
 from __future__ import annotations
 
 
-import enum
 import io
 import tarfile
 import zipfile
 
-
-class ArchiveFormat(enum.Enum):
-
-    ZIP: str = 'zip'
-    TAR_GZ: str = 'tar_gz'
+from core.file_builder.enum import ArchiveFormat
 
 
 class Archiver:

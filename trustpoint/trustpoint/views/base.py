@@ -21,13 +21,9 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic.base import RedirectView
 from django.views.generic.edit import FormMixin
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
-from django.db.models import QuerySet
 
 from typing import TYPE_CHECKING
 
-
-if TYPE_CHECKING:
-    from django.db.models import Model
 
 
 class IndexView(RedirectView):
@@ -122,14 +118,10 @@ class BaseBulkDeleteView(BulkDeletionMixin, FormMixin, BaseListView):
         return HttpResponseRedirect(success_url)
 
 
-class PrimaryKeyFromUrlToQuerysetMixin:
+class PrimaryKeyListFromPrimaryKeyString:
 
-    kwargs: dict
-    queryset: QuerySet
-    model: Model
-
-    def get_pks(self) -> list[str]:
-        pks = self.get_pks_path()
+    @staticmethod
+    def get_pks_as_list(pks: str) -> list[str]:
         if pks:
             pks_list = pks.split('/')
 
@@ -144,26 +136,8 @@ class PrimaryKeyFromUrlToQuerysetMixin:
 
         return []
 
-    def get_pks_path(self) -> str:
-        return self.kwargs.get('pks')
 
-    def get_queryset(self) -> None | QuerySet:
-        if self.queryset:
-            return self.queryset
-
-        pks = self.get_pks()
-        if not pks:
-            return self.model.objects.all()
-        queryset = self.model.objects.filter(pk__in=pks)
-
-        if len(pks) != len(queryset):
-            queryset = None
-
-        self.queryset = queryset
-        return queryset
-
-
-class BulkDeleteView(MultipleObjectTemplateResponseMixin, PrimaryKeyFromUrlToQuerysetMixin, BaseBulkDeleteView):
+class BulkDeleteView(MultipleObjectTemplateResponseMixin, PrimaryKeyListFromPrimaryKeyString, BaseBulkDeleteView):
     pass
 
 
