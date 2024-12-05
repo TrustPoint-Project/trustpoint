@@ -9,6 +9,7 @@ from django.http import Http404, HttpResponse
 
 
 from pki.models import CertificateModel
+from core import archiver
 
 
 class CertificateFileFormat(enum.Enum):
@@ -71,10 +72,8 @@ class CertificateDownloadResponseBuilder(DownloadResponseBuilder):
         if file_content == CertificateFileContent.CERT_ONLY:
             certificate_serializer = certificate_model.get_certificate_serializer()
         elif file_content == CertificateFileContent.CERT_AND_CHAIN:
-            # TODO: If a cross signed cert is contained with multiple chains, only the first one is currently included
             certificate_serializer = certificate_model.get_certificate_chain_serializers()[0]
         elif file_content == CertificateFileContent.CHAIN_ONLY:
-            # TODO: If a cross signed cert is contained with multiple chains, only the first one is currently included
             certificate_serializer = certificate_model.get_certificate_chain_serializers(include_self=False)[0]
         else:
             raise Http404
@@ -125,11 +124,9 @@ class MultiCertificateDownloadResponseBuilder(DownloadResponseBuilder):
             for certificate_model in certificate_models:
                 serializers.append(certificate_model.get_certificate_serializer())
         elif file_content == CertificateFileContent.CERT_AND_CHAIN:
-            # TODO: If a cross signed cert is contained with multiple chains, only the first one is currently included
             for certificate_model in certificate_models:
                 serializers.append(certificate_model.get_certificate_chain_serializers()[0])
         elif file_content == CertificateFileContent.CHAIN_ONLY:
-            # TODO: If a cross signed cert is contained with multiple chains, only the first one is currently included
             for certificate_model in certificate_models:
                 serializers.append(certificate_model.get_certificate_chain_serializers(include_self=False)[0])
 

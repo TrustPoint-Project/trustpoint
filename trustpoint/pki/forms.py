@@ -5,9 +5,6 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from core.serializer import CredentialSerializer
-from pki.initializer import (
-    UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer,
-)
 from trustpoint.views.base import LoggerMixin
 from pki.models import IssuingCaModel, DomainModel
 from core.validator.field import UniqueNameValidator
@@ -191,17 +188,17 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
         else:
             private_key_file_password = None
 
-        try:
-            initializer = UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer(
-                unique_name=cleaned_data['unique_name'],
-                private_key_raw=private_key_file_raw,
-                password=private_key_file_password,
-                issuing_ca_certificate_raw=issuing_ca_cert_raw,
-                additional_certificates_raw=certificate_chain_raw)
-        except Exception as e:
-            raise ValidationError(
-                'Failed to load CA from files. Either malformed file or wrong password.',
-                code='pkcs12-loading-failed')
-
-        initializer.initialize()
-        initializer.save()
+        # try:
+        #     initializer = UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer(
+        #         unique_name=cleaned_data['unique_name'],
+        #         private_key_raw=private_key_file_raw,
+        #         password=private_key_file_password,
+        #         issuing_ca_certificate_raw=issuing_ca_cert_raw,
+        #         additional_certificates_raw=certificate_chain_raw)
+        # except Exception as e:
+        #     raise ValidationError(
+        #         'Failed to load CA from files. Either malformed file or wrong password.',
+        #         code='pkcs12-loading-failed')
+        #
+        # initializer.initialize()
+        # initializer.save()

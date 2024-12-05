@@ -1,7 +1,6 @@
 from django.apps import AppConfig
 
 import logging
-import signal
 
 class SetupWizardConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'

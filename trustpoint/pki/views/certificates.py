@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 
-from django.http import Http404
+from django.http import Http404, HttpResponse
 from django.urls import reverse_lazy
 
 
@@ -12,10 +12,13 @@ from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView
 from django_tables2 import SingleTableView
 
+from pki.file_builder.certificate import CertificateFileBuilder
 from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, PrimaryKeyFromUrlToQuerysetMixin
 from pki.download.certificate import CertificateDownloadResponseBuilder, MultiCertificateDownloadResponseBuilder
 from pki.models import CertificateModel
 from pki.tables import CertificateTable
+from pki.file_builder import CertificateFileFormat
+
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -83,21 +86,28 @@ class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, De
     success_url = reverse_lazy('pki:certificates')
     ignore_url = reverse_lazy('pki:certificates')
     template_name = 'pki/certificates/download.html'
-    context_object_name = 'cert'
-    short: bool = None
+    context_object_name = 'certificate'
 
-    def get(self, *args, **kwargs):
-        file_format = self.kwargs.get('file_format')
-        file_content = self.kwargs.get('file_content')
-        if file_format is None and file_content is None:
-            return super().get(*args, **kwargs)
-
-        if file_format is None or file_content is None:
+    def get(self, *args: tuple, **kwargs: dict) -> HttpResponse:
+        pk = self.kwargs.get('pk')
+        if not pk:
             raise Http404
 
-        pk = self.kwargs.get('pk')
+        file_format = self.kwargs.get('file_format')
+        if file_format is None:
+            return super().get(*args, **kwargs)
 
-        return CertificateDownloadResponseBuilder(pk, file_format, file_content).as_django_http_response()
+        try:
+            file_format = CertificateFileFormat(self.kwargs.get('file_format'))
+        except Exception:
+            raise Http404
+
+        file_bytes = CertificateFileBuilder.build(pk, file_format=file_format)
+
+        response = HttpResponse(file_bytes, content_type=file_format.mime_type)
+        response['Content-Disposition'] = f'attachment; filename="certificate{file_format.file_extension}"'
+
+        return response
 
 
 class CertificateMultipleDownloadView(
@@ -110,23 +120,21 @@ class CertificateMultipleDownloadView(
     success_url = reverse_lazy('pki:certificates')
     ignore_url = reverse_lazy('pki:certificates')
     template_name = 'pki/certificates/download_multiple.html'
-    context_object_name = 'certs'
+    context_object_name = 'certificates'
 
     def get(self, *args, **kwargs):
         self.extra_context = {'pks_url_path': self.get_pks_path()}
+        pks = self.get_pks()
         file_format = self.kwargs.get('file_format')
-        file_content = self.kwargs.get('file_content')
         archive_format = self.kwargs.get('archive_format')
-        if file_format is None and file_content is None  and archive_format is None:
+
+
+        if file_format is None and archive_format is None:
             return super().get(*args, **kwargs)
 
-        if file_format is None or file_content is None or archive_format is None:
+        if file_format is None or archive_format is None:
             raise Http404
 
-        pks = self.get_pks()
 
-        return MultiCertificateDownloadResponseBuilder(
-            pks=pks,
-            file_format=file_format,
-            file_content=file_content,
-            archive_format=archive_format).as_django_http_response()
+
+

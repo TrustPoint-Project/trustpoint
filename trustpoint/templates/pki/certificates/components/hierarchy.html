@@ -33,11 +33,7 @@
             <div>Self-Signed</div>
             <div>{{ cert.is_self_signed }}</div>
         </div>
-
-        <div>
-            <div>Cross-Signed</div>
-            <div>{{ cert.is_cross_signed }}</div>
-        </div>
+    
 
     {% for certificate_chain in cert.get_certificate_chains %}
         <div class="tp-row-br">

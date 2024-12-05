@@ -4,7 +4,6 @@ from __future__ import annotations
 from django.db import models  # type: ignore[import-untyped]
 from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
 
-from pki.issuing_ca import IssuingCa
 from pki.models.credential import CredentialModel
 from trustpoint.views.base import LoggerMixin
 from core.validator.field import UniqueNameValidator
@@ -35,9 +34,6 @@ class IssuingCaModel(LoggerMixin, models.Model):
         unique=True)
     credential = models.ForeignKey(CredentialModel, related_name='issuing_cas', on_delete=models.CASCADE)
     issuing_ca_type = models.IntegerField(verbose_name=_('Issuing CA Type'), choices=IssuingCaTypeChoice, null=False, blank=False)
-
-    cmp_enabled = models.BooleanField(verbose_name=_('CMP Enabled'), null=False, blank=False)
-    est_enabled = models.BooleanField(verbose_name=_('EST Enabled'), null=False, blank=False)
 
     created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
@@ -72,9 +68,12 @@ class IssuingCaModel(LoggerMixin, models.Model):
         Returns:
             IssuingCaModel: The newly created Issuing CA model.
         """
-        if issuing_ca_type == cls.IssuingCaTypeChoice.AUTOGEN:
-            credential_type = CredentialModel.CredentialTypeChoice.AUTOGEN_ISSUING_CA
-        elif issuing_ca_type == cls.IssuingCaTypeChoice.LOCAL_UNPROTECTED:
+        issuing_ca_types = (
+            cls.IssuingCaTypeChoice.AUTOGEN,
+            cls.IssuingCaTypeChoice.LOCAL_UNPROTECTED,
+            cls.IssuingCaTypeChoice.LOCAL_PKCS11
+        )
+        if issuing_ca_type in issuing_ca_types:
             credential_type = CredentialModel.CredentialTypeChoice.ISSUING_CA
         else:
             raise ValueError(f'Issuing CA Type {issuing_ca_type} is not yet supported.')
@@ -88,8 +87,6 @@ class IssuingCaModel(LoggerMixin, models.Model):
             unique_name=unique_name,
             credential=credential_model,
             issuing_ca_type=issuing_ca_type,
-            cmp_enabled=True,
-            est_enabled=True
         )
         issuing_ca.save()
         return issuing_ca

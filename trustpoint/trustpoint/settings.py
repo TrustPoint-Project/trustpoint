@@ -50,7 +50,7 @@ INSTALLED_APPS = [
     'setup_wizard.apps.SetupWizardConfig',
     'users.apps.UsersConfig',
     # 'home.apps.HomeConfig',
-    # 'devices.apps.DevicesConfig',
+    'devices.apps.DevicesConfig',
     'pki.apps.PkiConfig',
     'settings.apps.SettingsConfig',
     'django.contrib.admin',

@@ -17,6 +17,10 @@ urlpatterns = [
         certificates.IssuedCertificatesTableView.as_view(),
         name='issued_certificates'),
     re_path(
+        r'^certificates/download/(?P<pk>[0-9]+)/?$',
+        certificates.CertificateDownloadView.as_view(),
+        name='certificate-download'),
+    re_path(
         r'^certificates/download/(?P<pks>([0-9]+/)+[0-9]+)/?$',
         certificates.CertificateMultipleDownloadView.as_view(),
         name='certificates-download'
@@ -24,22 +28,17 @@ urlpatterns = [
     re_path(
         r'^certificates/download/multiple/'
         r'(?P<file_format>[a-zA-Z0-9_]+)/'
-        r'(?P<file_content>[a-zA-Z0-9_]+)/'
         r'(?P<archive_format>[a-zA-Z0-9_]+)/'
         r'(?P<pks>([0-9]+/)+[0-9]+)/?$',
         certificates.CertificateMultipleDownloadView.as_view(),
         name='certificates-file-download'
     ),
     re_path(
-        r'^certificates/download/(?P<pk>[0-9]+)/?$',
-        certificates.CertificateDownloadView.as_view(short=True),
-        name='certificate-download'),
-    re_path(
-        r'^certificates/download/(?P<file_format>[a-zA-Z0-9_]+)/(?P<file_content>[a-zA-Z0-9_]+)/(?P<pk>[0-9]+)/?$',
-        certificates.CertificateDownloadView.as_view(short=False),
+        r'^certificates/download/(?P<file_format>[a-zA-Z0-9_]+)/(?P<pk>[0-9]+)/?$',
+        certificates.CertificateDownloadView.as_view(),
         name='certificate-file-download',
     ),
-    path('certificates/detail/<int:pk>/', certificates.CertificateDetailView.as_view(), name='certificate-detail'),
+    path('certificates/details/<int:pk>/', certificates.CertificateDetailView.as_view(), name='certificate-details'),
     path('issuing-cas/', issuing_cas.IssuingCaTableView.as_view(), name='issuing_cas'),
     path(
         'issuing-cas/add/method-select/',

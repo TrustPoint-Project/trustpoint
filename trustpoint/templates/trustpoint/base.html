@@ -52,7 +52,7 @@
             </div>
 
             <div class="tp-menu-group">
-                <a href="{% url 'pki:certificates' %}" class="tp-menu-head {% if page_category == 'pki' %}tp-menu-active{% endif %}">
+                <a href="{% url 'pki:domains' %}" class="tp-menu-head {% if page_category == 'pki' %}tp-menu-active{% endif %}">
                     <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-key"></use></svg>
                     {% translate "PKI" %}
@@ -81,7 +81,7 @@
                     <a href="{% url 'settings:logging-files' %}" class="tp-menu-item {% if page_name == 'logging' %}tp-menu-active{% endif %}">{% trans "Logging" %}</a>
 {#                    <a href="{% url 'settings:network' %}" class="tp-menu-item {% if page_name == 'network' %}tp-menu-active{% endif %}">{% trans "Network" %}</a>#}
 {#                    <a href="{% url 'settings:ntp' %}" class="tp-menu-item {% if page_name == 'ntp' %}tp-menu-active{% endif %}">{% trans "NTP" %}</a>#}
-                    <a href="{% url 'settings:security' %}" class="tp-menu-item {% if page_name == 'security' %}tp-menu-active{% endif %}">{% trans "Security" %}</a>
+{#                    <a href="{% url 'settings:security' %}" class="tp-menu-item {% if page_name == 'security' %}tp-menu-active{% endif %}">{% trans "Security" %}</a>#}
                 </div>
             </div>
             <div class="tp-menu-footer">

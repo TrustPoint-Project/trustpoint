@@ -15,7 +15,7 @@ from core.serializer import (
 from django.core.exceptions import ValidationError  # type: ignore[import-untyped]
 from django.db import models, transaction  # type: ignore[import-untyped]
 from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
-from core.util.x509 import CredentialNormalizer
+from core.x509 import CredentialNormalizer
 from pki.models import CertificateModel
 
 if TYPE_CHECKING:
@@ -50,28 +50,36 @@ class CredentialModel(models.Model):
         TRUSTPOINT_TLS_SERVER = 0, _('Trustpoint TLS Server')
         ROOT_CA = 1, _('Root CA')
         ISSUING_CA = 2, _('Issuing CA')
-        AUTOGEN_ROOT_CA = 3, _('Auto-Generated Root CA')
-        AUTOGEN_ISSUING_CA = 4, _('Auto-Generated ISSUING CA')
+        ISSUED_DOMAIN_CREDENTIAL_WITH_KEY = 3, _('Issued Domain Credential')
+        ISSUED_DOMAIN_CREDENTIAL_WITHOUT_KEY = 4, _('Issued Domain Credential')
 
     credential_type = models.IntegerField(
         verbose_name=_('Credential Type'), choices=CredentialTypeChoice
     )
     private_key = models.CharField(verbose_name='Private key (PEM)', max_length=65536, editable=False)
     certificate = models.ForeignKey(
-        CertificateModel, on_delete=models.CASCADE, editable=False, blank=False, null=False, related_name='credentials'
+        CertificateModel,
+        on_delete=models.CASCADE,
+        editable=False,
+        blank=False,
+        null=False,
+        related_name='credentials'
     )
     certificate_chain = models.ManyToManyField(
-        CertificateModel, blank=True, through='CertificateChainOrderModel', related_name='credential_certificate_chains'
+        CertificateModel,
+        blank=True,
+        through='CertificateChainOrderModel',
+        related_name='credential_certificate_chains'
     )
 
     created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
-    updated_at = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
 
     def __repr__(self) -> str:
         return (
             f'CredentialModel(credential_type={self.credential_type}, '
             f'certificate={self.certificate})'
         )
+
     def __str__(self) -> str:
         """Returns a human-readable string that represents this CertificateChainOrderModel entry.
 
@@ -195,8 +203,6 @@ class CredentialModel(models.Model):
                 for certificate_chain_order_model in certificate_chain_order_models
             ],
         )
-
-
 
 
 class CertificateChainOrderModel(models.Model):
