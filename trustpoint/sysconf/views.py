@@ -1,8 +1,12 @@
 """Django Views"""
 from __future__ import annotations
 
+from time import sleep
 from typing import TYPE_CHECKING
 
+import subprocess
+import logging
+from datetime import datetime
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ObjectDoesNotExist
@@ -10,7 +14,9 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.utils.translation import gettext as _
 from django.views.generic.base import RedirectView
-from django.views.generic.edit import FormView
+from django.views.generic.edit import FormView, View
+from pathlib import Path
+from django.conf import settings
 
 from trustpoint.views.base import (
     TpLoginRequiredMixin,
@@ -19,12 +25,19 @@ from trustpoint.views.base import (
 from .forms import LoggingConfigForm, NetworkConfigForm, NTPConfigForm, SecurityConfigForm
 from .models import LoggingConfig, NetworkConfig, NTPConfig, SecurityConfig
 from .security.manager import SecurityFeatures, SecurityManager
+from .utils import NTPStatusChecker, NTPRestart, NTPConnectionTester
 
 if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
 
+logger = logging.getLogger('tp.sysconf')
 
-
+STATE_FILE_DIR = Path('/etc/trustpoint/ntp/')
+SCRIPT_NTP_STATUS = STATE_FILE_DIR / Path('ntp_status.sh')
+SCRIPT_START_NTP = STATE_FILE_DIR / Path('start_ntp.sh')
+SCRIPT_STOP_NTP = STATE_FILE_DIR / Path('stop_ntp.sh')
+SCRIPT_UPDATE_NTP_CONFIG = STATE_FILE_DIR / Path('update_ntp_config.sh')
+SCRIPT_RESTART_NTP = STATE_FILE_DIR / Path('restart_ntp.sh')
 
 class SecurityLevelMixin:
     """A mixin that provides security feature checks for Django views."""
@@ -139,6 +152,7 @@ class LoggingConfigView(TpLoginRequiredMixin, FormView):
         logging_config.save()
 
         messages.success(self.request, 'Your changes were saved successfully.')
+
         return super().form_valid(form)
 
 
@@ -175,33 +189,292 @@ def network(request: HttpRequest) -> HttpResponse:
     context['network_config_form'] = NetworkConfigForm(instance=network_config)
     return render(request, 'sysconf/network.html', context=context)
 
+class ManageNTPConfigView(View):
+    """Class-based view to display, update, and manage NTP configuration."""
+    template_name = "sysconf/ntp.html"
 
-@login_required
-def ntp(request: HttpRequest) -> HttpResponse:
-    """Handle ntp Configuration
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.docker_container = settings.DOCKER_CONTAINER
+        self.ntp_config_stored = False
 
-    Returns: HTTPResponse
-    """
-    context = {'page_category': 'sysconf', 'page_name': 'ntp'}
-    # Try to read the configuration
-    try:
-        ntp_config = NTPConfig.objects.get(id=1)
-    except ObjectDoesNotExist:
-        # create an empty configuration
-        ntp_config = NTPConfig()
+    def get(self, request):
+        """Render the NTP configuration form."""
+        if self.docker_container:
 
-    if request.method == 'POST':
-        ntp_configuration_form = NTPConfigForm(request.POST, instance=ntp_config)
-        if ntp_configuration_form.is_valid():
-            ntp_configuration_form.save()
-            messages.success(request, _('Your changes were saved successfully.'))
+            config = NTPConfig.objects.first() or NTPConfig()
+            self.ntp_config_stored = bool(NTPConfig.objects.exists())
+            form = NTPConfigForm(instance=config)
+
+            status_checker = NTPStatusChecker(SCRIPT_NTP_STATUS)
+            ntp_enabled, message_level, message_text = status_checker.check_status()
+            messages.add_message(request, message_level, message_text)
+
+            return render(request, self.template_name, {
+                "form": form,
+                "ntp_enabled": ntp_enabled,
+                "ntp_available": True,
+                "ntp_config_stored": self.ntp_config_stored,
+            })
         else:
-            messages.error(request, _('Error saving the configuration'))
-        context['ntp_config_form'] = ntp_configuration_form
-        return render(request, 'sysconf/ntp.html', context=context)
+            return render(request, self.template_name, {
+                "form": NTPConfigForm(),
+                "ntp_enabled": False,
+                "ntp_available": False,
+                "ntp_config_stored": False,
+            })
 
-    context['ntp_config_form'] = NTPConfigForm(instance=ntp_config)
-    return render(request, 'sysconf/ntp.html', context=context)
+    def post(self, request):
+        """Handle form submission and update NTP configuration."""
+        if self.docker_container:
+            try:
+                config = NTPConfig.objects.first() or NTPConfig()
+                self.ntp_config_stored = bool(NTPConfig.objects.exists())
+
+            except Exception as e:
+                error_message = f"Failed to fetch or create NTPConfig instance: {str(e)}"
+                messages.error(request, error_message)
+
+                status_checker = NTPStatusChecker(SCRIPT_NTP_STATUS)
+                ntp_enabled, message_level, message_text = status_checker.check_status()
+                return render(request, self.template_name, {
+                    "form": NTPConfigForm(),
+                    "ntp_enabled": ntp_enabled,
+                    "ntp_available": True,
+                    "ntp_config_stored": self.ntp_config_stored,
+                })
+
+            try:
+                form = NTPConfigForm(request.POST, instance=config)
+            except Exception as e:
+                error_message = f"Failed to initialize NTPConfigForm: {str(e)}"
+                messages.error(request, error_message)
+
+                status_checker = NTPStatusChecker(SCRIPT_NTP_STATUS)
+                ntp_enabled, message_level, message_text = status_checker.check_status()
+                return render(request, self.template_name, {
+                    "form": NTPConfigForm(),
+                    "ntp_enabled": ntp_enabled,
+                    "ntp_available": True,
+                    "ntp_config_stored": self.ntp_config_stored,
+                })
+
+            if form.is_valid():
+                config = form.save()
+                self.ntp_config_stored = bool(NTPConfig.objects.exists())
+
+                try:
+                    if not SCRIPT_UPDATE_NTP_CONFIG.exists():
+                        raise FileNotFoundError(f"Script not found: {SCRIPT_UPDATE_NTP_CONFIG}")
+
+                    # Execute the script to apply configuration
+                    result = subprocess.run(
+                        ['sudo', str(SCRIPT_UPDATE_NTP_CONFIG), config.ntp_server_address, str(config.server_port)],
+                        capture_output=True,
+                        text=True
+                    )
+
+                    stdout = result.stdout.strip()
+                    stderr = result.stderr.strip()
+
+                    if result.returncode == 0:
+                        messages.success(request, "Configuration saved and applied successfully.")
+                    else:
+                        messages.error(request, f"Failed to apply configuration: {stderr}")
+
+                except subprocess.CalledProcessError as e:
+                    stderr = e.stderr.strip() if e.stderr else "Unknown error"
+                    messages.error(request, f"Failed to apply configuration: {stderr}")
+                except FileNotFoundError as e:
+                    messages.error(request, f"Script error: {e}")
+                except Exception as e:
+                    messages.error(request, f"Unexpected error: {str(e)}")
+
+                status_checker = NTPStatusChecker(SCRIPT_NTP_STATUS)
+                ntp_enabled, message_level, message_text = status_checker.check_status()
+
+                try:
+                    ntp_tester = NTPConnectionTester()
+                    ntp_test_success, ntp_test_result = ntp_tester.test_connection(config.ntp_server_address,
+                                                                                   config.server_port)
+                    if ntp_test_success:
+                        messages.success(request, ntp_test_result)
+                    else:
+                        raise Exception(ntp_test_result)
+
+                except Exception as e:
+                    messages.error(request, str(e))
+                    return render(request, self.template_name, {
+                        "form": NTPConfigForm(),
+                        "ntp_enabled": ntp_enabled,
+                        "ntp_available": True,
+                        "ntp_config_stored": self.ntp_config_stored,
+                    })
+
+                if ntp_enabled:
+
+                    ntp_restarter = NTPRestart(SCRIPT_RESTART_NTP)
+                    restart_successful, restart_message = ntp_restarter.restart()
+
+                    sleep(5)
+
+                    status_checker = NTPStatusChecker(SCRIPT_NTP_STATUS)
+                    ntp_enabled, message_level, message_text = status_checker.check_status()
+
+                    if restart_successful:
+
+                        if ntp_enabled:
+                            messages.success(request, restart_message)
+
+                        messages.add_message(request, message_level, message_text)
+                    else:
+                        messages.warning(request, restart_message)
+
+                return render(request, self.template_name, {
+                    "form": NTPConfigForm(instance=config),
+                    "ntp_enabled": ntp_enabled,
+                    "ntp_available": True,
+                    "ntp_config_stored": self.ntp_config_stored,
+                })
+
+            else:
+                error_message = "Invalid form data."
+                messages.error(request, error_message)
+
+                status_checker = NTPStatusChecker(SCRIPT_NTP_STATUS)
+                ntp_enabled, message_level, message_text = status_checker.check_status()
+
+                messages.add_message(request, message_level, message_text)
+
+                return render(request, self.template_name, {
+                    "form": form,
+                    "ntp_enabled": ntp_enabled,
+                    "ntp_available": True,
+                    "ntp_config_stored": self.ntp_config_stored,
+                })
+        else:
+            render(request, self.template_name, {
+                "form": NTPConfigForm(),
+                "ntp_enabled": False,
+                "ntp_available": False,
+                "ntp_config_stored": self.ntp_config_stored,
+            })
+
+
+class ToggleNTPView(View):
+    """
+    Class-based view to enable or disable NTP synchronization.
+    """
+
+    def post(self, request, enable):
+        """
+        Enable or disable NTP based on the `enable` parameter.
+        :param enable: A string indicating "true" or "false".
+        """
+        enable = enable.lower() == "true"
+
+        try:
+            config = NTPConfig.objects.first()
+            if not config:
+                messages.error(request, "No NTP configuration found.")
+                return redirect("sysconf:ntp")
+
+            if enable:
+                self._enable_ntp(request, config)
+            else:
+                self._disable_ntp(request, config)
+
+            config.save()
+            sleep(5)
+
+        except FileNotFoundError as e:
+            messages.error(request, f"Script error: {e}")
+        except subprocess.CalledProcessError as e:
+            error_message = (
+                f"Failed to toggle NTP. Command: {e.cmd}, Return Code: {e.returncode}, "
+                f"Output: {e.output}, Error: {e.stderr}"
+            )
+            messages.error(request, error_message)
+        except Exception as e:
+            messages.error(request, f"Unexpected error: {str(e)}")
+
+        return redirect("sysconf:ntp")
+
+    def _enable_ntp(self, request, config):
+        """
+        Enable NTP synchronization.
+        """
+        if not SCRIPT_START_NTP.exists():
+            raise FileNotFoundError(f"Script not found: {SCRIPT_START_NTP}")
+
+        result = subprocess.run(
+            ['sudo', str(SCRIPT_START_NTP)],
+            capture_output=True,
+            text=True
+        )
+
+        stdout = result.stdout.strip()
+        stderr = result.stderr.strip()
+
+        if result.returncode != 0:
+            raise subprocess.CalledProcessError(result.returncode, result.args, output=stdout, stderr=stderr)
+
+        config.enabled = True
+        messages.success(request, "NTP enabled.")
+
+    def _disable_ntp(self, request, config):
+        """
+        Disable NTP synchronization.
+        """
+        if not SCRIPT_STOP_NTP.exists():
+            raise FileNotFoundError(f"Script not found: {SCRIPT_STOP_NTP}")
+
+        result = subprocess.run(
+            ['sudo', str(SCRIPT_STOP_NTP)],
+            capture_output=True,
+            text=True
+        )
+
+        stdout = result.stdout.strip()
+        stderr = result.stderr.strip()
+
+        if result.returncode != 0:
+            raise subprocess.CalledProcessError(result.returncode, result.args, output=stdout, stderr=stderr)
+
+        config.enabled = False
+        messages.success(request, "NTP disabled successfully.")
+
+class NTPStatusView(View):
+    """Class-based view to check the current NTP status."""
+
+    def post(self, request):
+        """Handles the Check Status button action."""
+        try:
+            if not SCRIPT_NTP_STATUS.exists():
+                raise FileNotFoundError(f"Script not found: {SCRIPT_NTP_STATUS}")
+
+            result = subprocess.run(
+                ['sudo', str(SCRIPT_NTP_STATUS)],
+                capture_output=True,
+                text=True
+            )
+
+            stdout = result.stdout.strip()
+            stderr = result.stderr.strip()
+
+            if result.returncode == 0:
+                messages.success(request, f"NTP Status: {stdout}")
+            else:
+                messages.error(request, f"Failed to fetch NTP status: {stderr}")
+        except FileNotFoundError as e:
+            messages.error(request, f"Script error: {e}")
+        except subprocess.CalledProcessError as e:
+            error_message = f"Failed to fetch NTP status: {e.stderr if e.stderr else 'Unknown error'}"
+            messages.error(request, error_message)
+        except Exception as e:
+            messages.error(request, f"Unexpected error: {str(e)}")
+
+        return redirect("sysconf:ntp")
 
 
 @login_required

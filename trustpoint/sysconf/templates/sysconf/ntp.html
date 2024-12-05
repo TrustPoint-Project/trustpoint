@@ -1,23 +1,65 @@
 {% extends 'trustpoint/base.html' %}
 {% load i18n %}
 {% load crispy_forms_filters %}
+
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h1>{% trans "NTP Configuration" %}</h1>
+    <div class="card">
+        <div class="card-header">
+            <h1 class="card-title">{% trans "NTP Configuration" %}</h1>
+        </div>
+        <div class="card-body">
+            {% if ntp_available %}
+                <form method="post">
+                    {% csrf_token %}
+                    <fieldset class="form-group tp-form-group">
+                        {{ form|crispy }}
+                    </fieldset>
+                    {% if ntp_enabled %}
+                        <button type="submit"
+                                class="btn btn-primary">{% trans "Save Configuration & Restart NTP" %}</button>
+                    {% else %}
+                        <button type="submit" class="btn btn-primary">{% trans "Save Configuration" %}</button>
+                    {% endif %}
+                </form>
+            {% else %}
+                <div class="alert alert-warning" role="alert">
+                    <p>{% trans "NTP is only available in the Docker container setup." %}</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
-    <div class="card-body pt-4 pb-4">
-        <form method="POST" enctype="multipart/form-data" id="ntp_configuration">
-            {% csrf_token %}
-            <fieldset class="form-group tp-form-group">
-                {{ ntp_config_form|crispy }}
-            </fieldset>
-        </form>
-    </div>
-    <div class="card-footer text-body-secondary">
-        <button class="btn btn-primary ms-3 float-end" type="submit" form="ntp_configuration">
-            {% trans "Save" %}
-        </button>
-    </div>
-</div>
-{% endblock content %}
+
+    {% if ntp_available %}
+        {% if ntp_config_stored %}
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h2 class="card-title">{% trans "NTP Activation" %}</h2>
+                </div>
+                <div class="card-body">
+
+                    <div class="alert alert-info" role="alert">
+                        <p>{% trans "Updating the NTP service may take some time. Please refresh the page using the 'Check Status' button to view the latest status." %}</p>
+                    </div>
+
+                    <div class="d-flex justify-content-start align-items-center gap-2">
+                        {% if ntp_enabled %}
+                            <form method="post" action="{% url 'sysconf:toggle_ntp' 'false' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-danger">{% trans "Disable NTP" %}</button>
+                            </form>
+                        {% else %}
+                            <form method="post" action="{% url 'sysconf:toggle_ntp' 'true' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-success">{% trans "Enable NTP" %}</button>
+                            </form>
+                        {% endif %}
+
+                        <button type="button" class="btn btn-secondary" onclick="location.reload();">
+                            {% trans "Check Status" %}
+                        </button>
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    {% endif %}
+{% endblock %}
