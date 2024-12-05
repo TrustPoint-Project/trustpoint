@@ -13,6 +13,8 @@ urlpatterns = [
     path('ssh/', views.ssh, name='ssh'),
     path('security/', views.security, name='security'),
     path("ntp/", views.ManageNTPConfigView.as_view(), name="ntp"),
-    path("ntp/toggle/<str:enable>/", views.ToggleNTPView.as_view(), name="toggle_ntp"),
+    path("toggle_ntp/<str:enable>/", views.ToggleNTPView.as_view(), name="toggle_ntp"),
+    path("ntp-status/", views.NTPStatusView.as_view(), name="ntp_status"),
+
     #path('test-ntp-connection/', views.test_ntp_connection, name='test_ntp_connection'),
 ]

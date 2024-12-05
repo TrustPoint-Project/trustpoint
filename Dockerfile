@@ -9,7 +9,7 @@ EXPOSE 80 443
 
 
 # Update apt repository and install required dependencies from apt
-RUN apt update -y && apt install -y sudo apt-utils apache2 apache2-utils gettext python3 python3-venv libapache2-mod-wsgi-py3 python3-pip sed ntpsec
+RUN apt update -y && apt install -y sudo apt-utils apache2 apache2-utils gettext python3 python3-venv libapache2-mod-wsgi-py3 python3-pip sed chrony
 
 # Create a symbolic link, so that calling python will invoke python3
 RUN ln -s /usr/bin/python3 /usr/bin/python
@@ -72,7 +72,6 @@ RUN chown -R www-data:www-data .
 
 # Enable the site configuration
 RUN a2ensite trustpoint-http-init.conf
-
 
 # RUN apache as www-data user and in foreground
 CMD ["apache2ctl", "-D", "FOREGROUND"]

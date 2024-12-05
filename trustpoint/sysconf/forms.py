@@ -12,7 +12,7 @@ from .security import SecurityModeChoices
 class NTPConfigForm(forms.ModelForm):
     class Meta:
         model = NTPConfig
-        fields = ['ntp_server_address', 'server_port', 'enabled']
+        fields = ['ntp_server_address', 'server_port']
         widgets = {
             'ntp_server_address': forms.TextInput(attrs={'placeholder': 'Enter NTP server (e.g., pool.ntp.org)'}),
             'server_port': forms.NumberInput(attrs={'min': 1, 'max': 65535}),

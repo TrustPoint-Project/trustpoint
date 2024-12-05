@@ -1,18 +1,27 @@
 #!/bin/bash
 
+CHRONY_CONF="/etc/chrony/chrony.conf"
+
 # Ensure Chrony is installed and available
 if ! command -v chronyd &> /dev/null; then
     echo "Chrony is not installed. Please install it first."
     exit 1
 fi
 
-# Start Chrony
-echo "Starting Chrony..."
-chronyd -d &  # Run in the background in debug mode (change to normal mode if needed)
+if [ ! -f "$CHRONY_CONF" ]; then
+    echo "Chrony configuration file not found: $CHRONY_CONF"
+    exit 2
+fi
 
-if [ $? -eq 0 ]; then
+# Start Chrony in the background
+echo "Starting Chrony in the background..."
+nohup chronyd > /var/log/chrony.log 2>&1 &
+
+# Check if the process started successfully
+if pgrep chronyd > /dev/null; then
     echo "Chrony started successfully."
+    exit 0
 else
     echo "Failed to start Chrony."
-    exit 1
+    exit 3
 fi
