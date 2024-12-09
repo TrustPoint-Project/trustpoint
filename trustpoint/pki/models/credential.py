@@ -27,7 +27,13 @@ if TYPE_CHECKING:
     PrivateKey = Union[ec.EllipticCurvePrivateKey, rsa.RSAPrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
-__all__ = ['CredentialModel', 'CertificateChainOrderModel']
+__all__ = ['CredentialAlreadyExistsError', 'CredentialModel', 'CertificateChainOrderModel']
+
+
+class CredentialAlreadyExistsError(ValidationError):
+
+    def __init__(self, *args: tuple, **kwargs: dict) -> None:
+        super().__init__(message=_('Credential already exists.'), *args, **kwargs)
 
 
 class CredentialModel(models.Model):
@@ -38,6 +44,12 @@ class CredentialModel(models.Model):
 
     PKCS#11 credentials are not yet supported.
     """
+
+    class Meta:
+        """Metaclass configurations."""
+        constraints = [
+            models.UniqueConstraint(fields=['certificate'], name='unique_certificate'),
+        ]
 
     class CredentialTypeChoice(models.IntegerChoices):
         """The CredentialTypeChoice defines the type of the credential and thus implicitly restricts its usage.
@@ -57,9 +69,10 @@ class CredentialModel(models.Model):
         verbose_name=_('Credential Type'), choices=CredentialTypeChoice
     )
     private_key = models.CharField(verbose_name='Private key (PEM)', max_length=65536, editable=False)
+
     certificate = models.ForeignKey(
         CertificateModel,
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         editable=False,
         blank=False,
         null=False,
@@ -87,6 +100,14 @@ class CredentialModel(models.Model):
             str: Human-readable string that represents this CertificateChainOrderModel entry.
         """
         return self.__repr__()
+
+    def save(self, *args: tuple, **kwargs: dict) -> None:
+        if self.pk:
+            err_msg = _('Editing existing credentials is not supported.')
+            raise ValidationError(err_msg)
+        if CredentialModel.objects.filter(certificate=self.certificate).exists():
+            raise CredentialAlreadyExistsError()
+        super().save(*args, **kwargs)
 
     @classmethod
     def save_credential_serializer(
@@ -131,7 +152,6 @@ class CredentialModel(models.Model):
         certificate = CertificateModel.save_certificate(
             normalized_credential_serializer.credential_certificate
         )
-
         # TODO(AlexHx8472): Verify that the credential is valid in respect to the credential_type!!!
 
         credential_model = cls.objects.create(
@@ -208,8 +228,8 @@ class CredentialModel(models.Model):
 class CertificateChainOrderModel(models.Model):
     """This Model is used to preserve the order of certificates in credential certificate chains."""
 
-    certificate = models.ForeignKey(CertificateModel, on_delete=models.CASCADE, null=False, blank=False, editable=False)
-    credential = models.ForeignKey(CredentialModel, on_delete=models.CASCADE, null=False, blank=False, editable=False)
+    certificate = models.ForeignKey(CertificateModel, on_delete=models.PROTECT, null=False, blank=False, editable=False)
+    credential = models.ForeignKey(CredentialModel, on_delete=models.PROTECT, null=False, blank=False, editable=False)
     order = models.PositiveIntegerField(null=False, blank=False, editable=False)
 
     class Meta:

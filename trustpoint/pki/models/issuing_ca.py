@@ -15,6 +15,7 @@ class IssuingCaModel(LoggerMixin, models.Model):
 
     This model contains the configurations of all Issuing CAs available within the Trustpoint.
     """
+
     class IssuingCaTypeChoice(models.IntegerChoices):
         """The IssuingCaTypeChoice defines the type of Issuing CA.
 
@@ -32,7 +33,7 @@ class IssuingCaModel(LoggerMixin, models.Model):
         max_length=100,
         validators=[UniqueNameValidator()],
         unique=True)
-    credential = models.ForeignKey(CredentialModel, related_name='issuing_cas', on_delete=models.CASCADE)
+    credential = models.OneToOneField(CredentialModel, related_name='issuing_cas', on_delete=models.PROTECT)
     issuing_ca_type = models.IntegerField(verbose_name=_('Issuing CA Type'), choices=IssuingCaTypeChoice, null=False, blank=False)
 
     created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
