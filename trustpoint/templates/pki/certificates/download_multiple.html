@@ -44,7 +44,7 @@
                                 <div>{{ certificate.serial_number }}</div>
                             </div>
                         </div>
-                         <a class="btn btn-primary min-width-15 mt-2" href="{% url 'pki:certificate-details' pk=certificate.id %}">Certificate Details</a><br>
+                         <a class="btn btn-primary min-width-15 mt-2" href="{% url 'pki:certificate-detail' pk=certificate.id %}">Certificate Details</a><br>
                         {% if not forloop.last %}
                             <hr>
                         {% endif %}

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse_lazy
-from django.utils.translation import gettext as _
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormView
 from django_tables2 import SingleTableView

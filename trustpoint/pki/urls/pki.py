@@ -35,7 +35,7 @@ urlpatterns = [
         certificates.CertificateDownloadView.as_view(),
         name='certificate-file-download',
     ),
-    path('certificates/details/<int:pk>/', certificates.CertificateDetailView.as_view(), name='certificate-details'),
+    path('certificates/details/<int:pk>/', certificates.CertificateDetailView.as_view(), name='certificate-detail'),
     path('issuing-cas/', issuing_cas.IssuingCaTableView.as_view(), name='issuing_cas'),
     path(
         'issuing-cas/add/method-select/',
