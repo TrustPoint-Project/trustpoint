@@ -1,23 +1,68 @@
 {% extends 'trustpoint/base.html' %}
 {% load i18n %}
 {% load crispy_forms_filters %}
+
 {% block content %}
-<div class="card">
-    <div class="card-header">
-        <h1>{% trans "NTP Configuration" %}</h1>
+    <div class="card">
+        <div class="card-header">
+            <h1 class="card-title">{% trans "NTP Client" %}</h1>
+        </div>
+        <div class="card-body">
+            {% if ntp_available %}
+                <!-- Main form for saving the configuration -->
+                <form method="post">
+                    {% csrf_token %}
+                    <fieldset class="form-group tp-form-group">
+                        {{ form|crispy }}
+                    </fieldset>
+
+                    <div class="d-flex justify-content-start align-items-center gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            {% if ntp_enabled %}
+                                {% trans "Save Configuration & Restart NTP" %}
+                            {% else %}
+                                {% trans "Save Configuration" %}
+                            {% endif %}
+                        </button>
+                    </div>
+                </form>
+
+                <!-- Separate form for enabling/disabling NTP -->
+                <div class="d-flex justify-content-start align-items-center gap-2 mt-3">
+                    {% if ntp_config_stored %}
+                        <form method="post" action="{% if ntp_enabled %}{% url 'sysconf:toggle_ntp' 'false' %}{% else %}{% url 'sysconf:toggle_ntp' 'true' %}{% endif %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn {% if ntp_enabled %}btn-danger{% else %}btn-success{% endif %}">
+                                {% if ntp_enabled %}
+                                    {% trans "Disable NTP" %}
+                                {% else %}
+                                    {% trans "Enable NTP" %}
+                                {% endif %}
+                            </button>
+                        </form>
+                    {% endif %}
+
+                    <!-- Check Status button -->
+                    <button type="button" class="btn btn-secondary" onclick="location.reload();">
+                        {% trans "Check Status" %}
+                    </button>
+                </div>
+            {% else %}
+                <div class="alert alert-warning" role="alert">
+                    <p>{% trans "NTP is only available in the Docker container setup." %}</p>
+                </div>
+            {% endif %}
+        </div>
     </div>
-    <div class="card-body pt-4 pb-4">
-        <form method="POST" enctype="multipart/form-data" id="ntp_configuration">
-            {% csrf_token %}
-            <fieldset class="form-group tp-form-group">
-                {{ ntp_config_form|crispy }}
-            </fieldset>
-        </form>
+    <div class="card">
+        <div class="card-header">
+            <h1 class="card-title">{% trans "NTP Server" %}</h1>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-info" role="alert">
+                    <p>{% trans "Operating an NTP server will be available in future versions." %}</p>
+            </div>
+        </div>
     </div>
-    <div class="card-footer text-body-secondary">
-        <button class="btn btn-primary ms-3 float-end" type="submit" form="ntp_configuration">
-            {% trans "Save" %}
-        </button>
-    </div>
-</div>
-{% endblock content %}
+
+{% endblock %}
