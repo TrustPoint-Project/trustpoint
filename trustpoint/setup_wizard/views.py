@@ -1,28 +1,26 @@
 """Views for the users application."""
+
 from __future__ import annotations
 
-from pathlib import Path
 import subprocess
+from pathlib import Path
+from typing import Any, ClassVar
+
 from django.contrib import messages
-
-from django.http import HttpResponseRedirect
-from django.core.management import call_command
-from django.shortcuts import redirect
-from django.views.generic import TemplateView, FormView, View
-from django.urls import reverse_lazy
-
-from setup_wizard.forms import EmptyForm ,StartupWizardTlsCertificateForm
-from setup_wizard.tls_credential import Generator
-from setup_wizard import SetupWizardState
-
-from pki.models import CertificateModel
-from pki.models.truststore import TrustpointTlsServerCredentialModel, ActiveTrustpointTlsServerCredentialModel
-
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User
+from django.core.management import call_command
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
+from django.views.generic import FormView, TemplateView, View
+from pki.models import CertificateChainOrderModel, CertificateModel, CredentialModel
+from pki.models.truststore import TrustpointTlsServerCredentialModel
 
+from setup_wizard import SetupWizardState
+from setup_wizard.forms import EmptyForm, StartupWizardTlsCertificateForm
+from setup_wizard.tls_credential import Generator
 from trustpoint.settings import DOCKER_CONTAINER
-
 
 APACHE_PATH = Path(__file__).parent.parent.parent / 'docker/apache/tls'
 APACHE_KEY_PATH = APACHE_PATH / Path('apache-tls-server-key.key')
@@ -37,10 +35,30 @@ SCRIPT_WIZARD_DEMO_DATA = STATE_FILE_DIR / Path('wizard_demo_data.sh')
 SCRIPT_WIZARD_CREATE_SUPER_USER = STATE_FILE_DIR / Path('wizard_create_super_user.sh')
 
 
-class StartupWizardRedirect:
+class TrustpointWizardError(Exception):
+    """Custom exception for Trustpoint wizard-related issues."""
 
+
+
+class StartupWizardRedirect:
+    """Handles redirection logic based on the current state of the setup wizard.
+
+    This class provides a static method for determining the appropriate redirection
+    URL based on the wizard's state, ensuring users are guided through the setup process.
+    """
     @staticmethod
     def redirect_by_state(wizard_state: SetupWizardState) -> HttpResponseRedirect:
+        """Redirects the user to the appropriate setup wizard page based on the current state.
+
+        Args:
+            wizard_state (SetupWizardState): The current state of the setup wizard.
+
+        Returns:
+            HttpResponseRedirect: A redirection response to the appropriate page.
+
+        Raises:
+            ValueError: If the wizard state is unrecognized or invalid.
+        """
         if wizard_state == SetupWizardState.WIZARD_INITIAL:
             return redirect('setup_wizard:initial', permanent=False)
         if wizard_state == SetupWizardState.WIZARD_TLS_SERVER_CREDENTIAL_APPLY:
@@ -51,7 +69,8 @@ class StartupWizardRedirect:
             return redirect('setup_wizard:create_super_user', permanent=False)
         if wizard_state == SetupWizardState.WIZARD_COMPLETED:
             return redirect('users:login', permanent=False)
-        raise ValueError('Unknown wizard state found. Failed to redirect by state.')
+        err_msg = 'Unknown wizard state found. Failed to redirect by state.'
+        raise ValueError(err_msg)
 
 
 class SetupWizardInitialView(TemplateView):
@@ -75,7 +94,7 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
     form_class = StartupWizardTlsCertificateForm
     success_url = reverse_lazy('setup_wizard:tls_server_credential_apply')
 
-    def get(self, *args, **kwargs):
+    def dispatch(self, request, *args, **kwargs):
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
@@ -83,59 +102,76 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
         if wizard_state != SetupWizardState.WIZARD_INITIAL:
             return StartupWizardRedirect.redirect_by_state(wizard_state)
 
-        return super().get(*args, **kwargs)
-
-    def post(self, *args, **kwargs):
-        if not DOCKER_CONTAINER:
-            return redirect('users:login', permanent=False)
-
-        wizard_state = SetupWizardState.get_current_state()
-        if wizard_state != SetupWizardState.WIZARD_INITIAL:
-            return StartupWizardRedirect.redirect_by_state(wizard_state)
-
-        return super().post(*args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        cleaned_data = form.cleaned_data
-        generator = Generator(
-            ipv4_addresses=cleaned_data['ipv4_addresses'],
-            ipv6_addresses=cleaned_data['ipv6_addresses'],
-            domain_names=cleaned_data['domain_names']
-        )
-        tls_server_credential = generator.generate_tls_credential()
+        try:
+            # Generate the TLS Server Credential
+            cleaned_data = form.cleaned_data
+            generator = Generator(
+                ipv4_addresses=cleaned_data['ipv4_addresses'],
+                ipv6_addresses=cleaned_data['ipv6_addresses'],
+                domain_names=cleaned_data['domain_names'],
+            )
+            tls_server_credential = generator.generate_tls_credential()
 
-        trust_store_initializer = TrustStoreInitializer(
-            unique_name='Trustpoint-TLS-Server-Credential',
-            trust_store=tls_server_credential.additional_certificates.as_pem()
-        )
-        trust_store_model = trust_store_initializer.save()
-        certificate = CertificateModel.save_certificate(certificate=tls_server_credential.credential_certificate.as_crypto())
+            # Save the main certificate
+            credential_certificate = tls_server_credential.credential_certificate.as_crypto()
+            certificate_model = CertificateModel.save_certificate(credential_certificate)
 
-        trust_store_tls_server_credential_model = TrustpointTlsServerCredentialModel(
-            private_key_pem = tls_server_credential.credential_private_key.as_pkcs8_pem().decode(),
-            certificate = certificate,
-            trust_store = trust_store_model
-        )
-        trust_store_tls_server_credential_model.save()
+            # Save the private key
+            private_key_pem = tls_server_credential.credential_private_key.as_pkcs8_pem().decode()
 
-        if not SCRIPT_WIZARD_INITIAL.exists():
-            raise ValueError(str(SCRIPT_WIZARD_INITIAL))
+            # Save the credential and chain
+            credential_model = CredentialModel.objects.create(
+                credential_type=CredentialModel.CredentialTypeChoice.TRUSTPOINT_TLS_SERVER,
+                certificate=certificate_model,
+                private_key=private_key_pem,
+            )
 
-        # TODO(AlexHx8472): Exception Handling
-        proc = subprocess.run(['sudo', f'{SCRIPT_WIZARD_INITIAL}'])
+            # Save the certificate chain
+            for order, additional_certificate in enumerate(tls_server_credential.additional_certificates.as_crypto()):
+                chain_certificate_model = CertificateModel.save_certificate(additional_certificate)
+                CertificateChainOrderModel.objects.create(
+                    credential=credential_model, certificate=chain_certificate_model, order=order
+                )
 
-        # TODO(AlexHx8472): Exception Handling
-        match proc.returncode:
-            case 1:
-                raise ValueError('Initial failed with 1')
-            case 2:
-                raise ValueError('Initial failed with 2')
-            case 3:
-                raise ValueError('Initial failed with 3')
-            case 4:
-                raise ValueError('Initial failed with 4')
+            self._execute_initial_script()
 
-        return super().form_valid(form)
+            messages.add_message(self.request, messages.SUCCESS, 'TLS Server Credential generated successfully.')
+
+            return super().form_valid(form)
+        except subprocess.CalledProcessError as e:
+            error_message = self._get_error_message_from_return_code(e.returncode)
+            messages.add_message(self.request, messages.ERROR, f'Script error: {error_message}')
+            return redirect('setup_wizard:initial', permanent=False)
+        except FileNotFoundError:
+            messages.add_message(self.request, messages.ERROR, f'Transition script not found: {SCRIPT_WIZARD_INITIAL}.')
+            return redirect('setup_wizard:initial', permanent=False)
+        except Exception as e:
+            messages.add_message(self.request, messages.ERROR, f'Error generating TLS Server Credential: {e}')
+            return redirect('setup_wizard:initial', permanent=False)
+
+    def _execute_initial_script(self):
+        """Execute the initial setup script."""
+        if not Path(SCRIPT_WIZARD_INITIAL).exists():
+            err_msg = f'Script not found: {SCRIPT_WIZARD_INITIAL}'
+            raise FileNotFoundError(err_msg)
+
+        result = subprocess.run(['sudo', str(SCRIPT_WIZARD_INITIAL)], capture_output=True, text=True, check=True)
+
+        if result.returncode != 0:
+            raise subprocess.CalledProcessError(result.returncode, SCRIPT_WIZARD_INITIAL)
+
+    def _get_error_message_from_return_code(self, return_code):
+        """Maps return codes to error messages."""
+        error_messages = {
+            1: 'Trustpoint is not in the WIZARD_INITIAL state. State file missing.',
+            2: 'Multiple state files detected. Wizard state is corrupted.',
+            3: 'Failed to remove the WIZARD_INITIAL state file.',
+            4: 'Failed to create the WIZARD_TLS_SERVER_CREDENTIAL_APPLY state file.',
+        }
+        return error_messages.get(return_code, 'An unknown error occurred.')
 
 
 class SetupWizardImportTlsServerCredentialView(View):
@@ -150,9 +186,8 @@ class SetupWizardImportTlsServerCredentialView(View):
             return StartupWizardRedirect.redirect_by_state(wizard_state)
 
         messages.add_message(
-            self.request,
-            messages.ERROR,
-            'Import of the TLS-Server credential is not yet implemented.')
+            self.request, messages.ERROR, 'Import of the TLS-Server credential is not yet implemented.'
+        )
         return redirect('setup_wizard:initial', permanent=False)
 
 
@@ -162,7 +197,7 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
     template_name = 'setup_wizard/tls_server_credential_apply.html'
     success_url = reverse_lazy('setup_wizard:demo_data')
 
-    def get(self, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
@@ -171,14 +206,10 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
             return StartupWizardRedirect.redirect_by_state(wizard_state)
 
         file_format = self.kwargs.get('file_format')
-        if file_format is None:
-            return super().get(*args, **kwargs)
+        if file_format:
+            return self._generate_trust_store_response(file_format)
 
-        trust_store = TrustpointTlsServerCredentialModel.objects.all()[0].trust_store
-        if trust_store is None:
-            return super().get(*args, **kwargs)
-
-        return TrustStoreDownloadResponseBuilder(trust_store.id, file_format).as_django_http_response()
+        return super().get(request, *args, **kwargs)
 
     def post(self, *args, **kwargs):
         if not DOCKER_CONTAINER:
@@ -191,64 +222,123 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
         return super().post(*args, **kwargs)
 
     def form_valid(self, form):
+        try:
+            trustpoint_tls_server_credential_model = CredentialModel.objects.get(
+                credential_type=CredentialModel.CredentialTypeChoice.TRUSTPOINT_TLS_SERVER
+            )
+            if not trustpoint_tls_server_credential_model:
+                err_msg = 'No Trustpoint TLS Server Credential found.'
+                raise ValueError(err_msg)
 
-        trustpoint_tls_server_credential_model = TrustpointTlsServerCredentialModel.objects.all()[0]
-        ActiveTrustpointTlsServerCredentialModel(credential=trustpoint_tls_server_credential_model).save()
+            self._write_pem_files(trustpoint_tls_server_credential_model)
 
-        private_key_pem = trustpoint_tls_server_credential_model.private_key_pem
-        certificate = trustpoint_tls_server_credential_model.certificate.get_certificate_serializer().as_pem().decode()
-        trust_store = trustpoint_tls_server_credential_model.trust_store.get_serializer().as_pem().decode()
+            self._execute_transition_script()
+
+            messages.add_message(self.request, messages.SUCCESS, 'TLS Server Credential applied successfully.')
+            return super().form_valid(form)
+
+        except subprocess.CalledProcessError as e:
+            error_message = self._map_exit_code_to_message(e.returncode)
+            messages.add_message(self.request, messages.ERROR, f'Error applying TLS Server Credential: {error_message}')
+            return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
+        except FileNotFoundError as e:
+            messages.add_message(self.request, messages.ERROR, f'File not found: {e}')
+            return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
+
+        except TrustpointWizardError as e:
+            messages.add_message(self.request, messages.ERROR, str(e))
+            return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
+        except Exception as e:
+            messages.add_message(self.request, messages.ERROR, f'An unexpected error occurred: {e}')
+            return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
+
+    def _execute_transition_script(self):
+        """Executes the shell script for transitioning states."""
+        if not Path(SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY).exists():
+            err_msg = f'Script not found: {SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY}'
+            raise FileNotFoundError(err_msg)
+
+        result = subprocess.run(
+            ['sudo', SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY], capture_output=True, text=True, check=True
+        )
+        if result.returncode != 0:
+            raise subprocess.CalledProcessError(result.returncode, SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY)
+
+    def _map_exit_code_to_message(self, return_code):
+        """Maps shell script exit codes to user-friendly error messages."""
+        error_messages = {
+            1: 'State file not found. Ensure Trustpoint is in the correct state.',
+            2: 'Multiple state files detected. The wizard state is corrupted.',
+            3: 'Failed to create the required TLS directory for Apache.',
+            4: 'Failed to clear existing files in the Apache TLS directory.',
+            5: 'Failed to copy Trustpoint TLS files to the Apache directory.',
+            6: 'Failed to remove existing Apache sites from sites-enabled.',
+            7: 'Failed to copy HTTP config to Apache sites-available.',
+            8: 'Failed to copy HTTP config to Apache sites-enabled.',
+            9: 'Failed to copy HTTPS config to Apache sites-available.',
+            10: 'Failed to copy HTTPS config to Apache sites-enabled.',
+            11: 'Failed to enable Apache mod_ssl.',
+            12: 'Failed to enable Apache mod_rewrite.',
+            13: 'Failed to restart Apache gracefully.',
+            14: 'Failed to remove the current state file.',
+            15: 'Failed to create the next state file.',
+        }
+        return error_messages.get(return_code, 'An unknown error occurred.')
+
+    def _generate_trust_store_response(self, file_format):
+        """Generate a response containing the trust store."""
+        try:
+            trustpoint_tls_server_credential_model = CredentialModel.objects.get(
+                credential_type=CredentialModel.CredentialTypeChoice.TRUSTPOINT_TLS_SERVER
+            )
+        except CredentialModel.DoesNotExist:
+            messages.add_message(self.request, messages.ERROR, 'No trust store available for download.')
+            return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
+
+        valid_formats = {'pem', 'pkcs7_der', 'pkcs7_pem'}
+        if file_format not in valid_formats:
+            messages.add_message(
+                self.request,
+                messages.ERROR,
+                f"Invalid file format requested: {file_format}. Supported formats: {', '.join(valid_formats)}.",
+            )
+            return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
+
+        try:
+            serializer = trustpoint_tls_server_credential_model.certificate.get_certificate_serializer()
+            if file_format == 'pem':
+                trust_store = serializer.as_pem().decode()
+                content_type = 'application/x-pem-file'
+            elif file_format == 'pkcs7_der':
+                trust_store = serializer.as_pkcs7_der()
+                content_type = 'application/pkcs7-mime'
+            elif file_format == 'pkcs7_pem':
+                trust_store = serializer.as_pkcs7_pem().decode()
+                content_type = 'application/x-pem-file'
+        except Exception as e:
+            messages.add_message(self.request, messages.ERROR, f'Error generating {file_format} trust store: {e}')
+            return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
+
+        response = HttpResponse(content_type=content_type)
+        response['Content-Disposition'] = f'attachment; filename="trust_store.{file_format}"'
+        response.write(trust_store)
+        return response
+
+    def _write_pem_files(self, credential_model):
+        """Writes the private key, certificate, and trust store PEM files to disk."""
+        private_key_pem = credential_model.get_private_key_serializer().as_pkcs8_pem().decode()
+        certificate_pem = credential_model.get_certificate_serializer().as_pem().decode()
+        trust_store_pem = credential_model.get_certificate_chain_serializer().as_pem().decode()
 
         APACHE_KEY_PATH.write_text(private_key_pem)
-        APACHE_CERT_PATH.write_text(certificate)
-        APACHE_CERT_CHAIN_PATH.write_text(trust_store)
-
-        if not SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY.exists():
-            raise ValueError(str(SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY))
-
-        # TODO(AlexHx8472): Exception Handling
-        proc = subprocess.run(['sudo', f'{SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY}'])
-
-        # TODO(AlexHx8472): Exception Handling
-        match proc.returncode:
-            case 1:
-                raise ValueError('Credential apply failed with 1')
-            case 2:
-                raise ValueError('Credential apply failed with 2')
-            case 3:
-                raise ValueError('Credential apply failed with 3')
-            case 4:
-                raise ValueError('Credential apply failed with 4')
-            case 5:
-                raise ValueError('Credential apply failed with 5')
-            case 6:
-                raise ValueError('Credential apply failed with 6')
-            case 7:
-                raise ValueError('Credential apply failed with 7')
-            case 8:
-                raise ValueError('Credential apply failed with 8')
-            case 9:
-                raise ValueError('Credential apply failed with 9')
-            case 10:
-                raise ValueError('Credential apply failed with 10')
-            case 11:
-                raise ValueError('Credential apply failed with 11')
-            case 12:
-                raise ValueError('Credential apply failed with 12')
-            case 13:
-                raise ValueError('Credential apply failed with 13')
-            case 14:
-                raise ValueError('Credential apply failed with 14')
-            case 15:
-                raise ValueError('Credential apply failed with 15')
-
-        return super().form_valid(form)
+        APACHE_CERT_PATH.write_text(certificate_pem)
+        APACHE_CERT_CHAIN_PATH.write_text(trust_store_pem)
 
 
 class SetupWizardTlsServerCredentialApplyCancelView(View):
     http_method_names = ['get']
 
-    def get(self, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
@@ -256,30 +346,60 @@ class SetupWizardTlsServerCredentialApplyCancelView(View):
         if wizard_state != SetupWizardState.WIZARD_TLS_SERVER_CREDENTIAL_APPLY:
             return StartupWizardRedirect.redirect_by_state(wizard_state)
 
-        TrustStoreModel.objects.all().delete()
+        try:
+            self._clear_credential_and_certificate_data()
+
+            self._execute_cancel_script()
+
+            messages.add_message(request, messages.INFO, 'Generation of the TLS-Server credential canceled.')
+            return redirect('setup_wizard:initial', permanent=False)
+
+        except subprocess.CalledProcessError as e:
+            messages.add_message(
+                request,
+                messages.ERROR,
+                f'Cancel script failed with exit code {e.returncode}: {self._map_exit_code_to_message(e.returncode)}',
+            )
+            return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
+
+        except FileNotFoundError:
+            messages.add_message(
+                request, messages.ERROR, f'Cancel script not found: {SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY_CANCEL}'
+            )
+            return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
+
+        except Exception as e:
+            messages.add_message(request, messages.ERROR, f'An unexpected error occurred: {e}')
+            return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
+
+    def _clear_credential_and_certificate_data(self):
+        """Clears credential and certificate data."""
         CertificateModel.objects.all().delete()
         TrustpointTlsServerCredentialModel.objects.all().delete()
 
+    def _execute_cancel_script(self):
+        """Executes the shell script to cancel the TLS-Server credential generation."""
         if not SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY_CANCEL.exists():
-            raise ValueError(str(SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY_CANCEL))
+            err_msg = f'Script not found: {SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY_CANCEL}'
+            raise FileNotFoundError(err_msg)
 
-        # TODO(AlexHx8472): Exception Handling
-        proc = subprocess.run(['sudo', f'{SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY_CANCEL}'])
+        result = subprocess.run(
+            ['sudo', str(SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY_CANCEL)], capture_output=True, text=True, check=True
+        )
+        if result.returncode != 0:
+            raise subprocess.CalledProcessError(
+                result.returncode, str(SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY_CANCEL)
+            )
 
-        # TODO(AlexHx8472): Exception Handling
-        match proc.returncode:
-            case 1:
-                raise ValueError('Initial failed with 1')
-            case 2:
-                raise ValueError('Initial failed with 2')
-            case 3:
-                raise ValueError('Initial failed with 3')
-            case 4:
-                raise ValueError('Initial failed with 4')
-
-        messages.add_message(self.request, messages.INFO, 'Generation of the TLS-Server credential canceled.')
-
-        return redirect('setup_wizard:initial', permanent=False)
+    def _map_exit_code_to_message(self, return_code):
+        """Maps shell script exit codes to user-friendly error messages."""
+        error_messages = {
+            1: "The state file for 'WIZARD_TLS_SERVER_CREDENTIAL_APPLY' was not found. Ensure Trustpoint is in the correct state.",
+            2: 'Multiple state files were detected, indicating a corrupted wizard state. Please resolve the inconsistency.',
+            3: "Failed to remove the current 'WIZARD_TLS_SERVER_CREDENTIAL_APPLY' state file. Check file permissions.",
+            4: "Failed to create the 'WIZARD_INITIAL' state file. Ensure the directory is writable and permissions are set correctly.",
+        }
+        return error_messages.get(return_code, 'An unknown error occurred during the cancel operation.')
 
 
 class SetupWizardDemoDataView(FormView):
@@ -288,7 +408,8 @@ class SetupWizardDemoDataView(FormView):
     template_name = 'setup_wizard/demo_data.html'
     success_url = reverse_lazy('setup_wizard:create_super_user')
 
-    def get(self, *args, **kwargs):
+    def dispatch(self, request, *args, **kwargs):
+        """Handle request dispatch and wizard state validation."""
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
@@ -296,61 +417,88 @@ class SetupWizardDemoDataView(FormView):
         if wizard_state != SetupWizardState.WIZARD_DEMO_DATA:
             return StartupWizardRedirect.redirect_by_state(wizard_state)
 
-        return super().get(*args, **kwargs)
-
-    def post(self, *args, **kwargs):
-        if not DOCKER_CONTAINER:
-            return redirect('users:login', permanent=False)
-
-        wizard_state = SetupWizardState.get_current_state()
-        if wizard_state != SetupWizardState.WIZARD_DEMO_DATA:
-            return StartupWizardRedirect.redirect_by_state(wizard_state)
-
-        return super().post(*args, **kwargs)
-
-    def _execute_state_bump(self):
-        if not SCRIPT_WIZARD_DEMO_DATA.exists():
-            raise ValueError(str(SCRIPT_WIZARD_DEMO_DATA))
-
-        # TODO(AlexHx8472): Exception Handling
-        proc = subprocess.run(['sudo', f'{SCRIPT_WIZARD_DEMO_DATA}'])
-
-        # TODO(AlexHx8472): Exception Handling
-        match proc.returncode:
-            case 1:
-                raise ValueError('Initial failed with 1')
-            case 2:
-                raise ValueError('Initial failed with 2')
-            case 3:
-                raise ValueError('Initial failed with 3')
-            case 4:
-                raise ValueError('Initial failed with 4')
+        return super().dispatch(request, *args, **kwargs)
 
     def form_valid(self, form):
-        if 'without-demo-data' in self.request.POST:
-            self._execute_state_bump()
-            return super().form_valid(form)
+        """Handle form submission for demo data setup."""
+        try:
+            if 'without-demo-data' in self.request.POST:
+                self._execute_state_bump()
+            elif 'with-demo-data' in self.request.POST:
+                self._add_demo_data()
+                self._execute_state_bump()
+            else:
+                messages.add_message(self.request, messages.ERROR, 'Invalid option selected for demo data setup.')
+                return redirect('setup_wizard:demo_data', permanent=False)
 
-        elif 'with-demo-data' in self.request.POST:
+        except subprocess.CalledProcessError as e:
+            messages.add_message(
+                self.request,
+                messages.ERROR,
+                f'Demo data script failed with exit code {e.returncode}: {self._map_exit_code_to_message(e.returncode)}',
+            )
+            return redirect('setup_wizard:demo_data', permanent=False)
+        except FileNotFoundError:
+            messages.add_message(self.request, messages.ERROR, f'Demo data script not found: {SCRIPT_WIZARD_DEMO_DATA}')
+            return redirect('setup_wizard:demo_data', permanent=False)
+        except Exception as e:
+            messages.add_message(self.request, messages.ERROR, f'An unexpected error occurred: {e}')
+            return redirect('setup_wizard:demo_data', permanent=False)
+
+        return super().form_valid(form)
+
+    def _execute_state_bump(self):
+        """Move the wizard to the next state."""
+        if not SCRIPT_WIZARD_DEMO_DATA.exists():
+            err_msg = f'State bump script not found: {SCRIPT_WIZARD_DEMO_DATA}'
+            raise FileNotFoundError(err_msg)
+
+        result = subprocess.run(['sudo', str(SCRIPT_WIZARD_DEMO_DATA)], capture_output=True, text=True, check=True)
+        if result.returncode != 0:
+            raise subprocess.CalledProcessError(result.returncode, str(SCRIPT_WIZARD_DEMO_DATA))
+
+    def _add_demo_data(self):
+        """Add demo data to the database."""
+        try:
             call_command('add_domains_and_devices')
-            self._execute_state_bump()
-            return super().form_valid(form)
+        except Exception as e:
+            err_msg = f'Error adding demo data: {e}'
+            raise ValueError(err_msg)
 
-        messages.add_message(
-            self.request,
-            messages.ERROR,
-            'Failed to pre-populate the database with demo data.')
-        return redirect('setup_wizard:demo_data', permanent=False)
+    @staticmethod
+    def _map_exit_code_to_message(return_code: int) -> str:
+        """Map script exit codes to meaningful error messages.
+
+        Args:
+            return_code (int): The exit code returned by the script.
+
+        Returns:
+            str: A descriptive error message corresponding to the exit code.
+        """
+        error_messages = {
+            1: 'Trustpoint is not in the WIZARD_DEMO_DATA state.',
+            2: 'Found multiple wizard state files. The wizard state seems to be corrupted.',
+            3: 'Failed to remove the WIZARD_DEMO_DATA state file.',
+            4: 'Failed to create WIZARD_CREATE_SUPER_USER state file.',
+        }
+        return error_messages.get(return_code, 'An unknown error occurred while executing the demo data script.')
 
 
 class SetupWizardCreateSuperUserView(FormView):
-    http_method_names = ['get', 'post']
+    """View for handling the creation of a superuser during the setup wizard.
+
+    This view is part of the setup wizard process. It allows an admin to create a
+    superuser account, ensuring that the application has at least one administrative
+    user configured. The view validates the input using the `UserCreationForm`
+    and transitions the wizard state upon successful completion.
+    """
+    http_method_names: ClassVar[list[str]] = ['get', 'post']
     form_class = UserCreationForm
     template_name = 'setup_wizard/create_super_user.html'
     success_url = reverse_lazy('users:login')
 
-
-    def get(self, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Handle request dispatch and wizard state validation."""
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
@@ -358,45 +506,80 @@ class SetupWizardCreateSuperUserView(FormView):
         if wizard_state != SetupWizardState.WIZARD_CREATE_SUPER_USER:
             return StartupWizardRedirect.redirect_by_state(wizard_state)
 
-        return super().get(*args, **kwargs)
+        return super().dispatch(request, *args, **kwargs)
 
-    def post(self, *args, **kwargs):
-        if not DOCKER_CONTAINER:
-            return redirect('users:login', permanent=False)
+    def form_valid(self, form: UserCreationForm) -> HttpResponseRedirect:
+        """Handle form submission for creating a superuser.
 
-        wizard_state = SetupWizardState.get_current_state()
-        if wizard_state != SetupWizardState.WIZARD_CREATE_SUPER_USER:
-            return StartupWizardRedirect.redirect_by_state(wizard_state)
+        Args:
+            form (UserCreationForm): The form containing the data for the superuser creation.
 
-        return super().post(*args, **kwargs)
+        Returns:
+            HttpResponseRedirect: Redirect to the next step or login page.
+        """
+        try:
+            username = form.cleaned_data['username']
+            password = form.cleaned_data['password1']
+            call_command('createsuperuser', interactive=False, username=username, email='')
 
-    def _execute_state_bump(self):
-        if not SCRIPT_WIZARD_CREATE_SUPER_USER.exists():
-            raise ValueError(str(SCRIPT_WIZARD_CREATE_SUPER_USER))
+            user = User.objects.get(username=username)
+            user.set_password(password)
+            user.save()
+            messages.add_message(self.request, messages.SUCCESS, 'Successfully created super-user.')
 
-        # TODO(AlexHx8472): Exception Handling
-        proc = subprocess.run(['sudo', f'{SCRIPT_WIZARD_CREATE_SUPER_USER}'])
-
-        # TODO(AlexHx8472): Exception Handling
-        match proc.returncode:
-            case 1:
-                raise ValueError('Initial failed with 1')
-            case 2:
-                raise ValueError('Initial failed with 2')
-            case 3:
-                raise ValueError('Initial failed with 3')
-            case 4:
-                raise ValueError('Initial failed with 4')
-
-    def form_valid(self, form):
-        username = form.cleaned_data['username']
-        password = form.cleaned_data['password1']
-        call_command('createsuperuser', interactive=False, username=username, email='')
-        user = User.objects.get(username=username)
-        user.set_password(password)
-        user.save()
-        messages.add_message(self.request, messages.SUCCESS, 'Successfully created super-user.')
-
-        self._execute_state_bump()
+            self._execute_state_bump()
+        except User.DoesNotExist as e:
+            messages.add_message(self.request, messages.ERROR, f'User not found error: {e}')
+            return redirect('setup_wizard:create_super_user', permanent=False)
+        except subprocess.CalledProcessError as e:
+            messages.add_message(
+                self.request,
+                messages.ERROR,
+                f'Create superuser script failed with exit code {e.returncode}: '
+                f'{self._map_exit_code_to_message(e.returncode)}',
+            )
+            return redirect('setup_wizard:create_super_user', permanent=False)
+        except FileNotFoundError:
+            messages.add_message(
+                self.request, messages.ERROR, f'Create superuser script not found: {SCRIPT_WIZARD_CREATE_SUPER_USER}'
+            )
+            return redirect('setup_wizard:create_super_user', permanent=False)
+        except ValueError as e:
+            messages.add_message(self.request, messages.ERROR, f'Value error occurred: {e}')
+            return redirect('setup_wizard:create_super_user', permanent=False)
+        except Exception as e:  # noqa: BLE001
+            messages.add_message(self.request, messages.ERROR, f'An unexpected error occurred: {e}')
+            return redirect('setup_wizard:create_super_user', permanent=False)
 
         return super().form_valid(form)
+
+    @staticmethod
+    def _map_exit_code_to_message(return_code: int) -> str:
+        """Map script exit codes to meaningful error messages."""
+        error_messages = {
+            1: 'Trustpoint is not in the WIZARD_CREATE_SUPER_USER state.',
+            2: 'Found multiple wizard state files. The wizard state seems to be corrupted.',
+            3: 'Failed to remove the WIZARD_CREATE_SUPER_USER state file.',
+            4: 'Failed to create the WIZARD_COMPLETED state file.',
+        }
+        return error_messages.get(return_code, 'An unknown error occurred while executing the create superuser script.')
+
+    def _execute_state_bump(self) -> None:
+        """Move the wizard to the next state."""
+        script_path = Path(SCRIPT_WIZARD_CREATE_SUPER_USER).resolve()
+
+        if not script_path.exists():
+            err_msg = f'State bump script not found: {script_path}'
+            raise FileNotFoundError(err_msg)
+        if not script_path.is_file():
+            err_msg = f'The script path {script_path} is not a valid file.'
+            raise ValueError(err_msg)
+
+        command = ['sudo', str(script_path)]
+
+        result = subprocess.run(    # noqa: S603
+            command, capture_output=True, text=True, check=True
+        )
+
+        if result.returncode != 0:
+            raise subprocess.CalledProcessError(result.returncode, str(script_path))
