@@ -10,7 +10,7 @@ from devices import DeviceOnboardingStatus
 from devices.models import Device
 from django.db.models import Case, Count, F, IntegerField, Q, Value, When
 from django.db.models.functions import TruncDate
-from django.http import HttpRequest
+from django.http import HttpRequest  # type: ignore[import-untyped]
 from django.utils import dateparse, timezone
 from ninja import Router
 from ninja.responses import Response

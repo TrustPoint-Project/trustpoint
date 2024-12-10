@@ -5,8 +5,8 @@ from datetime import datetime, timedelta
 from typing import Any
 
 from django.core.management import call_command
-from django.db.models import QuerySet
-from django.http import HttpRequest, HttpResponse
+from django.db.models import QuerySet  # type: ignore[import-untyped]
+from django.http import HttpRequest, HttpResponse   # type: ignore[import-untyped]
 from django.shortcuts import get_object_or_404, render
 from django.utils import timezone
 from django.views.generic.base import RedirectView, TemplateView
