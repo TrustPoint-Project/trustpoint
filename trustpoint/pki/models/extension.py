@@ -34,7 +34,7 @@ __all__ = [
     'CertificateExtension',
     'BasicConstraintsExtension',
     'KeyUsageExtension',
-    'AlternativeNameExtensionModel',
+    'GeneralNamesModel',
     'IssuerAlternativeNameExtension',
     'SubjectAlternativeNameExtension'
 ]
@@ -192,20 +192,19 @@ class CertificateExtension:
 
     @classmethod
     @abc.abstractmethod
-    def save_from_crypto_extensions(cls, crypto_basic_constraints_extension: x509.Extension) \
+    def save_from_crypto_extensions(cls, extension: x509.Extension) \
             -> None | CertificateExtension:
         """Stores the extension in the database.
 
         Meant to be called within an atomic transaction while storing a certificate.
 
         Args:
-            crypto_basic_constraints_extension (x509.CertificateExtension):
-                The x509.Extension object that contains all extensions of the certificate.
+            extension (x509.Extension):
+                The x509.Extension object that contains the extension data of the certificate.
 
         Returns:
             trustpoint.pki.models.CertificateExtension: The instance of the saved extension.
         """
-        pass
 
 
 class BasicConstraintsExtension(CertificateExtension, models.Model):
@@ -250,7 +249,6 @@ class BasicConstraintsExtension(CertificateExtension, models.Model):
         Returns:
             trustpoint.pki.models.BasicConstraintsExtension: The instance of the saved BasicConstraintsExtension.
         """
-
         try:
             existing_entry = BasicConstraintsExtension.objects.filter(
                 critical=crypto_basic_constraints_extension.critical,
@@ -324,7 +322,6 @@ class KeyUsageExtension(CertificateExtension, models.Model):
         Returns:
             trustpoint.pki.models.KeyUsageExtension: The instance of the saved KeyUsageExtension.
         """
-
         try:
             # noinspection PyProtectedMember
             existing_entry = KeyUsageExtension.objects.filter(
@@ -361,19 +358,19 @@ class KeyUsageExtension(CertificateExtension, models.Model):
             return None
 
 
-class AlternativeNameExtensionModel(models.Model):
-    """AlternativeNameExtensionModel Model.
+class GeneralNamesModel(models.Model):
+    """GeneralNamesModel Model.
 
     See RFC5280 for more information.
     """
 
-    _alternative_name_extension_type: str
+    _general_name_type: str
 
     critical = models.BooleanField(verbose_name=_('Critical'), editable=False)
 
     @property
     def extension_oid(self) -> str:
-        raise NotImplementedError('This base class (AlternativeNameExtensionModel) does not have an extension_oid.')
+        raise NotImplementedError('This base class (GeneralNamesModel) does not have an extension_oid.')
 
     extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
 
@@ -413,7 +410,7 @@ class AlternativeNameExtensionModel(models.Model):
         related_name='issuer_alternative_names')
 
     @staticmethod
-    def _save_rfc822_name(entry: x509.RFC822Name, alt_name_ext: AlternativeNameExtensionModel) -> None:
+    def _save_rfc822_name(entry: x509.RFC822Name, alt_name_ext: GeneralNamesModel) -> None:
         existing_entry = GeneralNameRFC822Name.objects.filter(value=entry.value).first()
         if existing_entry:
             alt_name_ext.rfc822_names.add(existing_entry)
@@ -424,7 +421,7 @@ class AlternativeNameExtensionModel(models.Model):
         alt_name_ext.save()
 
     @staticmethod
-    def _save_dns_name(entry: x509.DNSName, alt_name_ext: AlternativeNameExtensionModel) -> None:
+    def _save_dns_name(entry: x509.DNSName, alt_name_ext: GeneralNamesModel) -> None:
         existing_entry = GeneralNameDNSName.objects.filter(value=entry.value).first()
         if existing_entry:
             alt_name_ext.dns_names.add(existing_entry)
@@ -435,7 +432,7 @@ class AlternativeNameExtensionModel(models.Model):
         alt_name_ext.save()
 
     @staticmethod
-    def _save_ip_address(entry: x509.IPAddress, alt_name_ext: AlternativeNameExtensionModel) -> None:
+    def _save_ip_address(entry: x509.IPAddress, alt_name_ext: GeneralNamesModel) -> None:
         if isinstance(entry.value, IPv4Address):
             ip_type = GeneralNameIpAddress.IpType.IPV4_ADDRESS
         elif isinstance(entry.value, IPv6Address):
@@ -457,7 +454,7 @@ class AlternativeNameExtensionModel(models.Model):
         alt_name_ext.save()
 
     @staticmethod
-    def _save_uri(entry: x509.UniformResourceIdentifier, alt_name_ext: AlternativeNameExtensionModel) -> None:
+    def _save_uri(entry: x509.UniformResourceIdentifier, alt_name_ext: GeneralNamesModel) -> None:
         existing_entry = GeneralNameUniformResourceIdentifier.objects.filter(value=entry.value).first()
         if existing_entry:
             alt_name_ext.uniform_resource_identifiers.add(existing_entry)
@@ -468,7 +465,7 @@ class AlternativeNameExtensionModel(models.Model):
         alt_name_ext.save()
 
     @staticmethod
-    def _save_registered_id(entry: x509.RegisteredID, alt_name_ext: AlternativeNameExtensionModel) -> None:
+    def _save_registered_id(entry: x509.RegisteredID, alt_name_ext: GeneralNamesModel) -> None:
         existing_entry = GeneralNameRegisteredId.objects.filter(value=entry.value.dotted_string).first()
         if existing_entry:
             alt_name_ext.registered_ids.add(existing_entry)
@@ -479,7 +476,7 @@ class AlternativeNameExtensionModel(models.Model):
         alt_name_ext.save()
 
     @staticmethod
-    def _save_other_name(entry: x509.OtherName, alt_name_ext: AlternativeNameExtensionModel) -> None:
+    def _save_other_name(entry: x509.OtherName, alt_name_ext: GeneralNamesModel) -> None:
         type_id = entry.type_id.dotted_string
         value = entry.value.hex().upper()
         existing_entry = GeneralNameOtherName.objects.filter(type_id=type_id, value=value).first()
@@ -495,7 +492,7 @@ class AlternativeNameExtensionModel(models.Model):
         alt_name_ext.save()
 
     @staticmethod
-    def _save_directory_name(entry: x509.DirectoryName, alt_name_ext: AlternativeNameExtensionModel) -> None:
+    def _save_directory_name(entry: x509.DirectoryName, alt_name_ext: GeneralNamesModel) -> None:
         directory_name = GeneralNameDirectoryName()
         directory_name.save()
 
@@ -514,12 +511,12 @@ class AlternativeNameExtensionModel(models.Model):
         directory_name.save()
 
     @classmethod
-    def save_crypto_extensions(
+    def save_general_names(
             cls,
-            alt_name_ext: SubjectAlternativeNameExtension | IssuerAlternativeNameExtension,
-            crypto_basic_constraints_extension: x509.Extension) \
-            -> None | AlternativeNameExtensionModel:
-        """Stores the AlternativeNameExtensionModel in the database.
+            general_name_ext: SubjectAlternativeNameExtension | IssuerAlternativeNameExtension | AuthorityKeyIdentifierExtension,
+            general_names: x509.Extension | list[x509.GeneralName]) \
+            -> None | GeneralNamesModel:
+        """Stores the GeneralNamesModel in the database.
 
         Meant to be called within an atomic transaction while storing a certificate.
 
@@ -531,42 +528,43 @@ class AlternativeNameExtensionModel(models.Model):
                 The x509.Extension object that contains all extensions of the certificate.
 
         Returns:
-            trustpoint.pki.models.AlternativeNameExtensionModel:
-                The instance of the saved AlternativeNameExtensionModel.
+            trustpoint.pki.models.GeneralNamesModel:
+                The instance of the saved GeneralNamesModel.
         """
+        if isinstance(general_names, x509.Extension):
+            general_names = general_names.value
 
-        for entry in crypto_basic_constraints_extension.value:
-
+        for entry in general_names:
             if isinstance(entry, x509.RFC822Name):
-                cls._save_rfc822_name(entry=entry, alt_name_ext=alt_name_ext)
+                cls._save_rfc822_name(entry=entry, alt_name_ext=general_name_ext)
             if isinstance(entry, x509.DNSName):
-                cls._save_dns_name(entry=entry, alt_name_ext=alt_name_ext)
+                cls._save_dns_name(entry=entry, alt_name_ext=general_name_ext)
             elif isinstance(entry, x509.IPAddress):
-                cls._save_ip_address(entry=entry, alt_name_ext=alt_name_ext)
+                cls._save_ip_address(entry=entry, alt_name_ext=general_name_ext)
             elif isinstance(entry, x509.DirectoryName):
-                cls._save_directory_name(entry=entry, alt_name_ext=alt_name_ext)
+                cls._save_directory_name(entry=entry, alt_name_ext=general_name_ext)
             elif isinstance(entry, x509.UniformResourceIdentifier):
-                cls._save_uri(entry=entry, alt_name_ext=alt_name_ext)
+                cls._save_uri(entry=entry, alt_name_ext=general_name_ext)
             elif isinstance(entry, x509.RegisteredID):
-                cls._save_registered_id(entry=entry, alt_name_ext=alt_name_ext)
+                cls._save_registered_id(entry=entry, alt_name_ext=general_name_ext)
             elif isinstance(entry, x509.OtherName):
-                cls._save_other_name(entry=entry, alt_name_ext=alt_name_ext)
+                cls._save_other_name(entry=entry, alt_name_ext=general_name_ext)
 
-        return alt_name_ext
+        return general_name_ext
 
     def __str__(self) -> str:
         return (
-            f'{self._alternative_name_extension_type.capitalize()}AlternativeNameExtension(critical={self.critical}, '
+            f'{self._general_name_type}(critical={self.critical}, '
             f'oid={self.extension_oid})')
 
 
-class IssuerAlternativeNameExtension(CertificateExtension, AlternativeNameExtensionModel):
+class IssuerAlternativeNameExtension(CertificateExtension, GeneralNamesModel):
     """IssuerAlternativeNameExtension Model.
 
     See RFC5280 for more information.
     """
 
-    _alternative_name_extension_type = 'issuer'
+    _general_name_type = 'IssuerAlternativeNameExtension'
 
     @property
     def extension_oid(self) -> str:
@@ -574,7 +572,7 @@ class IssuerAlternativeNameExtension(CertificateExtension, AlternativeNameExtens
     extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
 
     @classmethod
-    def save_from_crypto_extensions(cls, crypto_basic_constraints_extension: x509.Extension) \
+    def save_from_crypto_extensions(cls, extension: x509.Extension) \
             -> None | IssuerAlternativeNameExtension:
         """Stores the IssuerAlternativeNameExtension in the database.
 
@@ -590,24 +588,24 @@ class IssuerAlternativeNameExtension(CertificateExtension, AlternativeNameExtens
         """
 
         try:
-            alt_name_ext = IssuerAlternativeNameExtension(critical=crypto_basic_constraints_extension.critical)
-            alt_name_ext.save()
+            issuer_alt_name_ext = IssuerAlternativeNameExtension(critical=extension.critical)
+            issuer_alt_name_ext.save()
 
-            return super(IssuerAlternativeNameExtension, cls).save_crypto_extensions(
-                alt_name_ext=alt_name_ext,
-                crypto_basic_constraints_extension=crypto_basic_constraints_extension)
+            return super(IssuerAlternativeNameExtension, cls).save_general_names(
+                general_name_ext=issuer_alt_name_ext,
+                general_names=extension)
 
         except ExtensionNotFound:
             return None
 
 
-class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExtensionModel):
+class SubjectAlternativeNameExtension(CertificateExtension, GeneralNamesModel):
     """SubjectAlternativeNameExtension Model.
 
     See RFC5280 for more information.
     """
 
-    _alternative_name_extension_type = 'subject'
+    _general_name_type = 'SubjectAlternativeNameExtension'
 
     @property
     def extension_oid(self) -> str:
@@ -615,7 +613,7 @@ class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExten
     extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
 
     @classmethod
-    def save_from_crypto_extensions(cls, crypto_basic_constraints_extension: x509.Extension) \
+    def save_from_crypto_extensions(cls, extension: x509.Extension) \
             -> None | SubjectAlternativeNameExtension:
         """Stores the SubjectAlternativeNameExtension in the database.
 
@@ -631,20 +629,84 @@ class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExten
         """
 
         try:
-            alt_name_ext = SubjectAlternativeNameExtension(critical=crypto_basic_constraints_extension.critical)
+            alt_name_ext = SubjectAlternativeNameExtension(critical=extension.critical)
             alt_name_ext.save()
 
-            return super(SubjectAlternativeNameExtension, cls).save_crypto_extensions(
-                alt_name_ext=alt_name_ext,
-                crypto_basic_constraints_extension=crypto_basic_constraints_extension)
+            return super(SubjectAlternativeNameExtension, cls).save_general_names(
+                general_name_ext=alt_name_ext,
+                general_names=extension)
 
         except ExtensionNotFound:
             return None
 
-# class AuthorityKeyIdentifierExtension(CertificateExtension, models.Model):
-#     pass
-#
-#
+class AuthorityKeyIdentifierExtension(CertificateExtension, GeneralNamesModel):
+    """AuthorityKeyIdentifierExtension Model.
+
+    See RFC5280 for more information.
+    """
+
+    _general_name_type = 'AuthorityKeyIdentifier'
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.AUTHORITY_KEY_IDENTIFIER.dotted_string
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
+    key_identifier = models.CharField(
+        max_length=256,
+        editable=False,
+        null=True, blank=True,
+        verbose_name='Key Identifier'
+    )
+
+    authority_cert_serial_number = models.CharField(
+        max_length=256,
+        editable=False,
+        null=True,
+        blank=True,
+        verbose_name='Authority Cert Serial Number'
+    )
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) \
+            -> None | AuthorityKeyIdentifierExtension:
+        """Stores the AuthorityKeyIdentifierExtension in the database.
+
+        Meant to be called within an atomic transaction while storing a certificate.
+
+        Args:
+            extension (x509.Extension):
+                The x509.Extension object that contains the Authority Key Identifier extension of the certificate.
+
+        Returns:
+            trustpoint.pki.models.AuthorityKeyIdentifierExtension:
+                The instance of the saved AuthorityKeyIdentifierExtension.
+        """
+        try:
+            aki: x509.AuthorityKeyIdentifier = extension.value
+
+            key_identifier = aki.key_identifier.hex().upper() if aki.key_identifier else None
+            authority_cert_serial_number = None
+            if aki.authority_cert_serial_number is not None:
+                authority_cert_serial_number = hex(aki.authority_cert_serial_number)[2:].upper()
+
+            aki_extension = cls(
+                critical=extension.critical,
+                key_identifier=key_identifier,
+                authority_cert_serial_number=authority_cert_serial_number
+            )
+            aki_extension.save()
+
+            if aki.authority_cert_issuer:
+                cls.save_general_names(aki_extension, aki.authority_cert_issuer)
+
+            return aki_extension
+
+        except ExtensionNotFound:
+            return None
+
+
+
 # class SubjectKeyIdentifierExtension(CertificateExtension, models.Model):
 #     pass
 #

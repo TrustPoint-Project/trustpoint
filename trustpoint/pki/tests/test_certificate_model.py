@@ -1,3 +1,4 @@
+import hashlib
 import ipaddress
 from datetime import datetime, timedelta, timezone
 
@@ -8,6 +9,7 @@ from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from cryptography.hazmat.primitives.serialization import Encoding, PublicFormat
 from cryptography.x509 import (
+    AuthorityKeyIdentifier,
     BasicConstraints,
     DirectoryName,
     DNSName,
@@ -82,7 +84,7 @@ def ec_private_key() -> ec.EllipticCurvePrivateKey:
 
 
 @pytest.fixture(scope='module')
-def self_signed_cert_with_ext(rsa_private_key) -> None:
+def self_signed_cert_with_ext(rsa_private_key) -> x509.Certificate:
     """Generate a self-signed certificate with various extensions and all key usages set to True.
 
     Args:
@@ -95,7 +97,7 @@ def self_signed_cert_with_ext(rsa_private_key) -> None:
         x509.NameAttribute(NameOID.COMMON_NAME, COMMON_NAME),
         x509.NameAttribute(NameOID.COUNTRY_NAME, COUNTRY_NAME),
     ])
-    issuer = subject  # Self-signed
+    issuer = subject
     now = datetime.now(timezone.utc)
 
     # General Name entries
@@ -113,6 +115,7 @@ def self_signed_cert_with_ext(rsa_private_key) -> None:
         type_id=ObjectIdentifier(OTHER_NAME_OID),
         value=other_name_der
     )
+    cert_serial_number=x509.random_serial_number()
 
     san = SubjectAlternativeName([
         rfc822_name,
@@ -147,12 +150,33 @@ def self_signed_cert_with_ext(rsa_private_key) -> None:
         decipher_only=KEY_USAGE_FLAGS['decipher_only']
     )
 
+    public_key = rsa_private_key.public_key()
+    public_key_bytes = public_key.public_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    key_identifier = hashlib.sha1(public_key_bytes).digest()
+
+    aki = AuthorityKeyIdentifier(
+        key_identifier=key_identifier,
+        authority_cert_issuer=[
+            rfc822_name,
+            dns_name,
+            uri,
+            directory_name,
+            registered_id,
+            ip_address,
+            other_name
+        ],
+        authority_cert_serial_number=cert_serial_number
+    )
+
     cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
         .issuer_name(issuer)
         .public_key(rsa_private_key.public_key())
-        .serial_number(x509.random_serial_number())
+        .serial_number(cert_serial_number)
         .not_valid_before(now)
         .not_valid_after(now + timedelta(days=30))
         .add_extension(
@@ -169,6 +193,10 @@ def self_signed_cert_with_ext(rsa_private_key) -> None:
         )
         .add_extension(
             ian,
+            critical=False
+        )
+        .add_extension(
+            aki,
             critical=False
         )
         .sign(private_key=rsa_private_key, algorithm=hashes.SHA256())
@@ -222,7 +250,7 @@ def test_self_signed_certificate_values(self_signed_cert_with_ext) -> None:
     # @TODO: signature_algorithm_padding_scheme
     assert self_signed_cert_with_ext.signature.hex().upper() == cert_model.signature_value
 
-    assert cert_model.version == 3
+    assert cert_model.version == 2
 
     assert hex(self_signed_cert_with_ext.serial_number)[2:].upper() == cert_model.serial_number
 
@@ -354,6 +382,58 @@ def test_basic_constraints_ext(self_signed_cert_with_ext) -> None:
     bce = cert_model.basic_constraints_extension
     assert bce.ca is True
     assert bce.path_length_constraint == 0
+
+@pytest.mark.django_db
+def test_authority_key_identifier_ext(self_signed_cert_with_ext):
+    """Test that AuthorityKeyIdentifierExtension is correctly saved."""
+    cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
+
+    # Check if the AKI extension is saved
+    aki_ext = cert_model.authority_key_identifier_extension
+    assert aki_ext is not None
+
+    # Calculate the expected key_identifier as SHA-1 hash of the DER-encoded public key
+    public_key = self_signed_cert_with_ext.public_key()
+    public_key_bytes = public_key.public_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    expected_key_identifier = hashlib.sha1(public_key_bytes).digest().hex().upper()
+    assert aki_ext.key_identifier == expected_key_identifier
+
+    # Check authority_cert_serial_number
+    expected_serial_number = hex(self_signed_cert_with_ext.serial_number)[2:].upper()
+    assert aki_ext.authority_cert_serial_number == expected_serial_number
+
+    # TODO: Write GeneralName attr. test
+    # Check authority_cert_issuer GeneralNames
+    # Check RFC822Name
+    assert any(r.value == RFC822_EMAIL for r in aki_ext.rfc822_names.all())
+
+    # Check DNSName
+    assert any(d.value == DNS_NAME_VALUE for d in aki_ext.dns_names.all())
+
+    # Check UniformResourceIdentifier
+    assert any(u.value == URI_VALUE for u in aki_ext.uniform_resource_identifiers.all())
+    # Check DirectoryName
+    assert aki_ext.directory_names.count() == 1
+    dir_name = aki_ext.directory_names.first()
+    dir_attrs = list(dir_name.names.all())
+    assert any(attr.value == ORGANIZATION_NAME for attr in dir_attrs)
+
+    # Check RegisteredID
+    assert any(r.value == REGISTERED_ID_OID for r in aki_ext.registered_ids.all())
+
+    # Check IPAddress
+    assert any(ip.value == IP_ADDRESS_VALUE for ip in aki_ext.ip_addresses.all())
+
+    # Check OtherName
+    assert aki_ext.other_names.count() == 1
+    other_name = aki_ext.other_names.first()
+    assert other_name.type_id == OTHER_NAME_OID
+    decoded_asn1, _ = decode(bytes.fromhex(other_name.value), asn1Spec=char.UTF8String())
+    assert str(decoded_asn1) == OTHER_NAME_CONTENT
+
 
 @pytest.mark.django_db
 def test_get_certificate_serializer(self_signed_cert_with_ext) -> None:

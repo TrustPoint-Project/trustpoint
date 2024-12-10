@@ -17,6 +17,7 @@ from trustpoint.views.base import LoggerMixin
 
 from pki.models.extension import (
     AttributeTypeAndValue,
+    AuthorityKeyIdentifierExtension,
     BasicConstraintsExtension,
     KeyUsageExtension,
     IssuerAlternativeNameExtension,
@@ -233,6 +234,16 @@ class CertificateModel(LoggerMixin, models.Model):
         blank=True,
         on_delete=models.CASCADE)
 
+    authority_key_identifier_extension = models.ForeignKey(
+        verbose_name=CertificateExtensionOid.AUTHORITY_KEY_IDENTIFIER.verbose_name,
+        to=AuthorityKeyIdentifierExtension,
+        related_name='certificates',
+        editable=False,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
     # ext_authority_key_id = None
     # ext_subject_key_id = None
     # ext_certificate_policies = None
@@ -434,6 +445,9 @@ class CertificateModel(LoggerMixin, models.Model):
             elif isinstance(extension.value, x509.SubjectAlternativeName):
                 cert_model.subject_alternative_name_extension = \
                     SubjectAlternativeNameExtension.save_from_crypto_extensions(extension)
+            elif isinstance(extension.value, x509.AuthorityKeyIdentifier):
+                cert_model.authority_key_identifier_extension = \
+                    AuthorityKeyIdentifierExtension.save_from_crypto_extensions(extension)
 
     @classmethod
     @transaction.atomic
