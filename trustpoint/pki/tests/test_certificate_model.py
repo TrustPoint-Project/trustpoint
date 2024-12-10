@@ -20,6 +20,7 @@ from cryptography.x509 import (
     RegisteredID,
     RFC822Name,
     SubjectAlternativeName,
+    SubjectKeyIdentifier,
     UniformResourceIdentifier,
 )
 from cryptography.x509.oid import NameOID, ObjectIdentifier
@@ -171,6 +172,10 @@ def self_signed_cert_with_ext(rsa_private_key) -> x509.Certificate:
         authority_cert_serial_number=cert_serial_number
     )
 
+    ski = SubjectKeyIdentifier(
+        digest=key_identifier
+    )
+
     cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
@@ -197,6 +202,10 @@ def self_signed_cert_with_ext(rsa_private_key) -> x509.Certificate:
         )
         .add_extension(
             aki,
+            critical=False
+        )
+        .add_extension(
+            ski,
             critical=False
         )
         .sign(private_key=rsa_private_key, algorithm=hashes.SHA256())
@@ -433,6 +442,30 @@ def test_authority_key_identifier_ext(self_signed_cert_with_ext):
     assert other_name.type_id == OTHER_NAME_OID
     decoded_asn1, _ = decode(bytes.fromhex(other_name.value), asn1Spec=char.UTF8String())
     assert str(decoded_asn1) == OTHER_NAME_CONTENT
+
+
+@pytest.mark.django_db
+def test_subject_key_identifier_ext(self_signed_cert_with_ext):
+    """Test that the SubjectKeyIdentifierExtension is correctly saved.
+
+    Args:
+        self_signed_cert_with_ext (x509.Certificate): The certificate fixture with all extensions.
+    """
+    cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
+
+    # Check if the SKI extension is saved
+    ski_ext = cert_model.subject_key_identifier_extension
+    assert ski_ext is not None
+
+    # Calculate the expected key_identifier as SHA-1 hash of the DER-encoded public key
+    public_key = self_signed_cert_with_ext.public_key()
+    public_key_bytes = public_key.public_bytes(
+        encoding=serialization.Encoding.DER,
+        format=serialization.PublicFormat.SubjectPublicKeyInfo
+    )
+    expected_key_identifier = hashlib.sha1(public_key_bytes).digest().hex().upper()
+
+    assert ski_ext.key_identifier == expected_key_identifier
 
 
 @pytest.mark.django_db

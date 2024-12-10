@@ -707,8 +707,56 @@ class AuthorityKeyIdentifierExtension(CertificateExtension, GeneralNamesModel):
 
 
 
-# class SubjectKeyIdentifierExtension(CertificateExtension, models.Model):
-#     pass
+class SubjectKeyIdentifierExtension(CertificateExtension, models.Model):
+    """SubjectKeyIdentifierExtension Model.
+
+    Stores the Subject Key Identifier (SKI) extension of an X.509 certificate.
+    """
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.SUBJECT_KEY_IDENTIFIER.dotted_string
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
+    # The key_identifier is a hex-encoded, uppercase string representing the SKI
+    key_identifier = models.CharField(
+        max_length=256,
+        editable=False,
+        verbose_name='Key Identifier',
+        unique=True
+    )
+
+    def __str__(self) -> str:
+        return f'SubjectKeyIdentifierExtension(key_identifier={self.key_identifier})'
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) \
+            -> None | SubjectKeyIdentifierExtension:
+        """Stores the SubjectKeyIdentifierExtension in the database.
+
+        Meant to be called within an atomic transaction while storing a certificate.
+
+        Args:
+            extension (x509.Extension):
+                The x509.Extension object containing the SKI.
+
+        Returns:
+            SubjectKeyIdentifierExtension: The saved instance of SubjectKeyIdentifierExtension.
+        """
+        try:
+            ski_value: x509.SubjectKeyIdentifier = extension.value
+            key_id_hex = ski_value.digest.hex().upper()
+
+            existing_entry = cls.objects.filter(key_identifier=key_id_hex).first()
+            if existing_entry:
+                return existing_entry
+
+            ski_extension = cls(key_identifier=key_id_hex)
+            ski_extension.save()
+            return ski_extension
+
+        except ExtensionNotFound:
+            return None
 #
 #
 # class ExtendedKeyUsageExtension(CertificateExtension, models.Model):

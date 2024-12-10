@@ -3,6 +3,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from core.oid import CertificateExtensionOid, EllipticCurveOid, NameOid, PublicKeyAlgorithmOid, SignatureAlgorithmOid
+from core.serializer import CertificateSerializer, PublicKeySerializer
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
@@ -10,19 +12,16 @@ from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
-
-from core.oid import SignatureAlgorithmOid, PublicKeyAlgorithmOid, EllipticCurveOid, CertificateExtensionOid, NameOid
-from core.serializer import CertificateSerializer, PublicKeySerializer
-from trustpoint.views.base import LoggerMixin
-
 from pki.models.extension import (
     AttributeTypeAndValue,
     AuthorityKeyIdentifierExtension,
     BasicConstraintsExtension,
-    KeyUsageExtension,
     IssuerAlternativeNameExtension,
-    SubjectAlternativeNameExtension
+    KeyUsageExtension,
+    SubjectAlternativeNameExtension,
+    SubjectKeyIdentifierExtension,
 )
+from trustpoint.views.base import LoggerMixin
 
 if TYPE_CHECKING:
     from typing import Union
@@ -244,6 +243,16 @@ class CertificateModel(LoggerMixin, models.Model):
         on_delete=models.CASCADE
     )
 
+    subject_key_identifier_extension = models.ForeignKey(
+        verbose_name=CertificateExtensionOid.SUBJECT_KEY_IDENTIFIER.verbose_name,
+        to=SubjectKeyIdentifierExtension,
+        related_name='certificates',
+        editable=False,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
     # ext_authority_key_id = None
     # ext_subject_key_id = None
     # ext_certificate_policies = None
@@ -448,6 +457,9 @@ class CertificateModel(LoggerMixin, models.Model):
             elif isinstance(extension.value, x509.AuthorityKeyIdentifier):
                 cert_model.authority_key_identifier_extension = \
                     AuthorityKeyIdentifierExtension.save_from_crypto_extensions(extension)
+            elif isinstance(extension.value, x509.SubjectKeyIdentifier):
+                cert_model.subject_key_identifier_extension = \
+                    SubjectKeyIdentifierExtension.save_from_crypto_extensions(extension)
 
     @classmethod
     @transaction.atomic
