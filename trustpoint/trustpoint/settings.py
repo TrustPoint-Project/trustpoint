@@ -61,15 +61,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'crispy_bootstrap5',
-    'django_tables2',
-    # TODO(Aircoookie): Required only for HTTPS testing with Django runserver_plus, remove for production
-    'django_extensions',
-    # use "python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server.crt
-    # --key-file ../tests/data/x509/https_server.pem" to run with HTTPS
-    # note: replaces default exception debug page with worse one
-    # 'taggit',
-    # 'django_filters',
-    # ensure startup is the last app in the list so that ready() is called after all other apps are initialized
+    'django_tables2'
 ]
 
 MIDDLEWARE = [

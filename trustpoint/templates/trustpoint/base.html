@@ -44,7 +44,7 @@
             </div>
 
             <div class="tp-menu-group">
-                <a href="#" class="tp-menu-head {% if page_category == 'devices' %}tp-menu-active{% endif %}">
+                <a href="{% url 'devices:devices' %}" class="tp-menu-head {% if page_category == 'devices' %}tp-menu-active{% endif %}">
                     <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-boxes"></use></svg>
                     {% translate "Devices" %}
