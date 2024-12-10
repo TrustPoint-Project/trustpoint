@@ -2,10 +2,28 @@ from __future__ import annotations
 
 from pyasn1.codec.der import decoder, encoder
 from cryptography import x509
+from cryptography.x509.name import _ASN1Type
 import datetime
 from pyasn1_modules.rfc4210 import PKIMessage, PKIHeader, PKIProtection, PKIBody
-from pyasn1_modules.rfc4211 import CertReqMsg
+from pyasn1_modules.rfc4211 import CertReqMsg, CertRequest, CertTemplate
+from pyasn1.type.char import (
+    UTF8String,
+    NumericString,
+    PrintableString,
+    T61String,
+    IA5String,
+    VisibleString,
+    UniversalString,
+    BMPString
+)
+from pyasn1.type.univ import BitString, OctetString
+from pyasn1.type.useful import UTCTime, GeneralizedTime
 import enum
+
+
+class PkiMessageType(enum.Enum):
+
+    IR = 'ir'
 
 
 class ProtectionAlgorithm(enum.Enum):
@@ -154,10 +172,247 @@ class PkiMessageBody:
         return self._pki_body
 
 
+class CertificateTemplate:
+
+    _certificate_template: CertTemplate
+
+    _version: None | int = None
+    _serial_number: None | str = None
+
+    def __init__(self, certificate_template: CertTemplate) -> None:
+        self._certificate_template = certificate_template
+
+        if self.certificate_template['version'].isValue:
+            version = int(self.certificate_template['version'])
+            if version != 3:
+                raise ValueError(
+                    f'Certificate template contains version {version}, but only version 3 is supported.')
+            self._version = version
+
+        if self.certificate_template['serialNumber'].isValue:
+            # TODO(AlexHx8472): Handle SN
+            pass
+
+        if self.certificate_template['signingAlg'].isValue:
+            # TODO(AlexHx8472): Handle SN
+            pass
+
+        if self.certificate_template['issuer'].isValue:
+            # TODO(AlexHx8472): Handle SN
+            pass
+
+        if self.certificate_template['validity'].isValue:
+            # TODO(AlexHx8472): Handle SN
+            pass
+
+        if self.certificate_template['subject'].isValue:
+            rdns_sequence = self.certificate_template['subject'][0]
+            if rdns_sequence.isValue:
+                crypto_rdns_sequence: list[x509.RelativeDistinguishedName] = []
+                for rdns in rdns_sequence:
+                    if len(rdns) < 1:
+                        raise ValueError('Found empty RDN in the subject field of the certTemplate.')
+                    if len(rdns) > 1:
+                        raise ValueError('This CMP implementation does not support multi-valued RDNs.')
+
+                    attribute_type_and_value = rdns[0]
+                    if not attribute_type_and_value.isValue or \
+                            not attribute_type_and_value['type'].isValue or \
+                            not attribute_type_and_value['value'].isValue:
+                        raise ValueError('Found empty RDN in the subject field of the certTemplate.')
+
+                    attribute_type = attribute_type_and_value['type']
+                    crypto_oid = x509.ObjectIdentifier(str(attribute_type))
+
+                    attribute_value = attribute_type_and_value['value']
+                    decoded_attribute_value, _ = decoder.decode(attribute_value)
+
+                    if isinstance(decoded_attribute_value, UTF8String):
+                        crypto_rdns_sequence.append(x509.RelativeDistinguishedName(
+                            [
+                                x509.NameAttribute(
+                                    crypto_oid,
+                                    str(decoded_attribute_value))
+                            ]
+                        ))
+                        continue
+
+                    if isinstance(decoded_attribute_value, NumericString):
+                        crypto_rdns_sequence.append(x509.RelativeDistinguishedName(
+                            [
+                                x509.NameAttribute(
+                                    crypto_oid,
+                                    str(decoded_attribute_value),
+                                    _type=_ASN1Type.NumericString)
+                            ]
+                        ))
+                        continue
+
+                    if isinstance(decoded_attribute_value, PrintableString):
+                        crypto_rdns_sequence.append(x509.RelativeDistinguishedName(
+                            [
+                                x509.NameAttribute(
+                                    crypto_oid,
+                                    str(decoded_attribute_value),
+                                    _type=_ASN1Type.PrintableString)
+                            ]
+                        ))
+                        continue
+
+                    if isinstance(decoded_attribute_value, T61String):
+                        crypto_rdns_sequence.append(x509.RelativeDistinguishedName(
+                            [
+                                x509.NameAttribute(
+                                    crypto_oid,
+                                    str(decoded_attribute_value),
+                                    _type=_ASN1Type.T61String)
+                            ]
+                        ))
+                        continue
+
+                    if isinstance(decoded_attribute_value, IA5String):
+                        crypto_rdns_sequence.append(x509.RelativeDistinguishedName(
+                            [
+                                x509.NameAttribute(
+                                    crypto_oid,
+                                    str(decoded_attribute_value),
+                                    _type=_ASN1Type.IA5String)
+                            ]
+                        ))
+                        continue
+
+                    if isinstance(decoded_attribute_value, VisibleString):
+                        crypto_rdns_sequence.append(x509.RelativeDistinguishedName(
+                            [
+                                x509.NameAttribute(
+                                    crypto_oid,
+                                    str(decoded_attribute_value),
+                                    _type=_ASN1Type.VisibleString)
+                            ]
+                        ))
+                        continue
+
+                    if isinstance(decoded_attribute_value, UniversalString):
+                        crypto_rdns_sequence.append(x509.RelativeDistinguishedName(
+                            [
+                                x509.NameAttribute(
+                                    crypto_oid,
+                                    str(decoded_attribute_value),
+                                    _type=_ASN1Type.UniversalString)
+                            ]
+                        ))
+                        continue
+
+                    if isinstance(decoded_attribute_value, BMPString):
+                        crypto_rdns_sequence.append(x509.RelativeDistinguishedName(
+                            [
+                                x509.NameAttribute(
+                                    crypto_oid,
+                                    str(decoded_attribute_value),
+                                    _type=_ASN1Type.BMPString)
+                            ]
+                        ))
+                        continue
+
+                    if isinstance(decoded_attribute_value, BitString):
+                        crypto_rdns_sequence.append(x509.RelativeDistinguishedName(
+                            [
+                                x509.NameAttribute(
+                                    crypto_oid,
+                                    bytes(decoded_attribute_value),
+                                    _type=_ASN1Type.BitString)
+                            ]
+                        ))
+                        continue
+
+                    if isinstance(decoded_attribute_value, OctetString):
+                        crypto_rdns_sequence.append(x509.RelativeDistinguishedName(
+                            [
+                                x509.NameAttribute(
+                                    crypto_oid,
+                                    str(decoded_attribute_value),
+                                    _type=_ASN1Type.OctetString)
+                            ]
+                        ))
+                        continue
+
+                    if isinstance(decoded_attribute_value, UTCTime):
+                        crypto_rdns_sequence.append(x509.RelativeDistinguishedName(
+                            [
+                                x509.NameAttribute(
+                                    crypto_oid,
+                                    str(decoded_attribute_value),
+                                    _type=_ASN1Type.UTCTime)
+                            ]
+                        ))
+                        continue
+
+                    if isinstance(decoded_attribute_value, GeneralizedTime):
+                        crypto_rdns_sequence.append(x509.RelativeDistinguishedName(
+                            [
+                                x509.NameAttribute(
+                                    crypto_oid,
+                                    str(decoded_attribute_value),
+                                    _type=_ASN1Type.GeneralizedTime)
+                            ]
+                        ))
+                        continue
+
+                    raise ValueError(
+                        f'Found NameAttribute in an RDN with unknown value type: {type(decoded_attribute_value)}.')
+
+                self._subject = x509.Name(crypto_rdns_sequence)
+
+        if self.certificate_template['publicKey'].isValue:
+            # TODO(AlexHx8472): Handle SN
+            pass
+
+        if self.certificate_template['issuerUID'].isValue:
+            raise ValueError(
+                'This CMP implementation does now allow to issue certificates with issuerUID set. '
+                'This certificate field is deprecated.')
+
+        if self.certificate_template['subjectUID'].isValue:
+            raise ValueError(
+                'This CMP implementation does now allow to issue certificates with issuerUID set. '
+                'This certificate field is deprecated.')
+
+        if self.certificate_template['extensions'].isValue:
+            # TODO(AlexHx8472): Handle SN
+            pass
+
+        print(self.subject)
+
+
+    @property
+    def certificate_template(self) -> CertTemplate:
+        return self._certificate_template
+
+    @property
+    def version(self) -> None | int:
+        return self._version
+
+    @property
+    def serial_number(self) -> None | str:
+        return self._serial_number
+
+    @property
+    def subject(self) -> x509.Name:
+        return self._subject
+
+
 class CertRequestMessages(PkiMessageBody):
 
     _certificate_request_message: CertReqMsg
-    # _certificate_request:
+    _certificate_request: CertRequest
+
+    _certificate_template: CertificateTemplate
+
+    _popo: None | str
+    _reg_info: None | str
+
+    _certificate_request_id = int
+
 
     def __init__(self, pki_body: PKIBody) -> None:
         super().__init__(pki_body)
@@ -172,62 +427,130 @@ class CertRequestMessages(PkiMessageBody):
             raise ValueError('The CertReqMsg is emtpy.')
         self._certificate_request_message = self.pki_body[0][0]
 
-        print(self._certificate_request_message)
+        if not self.certificate_request_message['certReq'].isValue:
+            raise ValueError('Missing certReq field in CertReqMsg.')
+        self._certificate_request = self.certificate_request_message['certReq']
+
+        if not self.certificate_request_message[1].isValue:
+            self._popo = None
+        else:
+            # TODO(AlexHx8472): Handle POPO
+            pass
+
+        if not self.certificate_request_message[2].isValue:
+            self._reg_info = None
+        else:
+            # TODO(AlexHx8472): Handle reg info
+            pass
+
+        if not self.certificate_request['certReqId'].isValue:
+            raise ValueError('Missing certReqId field in CertReqMsg.')
+        cert_req_id = int(self.certificate_request['certReqId'])
+        if cert_req_id != 0:
+            raise ValueError(
+                'This CMP implementation only supports a single request per cmp message, but certReqId is not 0.')
+        self._certificate_request_id = cert_req_id
+
+        if not self.certificate_request['certTemplate'].isValue:
+            raise ValueError('Missing certTemplate in CertReqMsg.')
+        self._certificate_template = CertificateTemplate(self.certificate_request['certTemplate'])
+
+        if self.certificate_request['controls'].isValue:
+            raise ValueError('Controls field in certRequest found. This is not supported by this CMP implementation.')
+
+    @property
+    def certificate_request_message(self) -> CertReqMsg:
+        return self._certificate_request_message
+
+    @property
+    def certificate_request(self) -> CertRequest:
+        return self._certificate_request
+
+    @property
+    def certificate_request_id(self) -> int:
+        return self._certificate_request_id
+
+    @property
+    def certificate_template(self) -> CertificateTemplate:
+        return self._certificate_template
+
+class PkiMessage:
+
+    _header: PkiMessageHeader
+    _body: PkiMessageBody
 
 
+    _pvno: int
+    _message_type: PkiMessageType
+    _popo: Popo
+
+    def __init__(self, pki_message: bytes) -> None:
+        try:
+            self._pki_message, _ = decoder.decode(pki_message, asn1Spec=PKIMessage())
+        except Exception as exception:
+            raise ValueError('Failed to parse the cmp message.') from exception
+
+        self._pvno = int(self.pki_message['header']['pvno'])
+        self._message_type = PkiMessageType(self.pki_message['body'].getName())
+        self._number_of_message = len(self.pki_message['body'][0])
+
+        if self.number_of_message != 1:
+            raise ValueError('This CMP implementation only supports a single request per cmp message.')
+
+        if not self.pki_message['body'][0][0][1].isValue:
+            # TODO(AlexHx8472): CMP Lightweight required?
+            raise ValueError('Proof of Possession field is missing in CMP message. It is required.')
+        self._popo = Popo(self.pki_message['body'][0][0][1].getName())
+
+        if self.pki_message['body'][0][0][2].isValue:
+            raise ValueError('This CMP implementation does not support regInfo inf CertReqMsg.')
 
 
+    @property
+    def pvno(self) -> int:
+        return self._pvno
 
-# class PkiMessage:
-#
-#     _pki_message: PKIMessage
-#     _pki_header: PkiMessageHeader
-#
-#     _pvno: int
-#     _message_type: str
-#     _number_of_message: int
-#     _popo: Popo
-#
-#     def __init__(self, pki_message: bytes) -> None:
-#         try:
-#             self._pki_message, _ = decoder.decode(pki_message, asn1Spec=PKIMessage())
-#         except Exception as exception:
-#             raise ValueError('Failed to parse the cmp message.') from exception
-#
-#         self._pvno = int(self.pki_message['header']['pvno'])
-#         self._message_type = self.pki_message['body'].getName()
-#         self._number_of_message = len(self.pki_message['body'][0])
-#
-#         if self.number_of_message != 1:
-#             raise ValueError('This CMP implementation only supports a single request per cmp message.')
-#
-#         if not self.pki_message['body'][0][0][1].isValue:
-#             # TODO(AlexHx8472): CMP Lightweight required?
-#             raise ValueError('Proof of Possession field is missing in CMP message. It is required.')
-#         self._popo = Popo(self.pki_message['body'][0][0][1].getName())
-#
-#         if self.pki_message['body'][0][0][2].isValue:
-#             raise ValueError('This CMP implementation does not support regInfo inf CertReqMsg.')
+    @property
+    def message_type(self) -> PkiMessageType:
+        return self._message_type
+
+    @property
+    def number_of_message(self) -> int:
+        return self._number_of_message
+
+    @property
+    def pki_message(self) -> PKIMessage:
+        return self._pki_message
+
+    def pretty_print(self) -> None:
+        print(self.pki_message.prettyPrint())
+
+    @property
+    def header(self) -> PkiMessageHeader:
+        return self._pki_message.header
 
 
+class InitializationRequest(PkiMessage):
 
+    def __init__(self, pki_message: bytes) -> None:
+        super().__init__(pki_message)
 
-    #
-    # @property
-    # def pvno(self) -> int:
-    #     return self._pvno
-    #
-    # @property
-    # def message_type(self) -> str:
-    #     return self._message_type
-    #
-    # @property
-    # def number_of_message(self) -> int:
-    #     return self._number_of_message
-    #
-    # @property
-    # def pki_message(self) -> PKIMessage:
-    #     return self._pki_message
-    #
-    # def pretty_print(self) -> None:
-    #     print(self.pki_message.prettyPrint())
+        if self.message_type != PkiMessageType.IR:
+            raise ValueError(f'Expected CMP initialization request (ir), but found {self.message_type.value}.')
+
+        self._check_ir_header()
+        self._check_ir_body()
+        self._check_ir_protection()
+        self._check_ir_extra_certs()
+
+    def _check_ir_header(self) -> None:
+        pass
+
+    def _check_ir_body(self) -> None:
+        pass
+
+    def _check_ir_protection(self) -> None:
+        pass
+
+    def _check_ir_extra_certs(self) -> None:
+        pass

@@ -24,8 +24,8 @@ class CmpInitializationRequestView(View):
         pass
         # content-length: 128kiB
         # content-type: application/pkixcmp
-        # pki_message, _ = decoder.decode(request.read(), asn1Spec=PKIMessage())
-        # pki_header = PkiMessageHeader(pki_message['header'])
-        # pki_protection = PkiMessageProtection(pki_message['protection'])
-        # pki_body = CertRequestMessages(pki_message['body'])
-        # return HttpResponse(200)
+        pki_message, _ = decoder.decode(request.read(), asn1Spec=PKIMessage())
+        pki_header = PkiMessageHeader(pki_message['header'])
+        pki_protection = PkiMessageProtection(pki_message['protection'])
+        pki_body = CertRequestMessages(pki_message['body'])
+        return HttpResponse(200)

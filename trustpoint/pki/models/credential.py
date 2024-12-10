@@ -186,6 +186,18 @@ class CredentialModel(models.Model):
         err_msg = 'Failed to get private key information.'
         raise RuntimeError(err_msg)
 
+    def get_private_key_serializer(self) -> PrivateKeySerializer:
+        """Gets a serializer of the credential private key.
+
+        Returns:
+            PrivateKey: The credential private key abstraction.
+        """
+        if self.private_key:
+            return PrivateKeySerializer(self.private_key)
+
+        err_msg = 'Failed to get private key information.'
+        raise RuntimeError(err_msg)
+
     def get_certificate(self) -> x509.Certificate:
         """Gets the credential certificate as x509.Certificate instance.
 
