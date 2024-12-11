@@ -110,7 +110,10 @@ class PasswordBasedMacProtection(ProtectionAlgorithm):
 
     def __str__(self) -> str:
         return f"""PasswordBasedMacProtection
-        Salt:                           {self.salt.hex()}
-        OWF:                            {self.owf.name}
-        IterationCount:                 {self.iteration_count}
-        MAC:                            {self.mac.name}"""
+    Salt:                       {self.salt.hex()}
+    OWF:                        {self.owf.name}
+    IterationCount:             {self.iteration_count}
+    MAC:                        {self.mac.name}"""
+
+    def pretty_print(self) -> None:
+        print(str(self))

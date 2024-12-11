@@ -14,3 +14,11 @@ class HashAlgorithmOid(enum.Enum):
 class MacOid(enum.Enum):
 
     HMAC_SHA1 = '1.3.6.1.5.5.8.1.2'
+
+
+class CmpMessageType(enum.Enum):
+
+    IR = 'ir'
+    IP = 'ip'
+    CR = 'cr'
+    CP = 'cp'
