@@ -20,6 +20,7 @@ from pki.models.extension import (
     ExtendedKeyUsageExtension,
     IssuerAlternativeNameExtension,
     KeyUsageExtension,
+    NameConstraintsExtension,
     SubjectAlternativeNameExtension,
     SubjectKeyIdentifierExtension,
 )
@@ -275,6 +276,15 @@ class CertificateModel(LoggerMixin, models.Model):
         on_delete=models.CASCADE
     )
 
+    name_constraints_extension = models.ForeignKey(
+        NameConstraintsExtension,
+        related_name='certificates',
+        editable=False,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
     # ext_policy_mappings = None
     # ext_subject_alternative_name = None
     # ext_issuer_alternative_name = None
@@ -483,6 +493,8 @@ class CertificateModel(LoggerMixin, models.Model):
             elif isinstance(extension.value, x509.ExtendedKeyUsage):
                 from pki.models.extension import ExtendedKeyUsageExtension
                 cert_model.extended_key_usage_extension = ExtendedKeyUsageExtension.save_from_crypto_extensions(extension)
+            elif isinstance(extension.value, x509.NameConstraints):
+                cert_model.name_constraints_extension = NameConstraintsExtension.save_from_crypto_extensions(extension)
 
     @classmethod
     @transaction.atomic

@@ -60,6 +60,7 @@ class AttributeTypeAndValue(models.Model):
         except ValueError:
             name_oid = self.oid
         return f'{name_oid}={self.value}'
+    x509.NameConstraints
 
     @property
     def abbreviation(self) -> str:
@@ -85,8 +86,6 @@ class GeneralNameRFC822Name(models.Model):
 
 class GeneralNameDNSName(models.Model):
     """GeneralNameDNSName Model.
-
-    Entries of either SubjectAlternativeNames or IssuerAlternativeNames.
 
     See RFC5280 for more information.
     """
@@ -969,17 +968,144 @@ class ExtendedKeyUsageExtension(models.Model):
 
         except ExtensionNotFound:
             return None
-#
-#
-# class NameConstraintsExtension(CertificateExtension, models.Model):
-#     pass
-#
+
+
+class GeneralSubtree(models.Model):
+    """Represents a single GeneralSubtree as per RFC5280.
+
+    Base is a single GeneralName.
+    minimum defaults to 0 and maximum is optional.
+    """
+    rfc822_name = models.ForeignKey(GeneralNameRFC822Name, null=True, blank=True, on_delete=models.CASCADE)
+    dns_name = models.ForeignKey(GeneralNameDNSName, null=True, blank=True, on_delete=models.CASCADE)
+    directory_name = models.ForeignKey(GeneralNameDirectoryName, null=True, blank=True, on_delete=models.CASCADE)
+    uri = models.ForeignKey(GeneralNameUniformResourceIdentifier, null=True, blank=True, on_delete=models.CASCADE)
+    ip_address = models.ForeignKey(GeneralNameIpAddress, null=True, blank=True, on_delete=models.CASCADE)
+    registered_id = models.ForeignKey(GeneralNameRegisteredId, null=True, blank=True, on_delete=models.CASCADE)
+    other_name = models.ForeignKey(GeneralNameOtherName, null=True, blank=True, on_delete=models.CASCADE)
+
+    minimum = models.PositiveIntegerField(default=0, editable=False)
+    maximum = models.PositiveIntegerField(null=True, blank=True, editable=False, default=None)
+
+    def __str__(self):
+        return f"GeneralSubtree(GeneralName={self.get_str()}, min={self.minimum}, max={self.maximum})"
+
+    def get_str(self):
+        if self.rfc822_name:
+            return f"rfc822Name={self.rfc822_name.value}"
+        if self.dns_name:
+            return f"dNSName={self.dns_name.value}"
+        if self.directory_name:
+            return f"directoryName={','.join(str(n) for n in self.directory_name.names.all())}"
+        if self.uri:
+            return f"uri={self.uri.value}"
+        if self.ip_address:
+            return f"ipAddress={self.ip_address.value}"
+        if self.registered_id:
+            return f"registeredID={self.registered_id.value}"
+        if self.other_name:
+            return f"otherName={self.other_name.type_id}"
+        return "No GeneralName set"
+
+
+class NameConstraintsExtension(CertificateExtension, models.Model):
+    critical = models.BooleanField(verbose_name='Critical', editable=False)
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.NAME_CONSTRAINTS.dotted_string
+
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
+    permitted_subtrees = models.ManyToManyField(GeneralSubtree, related_name='permitted_subtrees_set', editable=False)
+    excluded_subtrees = models.ManyToManyField(GeneralSubtree, related_name='excluded_subtrees_set', editable=False)
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) -> None | NameConstraintsExtension:
+        """Stores the NameConstraints extension in the database.
+
+        Args:
+            extension (x509.Extension): The x509.Extension object containing NameConstraints.
+
+        Returns:
+            NameConstraintsExtension: The saved instance of NameConstraintsExtension or None.
+        """
+        if not isinstance(extension.value, x509.NameConstraints):
+            raise ValueError("Expected a NameConstraints extension.")
+
+        try:
+            nc_ext = cls(critical=extension.critical)
+            nc_ext.save()
+
+            def save_general_subtree(general_name: x509.GeneralName):
+                subtree = GeneralSubtree(minimum=0, maximum=None)
+                subtree.save()
+
+                if isinstance(general_name, x509.RFC822Name):
+                    from pki.models.extension import GeneralNameRFC822Name
+                    obj, _ = GeneralNameRFC822Name.objects.get_or_create(value=general_name.value)
+                    subtree.rfc822_name = obj
+
+                elif isinstance(general_name, x509.DNSName):
+                    from pki.models.extension import GeneralNameDNSName
+                    obj, _ = GeneralNameDNSName.objects.get_or_create(value=general_name.value)
+                    subtree.dns_name = obj
+
+                elif isinstance(general_name, x509.DirectoryName):
+                    dir_name = GeneralNameDirectoryName()
+                    dir_name.save()
+                    for rdn in general_name.value.rdns:
+                        for attr in rdn:
+                            atv = AttributeTypeAndValue.objects.filter(oid=attr.oid.dotted_string, value=attr.value).first()
+                            if not atv:
+                                atv = AttributeTypeAndValue(oid=attr.oid.dotted_string, value=attr.value)
+                                atv.save()
+                            dir_name.names.add(atv)
+                    dir_name.save()
+                    subtree.directory_name = dir_name
+
+                elif isinstance(general_name, x509.UniformResourceIdentifier):
+                    obj, _ = GeneralNameUniformResourceIdentifier.objects.get_or_create(value=general_name.value)
+                    subtree.uri = obj
+
+                elif isinstance(general_name, x509.IPAddress):
+                    ip_str = str(general_name.value)
+                    ip_type = GeneralNameIpAddress.IpType.IPV4_ADDRESS if general_name.value.version == 4 \
+                        else GeneralNameIpAddress.IpType.IPV6_ADDRESS
+                    obj, _ = GeneralNameIpAddress.objects.get_or_create(ip_type=ip_type, value=ip_str)
+                    subtree.ip_address = obj
+
+                elif isinstance(general_name, x509.RegisteredID):
+                    from pki.models.extension import GeneralNameRegisteredId
+                    obj, _ = GeneralNameRegisteredId.objects.get_or_create(value=general_name.value.dotted_string)
+                    subtree.registered_id = obj
+
+                elif isinstance(general_name, x509.OtherName):
+                    from pki.models.extension import GeneralNameOtherName
+                    hex_val = general_name.value.hex().upper()
+                    obj, _ = GeneralNameOtherName.objects.get_or_create(type_id=general_name.type_id.dotted_string, value=hex_val)
+                    subtree.other_name = obj
+
+                subtree.save()
+                return subtree
+
+            if extension.value.permitted_subtrees is not None:
+                for general_name in extension.value.permitted_subtrees:
+                    subtree_obj = save_general_subtree(general_name)
+                    nc_ext.permitted_subtrees.add(subtree_obj)
+
+            if extension.value.excluded_subtrees is not None:
+                for general_name in extension.value.excluded_subtrees:
+                    subtree_obj = save_general_subtree(general_name)
+                    nc_ext.excluded_subtrees.add(subtree_obj)
+
+            nc_ext.save()
+            return nc_ext
+        except ExtensionNotFound:
+            return None
+
 #
 # class CrlDistributionPointsExtension(CertificateExtension, models.Model):
-#     pass
-#
-#
-# class CertificatePoliciesExtension(CertificateExtension, models.Model):
 #     pass
 #
 #

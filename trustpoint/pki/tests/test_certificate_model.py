@@ -22,6 +22,7 @@ from cryptography.x509 import (
     SubjectAlternativeName,
     SubjectKeyIdentifier,
     UniformResourceIdentifier,
+    name,
 )
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID, ObjectIdentifier
 from pyasn1.codec.der.decoder import decode
@@ -29,6 +30,15 @@ from pyasn1.codec.der.encoder import encode
 from pyasn1.type import char
 
 from pki.models.certificate import CertificateModel
+from pki.models.extension import (
+    GeneralNameDirectoryName,
+    GeneralNameDNSName,
+    GeneralNameIpAddress,
+    GeneralNameRFC822Name,
+    GeneralNameUniformResourceIdentifier,
+    GeneralSubtree,
+    NameConstraintsExtension,
+)
 
 # ---------------------------- Certificate properties ----------------------------
 
@@ -213,6 +223,18 @@ def self_signed_cert_with_ext(rsa_private_key) -> x509.Certificate:
         ExtendedKeyUsageOID.OCSP_SIGNING,
     ])
 
+    nc = x509.NameConstraints(
+        permitted_subtrees=[
+            rfc822_name,
+            dns_name,
+            uri
+        ],
+        excluded_subtrees=[
+            directory_name,
+            registered_id,
+            other_name
+        ])
+
     cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
@@ -252,6 +274,10 @@ def self_signed_cert_with_ext(rsa_private_key) -> x509.Certificate:
         .add_extension(
             eku,
             critical=False
+        )
+        .add_extension(
+            nc,
+            critical=True
         )
         .sign(private_key=rsa_private_key, algorithm=hashes.SHA256())
     )
@@ -571,6 +597,49 @@ def test_extended_key_usage_ext(self_signed_cert_with_ext) -> None:
     }
     saved_oids = {kp.oid for kp in eku_ext.key_purpose_ids.all()}
     assert saved_oids == expected_oids
+
+
+@pytest.mark.django_db
+def test_name_constraints_ext(self_signed_cert_with_ext) -> None:
+    """Test the NameConstraintsExtension is correctly stored.
+
+    Args:
+        self_signed_cert_with_ext (x509.Certificate): The certificate fixture with all extensions.
+    """
+    cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
+    subtree: GeneralSubtree
+
+    assert cert_model.name_constraints_extension is not None
+    nc_ext = cert_model.name_constraints_extension
+
+    # Check criticality
+    assert nc_ext.critical is True
+
+    # Check permittedSubtrees
+    assert nc_ext.permitted_subtrees.count() == 3
+    for subtree in nc_ext.permitted_subtrees.all():
+        print(type(subtree))
+        print(subtree)
+        print()
+
+    assert any(subtree.rfc822_name.value == RFC822_EMAIL if subtree.rfc822_name else None for subtree in nc_ext.permitted_subtrees.all())
+    assert any(subtree.dns_name.value == DNS_NAME_VALUE if subtree.dns_name else None for subtree in nc_ext.permitted_subtrees.all())
+    assert any(subtree.uri.value == URI_VALUE if subtree.uri else None for subtree in nc_ext.permitted_subtrees.all())
+
+    # Check excludedSubtrees
+    assert nc_ext.excluded_subtrees.count() == 3
+
+    excluded_directory = nc_ext.excluded_subtrees.filter(directory_name__isnull=False).first()
+    assert excluded_directory is not None
+    assert any(attr.value == ORGANIZATION_NAME for attr in excluded_directory.directory_name.names.all())
+
+    assert any(subtree.registered_id.value == REGISTERED_ID_OID if subtree.registered_id else None for subtree in nc_ext.excluded_subtrees.all())
+
+    excluded_other_name = nc_ext.excluded_subtrees.filter(other_name__isnull=False).first()
+    assert excluded_other_name is not None
+    assert excluded_other_name.other_name.type_id == OTHER_NAME_OID
+    decoded_asn1, _ = decode(bytes.fromhex(excluded_other_name.other_name.value), asn1Spec=char.UTF8String())
+    assert str(decoded_asn1) == OTHER_NAME_CONTENT
 
 
 @pytest.mark.django_db
