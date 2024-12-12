@@ -757,10 +757,218 @@ class SubjectKeyIdentifierExtension(CertificateExtension, models.Model):
 
         except ExtensionNotFound:
             return None
-#
-#
-# class ExtendedKeyUsageExtension(CertificateExtension, models.Model):
-#     pass
+
+
+
+class NoticeReference(models.Model):
+    """Represents a NoticeReference as per RFC5280."""
+    organization = models.CharField(max_length=200, editable=False, verbose_name='Organization', null=True, blank=True)
+    notice_numbers = models.CharField(max_length=1024, editable=False, verbose_name='Notice Numbers', null=True, blank=True)
+
+    def __str__(self):
+        return f'{self.organization or "Unknown"}: {self.notice_numbers}'
+
+
+class UserNotice(models.Model):
+    """Represents a UserNotice as per RFC5280."""
+    notice_ref = models.ForeignKey(NoticeReference, null=True, blank=True, on_delete=models.CASCADE)
+    explicit_text = models.CharField(max_length=200, editable=False, verbose_name='Explicit Text', null=True, blank=True)
+
+    def __str__(self):
+        return f'UserNotice: {self.explicit_text or "No Explicit Text"}'
+
+
+class CPSUriModel(models.Model):
+    """Represents a CPS URI as per RFC5280."""
+    cps_uri = models.CharField(max_length=2048, editable=False, verbose_name='CPS URI')
+
+    def __str__(self):
+        return f'CPS URI: {self.cps_uri}'
+
+
+class QualifierModel(models.Model):
+    """Generic model to represent either a CPS URI or a User Notice."""
+    # TODO(BytesWelder): Maybe use cps_uri directly as CharField. Discuss differences
+    cps_uri = models.ForeignKey(CPSUriModel, null=True, blank=True, on_delete=models.CASCADE, related_name='qualifiers')
+    user_notice = models.ForeignKey(UserNotice, null=True, blank=True, on_delete=models.CASCADE, related_name='qualifiers')
+
+    def __str__(self):
+        if self.cps_uri:
+            return f'Qualifier: CPS URI - {self.cps_uri}'
+        if self.user_notice:
+            return f'Qualifier: User Notice - {self.user_notice}'
+        return 'Qualifier: Undefined'
+
+    def save(self, *args, **kwargs):
+        if self.cps_uri and self.user_notice:
+            raise ValueError("Only one of 'cps_uri' or 'user_notice' can be set, not both.")
+        super().save(*args, **kwargs)
+
+class PolicyQualifierInfo(models.Model):
+    """Represents a PolicyQualifierInfo as per RFC5280."""
+    policy_qualifier_id = models.CharField(max_length=256, editable=False, verbose_name='Policy Qualifier ID')
+    qualifier = models.ForeignKey(QualifierModel, null=True, blank=True, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return f'PolicyQualifierInfo: {self.policy_qualifier_id}'
+
+
+class PolicyInformation(models.Model):
+    """Model representing PolicyInformation as per RFC5280."""
+
+    policy_identifier = models.CharField(max_length=256, editable=False, verbose_name='Policy Identifier')
+    policy_qualifiers = models.ManyToManyField(PolicyQualifierInfo, blank=True, related_name='policies', editable=False)
+
+    def __str__(self):
+        return f'PolicyInformation(policy_identifier={self.policy_identifier})'
+
+
+
+class CertificatePoliciesExtension(CertificateExtension, models.Model):
+    """CertificatePoliciesExtension Model.
+
+    Stores the certificatePolicies extension as per RFC5280.
+    """
+
+    critical = models.BooleanField(verbose_name='Critical', editable=False)
+
+    certificate_policies = models.ManyToManyField(
+        PolicyInformation, 
+        related_name='certificate_policies', 
+        editable=False
+    )
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.CERTIFICATE_POLICIES.dotted_string
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
+
+    def __str__(self):
+        return f"CertificatePoliciesExtension(critical={self.critical}, " \
+               f"policies={[policy.policy_identifier for policy in self.certificate_policies.all()]})"
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) -> None | CertificatePoliciesExtension:
+        """Stores the CertificatePoliciesExtension in the database.
+
+        Args:
+            extension (x509.Extension): The x509.Extension object that contains the CertificatePolicies.
+
+        Returns:
+            CertificatePoliciesExtension: The instance of the saved CertificatePoliciesExtension.
+        """
+        if not isinstance(extension.value, x509.CertificatePolicies):
+            raise ValueError("Expected a CertificatePolicies extension.")
+
+        try:
+            policies_extension = cls(critical=extension.critical)
+            policies_extension.save()
+
+            for policy_info in extension.value:
+                policy_identifier = policy_info.policy_identifier.dotted_string
+                policy_information = PolicyInformation.objects.filter(policy_identifier=policy_identifier).first()
+
+                if not policy_information:
+                    policy_information = PolicyInformation(policy_identifier=policy_identifier)
+                    policy_information.save()
+
+                # Add policy qualifiers if present
+                for qualifier in policy_info.policy_qualifiers:
+                    if isinstance(qualifier, x509.UserNotice):
+                        # Save User Notice
+                        notice_reference = qualifier.notice_reference
+                        user_notice = UserNotice.objects.create(
+                            notice_ref=NoticeReference.objects.create(
+                                organization=notice_reference.organization if notice_reference else None,
+                                notice_numbers=",".join(map(str, notice_reference.notice_numbers)) if notice_reference else None,
+                            ) if notice_reference else None,
+                            explicit_text=qualifier.explicit_text,
+                        )
+                        qualifier_model = QualifierModel(user_notice=user_notice)
+                        qualifier_model.save()
+
+                    elif isinstance(qualifier, str):
+                        # Save CPS URI
+                        cps_uri = CPSUriModel.objects.create(cps_uri=qualifier)
+                        qualifier_model = QualifierModel(cps_uri=cps_uri)
+                        qualifier_model.save()
+
+                    # Add the qualifier to the policy
+                    policy_qualifier_info = PolicyQualifierInfo.objects.create(
+                        policy_qualifier_id=qualifier_model.pk,
+                        qualifier=qualifier_model,
+                    )
+                    policy_information.policy_qualifiers.add(policy_qualifier_info)
+
+                policy_information.save()
+                policies_extension.certificate_policies.add(policy_information)
+
+            policies_extension.save()
+            return policies_extension
+
+        except x509.ExtensionNotFound:
+            return None
+
+
+
+class KeyPurposeIdModel(models.Model):
+    """Represents a KeyPurposeId (OID) used in Extended Key Usage extension."""
+    oid = models.CharField(max_length=256, editable=False, verbose_name='Key Purpose OID', unique=True)
+
+    def __str__(self):
+        return f'KeyPurposeId({self.oid})'
+
+
+class ExtendedKeyUsageExtension(models.Model):
+    """ExtendedKeyUsageExtension Model.
+
+    As per RFC5280, this extension indicates one or more purposes for which the certified
+    public key may be used, in addition to or in place of the basic purposes indicated in the key usage extension.
+    """
+    critical = models.BooleanField(verbose_name='Critical', editable=False)
+    key_purpose_ids = models.ManyToManyField(KeyPurposeIdModel, related_name='extended_key_usages', editable=False)
+
+    def __str__(self) -> str:
+        purposes = [k.oid for k in self.key_purpose_ids.all()]
+        return f'ExtendedKeyUsageExtension(critical={self.critical}, key_purposes={purposes})'
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.EXTENDED_KEY_USAGE.dotted_string
+
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) -> None | ExtendedKeyUsageExtension:
+        """Stores the ExtendedKeyUsageExtension in the database.
+
+        Args:
+            extension (x509.Extension): The x509.Extension object that contains the Extended Key Usage.
+
+        Returns:
+            ExtendedKeyUsageExtension: The instance of the saved ExtendedKeyUsageExtension.
+        """
+        if not isinstance(extension.value, x509.ExtendedKeyUsage):
+            raise ValueError("Expected an ExtendedKeyUsage extension.")
+
+        try:
+            eku_extension = cls(critical=extension.critical)
+            eku_extension.save()
+
+            for oid in extension.value:
+                oid_str = oid.dotted_string
+                key_purpose = KeyPurposeIdModel.objects.filter(oid=oid_str).first()
+                if not key_purpose:
+                    key_purpose = KeyPurposeIdModel(oid=oid_str)
+                    key_purpose.save()
+
+                eku_extension.key_purpose_ids.add(key_purpose)
+
+            eku_extension.save()
+            return eku_extension
+
+        except ExtensionNotFound:
+            return None
 #
 #
 # class NameConstraintsExtension(CertificateExtension, models.Model):

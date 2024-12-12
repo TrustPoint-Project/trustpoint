@@ -23,7 +23,7 @@ from cryptography.x509 import (
     SubjectKeyIdentifier,
     UniformResourceIdentifier,
 )
-from cryptography.x509.oid import NameOID, ObjectIdentifier
+from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID, ObjectIdentifier
 from pyasn1.codec.der.decoder import decode
 from pyasn1.codec.der.encoder import encode
 from pyasn1.type import char
@@ -176,6 +176,43 @@ def self_signed_cert_with_ext(rsa_private_key) -> x509.Certificate:
         digest=key_identifier
     )
 
+    cp_ext = x509.CertificatePolicies(
+        policies=[
+            x509.PolicyInformation(
+                policy_identifier=x509.ObjectIdentifier("2.23.140.1.1"),
+                policy_qualifiers=[
+                    "https://example-ev-certs.com/cps",
+                    x509.UserNotice(
+                        notice_reference=x509.NoticeReference(
+                            organization="Example EV Certification Authority",
+                            notice_numbers=[1, 2]
+                        ),
+                        explicit_text="EV certificates issued under Example EV CA's CP/CPS."
+                    )
+                ]
+            ),
+            x509.PolicyInformation(
+                policy_identifier=x509.ObjectIdentifier("2.23.140.1.2.1"),
+                policy_qualifiers=[
+                    'https://example-dv-certs.com/cps',
+                    x509.UserNotice(
+                        notice_reference=None,
+                        explicit_text='DV certificates issued with minimal identity validation.'
+                    )
+                ]
+            )
+        ]
+    )
+
+    eku = x509.ExtendedKeyUsage([
+        ExtendedKeyUsageOID.SERVER_AUTH,
+        ExtendedKeyUsageOID.CLIENT_AUTH,
+        ExtendedKeyUsageOID.CODE_SIGNING,
+        ExtendedKeyUsageOID.EMAIL_PROTECTION,
+        ExtendedKeyUsageOID.TIME_STAMPING,
+        ExtendedKeyUsageOID.OCSP_SIGNING,
+    ])
+
     cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
@@ -206,6 +243,14 @@ def self_signed_cert_with_ext(rsa_private_key) -> x509.Certificate:
         )
         .add_extension(
             ski,
+            critical=False
+        )
+        .add_extension(
+            cp_ext,
+            critical=True
+        )
+        .add_extension(
+            eku,
             critical=False
         )
         .sign(private_key=rsa_private_key, algorithm=hashes.SHA256())
@@ -466,6 +511,66 @@ def test_subject_key_identifier_ext(self_signed_cert_with_ext):
     expected_key_identifier = hashlib.sha1(public_key_bytes).digest().hex().upper()
 
     assert ski_ext.key_identifier == expected_key_identifier
+
+
+@pytest.mark.django_db
+def test_certificate_policies_multiple_entries(self_signed_cert_with_ext):
+    """Test the CertificatePoliciesExtension with multiple PolicyInformation entries."""
+    cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
+
+    policies_ext = cert_model.certificate_policies_extension
+    assert policies_ext is not None
+    assert policies_ext.critical is True
+    assert policies_ext.certificate_policies.count() == 2
+
+    # Check EV policy
+    ev_policy = policies_ext.certificate_policies.filter(policy_identifier="2.23.140.1.1").first()
+    assert ev_policy is not None
+    assert ev_policy.policy_qualifiers.count() == 2
+    ev_cps_uri = ev_policy.policy_qualifiers.filter(qualifier__cps_uri__cps_uri="https://example-ev-certs.com/cps").first()
+    assert ev_cps_uri is not None
+    ev_user_notice = ev_policy.policy_qualifiers.filter(qualifier__user_notice__explicit_text__contains="EV certificates issued").first()
+    assert ev_user_notice is not None
+
+    # Check DV policy
+    dv_policy = policies_ext.certificate_policies.filter(policy_identifier="2.23.140.1.2.1").first()
+    assert dv_policy is not None
+    assert dv_policy.policy_qualifiers.count() == 2
+    dv_cps_uri = dv_policy.policy_qualifiers.filter(qualifier__cps_uri__cps_uri="https://example-dv-certs.com/cps").first()
+    assert dv_cps_uri is not None
+    dv_user_notice = dv_policy.policy_qualifiers.filter(qualifier__user_notice__explicit_text__contains="DV certificates issued").first()
+    assert dv_user_notice is not None
+
+
+@pytest.mark.django_db
+def test_extended_key_usage_ext(self_signed_cert_with_ext) -> None:
+    """Test the ExtendedKeyUsageExtension is correctly stored.
+
+    Args:
+        self_signed_cert_with_ext (x509.Certificate): The certificate fixture with all extensions.
+    """
+    cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
+
+    assert cert_model.extended_key_usage_extension is not None
+    eku_ext = cert_model.extended_key_usage_extension
+
+    assert eku_ext.critical is False
+
+    for kp in eku_ext.key_purpose_ids.all():
+        print(kp.oid)
+    print()
+    print(eku_ext)
+
+    expected_oids = {
+        ExtendedKeyUsageOID.SERVER_AUTH.dotted_string,
+        ExtendedKeyUsageOID.CLIENT_AUTH.dotted_string,
+        ExtendedKeyUsageOID.CODE_SIGNING.dotted_string,
+        ExtendedKeyUsageOID.EMAIL_PROTECTION.dotted_string,
+        ExtendedKeyUsageOID.TIME_STAMPING.dotted_string,
+        ExtendedKeyUsageOID.OCSP_SIGNING.dotted_string,
+    }
+    saved_oids = {kp.oid for kp in eku_ext.key_purpose_ids.all()}
+    assert saved_oids == expected_oids
 
 
 @pytest.mark.django_db

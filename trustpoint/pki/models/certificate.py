@@ -16,6 +16,8 @@ from pki.models.extension import (
     AttributeTypeAndValue,
     AuthorityKeyIdentifierExtension,
     BasicConstraintsExtension,
+    CertificatePoliciesExtension,
+    ExtendedKeyUsageExtension,
     IssuerAlternativeNameExtension,
     KeyUsageExtension,
     SubjectAlternativeNameExtension,
@@ -253,16 +255,32 @@ class CertificateModel(LoggerMixin, models.Model):
         on_delete=models.CASCADE
     )
 
-    # ext_authority_key_id = None
-    # ext_subject_key_id = None
-    # ext_certificate_policies = None
+    certificate_policies_extension = models.ForeignKey(
+        verbose_name=CertificateExtensionOid.CERTIFICATE_POLICIES.verbose_name,
+        to=CertificatePoliciesExtension,
+        related_name='certificates',
+        editable=False,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
+    extended_key_usage_extension = models.ForeignKey(
+        verbose_name=CertificateExtensionOid.EXTENDED_KEY_USAGE.verbose_name,
+        to=ExtendedKeyUsageExtension,
+        related_name='certificates',
+        editable=False,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
     # ext_policy_mappings = None
     # ext_subject_alternative_name = None
     # ext_issuer_alternative_name = None
     # ext_subject_directory_attributes = None
     # ext_name_constraints = None
     # ext_policy_constraints = None
-    # ext_extended_key_usage = None
     # ext_crl_distribution_points = None
     # ext_inhibit_any_policy = None
     # ext_freshest_crl = None
@@ -460,6 +478,11 @@ class CertificateModel(LoggerMixin, models.Model):
             elif isinstance(extension.value, x509.SubjectKeyIdentifier):
                 cert_model.subject_key_identifier_extension = \
                     SubjectKeyIdentifierExtension.save_from_crypto_extensions(extension)
+            elif isinstance(extension.value, x509.CertificatePolicies):
+                cert_model.certificate_policies_extension = CertificatePoliciesExtension.save_from_crypto_extensions(extension)
+            elif isinstance(extension.value, x509.ExtendedKeyUsage):
+                from pki.models.extension import ExtendedKeyUsageExtension
+                cert_model.extended_key_usage_extension = ExtendedKeyUsageExtension.save_from_crypto_extensions(extension)
 
     @classmethod
     @transaction.atomic
