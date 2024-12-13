@@ -16,29 +16,40 @@ class DeviceModel(models.Model):
     class OnboardingProtocol(models.IntegerChoices):
         """Supported Onboarding Protocols."""
 
-        MANUAL = 1, _('Manual download')
-        # BROWSER = 2, _('Browser download')
-        # CLI = 3, _('Device CLI')
-        TP_CLIENT_PW = 4, _('Trustpoint Client')
-        # AOKI = 7, _('AOKI')
-        # BRSKI = 6, _('BRSKI')
+        MANUAL = 0, _('Manual download')
+        BROWSER = 1, _('Browser download')
+        CLI = 2, _('Device CLI')
+        TP_CLIENT_PW = 3, _('Trustpoint Client')
+        AOKI = 4, _('AOKI')
+        BRSKI = 5, _('BRSKI')
 
 
-    # class Meta:
-    #     indexes = [
-    #         models.Index(fields=["content_type", "object_id"]),
-    #     ]
+    class OnboardingStatus(models.IntegerChoices):
+        """Onboarding status."""
+
+        PENDING = 0, _('Pending')
+        ONBOARDED = 1, _('Onboarded')
 
 
     unique_name = models.CharField(
         _('Device'), max_length=100, unique=True, default=f'New-Device', validators=[UniqueNameValidator()]
     )
     serial_number = models.CharField(_('Serial-Number'), max_length=100)
+    domain = models.ForeignKey(
+        DomainModel,
+        verbose_name=_('Domain'),
+        related_name='devices',
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT
+    )
+
     onboarding_protocol = models.IntegerField(verbose_name=_('Onboarding Protocol'), choices=OnboardingProtocol)
-    # content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
-    # object_id = models.PositiveIntegerField()
-    # onboarding_process = GenericForeignKey('content_type', 'object_id')
-    domains = models.ManyToManyField(DomainModel, verbose_name=_('Domains'), related_name='devices')
+    onboarding_status = models.IntegerField(
+        verbose_name=_('Onboarding Status'),
+        choices=OnboardingStatus,
+        default=OnboardingStatus.PENDING)
+
     created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
 

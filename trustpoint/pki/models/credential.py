@@ -236,6 +236,15 @@ class CredentialModel(models.Model):
             ],
         )
 
+    def get_credential_serializer(self) -> CredentialSerializer:
+        return CredentialSerializer(
+            (
+                self.get_private_key_serializer(),
+                self.get_certificate_serializer(),
+                self.get_certificate_chain_serializer()
+            )
+        )
+
 
 class CertificateChainOrderModel(models.Model):
     """This Model is used to preserve the order of certificates in credential certificate chains."""

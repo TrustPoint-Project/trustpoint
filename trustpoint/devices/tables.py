@@ -33,10 +33,12 @@ class DeviceTable(tables.Table):
         fields = (
             'row_checkbox',
             'unique_name',
-            'domains',
+            'domain',
             'serial_number',
             'created_at',
             'updated_at',
+            'onboarding_protocol',
+            'onboarding_status',
             'onboarding',
             'details',
             'edit',
@@ -49,6 +51,20 @@ class DeviceTable(tables.Table):
     edit = tables.Column(empty_values=(), orderable=False, verbose_name=_('Edit'))
     delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
 
+    @staticmethod
+    def render_onboarding(record: DeviceModel) -> SafeString:
+        """Creates the html hyperlink for the onboarding-view.
+
+        Args:
+            record (Device): The current record of the Device model.
+
+        Returns:
+            SafeString: The html hyperlink for the details-view.
+        """
+        if record.onboarding_protocol == DeviceModel.OnboardingProtocol.MANUAL:
+            return format_html(
+                '<a href="onboarding/manual/{}/" class="btn btn-primary tp-table-btn">{}</a>',
+                record.pk, _('Onboard'))
 
     @staticmethod
     def render_details(record: DeviceModel) -> SafeString:

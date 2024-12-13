@@ -1,0 +1,99 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+    
+        <div class="card">
+
+                <div class="card-header">
+                    <div class="">
+                        <h1>{% trans "Manual Onboarding" %}</h1>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="tp-card-centered-content">
+                        <h2>Download Domain Credential</h2>
+                        <hr>
+
+                        <button href="{% url 'devices:manual_download' pk=device.id format='pkcs12' %}" class="btn btn-primary mb-3 min-width-20" id="pkcs12-download-btn">Download as PKCS#12 File</button><br>
+                        <button href="{% url 'devices:manual_download' pk=device.id format='zip' %}" class="btn btn-primary mb-3 min-width-20">Download as PEM Files (zip)</button><br>
+                        <button href="{% url 'devices:manual_download' pk=device.id format='tar_gz' %}" class="btn btn-primary min-width-20">Download as PEM Files (tar.gz)</button><br>
+                        <hr>
+                        <div class="tp-card-btn-footer">
+                            <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                            <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
+                        </div>
+                    </div>
+                </div>
+        </div>
+
+    <script>
+        document.getElementById('pkcs12-download-btn').addEventListener('click', () => {
+
+            // File download URL
+            const fileDownloadUrl = "{% url 'devices:manual_download' pk=device.id format='pkcs12' %}";
+
+            // Redirect URL
+            const redirectUrl = "{% url 'devices:devices' %}"; // Replace with your actual redirect URL
+
+            // Trigger file download
+            const link = document.createElement('a');
+            link.href = fileDownloadUrl;
+            link.download = '{{ filename }}.p12'; // Optional: Suggest a filename
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Redirect after a short delay
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 1000); // Adjust the delay as needed
+        });
+        
+        document.getElementById('pem-zip-download-btn').addEventListener('click', () => {
+            console.log('hello');
+            // File download URL
+            const fileDownloadUrl = "{% url 'devices:manual_download' pk=device.id format='pkcs12' %}";
+
+            // Redirect URL
+            const redirectUrl = "{% url 'devices:devices' %}"; // Replace with your actual redirect URL
+
+            // Trigger file download
+            const link = document.createElement('a');
+            link.href = fileDownloadUrl;
+            link.download = '{{ filename }}.zip'; // Optional: Suggest a filename
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Redirect after a short delay
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 1000); // Adjust the delay as needed
+        });
+        
+        document.getElementById('pem-tar-gz-download-btn').addEventListener('click', () => {
+            console.log('hello');
+            // File download URL
+            const fileDownloadUrl = "{% url 'devices:manual_download' pk=device.id format='pkcs12' %}";
+
+            // Redirect URL
+            const redirectUrl = "{% url 'devices:devices' %}"; // Replace with your actual redirect URL
+
+            // Trigger file download
+            const link = document.createElement('a');
+            link.href = fileDownloadUrl;
+            link.download = '{{ filename }}.tar.gz'; // Optional: Suggest a filename
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Redirect after a short delay
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 1000); // Adjust the delay as needed
+        });
+    </script>
+
+{% endblock content %}
