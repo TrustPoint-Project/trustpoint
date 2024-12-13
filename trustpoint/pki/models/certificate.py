@@ -17,6 +17,7 @@ from pki.models.extension import (
     AuthorityKeyIdentifierExtension,
     BasicConstraintsExtension,
     CertificatePoliciesExtension,
+    CrlDistributionPointsExtension,
     ExtendedKeyUsageExtension,
     IssuerAlternativeNameExtension,
     KeyUsageExtension,
@@ -285,13 +286,21 @@ class CertificateModel(LoggerMixin, models.Model):
         on_delete=models.CASCADE
     )
 
+    
+    crl_distribution_points_extension = models.ForeignKey(
+        CrlDistributionPointsExtension,
+        related_name='certificates',
+        editable=False,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
     # ext_policy_mappings = None
     # ext_subject_alternative_name = None
     # ext_issuer_alternative_name = None
     # ext_subject_directory_attributes = None
-    # ext_name_constraints = None
     # ext_policy_constraints = None
-    # ext_crl_distribution_points = None
     # ext_inhibit_any_policy = None
     # ext_freshest_crl = None
 
@@ -495,6 +504,8 @@ class CertificateModel(LoggerMixin, models.Model):
                 cert_model.extended_key_usage_extension = ExtendedKeyUsageExtension.save_from_crypto_extensions(extension)
             elif isinstance(extension.value, x509.NameConstraints):
                 cert_model.name_constraints_extension = NameConstraintsExtension.save_from_crypto_extensions(extension)
+            elif isinstance(extension.value, x509.CRLDistributionPoints):
+                cert_model.crl_distribution_points_extension = CrlDistributionPointsExtension.save_from_crypto_extensions(extension)
 
     @classmethod
     @transaction.atomic

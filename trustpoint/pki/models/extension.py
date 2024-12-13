@@ -7,14 +7,12 @@ import abc
 from ipaddress import IPv4Address, IPv4Network, IPv6Address, IPv6Network
 from typing import TYPE_CHECKING
 
+from core.oid import CertificateExtensionOid, NameOid
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 from cryptography.x509.extensions import ExtensionNotFound
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-
-from core.oid import NameOid, CertificateExtensionOid
-
 
 if TYPE_CHECKING:
     from typing import Union
@@ -363,16 +361,6 @@ class GeneralNamesModel(models.Model):
     See RFC5280 for more information.
     """
 
-    _general_name_type: str
-
-    critical = models.BooleanField(verbose_name=_('Critical'), editable=False)
-
-    @property
-    def extension_oid(self) -> str:
-        raise NotImplementedError('This base class (GeneralNamesModel) does not have an extension_oid.')
-
-    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
-
     rfc822_names = models.ManyToManyField(
         to=GeneralNameRFC822Name,
         verbose_name=_('RFC822 Names'),
@@ -408,30 +396,27 @@ class GeneralNamesModel(models.Model):
         verbose_name=_('Other Names'),
         related_name='issuer_alternative_names')
 
-    @staticmethod
-    def _save_rfc822_name(entry: x509.RFC822Name, alt_name_ext: GeneralNamesModel) -> None:
+    def _save_rfc822_name(self, entry: x509.RFC822Name) -> None:
         existing_entry = GeneralNameRFC822Name.objects.filter(value=entry.value).first()
         if existing_entry:
-            alt_name_ext.rfc822_names.add(existing_entry)
+            self.rfc822_names.add(existing_entry)
         else:
             rfc822_name = GeneralNameRFC822Name(value=entry.value)
             rfc822_name.save()
-            alt_name_ext.rfc822_names.add(rfc822_name)
-        alt_name_ext.save()
+            self.rfc822_names.add(rfc822_name)
+        self.save()
 
-    @staticmethod
-    def _save_dns_name(entry: x509.DNSName, alt_name_ext: GeneralNamesModel) -> None:
+    def _save_dns_name(self, entry: x509.DNSName) -> None:
         existing_entry = GeneralNameDNSName.objects.filter(value=entry.value).first()
         if existing_entry:
-            alt_name_ext.dns_names.add(existing_entry)
+            self.dns_names.add(existing_entry)
         else:
             dns_name = GeneralNameDNSName(value=entry.value)
             dns_name.save()
-            alt_name_ext.dns_names.add(dns_name)
-        alt_name_ext.save()
+            self.dns_names.add(dns_name)
+        self.save()
 
-    @staticmethod
-    def _save_ip_address(entry: x509.IPAddress, alt_name_ext: GeneralNamesModel) -> None:
+    def _save_ip_address(self, entry: x509.IPAddress) -> None:
         if isinstance(entry.value, IPv4Address):
             ip_type = GeneralNameIpAddress.IpType.IPV4_ADDRESS
         elif isinstance(entry.value, IPv6Address):
@@ -445,58 +430,54 @@ class GeneralNamesModel(models.Model):
 
         existing_entry = GeneralNameIpAddress.objects.filter(ip_type=ip_type, value=entry.value).first()
         if existing_entry:
-            alt_name_ext.ip_addresses.add(existing_entry)
+            self.ip_addresses.add(existing_entry)
         else:
             ip_address = GeneralNameIpAddress(ip_type=ip_type, value=entry.value)
             ip_address.save()
-            alt_name_ext.ip_addresses.add(ip_address)
-        alt_name_ext.save()
+            self.ip_addresses.add(ip_address)
+        self.save()
 
-    @staticmethod
-    def _save_uri(entry: x509.UniformResourceIdentifier, alt_name_ext: GeneralNamesModel) -> None:
+    def _save_uri(self, entry: x509.UniformResourceIdentifier) -> None:
         existing_entry = GeneralNameUniformResourceIdentifier.objects.filter(value=entry.value).first()
         if existing_entry:
-            alt_name_ext.uniform_resource_identifiers.add(existing_entry)
+            self.uniform_resource_identifiers.add(existing_entry)
         else:
             uri = GeneralNameUniformResourceIdentifier(value=entry.value)
             uri.save()
-            alt_name_ext.uniform_resource_identifiers.add(uri)
-        alt_name_ext.save()
+            self.uniform_resource_identifiers.add(uri)
+        self.save()
 
-    @staticmethod
-    def _save_registered_id(entry: x509.RegisteredID, alt_name_ext: GeneralNamesModel) -> None:
+    def _save_registered_id(self, entry: x509.RegisteredID) -> None:
         existing_entry = GeneralNameRegisteredId.objects.filter(value=entry.value.dotted_string).first()
         if existing_entry:
-            alt_name_ext.registered_ids.add(existing_entry)
+            self.registered_ids.add(existing_entry)
         else:
             registered_id = GeneralNameRegisteredId(value=entry.value.dotted_string)
             registered_id.save()
-            alt_name_ext.registered_ids.add(registered_id)
-        alt_name_ext.save()
+            self.registered_ids.add(registered_id)
+        self.save()
 
-    @staticmethod
-    def _save_other_name(entry: x509.OtherName, alt_name_ext: GeneralNamesModel) -> None:
+    def _save_other_name(self, entry: x509.OtherName) -> None:
         type_id = entry.type_id.dotted_string
         value = entry.value.hex().upper()
         existing_entry = GeneralNameOtherName.objects.filter(type_id=type_id, value=value).first()
         if existing_entry:
-            alt_name_ext.other_names.add(existing_entry)
+            self.other_names.add(existing_entry)
         else:
             other_name = GeneralNameOtherName(
                 type_id=type_id,
                 value=value
             )
             other_name.save()
-            alt_name_ext.other_names.add(other_name)
-        alt_name_ext.save()
+            self.other_names.add(other_name)
+        self.save()
 
-    @staticmethod
-    def _save_directory_name(entry: x509.DirectoryName, alt_name_ext: GeneralNamesModel) -> None:
+    def _save_directory_name(self, entry: x509.DirectoryName) -> None:
         directory_name = GeneralNameDirectoryName()
         directory_name.save()
 
-        alt_name_ext.directory_names.add(directory_name)
-        alt_name_ext.save()
+        self.directory_names.add(directory_name)
+        self.save()
 
         for name in entry.value:
             existing_entry = AttributeTypeAndValue.objects.filter(oid=name.oid.dotted_string, value=name.value).first()
@@ -509,10 +490,8 @@ class GeneralNamesModel(models.Model):
 
         directory_name.save()
 
-    @classmethod
     def save_general_names(
-            cls,
-            general_name_ext: SubjectAlternativeNameExtension | IssuerAlternativeNameExtension | AuthorityKeyIdentifierExtension,
+            self,
             general_names: x509.Extension | list[x509.GeneralName]) \
             -> None | GeneralNamesModel:
         """Stores the GeneralNamesModel in the database.
@@ -535,29 +514,24 @@ class GeneralNamesModel(models.Model):
 
         for entry in general_names:
             if isinstance(entry, x509.RFC822Name):
-                cls._save_rfc822_name(entry=entry, alt_name_ext=general_name_ext)
+                self._save_rfc822_name(entry=entry)
             if isinstance(entry, x509.DNSName):
-                cls._save_dns_name(entry=entry, alt_name_ext=general_name_ext)
+                self._save_dns_name(entry=entry)
             elif isinstance(entry, x509.IPAddress):
-                cls._save_ip_address(entry=entry, alt_name_ext=general_name_ext)
+                self._save_ip_address(entry=entry)
             elif isinstance(entry, x509.DirectoryName):
-                cls._save_directory_name(entry=entry, alt_name_ext=general_name_ext)
+                self._save_directory_name(entry=entry)
             elif isinstance(entry, x509.UniformResourceIdentifier):
-                cls._save_uri(entry=entry, alt_name_ext=general_name_ext)
+                self._save_uri(entry=entry)
             elif isinstance(entry, x509.RegisteredID):
-                cls._save_registered_id(entry=entry, alt_name_ext=general_name_ext)
+                self._save_registered_id(entry=entry)
             elif isinstance(entry, x509.OtherName):
-                cls._save_other_name(entry=entry, alt_name_ext=general_name_ext)
+                self._save_other_name(entry=entry)
 
-        return general_name_ext
-
-    def __str__(self) -> str:
-        return (
-            f'{self._general_name_type}(critical={self.critical}, '
-            f'oid={self.extension_oid})')
+        return self
 
 
-class IssuerAlternativeNameExtension(CertificateExtension, GeneralNamesModel):
+class IssuerAlternativeNameExtension(CertificateExtension, models.Model):
     """IssuerAlternativeNameExtension Model.
 
     See RFC5280 for more information.
@@ -569,6 +543,23 @@ class IssuerAlternativeNameExtension(CertificateExtension, GeneralNamesModel):
     def extension_oid(self) -> str:
         return CertificateExtensionOid.ISSUER_ALTERNATIVE_NAME.dotted_string
     extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
+    critical = models.BooleanField(verbose_name=_('Critical'), editable=False)
+
+    issuer_alt_name = models.ForeignKey(
+        GeneralNamesModel,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name=_('Issuer Alternative Name Issuer')
+    )
+
+    
+    def __str__(self) -> str:
+        return (
+            f'{self._general_name_type}(critical={self.critical}, '
+            f'oid={self.extension_oid})')
+
 
     @classmethod
     def save_from_crypto_extensions(cls, extension: x509.Extension) \
@@ -587,18 +578,19 @@ class IssuerAlternativeNameExtension(CertificateExtension, GeneralNamesModel):
         """
 
         try:
-            issuer_alt_name_ext = IssuerAlternativeNameExtension(critical=extension.critical)
-            issuer_alt_name_ext.save()
+            gn = GeneralNamesModel()
+            gn.save()
+            gn.save_general_names(extension)
 
-            return super(IssuerAlternativeNameExtension, cls).save_general_names(
-                general_name_ext=issuer_alt_name_ext,
-                general_names=extension)
+            issuer_alt_name_ext = IssuerAlternativeNameExtension(critical=extension.critical, issuer_alt_name=gn)
+            issuer_alt_name_ext.save()
+            return issuer_alt_name_ext
 
         except ExtensionNotFound:
             return None
 
 
-class SubjectAlternativeNameExtension(CertificateExtension, GeneralNamesModel):
+class SubjectAlternativeNameExtension(CertificateExtension, models.Model):
     """SubjectAlternativeNameExtension Model.
 
     See RFC5280 for more information.
@@ -610,6 +602,21 @@ class SubjectAlternativeNameExtension(CertificateExtension, GeneralNamesModel):
     def extension_oid(self) -> str:
         return CertificateExtensionOid.SUBJECT_ALTERNATIVE_NAME.dotted_string
     extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
+    critical = models.BooleanField(verbose_name=_('Critical'), editable=False)
+
+    subject_alt_name = models.ForeignKey(
+        GeneralNamesModel,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name=_('Issuer Alternative Name Issuer')
+    )
+
+    def __str__(self) -> str:
+        return (
+            f'{self._general_name_type}(critical={self.critical}, '
+            f'oid={self.extension_oid})')
 
     @classmethod
     def save_from_crypto_extensions(cls, extension: x509.Extension) \
@@ -626,25 +633,26 @@ class SubjectAlternativeNameExtension(CertificateExtension, GeneralNamesModel):
             trustpoint.pki.models.SubjectAlternativeNameExtension:
             The instance of the saved SubjectAlternativeNameExtension.
         """
-
         try:
-            alt_name_ext = SubjectAlternativeNameExtension(critical=extension.critical)
-            alt_name_ext.save()
+            gn = GeneralNamesModel()
+            gn.save()
+            gn.save_general_names(extension)
 
-            return super(SubjectAlternativeNameExtension, cls).save_general_names(
-                general_name_ext=alt_name_ext,
-                general_names=extension)
+            alt_name_ext = SubjectAlternativeNameExtension(critical=extension.critical, subject_alt_name=gn)
+            alt_name_ext.save()
+            return alt_name_ext
 
         except ExtensionNotFound:
             return None
 
-class AuthorityKeyIdentifierExtension(CertificateExtension, GeneralNamesModel):
+
+class AuthorityKeyIdentifierExtension(CertificateExtension, models.Model):
     """AuthorityKeyIdentifierExtension Model.
 
     See RFC5280 for more information.
     """
 
-    _general_name_type = 'AuthorityKeyIdentifier'
+    _extension_type = 'AuthorityKeyIdentifier'
 
     @property
     def extension_oid(self) -> str:
@@ -666,6 +674,21 @@ class AuthorityKeyIdentifierExtension(CertificateExtension, GeneralNamesModel):
         verbose_name='Authority Cert Serial Number'
     )
 
+    critical = models.BooleanField(verbose_name=_('Critical'), editable=False)
+
+    authority_cert_issuer = models.ForeignKey(
+        GeneralNamesModel,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name=_('Issuer Alternative Name Issuer')
+    )
+
+    def __str__(self) -> str:
+        return (
+            f'{self._extension_type}(critical={self.critical}, '
+            f'oid={self.extension_oid})')
+
     @classmethod
     def save_from_crypto_extensions(cls, extension: x509.Extension) \
             -> None | AuthorityKeyIdentifierExtension:
@@ -683,27 +706,28 @@ class AuthorityKeyIdentifierExtension(CertificateExtension, GeneralNamesModel):
         """
         try:
             aki: x509.AuthorityKeyIdentifier = extension.value
-
             key_identifier = aki.key_identifier.hex().upper() if aki.key_identifier else None
-            authority_cert_serial_number = None
-            if aki.authority_cert_serial_number is not None:
-                authority_cert_serial_number = hex(aki.authority_cert_serial_number)[2:].upper()
-
-            aki_extension = cls(
-                critical=extension.critical,
-                key_identifier=key_identifier,
-                authority_cert_serial_number=authority_cert_serial_number
-            )
-            aki_extension.save()
+            authority_cert_serial_number = hex(aki.authority_cert_serial_number)[2:].upper() \
+                if aki.authority_cert_serial_number else None
+            gn = None
 
             if aki.authority_cert_issuer:
-                cls.save_general_names(aki_extension, aki.authority_cert_issuer)
+                gn = GeneralNamesModel()
+                gn.save()
+                gn.save_general_names(aki.authority_cert_issuer)
+
+            aki_extension = AuthorityKeyIdentifierExtension(
+                key_identifier=key_identifier,
+                authority_cert_serial_number=authority_cert_serial_number,
+                critical=extension.critical,
+                authority_cert_issuer=gn
+            )
+            aki_extension.save()
 
             return aki_extension
 
         except ExtensionNotFound:
             return None
-
 
 
 class SubjectKeyIdentifierExtension(CertificateExtension, models.Model):
@@ -758,7 +782,6 @@ class SubjectKeyIdentifierExtension(CertificateExtension, models.Model):
             return None
 
 
-
 class NoticeReference(models.Model):
     """Represents a NoticeReference as per RFC5280."""
     organization = models.CharField(max_length=200, editable=False, verbose_name='Organization', null=True, blank=True)
@@ -803,6 +826,7 @@ class QualifierModel(models.Model):
             raise ValueError("Only one of 'cps_uri' or 'user_notice' can be set, not both.")
         super().save(*args, **kwargs)
 
+
 class PolicyQualifierInfo(models.Model):
     """Represents a PolicyQualifierInfo as per RFC5280."""
     policy_qualifier_id = models.CharField(max_length=256, editable=False, verbose_name='Policy Qualifier ID')
@@ -820,7 +844,6 @@ class PolicyInformation(models.Model):
 
     def __str__(self):
         return f'PolicyInformation(policy_identifier={self.policy_identifier})'
-
 
 
 class CertificatePoliciesExtension(CertificateExtension, models.Model):
@@ -908,7 +931,6 @@ class CertificatePoliciesExtension(CertificateExtension, models.Model):
 
         except x509.ExtensionNotFound:
             return None
-
 
 
 class KeyPurposeIdModel(models.Model):
@@ -1104,10 +1126,176 @@ class NameConstraintsExtension(CertificateExtension, models.Model):
         except ExtensionNotFound:
             return None
 
-#
-# class CrlDistributionPointsExtension(CertificateExtension, models.Model):
-#     pass
-#
+
+class DistributionPointName(models.Model):
+    full_name = models.ForeignKey(
+        GeneralNamesModel,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+    )
+
+    name_relative_to_crl_issuer = models.ManyToManyField(
+        AttributeTypeAndValue,
+        verbose_name=_('Name relative to crl issuer'),
+        related_name='distribution_point_name',
+        editable=False,
+        blank=True
+    )
+
+    def __str__(self) -> str:
+        if self.full_name:
+            return f"DistributionPointName(full_name={self.full_name})"
+        else:
+            nrci = ", ".join(str(a) for a in self.name_relative_to_crl_issuer.all())
+            return f"DistributionPointName(nameRelativeToCRLIssuer={nrci})"
+
+    def save(self, *args, **kwargs):
+        if self.full_name and self.name_relative_to_crl_issuer.exists():
+            raise ValueError("Only one of 'full_name' or 'name_relative_to_crl_issuer' can be set, not both.")
+        super().save(*args, **kwargs)
+
+
+class DistributionPointModel(CertificateExtension, models.Model):
+    distribution_point_name = models.ForeignKey(
+        DistributionPointName,
+        verbose_name='Distribution Point Name',
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
+    reasons = models.CharField(max_length=16, blank=True, null=True, verbose_name=_('Reasons'))
+
+    crl_issuer = models.ForeignKey(
+        GeneralNamesModel,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        verbose_name=_('CRL Issuer')
+    )
+
+
+class CrlDistributionPointsExtension(CertificateExtension, models.Model):
+    mapping = {
+        "unused": 0,
+        "keyCompromise": 1,
+        "cACompromise": 2,
+        "affiliationChanged": 3,
+        "superseded": 4,
+        "cessationOfOperation": 5,
+        "certificateHold": 6,
+        "privilegeWithdrawn": 7,
+        "aACompromise": 8
+    }
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.CRL_DISTRIBUTION_POINTS.dotted_string
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
+    critical = models.BooleanField(verbose_name=_('Critical'), editable=False)
+
+    distribution_points = models.ManyToManyField(
+        DistributionPointModel,
+        verbose_name='Distribution Points',
+        blank=True
+    )
+
+    def __str__(self) -> str:
+        return f'CRLDistributionPointsExtension(critical={self.critical}, dp_count={self.distribution_points.count()})'
+
+    def reasons_list_to_bitstring(self, reasons_list: list[str]) -> str:
+        bits = ['0'] * 9
+        for reason in reasons_list:
+            idx = self.mapping[reason]
+            bits[idx] = '1'
+        return ''.join(bits)
+
+    def bitstring_to_reasons_list(self, bitstr: str) -> list[str]:
+        reverse_mapping = {v: k for k, v in self.mapping.items()}
+        reasons = []
+        for i, bit in enumerate(bitstr):
+            if bit == '1':
+                reasons.append(reverse_mapping[i])
+        return reasons
+
+    def set_reasons_on_distribution_point(self, dp_obj, reasons_list: list[str]) -> None:
+        dp_obj.reasons = self.reasons_list_to_bitstring(reasons_list)
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) -> CrlDistributionPointsExtension | None:
+        dp: x509.DistributionPoint
+        try:
+            cdp_ext = cls(critical=extension.critical)
+            cdp_ext.save()
+
+            for dp in extension.value:
+
+                dpn = DistributionPointName()
+                dpn.save()
+
+                if dp.full_name is not None:
+                    gn = GeneralNamesModel()
+                    gn.save()
+                    GeneralNamesModel.save_general_names(gn, dp.full_name)
+                    dpn.full_name = gn
+                    dpn.save()
+                elif dp.relative_name is not None:
+                    for atv in dp.relative_name:
+                        attr = AttributeTypeAndValue.objects.filter(
+                            oid=atv.oid.dotted_string,
+                            value=atv.value
+                        ).first()
+                        if not attr:
+                            attr = AttributeTypeAndValue(oid=atv.oid.dotted_string, value=atv.value)
+                            attr.save()
+                        dpn.name_relative_to_crl_issuer.add(attr)
+                    dpn.save()
+
+                # TODO: Check if x509 is using the correct ReasonFlags for Distribution Point. -> It is commented out?
+                reasons_list = ['']
+                # if dp.reasons is not None:
+                #     reasons_list = []
+                #     if x509.ReasonFlags.unused in dp.reasons:
+                #         reasons_list.append("unused")
+                #     if x509.ReasonFlags.key_compromise in dp.reasons:
+                #         reasons_list.append("keyCompromise")
+                #     if x509.ReasonFlags.ca_compromise in dp.reasons:
+                #         reasons_list.append("cACompromise")
+                #     if x509.ReasonFlags.affiliation_changed in dp.reasons:
+                #         reasons_list.append("affiliationChanged")
+                #     if x509.ReasonFlags.superseded in dp.reasons:
+                #         reasons_list.append("superseded")
+                #     if x509.ReasonFlags.cessation_of_operation in dp.reasons:
+                #         reasons_list.append("cessationOfOperation")
+                #     if x509.ReasonFlags.certificate_hold in dp.reasons:
+                #         reasons_list.append("certificateHold")
+                #     if x509.ReasonFlags.privilege_withdrawn in dp.reasons:
+                #         reasons_list.append("privilegeWithdrawn")
+                #     if x509.ReasonFlags.aA_compromise in dp.reasons:
+                #         reasons_list.append("aACompromise")
+
+                crl_issuer = None
+                # cRLIssuer falls vorhanden
+                if dp.crl_issuer is not None:
+                    # crl_issuer ist eine Liste von GeneralNames
+                    crl_issuer = GeneralNamesModel()
+                    GeneralNamesModel.save_general_names(gn, dp.crl_issuer)
+
+                dp_model, _ = DistributionPointModel.objects.get_or_create(
+                    distribution_point_name=dpn,
+                    reasons=cdp_ext.reasons_list_to_bitstring(reasons_list),
+                    crl_issuer=crl_issuer
+                )
+
+                cdp_ext.distribution_points.add(dp_model)
+
+            cdp_ext.save()
+            return cdp_ext
+        except ExtensionNotFound:
+            return None
+
+
 #
 # class AuthorityInformationAccessExtension(CertificateExtension, models.Model):
 #     pass

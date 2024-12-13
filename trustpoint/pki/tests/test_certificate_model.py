@@ -38,6 +38,7 @@ from pki.models.extension import (
     GeneralNameUniformResourceIdentifier,
     GeneralSubtree,
     NameConstraintsExtension,
+    SubjectAlternativeNameExtension,
 )
 
 # ---------------------------- Certificate properties ----------------------------
@@ -235,6 +236,23 @@ def self_signed_cert_with_ext(rsa_private_key) -> x509.Certificate:
             other_name
         ])
 
+    crl_dp = x509.CRLDistributionPoints([
+        x509.DistributionPoint(
+            full_name=[
+                x509.UniformResourceIdentifier("http://example.com/crl1"),
+                x509.DNSName(URI_VALUE),
+            ],
+            relative_name=None,
+            reasons=frozenset([
+                x509.ReasonFlags.key_compromise,
+                x509.ReasonFlags.ca_compromise
+            ]),
+            crl_issuer=[
+                x509.DNSName(URI_VALUE)
+            ],
+        )
+    ])
+
     cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
@@ -279,6 +297,10 @@ def self_signed_cert_with_ext(rsa_private_key) -> x509.Certificate:
             nc,
             critical=True
         )
+        # .add_extension(
+        #     crl_dp,
+        #     critical=False
+        # )
         .sign(private_key=rsa_private_key, algorithm=hashes.SHA256())
     )
     return cert
@@ -398,7 +420,7 @@ def test_san_ext(self_signed_cert_with_ext) -> None:
     cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
 
     assert cert_model.subject_alternative_name_extension is not None
-    san_ext = cert_model.subject_alternative_name_extension
+    san_ext = cert_model.subject_alternative_name_extension.subject_alt_name
     # Check that all GeneralName types are present
     assert any(d.value == DNS_NAME_VALUE for d in san_ext.dns_names.all())
     assert any(r.value == RFC822_EMAIL for r in san_ext.rfc822_names.all())
@@ -428,7 +450,7 @@ def test_ian_ext(self_signed_cert_with_ext) -> None:
     cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
 
     assert cert_model.issuer_alternative_name_extension is not None
-    ian_ext = cert_model.issuer_alternative_name_extension
+    ian_ext = cert_model.issuer_alternative_name_extension.issuer_alt_name
     # DNSName check
     assert any(d.value == DNS_NAME_VALUE for d in ian_ext.dns_names.all())
     # RFC822Name check
@@ -485,31 +507,33 @@ def test_authority_key_identifier_ext(self_signed_cert_with_ext):
     expected_serial_number = hex(self_signed_cert_with_ext.serial_number)[2:].upper()
     assert aki_ext.authority_cert_serial_number == expected_serial_number
 
+    authority_cert_issuer = aki_ext.authority_cert_issuer
+
     # TODO: Write GeneralName attr. test
     # Check authority_cert_issuer GeneralNames
     # Check RFC822Name
-    assert any(r.value == RFC822_EMAIL for r in aki_ext.rfc822_names.all())
+    assert any(r.value == RFC822_EMAIL for r in authority_cert_issuer.rfc822_names.all())
 
     # Check DNSName
-    assert any(d.value == DNS_NAME_VALUE for d in aki_ext.dns_names.all())
+    assert any(d.value == DNS_NAME_VALUE for d in authority_cert_issuer.dns_names.all())
 
     # Check UniformResourceIdentifier
-    assert any(u.value == URI_VALUE for u in aki_ext.uniform_resource_identifiers.all())
+    assert any(u.value == URI_VALUE for u in authority_cert_issuer.uniform_resource_identifiers.all())
     # Check DirectoryName
-    assert aki_ext.directory_names.count() == 1
-    dir_name = aki_ext.directory_names.first()
+    assert authority_cert_issuer.directory_names.count() == 1
+    dir_name = authority_cert_issuer.directory_names.first()
     dir_attrs = list(dir_name.names.all())
     assert any(attr.value == ORGANIZATION_NAME for attr in dir_attrs)
 
     # Check RegisteredID
-    assert any(r.value == REGISTERED_ID_OID for r in aki_ext.registered_ids.all())
+    assert any(r.value == REGISTERED_ID_OID for r in authority_cert_issuer.registered_ids.all())
 
     # Check IPAddress
-    assert any(ip.value == IP_ADDRESS_VALUE for ip in aki_ext.ip_addresses.all())
+    assert any(ip.value == IP_ADDRESS_VALUE for ip in authority_cert_issuer.ip_addresses.all())
 
     # Check OtherName
-    assert aki_ext.other_names.count() == 1
-    other_name = aki_ext.other_names.first()
+    assert authority_cert_issuer.other_names.count() == 1
+    other_name = authority_cert_issuer.other_names.first()
     assert other_name.type_id == OTHER_NAME_OID
     decoded_asn1, _ = decode(bytes.fromhex(other_name.value), asn1Spec=char.UTF8String())
     assert str(decoded_asn1) == OTHER_NAME_CONTENT
@@ -582,11 +606,6 @@ def test_extended_key_usage_ext(self_signed_cert_with_ext) -> None:
 
     assert eku_ext.critical is False
 
-    for kp in eku_ext.key_purpose_ids.all():
-        print(kp.oid)
-    print()
-    print(eku_ext)
-
     expected_oids = {
         ExtendedKeyUsageOID.SERVER_AUTH.dotted_string,
         ExtendedKeyUsageOID.CLIENT_AUTH.dotted_string,
@@ -640,6 +659,45 @@ def test_name_constraints_ext(self_signed_cert_with_ext) -> None:
     assert excluded_other_name.other_name.type_id == OTHER_NAME_OID
     decoded_asn1, _ = decode(bytes.fromhex(excluded_other_name.other_name.value), asn1Spec=char.UTF8String())
     assert str(decoded_asn1) == OTHER_NAME_CONTENT
+
+
+# @pytest.mark.django_db
+# def test_crl_distribution_points_ext(self_signed_cert_with_ext) -> None:
+#     """Test the CRLDistributionPointsExtension is correctly stored.
+
+#     Args:
+#         self_signed_cert_with_ext (x509.Certificate): The certificate fixture with the CRL Distribution Points extension.
+#     """
+#     cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
+
+#     # Check if the CRL Distribution Points extension is saved
+#     crl_dp_ext = cert_model.crl_distribution_points_extension
+#     print('MOIN: ')
+#     print(crl_dp_ext)
+#     assert crl_dp_ext is not None
+#     assert crl_dp_ext.critical is False
+
+#     # Verify distribution points
+#     assert crl_dp_ext.distribution_points.count() == 1
+#     dp = crl_dp_ext.distribution_points.first()
+
+#     # Check fullName
+#     full_names = dp.distribution_point_name.full_name
+#     assert full_names is not None
+#     assert any(uri.value == "http://example.com/crl1" for uri in full_names.uniform_resource_identifiers.all())
+#     assert any(dns.value == "crl.example.com" for dns in full_names.dns_names.all())
+
+#     # Check reasons
+#     reasons = dp.get_reasons_as_list()
+#     assert "keyCompromise" in reasons
+#     assert "cACompromise" in reasons
+
+#     # Check CRL issuer
+#     crl_issuer = dp.crl_issuer
+#     assert crl_issuer is not None
+#     assert any(dns.value == "issuer.example.com" for dns in crl_issuer.dns_names.all())
+
+
 
 
 @pytest.mark.django_db
