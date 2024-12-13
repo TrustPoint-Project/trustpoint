@@ -38,6 +38,50 @@ SCRIPT_WIZARD_CREATE_SUPER_USER = STATE_FILE_DIR / Path('wizard_create_super_use
 class TrustpointWizardError(Exception):
     """Custom exception for Trustpoint wizard-related issues."""
 
+class TrustpointTlsServerCredentialError(Exception):
+    """Custom exception for errors related to Trustpoint TLS Server Credentials.
+
+    This exception is raised when specific issues with the TLS Server Credentials
+    occur, such as missing credentials.
+    """
+    def __init__(self, message: str = 'Trustpoint TLS Server Credential error occurred.') -> None:
+        """Initialize the exception with a custom error message.
+
+        Args:
+            message (str): A custom error message describing the exception. Defaults
+                           to 'Trustpoint TLS Server Credential error occurred.'.
+        """
+        super().__init__(message)
+
+def execute_shell_script(script_path: str) -> None:
+    """Execute a shell script.
+
+    Args:
+        script_path (str): The path to the shell script to execute.
+
+    Raises:
+        FileNotFoundError: If the script does not exist.
+        ValueError: If the script path is not a valid file.
+        subprocess.CalledProcessError: If the script fails to execute.
+    """
+    script_path = Path(script_path).resolve()
+
+    if not script_path.exists():
+        err_msg = f'State bump script not found: {script_path}'
+        raise FileNotFoundError(err_msg)
+    if not script_path.is_file():
+        err_msg = f'The script path {script_path} is not a valid file.'
+        raise ValueError(err_msg)
+
+    command = ['sudo', str(script_path)]
+
+    result = subprocess.run(  # noqa: S603
+        command, capture_output=True, text=True, check=True
+    )
+
+    if result.returncode != 0:
+        raise subprocess.CalledProcessError(result.returncode, str(script_path))
+
 
 
 class StartupWizardRedirect:
@@ -74,10 +118,36 @@ class StartupWizardRedirect:
 
 
 class SetupWizardInitialView(TemplateView):
-    http_method_names = ['get']
+    """View for the initial step of the setup wizard.
+
+    This view is responsible for displaying the initial setup wizard page. It
+    ensures that the application is running in a Docker container and that the
+    setup wizard is in the initial state. If either condition is not met, the
+    user is redirected to the appropriate page, such as the login page or the
+    next setup step.
+
+    Attributes:
+        http_method_names (ClassVar[list[str]]): List of HTTP methods allowed for this view.
+        template_name (str): Path to the template used for rendering the initial page.
+    """
+    http_method_names: ClassVar[list[str]] = ['get']
     template_name = 'setup_wizard/initial.html'
 
-    def get(self, *args, **kwargs):
+    def get(self, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Handle GET requests for the initial setup wizard page.
+
+        This method validates the current state of the setup wizard and redirects
+        the user to the appropriate page. If the application is not running in a
+        Docker container, the user is redirected to the login page.
+
+        Args:
+            *args (Any): Additional positional arguments.
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            HttpResponse: A redirect response to the appropriate setup wizard page
+                          or the login page if the setup is not in a Docker container.
+        """
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
@@ -89,12 +159,40 @@ class SetupWizardInitialView(TemplateView):
 
 
 class SetupWizardGenerateTlsServerCredentialView(FormView):
-    http_method_names = ['get', 'post']
+    """View for generating TLS Server Credentials in the setup wizard.
+
+    This view handles the generation of TLS Server Credentials as part of the
+    setup wizard. It provides a form for the user to input necessary information
+    such as IP addresses and domain names, and processes the data to generate
+    the required TLS certificates.
+
+    Attributes:
+        http_method_names (ClassVar[list[str]]): HTTP methods allowed for this view.
+        template_name (str): Path to the template used for rendering the form.
+        form_class (Form): The form class used to validate user input.
+        success_url (str): The URL to redirect to upon successful credential generation.
+    """
+    http_method_names: ClassVar[list[str]] = ['get', 'post']
     template_name = 'setup_wizard/generate_tls_server_credential.html'
     form_class = StartupWizardTlsCertificateForm
     success_url = reverse_lazy('setup_wizard:tls_server_credential_apply')
 
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Override the dispatch method to enforce wizard state validation.
+
+        This method ensures that the user is redirected appropriately based on the
+        current wizard state. If the application is not running in a Docker container,
+        the user is redirected to the login page.
+
+        Args:
+            request (HttpRequest): The incoming HTTP request.
+            *args (Any): Additional positional arguments.
+            **kwargs (Any): Additional keyword arguments.
+
+        Returns:
+            HttpResponse: A redirect response to the appropriate page or
+                          the next handler in the dispatch chain.
+        """
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
@@ -104,7 +202,22 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
 
         return super().dispatch(request, *args, **kwargs)
 
-    def form_valid(self, form):
+    def form_valid(self, form: UserCreationForm) -> HttpResponseRedirect:
+        """Handle a valid form submission for TLS Server Credential generation.
+
+        Args:
+            form (UserCreationForm): The validated form containing user input
+                                     for generating the TLS Server Credential.
+
+        Returns:
+            HttpResponseRedirect: Redirect to the success URL upon successful
+                                  credential generation, or an error page if
+                                  an exception occurs.
+
+        Raises:
+            TrustpointTlsServerCredentialError: If no TLS server credential is found.
+            subprocess.CalledProcessError: If the associated shell script fails.
+        """
         try:
             # Generate the TLS Server Credential
             cleaned_data = form.cleaned_data
@@ -136,7 +249,7 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
                     credential=credential_model, certificate=chain_certificate_model, order=order
                 )
 
-            self._execute_initial_script()
+            execute_shell_script(SCRIPT_WIZARD_INITIAL)
 
             messages.add_message(self.request, messages.SUCCESS, 'TLS Server Credential generated successfully.')
 
@@ -148,22 +261,11 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
         except FileNotFoundError:
             messages.add_message(self.request, messages.ERROR, f'Transition script not found: {SCRIPT_WIZARD_INITIAL}.')
             return redirect('setup_wizard:initial', permanent=False)
-        except Exception as e:
+        except Exception as e: # noqa: BLE001
             messages.add_message(self.request, messages.ERROR, f'Error generating TLS Server Credential: {e}')
             return redirect('setup_wizard:initial', permanent=False)
 
-    def _execute_initial_script(self):
-        """Execute the initial setup script."""
-        if not Path(SCRIPT_WIZARD_INITIAL).exists():
-            err_msg = f'Script not found: {SCRIPT_WIZARD_INITIAL}'
-            raise FileNotFoundError(err_msg)
-
-        result = subprocess.run(['sudo', str(SCRIPT_WIZARD_INITIAL)], capture_output=True, text=True, check=True)
-
-        if result.returncode != 0:
-            raise subprocess.CalledProcessError(result.returncode, SCRIPT_WIZARD_INITIAL)
-
-    def _get_error_message_from_return_code(self, return_code):
+    def _get_error_message_from_return_code(self, return_code: int) -> str:
         """Maps return codes to error messages."""
         error_messages = {
             1: 'Trustpoint is not in the WIZARD_INITIAL state. State file missing.',
@@ -175,9 +277,17 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
 
 
 class SetupWizardImportTlsServerCredentialView(View):
-    http_method_names = ['get']
+    """View for handling the import of TLS Server Credentials."""
+    http_method_names: ClassVar[list[str]] = ['get']
 
-    def get(self, *args, **kwargs):
+    def get(self) -> HttpResponse:
+        """Handle GET requests for importing TLS Server Credentials.
+
+        Returns:
+            HttpResponse: A redirect to the initial setup wizard page if the
+                          import feature is not implemented or the wizard state
+                          is incorrect.
+        """
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
@@ -192,12 +302,30 @@ class SetupWizardImportTlsServerCredentialView(View):
 
 
 class SetupWizardTlsServerCredentialApplyView(FormView):
-    http_method_names = ['get', 'post']
+    """View for handling the application of TLS Server Credentials in the setup wizard.
+
+    Attributes:
+        http_method_names (list[str]): Allowed HTTP methods for this view ('get' and 'post').
+        form_class (Form): The form used for processing TLS Server Credential application.
+        template_name (str): The template used to render the view.
+        success_url (str): The URL to redirect to upon successful form submission.
+    """
+    http_method_names: ClassVar[list[str]] = ['get', 'post']
     form_class = EmptyForm
     template_name = 'setup_wizard/tls_server_credential_apply.html'
     success_url = reverse_lazy('setup_wizard:demo_data')
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Handle GET requests for the TLS Server Credential application view.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+            *args (Any): Positional arguments passed to the method.
+            **kwargs (Any): Keyword arguments passed to the method.
+
+        Returns:
+            HttpResponse: A redirect response to the appropriate wizard state or the requested page.
+        """
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
@@ -211,7 +339,16 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
 
         return super().get(request, *args, **kwargs)
 
-    def post(self, *args, **kwargs):
+    def post(self, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Handle POST requests for the TLS Server Credential application view.
+
+        Args:
+            *args (Any): Positional arguments passed to the method.
+            **kwargs (Any): Keyword arguments passed to the method.
+
+        Returns:
+            HttpResponse: A redirect response to the appropriate page based on the wizard state.
+        """
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
@@ -221,18 +358,25 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
 
         return super().post(*args, **kwargs)
 
-    def form_valid(self, form):
+    def form_valid(self, form: UserCreationForm) -> HttpResponseRedirect:
+        """Process a valid form submission during the TLS Server Credential application.
+
+        Args:
+            form (UserCreationForm): The form instance containing the submitted data.
+
+        Returns:
+            HttpResponseRedirect: Redirect to the next step or an error page based on the outcome.
+        """
         try:
             trustpoint_tls_server_credential_model = CredentialModel.objects.get(
                 credential_type=CredentialModel.CredentialTypeChoice.TRUSTPOINT_TLS_SERVER
             )
             if not trustpoint_tls_server_credential_model:
-                err_msg = 'No Trustpoint TLS Server Credential found.'
-                raise ValueError(err_msg)
+                self._raise_tls_credential_error('No Trustpoint TLS Server Credential found.')
 
             self._write_pem_files(trustpoint_tls_server_credential_model)
 
-            self._execute_transition_script()
+            execute_shell_script(SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY)
 
             messages.add_message(self.request, messages.SUCCESS, 'TLS Server Credential applied successfully.')
             return super().form_valid(form)
@@ -248,23 +392,19 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
         except TrustpointWizardError as e:
             messages.add_message(self.request, messages.ERROR, str(e))
             return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
-        except Exception as e:
+        except Exception as e:  #noqa: BLE001
             messages.add_message(self.request, messages.ERROR, f'An unexpected error occurred: {e}')
             return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
 
-    def _execute_transition_script(self):
-        """Executes the shell script for transitioning states."""
-        if not Path(SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY).exists():
-            err_msg = f'Script not found: {SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY}'
-            raise FileNotFoundError(err_msg)
+    def _raise_tls_credential_error(self, message: str) -> None:
+        """Raise a TrustpointTlsServerCredentialError with a given message.
 
-        result = subprocess.run(
-            ['sudo', SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY], capture_output=True, text=True, check=True
-        )
-        if result.returncode != 0:
-            raise subprocess.CalledProcessError(result.returncode, SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY)
+        Args:
+            message (str): The error message to include in the exception.
+        """
+        raise TrustpointTlsServerCredentialError(message)
 
-    def _map_exit_code_to_message(self, return_code):
+    def _map_exit_code_to_message(self, return_code: int) -> str:
         """Maps shell script exit codes to user-friendly error messages."""
         error_messages = {
             1: 'State file not found. Ensure Trustpoint is in the correct state.',
@@ -285,8 +425,15 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
         }
         return error_messages.get(return_code, 'An unknown error occurred.')
 
-    def _generate_trust_store_response(self, file_format):
-        """Generate a response containing the trust store."""
+    def _generate_trust_store_response(self, file_format: str) -> HttpResponse:
+        """Generate a response containing the trust store in the requested format.
+
+        Args:
+            file_format (str): The desired file format for the trust store (e.g., 'pem', 'pkcs7_der', 'pkcs7_pem').
+
+        Returns:
+            HttpResponse: A response with the trust store content or an error message.
+        """
         try:
             trustpoint_tls_server_credential_model = CredentialModel.objects.get(
                 credential_type=CredentialModel.CredentialTypeChoice.TRUSTPOINT_TLS_SERVER
@@ -315,7 +462,7 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
             elif file_format == 'pkcs7_pem':
                 trust_store = serializer.as_pkcs7_pem().decode()
                 content_type = 'application/x-pem-file'
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             messages.add_message(self.request, messages.ERROR, f'Error generating {file_format} trust store: {e}')
             return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
 
@@ -324,8 +471,12 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
         response.write(trust_store)
         return response
 
-    def _write_pem_files(self, credential_model):
-        """Writes the private key, certificate, and trust store PEM files to disk."""
+    def _write_pem_files(self, credential_model: CredentialModel) -> None:
+        """Writes the private key, certificate, and trust store PEM files to disk.
+
+        Args:
+            credential_model (CredentialModel): The credential model instance containing the keys and certificates.
+        """
         private_key_pem = credential_model.get_private_key_serializer().as_pkcs8_pem().decode()
         certificate_pem = credential_model.get_certificate_serializer().as_pem().decode()
         trust_store_pem = credential_model.get_certificate_chain_serializer().as_pem().decode()
@@ -336,9 +487,22 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
 
 
 class SetupWizardTlsServerCredentialApplyCancelView(View):
-    http_method_names = ['get']
+    """View for handling the cancellation of TLS Server Credential application.
 
-    def get(self, request, *args, **kwargs):
+    Attributes:
+        http_method_names (list[str]): Allowed HTTP methods for this view.
+    """
+    http_method_names: ClassVar[list[str]] = ['get']
+
+    def get(self, request: HttpRequest) -> HttpResponse:
+        """Handle GET requests for the TLS Server Credential import view.
+
+        Args:
+            request (HttpRequest): The HTTP request object.
+
+        Returns:
+            HttpResponse: A redirect to the next step or an error response.
+        """
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
 
@@ -349,7 +513,7 @@ class SetupWizardTlsServerCredentialApplyCancelView(View):
         try:
             self._clear_credential_and_certificate_data()
 
-            self._execute_cancel_script()
+            execute_shell_script(SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY_CANCEL)
 
             messages.add_message(request, messages.INFO, 'Generation of the TLS-Server credential canceled.')
             return redirect('setup_wizard:initial', permanent=False)
@@ -368,47 +532,42 @@ class SetupWizardTlsServerCredentialApplyCancelView(View):
             )
             return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
 
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             messages.add_message(request, messages.ERROR, f'An unexpected error occurred: {e}')
             return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
 
-    def _clear_credential_and_certificate_data(self):
+    def _clear_credential_and_certificate_data(self) -> None:
         """Clears credential and certificate data."""
         CertificateModel.objects.all().delete()
         TrustpointTlsServerCredentialModel.objects.all().delete()
 
-    def _execute_cancel_script(self):
-        """Executes the shell script to cancel the TLS-Server credential generation."""
-        if not SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY_CANCEL.exists():
-            err_msg = f'Script not found: {SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY_CANCEL}'
-            raise FileNotFoundError(err_msg)
-
-        result = subprocess.run(
-            ['sudo', str(SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY_CANCEL)], capture_output=True, text=True, check=True
-        )
-        if result.returncode != 0:
-            raise subprocess.CalledProcessError(
-                result.returncode, str(SCRIPT_WIZARD_TLS_SERVER_CREDENTIAL_APPLY_CANCEL)
-            )
-
-    def _map_exit_code_to_message(self, return_code):
+    def _map_exit_code_to_message(self, return_code:int) -> str:
         """Maps shell script exit codes to user-friendly error messages."""
         error_messages = {
-            1: "The state file for 'WIZARD_TLS_SERVER_CREDENTIAL_APPLY' was not found. Ensure Trustpoint is in the correct state.",
-            2: 'Multiple state files were detected, indicating a corrupted wizard state. Please resolve the inconsistency.',
+            1: "The state file for 'WIZARD_TLS_SERVER_CREDENTIAL_APPLY' was not found. Ensure Trustpoint "
+               "is in the correct state.",
+            2: 'Multiple state files were detected, indicating a corrupted wizard state. '
+               'Please resolve the inconsistency.',
             3: "Failed to remove the current 'WIZARD_TLS_SERVER_CREDENTIAL_APPLY' state file. Check file permissions.",
-            4: "Failed to create the 'WIZARD_INITIAL' state file. Ensure the directory is writable and permissions are set correctly.",
+            4: "Failed to create the 'WIZARD_INITIAL' state file. Ensure the directory is writable and "
+               "permissions are set correctly.",
         }
         return error_messages.get(return_code, 'An unknown error occurred during the cancel operation.')
 
 
 class SetupWizardDemoDataView(FormView):
-    http_method_names = ['get', 'post']
+    """View for handling the demo data setup during the setup wizard.
+
+    This view allows the user to either add demo data to the database or proceed without
+    it. It validates the current wizard state and transitions to the next state upon
+    successful completion.
+    """
+    http_method_names: ClassVar[list[str]] = ['get', 'post']
     form_class = EmptyForm
     template_name = 'setup_wizard/demo_data.html'
     success_url = reverse_lazy('setup_wizard:create_super_user')
 
-    def dispatch(self, request, *args, **kwargs):
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         """Handle request dispatch and wizard state validation."""
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
@@ -419,14 +578,14 @@ class SetupWizardDemoDataView(FormView):
 
         return super().dispatch(request, *args, **kwargs)
 
-    def form_valid(self, form):
+    def form_valid(self, form: UserCreationForm) -> HttpResponseRedirect:
         """Handle form submission for demo data setup."""
         try:
             if 'without-demo-data' in self.request.POST:
                 self._execute_state_bump()
             elif 'with-demo-data' in self.request.POST:
                 self._add_demo_data()
-                self._execute_state_bump()
+                execute_shell_script(SCRIPT_WIZARD_DEMO_DATA)
             else:
                 messages.add_message(self.request, messages.ERROR, 'Invalid option selected for demo data setup.')
                 return redirect('setup_wizard:demo_data', permanent=False)
@@ -435,35 +594,29 @@ class SetupWizardDemoDataView(FormView):
             messages.add_message(
                 self.request,
                 messages.ERROR,
-                f'Demo data script failed with exit code {e.returncode}: {self._map_exit_code_to_message(e.returncode)}',
+                f'Demo data script failed with exit code {e.returncode}: '
+                f'{self._map_exit_code_to_message(e.returncode)}',
             )
             return redirect('setup_wizard:demo_data', permanent=False)
         except FileNotFoundError:
             messages.add_message(self.request, messages.ERROR, f'Demo data script not found: {SCRIPT_WIZARD_DEMO_DATA}')
             return redirect('setup_wizard:demo_data', permanent=False)
-        except Exception as e:
+        except ValueError as e:
+            messages.add_message(self.request, messages.ERROR, f'Value error: {e}')
+            return redirect('setup_wizard:demo_data', permanent=False)
+        except Exception as e:  # noqa: BLE001
             messages.add_message(self.request, messages.ERROR, f'An unexpected error occurred: {e}')
             return redirect('setup_wizard:demo_data', permanent=False)
 
         return super().form_valid(form)
 
-    def _execute_state_bump(self):
-        """Move the wizard to the next state."""
-        if not SCRIPT_WIZARD_DEMO_DATA.exists():
-            err_msg = f'State bump script not found: {SCRIPT_WIZARD_DEMO_DATA}'
-            raise FileNotFoundError(err_msg)
-
-        result = subprocess.run(['sudo', str(SCRIPT_WIZARD_DEMO_DATA)], capture_output=True, text=True, check=True)
-        if result.returncode != 0:
-            raise subprocess.CalledProcessError(result.returncode, str(SCRIPT_WIZARD_DEMO_DATA))
-
-    def _add_demo_data(self):
+    def _add_demo_data(self) -> None:
         """Add demo data to the database."""
         try:
             call_command('add_domains_and_devices')
         except Exception as e:
             err_msg = f'Error adding demo data: {e}'
-            raise ValueError(err_msg)
+            raise ValueError(err_msg) from e
 
     @staticmethod
     def _map_exit_code_to_message(return_code: int) -> str:
@@ -527,7 +680,7 @@ class SetupWizardCreateSuperUserView(FormView):
             user.save()
             messages.add_message(self.request, messages.SUCCESS, 'Successfully created super-user.')
 
-            self._execute_state_bump()
+            execute_shell_script(SCRIPT_WIZARD_CREATE_SUPER_USER)
         except User.DoesNotExist as e:
             messages.add_message(self.request, messages.ERROR, f'User not found error: {e}')
             return redirect('setup_wizard:create_super_user', permanent=False)
@@ -563,23 +716,3 @@ class SetupWizardCreateSuperUserView(FormView):
             4: 'Failed to create the WIZARD_COMPLETED state file.',
         }
         return error_messages.get(return_code, 'An unknown error occurred while executing the create superuser script.')
-
-    def _execute_state_bump(self) -> None:
-        """Move the wizard to the next state."""
-        script_path = Path(SCRIPT_WIZARD_CREATE_SUPER_USER).resolve()
-
-        if not script_path.exists():
-            err_msg = f'State bump script not found: {script_path}'
-            raise FileNotFoundError(err_msg)
-        if not script_path.is_file():
-            err_msg = f'The script path {script_path} is not a valid file.'
-            raise ValueError(err_msg)
-
-        command = ['sudo', str(script_path)]
-
-        result = subprocess.run(    # noqa: S603
-            command, capture_output=True, text=True, check=True
-        )
-
-        if result.returncode != 0:
-            raise subprocess.CalledProcessError(result.returncode, str(script_path))
