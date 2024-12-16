@@ -582,8 +582,10 @@ class SetupWizardDemoDataView(FormView):
         """Handle form submission for demo data setup."""
         try:
             if 'without-demo-data' in self.request.POST:
-                self._execute_state_bump()
+                messages.add_message(self.request, messages.INFO, 'Setup Trustpoint with no demo data')
+                execute_shell_script(SCRIPT_WIZARD_DEMO_DATA)
             elif 'with-demo-data' in self.request.POST:
+                messages.add_message(self.request, messages.INFO, 'Setup Trustpoint with demo data')
                 self._add_demo_data()
                 execute_shell_script(SCRIPT_WIZARD_DEMO_DATA)
             else:
