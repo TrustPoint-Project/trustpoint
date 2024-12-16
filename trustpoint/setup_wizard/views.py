@@ -6,14 +6,14 @@ import subprocess
 from pathlib import Path
 from typing import Any, ClassVar
 
-from django.contrib import messages
-from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
-from django.core.management import call_command
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect
-from django.shortcuts import redirect
-from django.urls import reverse_lazy
-from django.views.generic import FormView, TemplateView, View
+from django.contrib import messages  # type: ignore[import-untyped]
+from django.contrib.auth.forms import UserCreationForm  # type: ignore[import-untyped]
+from django.contrib.auth.models import User  # type: ignore[import-untyped]
+from django.core.management import call_command  # type: ignore[import-untyped]
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect  # type: ignore[import-untyped]
+from django.shortcuts import redirect  # type: ignore[import-untyped]
+from django.urls import reverse_lazy  # type: ignore[import-untyped]
+from django.views.generic import FormView, TemplateView, View  # type: ignore[import-untyped]
 from pki.models import CertificateChainOrderModel, CertificateModel, CredentialModel
 from pki.models.truststore import TrustpointTlsServerCredentialModel
 
@@ -38,12 +38,14 @@ SCRIPT_WIZARD_CREATE_SUPER_USER = STATE_FILE_DIR / Path('wizard_create_super_use
 class TrustpointWizardError(Exception):
     """Custom exception for Trustpoint wizard-related issues."""
 
+
 class TrustpointTlsServerCredentialError(Exception):
     """Custom exception for errors related to Trustpoint TLS Server Credentials.
 
     This exception is raised when specific issues with the TLS Server Credentials
     occur, such as missing credentials.
     """
+
     def __init__(self, message: str = 'Trustpoint TLS Server Credential error occurred.') -> None:
         """Initialize the exception with a custom error message.
 
@@ -53,18 +55,19 @@ class TrustpointTlsServerCredentialError(Exception):
         """
         super().__init__(message)
 
-def execute_shell_script(script_path: str) -> None:
+
+def execute_shell_script(script: Path) -> None:
     """Execute a shell script.
 
     Args:
-        script_path (str): The path to the shell script to execute.
+        script (Path): The path to the shell script to execute.
 
     Raises:
         FileNotFoundError: If the script does not exist.
         ValueError: If the script path is not a valid file.
         subprocess.CalledProcessError: If the script fails to execute.
     """
-    script_path = Path(script_path).resolve()
+    script_path = Path(script).resolve()
 
     if not script_path.exists():
         err_msg = f'State bump script not found: {script_path}'
@@ -83,13 +86,13 @@ def execute_shell_script(script_path: str) -> None:
         raise subprocess.CalledProcessError(result.returncode, str(script_path))
 
 
-
 class StartupWizardRedirect:
     """Handles redirection logic based on the current state of the setup wizard.
 
     This class provides a static method for determining the appropriate redirection
     URL based on the wizard's state, ensuring users are guided through the setup process.
     """
+
     @staticmethod
     def redirect_by_state(wizard_state: SetupWizardState) -> HttpResponseRedirect:
         """Redirects the user to the appropriate setup wizard page based on the current state.
@@ -130,6 +133,7 @@ class SetupWizardInitialView(TemplateView):
         http_method_names (ClassVar[list[str]]): List of HTTP methods allowed for this view.
         template_name (str): Path to the template used for rendering the initial page.
     """
+
     http_method_names: ClassVar[list[str]] = ['get']
     template_name = 'setup_wizard/initial.html'
 
@@ -172,6 +176,7 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
         form_class (Form): The form class used to validate user input.
         success_url (str): The URL to redirect to upon successful credential generation.
     """
+
     http_method_names: ClassVar[list[str]] = ['get', 'post']
     template_name = 'setup_wizard/generate_tls_server_credential.html'
     form_class = StartupWizardTlsCertificateForm
@@ -261,7 +266,7 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
         except FileNotFoundError:
             messages.add_message(self.request, messages.ERROR, f'Transition script not found: {SCRIPT_WIZARD_INITIAL}.')
             return redirect('setup_wizard:initial', permanent=False)
-        except Exception as e: # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             messages.add_message(self.request, messages.ERROR, f'Error generating TLS Server Credential: {e}')
             return redirect('setup_wizard:initial', permanent=False)
 
@@ -278,6 +283,7 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
 
 class SetupWizardImportTlsServerCredentialView(View):
     """View for handling the import of TLS Server Credentials."""
+
     http_method_names: ClassVar[list[str]] = ['get']
 
     def get(self) -> HttpResponse:
@@ -310,6 +316,7 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
         template_name (str): The template used to render the view.
         success_url (str): The URL to redirect to upon successful form submission.
     """
+
     http_method_names: ClassVar[list[str]] = ['get', 'post']
     form_class = EmptyForm
     template_name = 'setup_wizard/tls_server_credential_apply.html'
@@ -392,7 +399,7 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
         except TrustpointWizardError as e:
             messages.add_message(self.request, messages.ERROR, str(e))
             return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
-        except Exception as e:  #noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             messages.add_message(self.request, messages.ERROR, f'An unexpected error occurred: {e}')
             return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
 
@@ -492,6 +499,7 @@ class SetupWizardTlsServerCredentialApplyCancelView(View):
     Attributes:
         http_method_names (list[str]): Allowed HTTP methods for this view.
     """
+
     http_method_names: ClassVar[list[str]] = ['get']
 
     def get(self, request: HttpRequest) -> HttpResponse:
@@ -541,16 +549,16 @@ class SetupWizardTlsServerCredentialApplyCancelView(View):
         CertificateModel.objects.all().delete()
         TrustpointTlsServerCredentialModel.objects.all().delete()
 
-    def _map_exit_code_to_message(self, return_code:int) -> str:
+    def _map_exit_code_to_message(self, return_code: int) -> str:
         """Maps shell script exit codes to user-friendly error messages."""
         error_messages = {
             1: "The state file for 'WIZARD_TLS_SERVER_CREDENTIAL_APPLY' was not found. Ensure Trustpoint "
-               "is in the correct state.",
+            'is in the correct state.',
             2: 'Multiple state files were detected, indicating a corrupted wizard state. '
-               'Please resolve the inconsistency.',
+            'Please resolve the inconsistency.',
             3: "Failed to remove the current 'WIZARD_TLS_SERVER_CREDENTIAL_APPLY' state file. Check file permissions.",
             4: "Failed to create the 'WIZARD_INITIAL' state file. Ensure the directory is writable and "
-               "permissions are set correctly.",
+            'permissions are set correctly.',
         }
         return error_messages.get(return_code, 'An unknown error occurred during the cancel operation.')
 
@@ -562,6 +570,7 @@ class SetupWizardDemoDataView(FormView):
     it. It validates the current wizard state and transitions to the next state upon
     successful completion.
     """
+
     http_method_names: ClassVar[list[str]] = ['get', 'post']
     form_class = EmptyForm
     template_name = 'setup_wizard/demo_data.html'
@@ -647,6 +656,7 @@ class SetupWizardCreateSuperUserView(FormView):
     user configured. The view validates the input using the `UserCreationForm`
     and transitions the wizard state upon successful completion.
     """
+
     http_method_names: ClassVar[list[str]] = ['get', 'post']
     form_class = UserCreationForm
     template_name = 'setup_wizard/create_super_user.html'
