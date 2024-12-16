@@ -1,0 +1,26 @@
+{% extends 'trustpoint/base.html' %}
+{% load crispy_forms_filters %}
+{% load i18n %}
+{% block content %}
+    <div class="card">
+        <div class="card-header d-flex">
+            <h1>{% trans 'Add Device' %}</h1>
+        </div>
+        <div class="card-body py-3">
+            <form method="POST" id="add-device-form">
+                {% csrf_token %}
+                {{ form|crispy }}
+                <hr>
+                <div class="tp-form-btn-group">
+                    <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
+                    <button type="submit" class="btn btn-primary">
+                        {% trans 'Add Device' %}
+                    </button>
+                </div>
+            </form>
+
+        </div>
+
+
+    </div>
+{% endblock content %}

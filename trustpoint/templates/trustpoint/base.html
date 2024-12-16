@@ -36,7 +36,7 @@
 {#    <div class="container-fluid p-0 m-0 d-flex">#}
         <nav class="tp-sidenav">
             <div class="tp-menu-group">
-                <a href="#" class="tp-menu-head {% if page_name == 'dashboard' %}tp-menu-active{% endif %}">
+                <a href="{% url 'home:dashboard' %}" class="tp-menu-head {% if page_name == 'dashboard' %}tp-menu-active{% endif %}">
                     <svg class="bi" fill="currentColor" role="img">
                         <use href="{% static 'img/icons.svg' %}#icon-home"></use></svg>
                     {% translate "Dashboard" %}

@@ -5,30 +5,156 @@ from django.utils.translation import gettext_lazy as _  # type: ignore[import-un
 from django.contrib.contenttypes.fields import GenericForeignKey   # type: ignore[import-untyped]
 from django.contrib.contenttypes.models import ContentType # type: ignore[import-untyped]
 from core.validator.field import UniqueNameValidator
-
+from core.serializer import CredentialSerializer, PrivateKeySerializer
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import rsa, ec
+import datetime
 
 from pki.models import CertificateModel, DomainModel, CredentialModel
 
 
 class DeviceModel(models.Model):
 
+    def _generate_private_key(self) -> PrivateKeySerializer:
+        issuing_ca_private_key = self.domain.issuing_ca.credential.get_private_key()
+        if isinstance(issuing_ca_private_key, rsa.RSAPrivateKey):
+            key_size = issuing_ca_private_key.key_size
+            return PrivateKeySerializer(
+                rsa.generate_private_key(key_size=key_size, public_exponent=65537)
+            )
+        if isinstance(issuing_ca_private_key, ec.EllipticCurvePrivateKey):
+            curve = issuing_ca_private_key.curve
+            return PrivateKeySerializer(
+                ec.generate_private_key(curve=curve)
+            )
+        raise ValueError('Cannot build the domain credential, unknown key type found.')
+
+    def _get_hash_algorithm_from_issuing_ca_credential(self) -> hashes.SHA256 | hashes.SHA384:
+        hash_algorithm = self.domain.issuing_ca.credential.get_certificate().signature_hash_algorithm
+        if isinstance(hash_algorithm, hashes.SHA256):
+            return hashes.SHA256()
+        if isinstance(hash_algorithm, hashes.SHA384):
+            return hashes.SHA384()
+        raise ValueError('Cannot build the domain credential, unknown hash algorithm found.')
+
+    def issue_domain_credential(self) -> CredentialSerializer:
+        domain_credential_private_key = self._generate_private_key()
+        hash_algorithm = self._get_hash_algorithm_from_issuing_ca_credential()
+        one_day = datetime.timedelta(1, 0, 0)
+
+        certificate_builder = x509.CertificateBuilder()
+        certificate_builder = certificate_builder.subject_name(x509.Name([
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'Trustpoint Device Credential'),
+            x509.NameAttribute(
+                x509.NameOID.DN_QUALIFIER,
+                f'trustpoint.{self.unique_name}.{self.domain.unique_name}.local'),
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number)
+        ]))
+        certificate_builder = certificate_builder.issuer_name(
+            self.domain.issuing_ca.credential.get_certificate().subject)
+        certificate_builder = certificate_builder.not_valid_before(datetime.datetime.now(datetime.UTC))
+        certificate_builder = certificate_builder.not_valid_after(
+            datetime.datetime.now(datetime.UTC) + (one_day * 365))
+        certificate_builder = certificate_builder.serial_number(x509.random_serial_number())
+        certificate_builder = certificate_builder.public_key(
+            domain_credential_private_key.public_key_serializer.as_crypto())
+        domain_certificate = certificate_builder.sign(
+            private_key=domain_credential_private_key.as_crypto(),
+            algorithm=hash_algorithm
+        )
+
+        certificate = CertificateModel.save_certificate(domain_certificate)
+        issued_domain_credential = IssuedDomainCredentialModel(
+            issued_domain_credential_certificate=certificate,
+            device=self,
+            domain=self.domain
+        )
+        issued_domain_credential.save()
+
+        self.onboarding_status = self.OnboardingStatus.ONBOARDED
+        self.save()
+
+        return CredentialSerializer(
+            (
+                domain_credential_private_key,
+                domain_certificate,
+                [self.domain.issuing_ca.credential.get_certificate()] +
+                self.domain.issuing_ca.credential.get_certificate_chain()
+            )
+        )
+
+    def issue_application_credential(
+            self,
+            subject: dict[x509.ObjectIdentifier, str],
+            validity_days: int,
+            certificate_type: IssuedApplicationCertificateModel.ApplicationCertificateType) -> CredentialSerializer:
+        application_cert_private_key = self._generate_private_key()
+        hash_algorithm = self._get_hash_algorithm_from_issuing_ca_credential()
+        one_day = datetime.timedelta(1, 0, 0)
+
+        for x, y in subject.items():
+            print(x)
+            print(y)
+            print()
+
+        certificate_builder = x509.CertificateBuilder()
+        certificate_builder = certificate_builder.subject_name(x509.Name([
+            x509.NameAttribute(key, value) for key, value in subject.items()
+        ]))
+        certificate_builder = certificate_builder.issuer_name(
+            self.domain.issuing_ca.credential.get_certificate().subject)
+        certificate_builder = certificate_builder.not_valid_before(datetime.datetime.now(datetime.UTC))
+        certificate_builder = certificate_builder.not_valid_after(
+            datetime.datetime.now(datetime.UTC) + (one_day * validity_days))
+        certificate_builder = certificate_builder.serial_number(x509.random_serial_number())
+        certificate_builder = certificate_builder.public_key(
+            application_cert_private_key.public_key_serializer.as_crypto())
+        domain_certificate = certificate_builder.sign(
+            private_key=application_cert_private_key.as_crypto(),
+            algorithm=hash_algorithm
+        )
+        certificate = CertificateModel.save_certificate(domain_certificate)
+
+        issued_application_certificate = IssuedApplicationCertificateModel(
+            device=self,
+            domain=self.domain,
+            issued_application_certificate=certificate,
+            issued_application_certificate_type=certificate_type
+        )
+        issued_application_certificate.save()
+
+        return CredentialSerializer(
+            (
+                application_cert_private_key,
+                domain_certificate,
+                [self.domain.issuing_ca.credential.get_certificate()] +
+                self.domain.issuing_ca.credential.get_certificate_chain()
+            )
+        )
+
+    def __str__(self) -> str:
+        return f'DeviceModel(unique_name={self.unique_name})'
+
 
     class OnboardingProtocol(models.IntegerChoices):
         """Supported Onboarding Protocols."""
 
-        MANUAL = 0, _('Manual download')
-        BROWSER = 1, _('Browser download')
-        CLI = 2, _('Device CLI')
-        TP_CLIENT_PW = 3, _('Trustpoint Client')
-        AOKI = 4, _('AOKI')
-        BRSKI = 5, _('BRSKI')
+        NO_ONBOARDING = 0, _('No Onboarding')
+        MANUAL = 1, _('Manual download')
+        BROWSER = 2, _('Browser download')
+        CLI = 3, _('Device CLI')
+        TP_CLIENT_PW = 4, _('Trustpoint Client')
+        AOKI = 5, _('AOKI')
+        BRSKI = 6, _('BRSKI')
 
 
     class OnboardingStatus(models.IntegerChoices):
         """Onboarding status."""
 
-        PENDING = 0, _('Pending')
-        ONBOARDED = 1, _('Onboarded')
+        NO_ONBOARDING = 0, _('No Onboarding')
+        PENDING = 1, _('Pending')
+        ONBOARDED = 2, _('Onboarded')
 
 
     unique_name = models.CharField(
@@ -61,31 +187,51 @@ class IssuedDomainCredentialModel(models.Model):
         verbose_name=_('Issued Domain Credential'),
         on_delete=models.CASCADE,
         related_name='issued_domain_credential')
+    device = models.ForeignKey(
+        DeviceModel,
+        verbose_name=_('Device'),
+        on_delete=models.CASCADE,
+        related_name='issued_domain_credentials'
+    )
     domain = models.ForeignKey(
         DomainModel,
         verbose_name=_('Domain'),
         on_delete=models.CASCADE,
         related_name='issued_domain_credentials')
 
-    domain_credential = models.ForeignKey(CredentialModel, on_delete=models.CASCADE)
-
     created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
 
+    def __str__(self) -> str:
+        return f'IssuedDomainCredential(device={self.device.unique_name}, domain={self.domain.unique_name})'
 
-class IssuedApplicationCertificate(models.Model):
+
+class IssuedApplicationCertificateModel(models.Model):
+
+    class ApplicationCertificateType(models.IntegerChoices):
+
+        GENERIC = 0, _('Generic')
+        TLS_CLIENT = 1, _('TLS-Client')
+        TLS_SERVER = 2, _('TLS-Server')
 
     device = models.ForeignKey(
         DeviceModel,
         on_delete=models.CASCADE,
         related_name='issued_application_certificates')
-    domain_credential = models.ForeignKey(
-        IssuedDomainCredentialModel,
+    domain = models.ForeignKey(
+        DomainModel,
+        verbose_name=_('Domain'),
         on_delete=models.CASCADE,
         related_name='issued_application_certificates')
-
-    application_certificate = models.ForeignKey(
+    issued_application_certificate = models.ForeignKey(
         CertificateModel,
         verbose_name=_('Application Certificate'),
         on_delete=models.CASCADE)
+
+    issued_application_certificate_type = models.IntegerField(
+        verbose_name=_('Application Certificate Type'),
+        choices=ApplicationCertificateType,
+        null=False,
+        blank=False,
+    )
 
     created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)

@@ -49,7 +49,7 @@ DOCKER_CONTAINER = False
 INSTALLED_APPS = [
     'setup_wizard.apps.SetupWizardConfig',
     'users.apps.UsersConfig',
-    # 'home.apps.HomeConfig',
+    'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
     'pki.apps.PkiConfig',
     'settings.apps.SettingsConfig',
