@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import ipaddress
+
 from django.db import models    # type: ignore[import-untyped]
 from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
 from django.contrib.contenttypes.fields import GenericForeignKey   # type: ignore[import-untyped]
@@ -7,6 +9,7 @@ from django.contrib.contenttypes.models import ContentType # type: ignore[import
 from core.validator.field import UniqueNameValidator
 from core.serializer import CredentialSerializer, PrivateKeySerializer
 from cryptography import x509
+from cryptography.x509 import oid
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
 import datetime
@@ -84,19 +87,105 @@ class DeviceModel(models.Model):
             )
         )
 
+    @staticmethod
+    def _add_tls_client_cert_extensions(
+            certificate_builder: x509.CertificateBuilder,
+            application_credential_private_key: PrivateKeySerializer,
+            issuing_ca_private_key: PrivateKeySerializer) -> x509.CertificateBuilder:
+        certificate_builder = certificate_builder.add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=True,
+                key_cert_sign=False,
+                crl_sign=False,
+                encipher_only=False,
+                decipher_only=False
+            ),
+            critical=True
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(
+                issuing_ca_private_key.public_key_serializer.as_crypto()),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(application_credential_private_key.public_key_serializer.as_crypto()),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.ExtendedKeyUsage([oid.ExtendedKeyUsageOID.CLIENT_AUTH]),
+            critical=False
+        )
+        return certificate_builder
+
+    @staticmethod
+    def _add_tls_server_cert_extensions(
+            certificate_builder: x509.CertificateBuilder,
+            application_credential_private_key: PrivateKeySerializer,
+            issuing_ca_private_key: PrivateKeySerializer,
+            ipv4_addresses: list[ipaddress.IPv4Address],
+            ipv6_addresses: list[ipaddress.IPv6Address],
+            domain_names: list[str]) -> x509.CertificateBuilder:
+
+        # TODO(AlexHx8472): Set key usage according to cipher suite used -> BSI technical guideline
+        certificate_builder = certificate_builder.add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                content_commitment=False,
+                key_encipherment=True,
+                data_encipherment=False,
+                key_agreement=True,
+                key_cert_sign=False,
+                crl_sign=False,
+                encipher_only=False,
+                decipher_only=False
+            ),
+            critical=True
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(
+                issuing_ca_private_key.public_key_serializer.as_crypto()),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(
+                application_credential_private_key.public_key_serializer.as_crypto()),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.ExtendedKeyUsage([oid.ExtendedKeyUsageOID.SERVER_AUTH]),
+            critical=False
+        )
+
+        san = []
+        for ipv4_address in ipv4_addresses:
+            san.append(x509.IPAddress(ipv4_address))
+        for ipv6_address in ipv6_addresses:
+            san.append(x509.IPAddress(ipv6_address))
+        for domain_name in domain_names:
+            san.append(x509.DNSName(domain_name))
+        certificate_builder = certificate_builder.add_extension(
+            x509.SubjectAlternativeName(san),
+            critical=True
+        )
+        return certificate_builder
+
     def issue_application_credential(
             self,
             subject: dict[x509.ObjectIdentifier, str],
             validity_days: int,
-            certificate_type: IssuedApplicationCertificateModel.ApplicationCertificateType) -> CredentialSerializer:
-        application_cert_private_key = self._generate_private_key()
+            certificate_type: IssuedApplicationCertificateModel.ApplicationCertificateType,
+            ipv4_addresses: None | list[ipaddress.IPv4Address] = None,
+            ipv6_addresses: None | list[ipaddress.IPv6Address] = None,
+            domain_names: None | list[str] = None) -> CredentialSerializer:
+
+        issuing_ca_private_key = self.domain.issuing_ca.credential.get_private_key_serializer()
+        application_credential_private_key = self._generate_private_key()
         hash_algorithm = self._get_hash_algorithm_from_issuing_ca_credential()
         one_day = datetime.timedelta(1, 0, 0)
-
-        for x, y in subject.items():
-            print(x)
-            print(y)
-            print()
 
         certificate_builder = x509.CertificateBuilder()
         certificate_builder = certificate_builder.subject_name(x509.Name([
@@ -109,9 +198,30 @@ class DeviceModel(models.Model):
             datetime.datetime.now(datetime.UTC) + (one_day * validity_days))
         certificate_builder = certificate_builder.serial_number(x509.random_serial_number())
         certificate_builder = certificate_builder.public_key(
-            application_cert_private_key.public_key_serializer.as_crypto())
+            application_credential_private_key.public_key_serializer.as_crypto())
+
+        certificate_builder = certificate_builder.add_extension(
+            x509.BasicConstraints(ca=False, path_length=None),
+            critical=False
+        )
+
+        if certificate_type == IssuedApplicationCertificateModel.ApplicationCertificateType.TLS_CLIENT:
+            certificate_builder = self._add_tls_client_cert_extensions(
+                certificate_builder=certificate_builder,
+                application_credential_private_key=application_credential_private_key,
+                issuing_ca_private_key=issuing_ca_private_key)
+        if certificate_type == IssuedApplicationCertificateModel.ApplicationCertificateType.TLS_SERVER:
+            certificate_builder = self._add_tls_server_cert_extensions(
+                certificate_builder=certificate_builder,
+                application_credential_private_key=application_credential_private_key,
+                issuing_ca_private_key=issuing_ca_private_key,
+                ipv4_addresses=ipv4_addresses,
+                ipv6_addresses=ipv6_addresses,
+                domain_names=domain_names
+            )
+
         domain_certificate = certificate_builder.sign(
-            private_key=application_cert_private_key.as_crypto(),
+            private_key=issuing_ca_private_key.as_crypto(),
             algorithm=hash_algorithm
         )
         certificate = CertificateModel.save_certificate(domain_certificate)
@@ -126,7 +236,7 @@ class DeviceModel(models.Model):
 
         return CredentialSerializer(
             (
-                application_cert_private_key,
+                application_credential_private_key,
                 domain_certificate,
                 [self.domain.issuing_ca.credential.get_certificate()] +
                 self.domain.issuing_ca.credential.get_certificate_chain()
