@@ -43,7 +43,7 @@ urlpatterns += [
     path('pki/', include('pki.urls.pki')),
     path('.well-known/est/', include('pki.urls.est')),
     path('.well-known/cmp/', include('cmp.urls')),
-    # path('home/', include('home.urls')),
+    path('home/', include('home.urls')),
     path('devices/', include('devices.urls')),
     path('settings/', include('settings.urls')),
     path('i18n/', include("django.conf.urls.i18n")),
