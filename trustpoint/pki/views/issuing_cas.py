@@ -66,11 +66,14 @@ class IssuingCaAddFileImportSeparateFilesView(IssuingCaContextMixin, TpLoginRequ
 
 class IssuingCaDetailView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):
 
+    http_method_names = ['get']
+
     model = IssuingCaModel
     success_url = reverse_lazy('pki:issuing_cas')
     ignore_url = reverse_lazy('pki:issuing_cas')
     template_name = 'pki/issuing_cas/details.html'
     context_object_name = 'issuing_ca'
+
 
 
 class IssuingCaConfigView(LoggerMixin, IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):

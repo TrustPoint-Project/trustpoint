@@ -18,6 +18,8 @@ from cryptography.hazmat.primitives.serialization import (
     pkcs12,
 )
 from cryptography.x509.oid import NameOID
+
+from core.serializer import CredentialSerializer
 from pki.models import CertificateModel, IssuingCaModel, CredentialModel
 
 PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
@@ -133,26 +135,20 @@ class CertificateCreationCommandMixin:
             chain: list[x509.Certificate],
             private_key: rsa.RSAPrivateKey,
             unique_name: str ='issuing_ca') -> None:
-        issuing_ca_cert_model = CertificateModel.save_certificate(issuing_ca_cert)
-        root_ca_cert_model = CertificateModel.save_certificate(root_ca_cert)
 
-        credential_data = {
-            'credential_type': CredentialModel.CredentialTypeChoice.ISSUING_CA,
-            'private_key': private_key.private_bytes(
-                encoding=Encoding.PEM,
-                format=PrivateFormat.TraditionalOpenSSL,
-                encryption_algorithm=NoEncryption()
-            ).decode(),
-            'certificate': issuing_ca_cert_model
-        }
-        credential_model = CredentialModel.objects.create(**credential_data)
+        issuing_ca_credential_serializer = CredentialSerializer(
+            (
+                private_key,
+                issuing_ca_cert,
+                [root_ca_cert],
+            )
+        )
 
-        issuing_ca_model = IssuingCaModel(
+        IssuingCaModel.create_new_issuing_ca(
             unique_name=unique_name,
-            credential=credential_model,
+            credential_serializer=issuing_ca_credential_serializer,
             issuing_ca_type=IssuingCaModel.IssuingCaTypeChoice.LOCAL_UNPROTECTED
         )
-        issuing_ca_model.save()
 
         print(f"Issuing CA '{unique_name}' saved successfully.")
 
