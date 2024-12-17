@@ -1,7 +1,7 @@
-# add_domains_and_devices.py
+"""Adds Issuing CAs, Domains and Devices with different onboarding protocols."""
+
 import random
 import string
-from pathlib import Path
 from django.core.management.base import BaseCommand
 
 from pki.models import DomainModel, IssuingCaModel
