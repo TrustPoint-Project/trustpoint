@@ -18,7 +18,7 @@ from cryptography.hazmat.primitives.serialization import (
     pkcs12,
 )
 from cryptography.x509.oid import NameOID
-from pki.models import CertificateModel, IssuingCaModel
+from pki.models import CertificateModel, IssuingCaModel, CredentialModel
 
 PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
 PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
@@ -134,25 +134,28 @@ class CertificateCreationCommandMixin:
             private_key: rsa.RSAPrivateKey,
             unique_name: str ='issuing_ca') -> None:
         issuing_ca_cert_model = CertificateModel.save_certificate(issuing_ca_cert)
-        root_ca_cert_model = CertificateModel.save_certificate(root_ca_cert, exist_ok=True)
+        root_ca_cert_model = CertificateModel.save_certificate(root_ca_cert)
 
-        intermediate_ca_certs = []
-        for cert in chain:
-            intermediate_ca_certs.append(CertificateModel.save_certificate(cert))
+        credential_data = {
+            'credential_type': CredentialModel.CredentialTypeChoice.ISSUING_CA,
+            'private_key': private_key.private_bytes(
+                encoding=Encoding.PEM,
+                format=PrivateFormat.TraditionalOpenSSL,
+                encryption_algorithm=NoEncryption()
+            ).decode(),
+            'certificate': issuing_ca_cert_model
+        }
+        credential_model = CredentialModel.objects.create(**credential_data)
 
-        issuing_ca_model = IssuingCaModel()
-        issuing_ca_model.unique_name = unique_name
-        issuing_ca_model.issuing_ca_certificate = issuing_ca_cert_model
-        issuing_ca_model.root_ca_certificate = root_ca_cert_model
-        issuing_ca_model.private_key_pem = private_key.private_bytes(
-            encoding=Encoding.PEM,
-            format=PrivateFormat.TraditionalOpenSSL,
-            encryption_algorithm=NoEncryption()).decode()
-
-        if intermediate_ca_certs:
-            issuing_ca_cert_model.intermediate_ca_certificates = intermediate_ca_certs
-
+        issuing_ca_model = IssuingCaModel(
+            unique_name=unique_name,
+            credential=credential_model,
+            issuing_ca_type=IssuingCaModel.IssuingCaTypeChoice.LOCAL_UNPROTECTED
+        )
         issuing_ca_model.save()
+
+        print(f"Issuing CA '{unique_name}' saved successfully.")
+
 
     @staticmethod
     def store_ee_certs(certs: dict[str, x509.Certificate]) -> None:
