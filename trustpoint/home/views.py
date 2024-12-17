@@ -2,17 +2,17 @@ import logging
 from django.contrib.auth.decorators import login_required
 from django.views.generic.base import RedirectView, TemplateView
 from django.shortcuts import render, get_object_or_404, redirect
-# from django_tables2 import RequestConfig
+from django_tables2 import RequestConfig
 from datetime import datetime, timedelta
 
 from django.contrib import messages
 
 from trustpoint.views.base import TpLoginRequiredMixin
-# from .filters import NotificationFilter
 from django.core.management import call_command
 
+from .filters import NotificationFilter
 from .models import NotificationModel, NotificationStatus
-# from .tables import NotificationTable
+from .tables import NotificationTable
 
 SUCCESS = 25
 ERROR = 40
@@ -43,25 +43,25 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # context = self.handle_notifications(context)
+        context = self.handle_notifications(context)
 
         context['page_category'] = 'home'
         context['page_name'] = 'dashboard'
         return context
 
-    # def handle_notifications(self, context):
-    #     all_notifications = NotificationModel.objects.all()
-    #
-    #     # notification_filter = NotificationFilter(self.request.GET, queryset=all_notifications)
-    #     # filtered_notifications = notification_filter.qs
-    #
-    #     all_notifications_table = NotificationTable(filtered_notifications)
-    #     RequestConfig(self.request, paginate={"per_page": 5}).configure(all_notifications_table)
-    #
-    #     context['all_notifications_table'] = all_notifications_table
-    #     context['notification_filter'] = notification_filter
-    #
-    #     return context
+    def handle_notifications(self, context):
+        all_notifications = NotificationModel.objects.all()
+
+        notification_filter = NotificationFilter(self.request.GET, queryset=all_notifications)
+        filtered_notifications = notification_filter.qs
+
+        all_notifications_table = NotificationTable(filtered_notifications)
+        RequestConfig(self.request, paginate={"per_page": 5}).configure(all_notifications_table)
+
+        context['all_notifications_table'] = all_notifications_table
+        context['notification_filter'] = notification_filter
+
+        return context
 
 @login_required
 def notification_details_view(request, pk):
