@@ -164,6 +164,13 @@ class CertificateMultipleDownloadView(
         if not pks:
             raise Http404
 
+        pks_list = self.get_pks_as_list(pks=pks)
+        print(pks_list)
+        self.queryset = self.model.objects.filter(pk__in=pks_list)
+
+        if len(pks_list) != len(self.queryset):
+            raise Http404
+
         if not file_format and not archive_format:
             return super().get(request, *args, **kwargs)
 
@@ -177,14 +184,8 @@ class CertificateMultipleDownloadView(
         except Exception as exception:
             raise Http404 from exception
 
-        pks_list = self.get_pks_as_list(pks=pks)
-        queryset = self.model.objects.filter(pk__in=pks_list)
-
-        if len(pks_list) != len(queryset):
-            raise Http404
-
         file_bytes = CertificateArchiveFileBuilder.build(
-            certificate_serializers=[certificate_model.get_certificate_serializer() for certificate_model in queryset],
+            certificate_serializers=[certificate_model.get_certificate_serializer() for certificate_model in self.queryset],
             file_format=file_format_enum,
             archive_format=archive_format_enum,
         )

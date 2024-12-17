@@ -28,6 +28,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 ADMIN_ENABLED = True if DEBUG else False
+DEVELOPMENT_ENV = False
 
 # SECURITY WARNING: keep the secret key used in production secret!
 if DEBUG:
@@ -41,8 +42,6 @@ ALLOWED_HOSTS = ['*']
 # mDNS service discovery advertisement
 ADVERTISED_HOST = '127.0.0.1'
 ADVERTISED_PORT = 443
-
-DOCKER_CONTAINER = False
 
 # Application definition
 
@@ -63,6 +62,9 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'django_tables2'
 ]
+
+if DEVELOPMENT_ENV:
+    INSTALLED_APPS.append('django_extensions')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
