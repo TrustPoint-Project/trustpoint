@@ -24,7 +24,8 @@ from django.views.generic.list import BaseListView, MultipleObjectTemplateRespon
 
 from typing import TYPE_CHECKING
 
-
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
 
 class IndexView(RedirectView):
     """View that redirects to the index home page."""
@@ -125,19 +126,38 @@ class PrimaryKeyListFromPrimaryKeyString:
         if pks:
             pks_list = pks.split('/')
 
-            # removing possible trailing emtpy string
+            # removing possible trailing empty string
             if pks_list[-1] == '':
                 del pks_list[-1]
 
             if len(pks_list) != len(set(pks_list)):
-                raise Http404('Duplicate Issuing CA primary keys found.')
+                raise Http404('Duplicates in query primary key list found.')
 
             return pks_list
 
         return []
+    
+class PrimaryKeyQuerysetFromUrlMixin(PrimaryKeyListFromPrimaryKeyString):
+    def get_pks_path(self) -> str:
+        return self.kwargs.get('pks')
+
+    def get_queryset(self) -> None | QuerySet:
+        if self.queryset:
+            return self.queryset
+
+        pks = self.get_pks_as_list(self.get_pks_path())
+        if not pks:
+            return self.model.objects.all()
+        queryset = self.model.objects.filter(pk__in=pks)
+
+        if len(pks) != len(queryset):
+            queryset = None
+
+        self.queryset = queryset
+        return queryset
 
 
-class BulkDeleteView(MultipleObjectTemplateResponseMixin, PrimaryKeyListFromPrimaryKeyString, BaseBulkDeleteView):
+class BulkDeleteView(MultipleObjectTemplateResponseMixin, PrimaryKeyQuerysetFromUrlMixin, BaseBulkDeleteView):
     pass
 
 

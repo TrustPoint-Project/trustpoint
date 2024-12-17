@@ -165,7 +165,6 @@ class CertificateMultipleDownloadView(
             raise Http404
 
         pks_list = self.get_pks_as_list(pks=pks)
-        print(pks_list)
         self.queryset = self.model.objects.filter(pk__in=pks_list)
 
         if len(pks_list) != len(self.queryset):
