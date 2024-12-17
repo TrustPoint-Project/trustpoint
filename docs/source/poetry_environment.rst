@@ -26,9 +26,9 @@ Add Poetry to your PATH by updating your shell configuration file:
       echo 'export PATH="$PATH:$HOME/.local/bin"' >> ~/.zshrc
       source ~/.zshrc
 
---------------------------
+-----------------------------------
 2. Install Dependencies with Poetry
---------------------------
+-----------------------------------
 
 Navigate to your project directory and install dependencies using Poetry:
 
@@ -41,9 +41,9 @@ This command will:
 - Install all dependencies listed in `pyproject.toml`.
 - Create a virtual environment under `.venv` or as per Poetry's configuration.
 
---------------------------
+---------------------------
 3. Activate the Environment
---------------------------
+---------------------------
 
 Activate the Poetry-managed virtual environment:
 
@@ -53,9 +53,9 @@ Activate the Poetry-managed virtual environment:
 
 Your terminal prompt will reflect the activated environment.
 
---------------------------
+------------------------------------
 4. Set Up the Database and Superuser
---------------------------
+------------------------------------
 
 To set up the SQLite database for development:
 
@@ -80,9 +80,9 @@ To set up the SQLite database for development:
 
    Follow the prompts to set a username, and password.
 
---------------------------
+-----------------------------
 5. Run the Development Server
---------------------------
+-----------------------------
 
 To start the development server, run the server over HTTP with:
 
