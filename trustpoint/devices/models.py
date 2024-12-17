@@ -317,6 +317,15 @@ class IssuedDomainCredentialModel(models.Model):
 
 class IssuedApplicationCertificateModel(models.Model):
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=['device', 'common_name'],
+                name='unique_active_application_certificate_category',
+                condition=models.Q(is_active=True)  # Only enforce uniqueness when is_active is True
+            )
+        ]
+
     class ApplicationCertificateType(models.IntegerChoices):
 
         GENERIC = 0, _('Generic')
@@ -343,5 +352,7 @@ class IssuedApplicationCertificateModel(models.Model):
         null=False,
         blank=False,
     )
+    common_name = models.CharField(verbose_name=_('Common Name'), max_length=255)
+    is_active = models.BooleanField(verbose_name=_('Active'), default=True)
 
     created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)

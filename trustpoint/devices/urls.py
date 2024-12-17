@@ -28,11 +28,6 @@ urlpatterns = [
         views.DeviceDownloadIssuedApplicationTlsClientCredential.as_view(),
         name='select_issued_application_tls_client_credential_format'
     ),
-path(
-        'certificate-lifecycle-management/download-issued-application-tls-server-credential/<int:pk>/',
-        views.DeviceDownloadIssuedApplicationTlsServerCredential.as_view(),
-        name='select_issued_application_tls_server_credential_format'
-    ),
     path('certificate-lifecycle-management/issue-tls-server-credential/<int:pk>/',
          views.DeviceIssueTlsServerCredentialView.as_view(),
          name='issue_tls_server_credential'

@@ -25,7 +25,7 @@ class IndexView(TpLoginRequiredMixin, RedirectView):
 class DashboardView(TpLoginRequiredMixin, TemplateView):
     template_name = 'home/dashboard.html'
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: tuple, **kwargs: dict) -> None:
         super().__init__(*args, **kwargs)
         self.last_week_dates = self.generate_last_week_dates()
 

@@ -19,12 +19,14 @@
                     <hr>
                     {{ form|crispy }}
                 </div>
+                <button type="submit" class="btn btn-primary" name="action" value="pkcs12">{% trans "Issue TLS-Client Credential and download as PKCS#12 file" %}</button>
+                <button type="submit" class="btn btn-primary" name="action" value="zip">{% trans "Issue TLS-Client Credential and download as zip file (PEM)" %}</button>
+                <button type="submit" class="btn btn-primary" name="action" value="tar_gz">{% trans "Issue TLS-Client Credential and download as tar.gz file (PEM)" %}</button>
             </div>
             <div class="card-footer">
                 <div class="tp-card-btn-footer">
                     <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
                     <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
-                    <button type="submit" class="btn btn-primary">{% trans "Issue TLS-Client Credential" %}</button>
                 </div>
             </div>
         </div>

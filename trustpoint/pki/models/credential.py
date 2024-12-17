@@ -20,10 +20,8 @@ from pki.models import CertificateModel
 
 if TYPE_CHECKING:
     from typing import Any, ClassVar, Union
-
     from cryptography import x509
     from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
-
     PrivateKey = Union[ec.EllipticCurvePrivateKey, rsa.RSAPrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 

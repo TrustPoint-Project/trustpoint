@@ -118,9 +118,8 @@ class IssuingCaAddFileImportPkcs12Form(LoggerMixin, forms.Form):
         try:
             credential_serializer = CredentialSerializer(pkcs12_raw, pkcs12_password)
         except Exception as exception:
-            raise ValidationError(
-                _('Failed to parse and load the uploaded file. Either wrong password or corrupted file.')
-            ) from exception
+            err_msg = _('Failed to parse and load the uploaded file. Either wrong password or corrupted file.')
+            raise ValidationError(err_msg) from exception
 
         try:
             IssuingCaModel.create_new_issuing_ca(

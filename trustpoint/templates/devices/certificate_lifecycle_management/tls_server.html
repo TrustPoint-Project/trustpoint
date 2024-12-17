@@ -4,7 +4,7 @@
 {% load crispy_forms_filters %}
 
 {% block content %}
-    <form method="POST" autocomplete="off" action="{% url 'devices:select_issued_application_tls_server_credential_format' pk=device.id%}">
+    <form method="POST" autocomplete="off">
         {% csrf_token %}
 
         <div class="card">
@@ -19,14 +19,83 @@
                     <hr>
                     {{ form|crispy }}
                 </div>
+                <hr>
+                <button type="submit" class="btn btn-primary min-width-42 mb-3" name="action" value="pkcs12" id="pkcs12-download-btn">{% trans "Issue TLS-Server Credential and download as PKCS#12 file" %}</button><br>
+                <button type="submit" class="btn btn-primary min-width-42 mb-3" name="action" value="zip" id="pem-zip-download-btn">{% trans "Issue TLS-Server Credential and download as zip file (PEM)" %}</button><br>
+                <button type="submit" class="btn btn-primary min-width-42" name="action" value="tar_gz" id="pem-tar-gz-download-btn">{% trans "Issue TLS-Server Credential and download as tar.gz file (PEM)" %}</button><br>
             </div>
             <div class="card-footer">
                 <div class="tp-card-btn-footer">
                     <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
                     <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
-                    <button type="submit" class="btn btn-primary">{% trans "Issue TLS-Client Credential" %}</button>
                 </div>
             </div>
         </div>
     </form>
+
+    <script>
+        document.getElementById('pkcs12-download-btn').addEventListener('click', () => {
+
+            // File download URL
+            const fileDownloadUrl = "{% url 'devices:download_issued_application_credential' pk=device.id format='pkcs12' %}";
+
+            // Redirect URL
+            const redirectUrl = "{% url 'devices:successful_application_issuance' pk=device.id %}"; // Replace with your actual redirect URL
+
+            // Trigger file download
+            const link = document.createElement('a');
+            link.href = fileDownloadUrl;
+            link.download = '{{ filename }}.p12'; // Optional: Suggest a filename
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Redirect after a short delay
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 50); // Adjust the delay as needed
+        });
+
+        document.getElementById('pem-zip-download-btn').addEventListener('click', () => {
+            // File download URL
+            const fileDownloadUrl = "{% url 'devices:download_issued_application_credential' pk=device.id common_name=common_name validity=validity format='zip' %}";
+
+            // Redirect URL
+            const redirectUrl = "{% url 'devices:successful_application_issuance' pk=device.id %}"; // Replace with your actual redirect URL
+
+            // Trigger file download
+            const link = document.createElement('a');
+            link.href = fileDownloadUrl;
+            link.download = '{{ filename }}.zip'; // Optional: Suggest a filename
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Redirect after a short delay
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 50); // Adjust the delay as needed
+        });
+
+        document.getElementById('pem-tar-gz-download-btn').addEventListener('click', () => {
+            // File download URL
+            const fileDownloadUrl = "{% url 'devices:download_issued_application_credential' pk=device.id  common_name=common_name validity=validity format='tar_gz' %}";
+
+            // Redirect URL
+            const redirectUrl = "{% url 'devices:successful_application_issuance' pk=device.id %}"; // Replace with your actual redirect URL
+
+            // Trigger file download
+            const link = document.createElement('a');
+            link.href = fileDownloadUrl;
+            link.download = '{{ filename }}.tar.gz'; // Optional: Suggest a filename
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            // Redirect after a short delay
+            setTimeout(() => {
+                window.location.href = redirectUrl;
+            }, 50); // Adjust the delay as needed
+        });
+    </script>
 {% endblock content %}

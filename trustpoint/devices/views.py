@@ -315,134 +315,110 @@ class DeviceDownloadIssuedApplicationTlsClientCredential(DeviceContextMixin, TpL
 
 class DeviceIssueTlsServerCredentialView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
 
-    http_method_names = ['get']
+    http_method_names = ['get', 'post']
     model = DeviceModel
     template_name = 'devices/certificate_lifecycle_management/tls_server.html'
     form_class = IssueTlsServerCredentialForm
     context_object_name = 'device'
 
+    _pseudonym: str
+    _serial_number: str
+    _dn_qualifier: str
+
+    @staticmethod
+    def _get_fixed_pseudonym() -> str:
+        return 'Trustpoint TLS-Server Certificate'
+
+    def _get_fixed_serial_number(self) -> str:
+        return self.get_object().serial_number
+
+    def _get_fixed_dn_qualifier(self) -> str:
+        device = self.get_object()
+        return (
+            f'trustpoint.{device.unique_name}.{device.domain.unique_name}.'
+            f'{device.domain.issuing_ca.unique_name}.tls-server.local')
+
     def get_success_url(self) -> str:
         return reverse_lazy('devices:clm', kwargs={'pk': self.get_object().id})
 
     def get_initial(self) -> dict:
-        device = self.get_object()
         initial = super().get_initial()
         return {
-            'common_name': '',
-            'pseudonym': 'Trustpoint TLS-Client Certificate',
-            'serial_number': device.serial_number,
-            'dn_qualifier': f'trustpoint.{device.unique_name}.{device.domain.unique_name}.local',
-            'validity': 10
+            'pseudonym': self._get_fixed_pseudonym(),
+            'serial_number': self._get_fixed_serial_number(),
+            'dn_qualifier': self._get_fixed_dn_qualifier(),
         } | initial
-
-
-class DeviceDownloadIssuedApplicationTlsServerCredential(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
-
-    model = DeviceModel
-    http_method_names = ['get', 'post']
-    template_name = 'devices/certificate_lifecycle_management/download.html'
-    context_object_name = 'device'
 
     @staticmethod
     def _get_file_response(data: io.BytesIO, content_type: str, filename: str) -> FileResponse:
         return FileResponse(data, content_type=content_type, as_attachment=True, filename=filename)
 
-    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse | FileResponse:
+    def post(self, *args: tuple, **kwargs: dict) -> FileResponse:
         device = self.get_object()
         if not device.domain:
             raise Http404
         if not device.domain.issuing_ca:
             raise Http404
 
-        common_name = self.request.POST.get('common_name')
-        validity_days = self.request.POST.get('validity')
-        ipv4_addresses = self.request.POST.get('ipv4_addresses')
-        ipv6_addresses = self.request.POST.get('ipv6_addresses')
-        domain_names = self.request.POST.get('domain_names')
+        form = self.get_form()
+        if not form.is_valid():
+            raise Http404
 
-        print(ipv4_addresses)
-        print(ipv6_addresses)
-        print(domain_names)
 
-        self.extra_context['common_name'] = common_name
-        self.extra_context['validity'] = validity_days
-        self.extra_context['ipv4_addresses'] = ipv4_addresses
-        self.extra_context['ipv6_addresses'] = ipv6_addresses
-        self.extra_context['domain_names'] = domain_names
-
-        return super().get(*args, **kwargs)
-
-    def get(self, *args: tuple, **kwargs: dict) -> FileResponse:
-        common_name = self.kwargs.get('common_name')
-        validity_days = self.kwargs.get('validity')
-        format_ = self.kwargs.get('format')
-        device = self.get_object()
-        ipv4_addresses = self.kwargs.get('ipv4_addresses')
-        ipv6_addresses = self.kwargs.get('ipv6_addresses')
-        domain_names = self.kwargs.get('domain_names')
-
-        print(type(ipv4_addresses))
-        for i in ipv4_addresses:
-            print(type(i))
-            print(i)
+        action = self.request.POST.get('action')
 
         distinguished_name = {
-            NameOID.COMMON_NAME: common_name,
-            NameOID.PSEUDONYM: 'Trustpoint TLS-Client Certificate',
-            NameOID.SERIAL_NUMBER: device.serial_number,
-            NameOID.DN_QUALIFIER: f'trustpoint.{device.unique_name}.{device.domain.unique_name}.local'
+            NameOID.COMMON_NAME: form.cleaned_data.get('common_name'),
+            NameOID.PSEUDONYM: self._get_fixed_pseudonym(),
+            NameOID.SERIAL_NUMBER: self._get_fixed_serial_number(),
+            NameOID.DN_QUALIFIER: self._get_fixed_dn_qualifier()
         }
 
         credential = device.issue_application_credential(
             subject=distinguished_name,
-            validity_days=validity_days,
+            validity_days=form.cleaned_data.get('validity'),
             certificate_type=IssuedApplicationCertificateModel.ApplicationCertificateType.TLS_SERVER,
-            ipv4_addresses=self.kwargs.get('ipv4_addresses'),
-            ipv6_addresses=self.kwargs.get('ipv6_addresses'),
-            domain_names=self.kwargs.get('domain_names')
+            ipv4_addresses=form.cleaned_data.get('ipv4_addresses'),
+            ipv6_addresses=form.cleaned_data.get('ipv6_addresses'),
+            domain_names=form.cleaned_data.get('domain_names'),
         )
 
-        if format_ == 'pkcs12':
-            response = FileResponse(
+        if action == 'pkcs12':
+            return FileResponse(
                 io.BytesIO(credential.as_pkcs12()),
                 content_type='application/pkcs12',
                 as_attachment=True,
                 filename=f'trustpoint-domain-credential-{device.unique_name}.p12')
-
-        elif format_ == 'zip':
+        if action == 'zip':
             zip_archive = Archiver.archive(
                 data_to_archive={
-                    'tls_client_credential_private_key.pem': credential.credential_private_key.as_pkcs8_pem(),
-                    'tls_client_credential_certificate.pem': credential.credential_certificate.as_pem(),
-                    'tls_client_credential_certificate_chain.pem': credential.additional_certificates.as_pem()
+                    'tls_server_credential_private_key.pem': credential.credential_private_key.as_pkcs8_pem(),
+                    'tls_server_credential_certificate.pem': credential.credential_certificate.as_pem(),
+                    'tls_server_credential_certificate_chain.pem': credential.additional_certificates.as_pem()
                 },
                 archive_format=ArchiveFormat.ZIP
             )
 
-            response = self._get_file_response(
+            return self._get_file_response(
                 data=io.BytesIO(zip_archive),
                 content_type=ArchiveFormat.ZIP.mime_type,
-                filename=f'trustpoint-tls_client-credential-{device.unique_name}{ArchiveFormat.ZIP.file_extension}')
-
-        elif format_ == 'tar_gz':
+                filename=f'trustpoint-tls-server-credential-{device.unique_name}{ArchiveFormat.ZIP.file_extension}')
+        if action == 'tar_gz':
             tar_gz_archive = Archiver.archive(
                 data_to_archive={
-                    'tls_client_credential_private_key.pem': credential.credential_private_key.as_pkcs8_pem(),
-                    'tls_client_credential_certificate.pem': credential.credential_certificate.as_pem(),
-                    'tls_client_credential_certificate_chain.pem': credential.additional_certificates.as_pem()
+                    'tls_server_credential_private_key.pem': credential.credential_private_key.as_pkcs8_pem(),
+                    'tls_server_credential_certificate.pem': credential.credential_certificate.as_pem(),
+                    'tls_server_credential_certificate_chain.pem': credential.additional_certificates.as_pem()
                 },
                 archive_format=ArchiveFormat.TAR_GZ
             )
 
-            response = self._get_file_response(
+            return self._get_file_response(
                 data=io.BytesIO(tar_gz_archive),
                 content_type=ArchiveFormat.TAR_GZ.mime_type,
-                filename=f'trustpoint-tls_client-credential-{device.unique_name}{ArchiveFormat.TAR_GZ.file_extension}')
+                filename=f'trustpoint-tls-server-credential-{device.unique_name}{ArchiveFormat.TAR_GZ.file_extension}')
 
-        else:
-            raise Http404
-
-        return response
+        raise Http404
 
 
 class DeviceSuccessfulApplicationIssuanceRedirectView(DeviceContextMixin, TpLoginRequiredMixin, BaseDetailView):

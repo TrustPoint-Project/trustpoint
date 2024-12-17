@@ -8,6 +8,7 @@ class IssueTlsClientCredentialForm(forms.Form):
     common_name = forms.CharField(
         max_length=100,
         label=_('Common Name'),
+        initial='',
         required=True,
     )
     pseudonym = forms.CharField(
@@ -30,6 +31,7 @@ class IssueTlsClientCredentialForm(forms.Form):
     )
     validity = forms.IntegerField(
         label=_('Validity (days)'),
+        initial=10,
         required=True
     )
 
@@ -46,7 +48,7 @@ class IssueTlsServerCredentialForm(forms.Form):
     common_name = forms.CharField(
         max_length=100,
         label=_('Common Name'),
-        required=True,
+        required=True
     )
     pseudonym = forms.CharField(
         max_length=100,
@@ -68,6 +70,7 @@ class IssueTlsServerCredentialForm(forms.Form):
     )
     validity = forms.IntegerField(
         label=_('Validity (days)'),
+        initial=10,
         required=True
     )
     ipv4_addresses = forms.CharField(
