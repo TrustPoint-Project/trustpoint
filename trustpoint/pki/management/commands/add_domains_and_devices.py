@@ -66,10 +66,15 @@ class Command(BaseCommand):
         }
 
         # onboarding_protocols = [protocol.value for protocol in Device.OnboardingProtocol]
-        onboarding_protocols = [DeviceModel.OnboardingProtocol.TP_CLIENT_PW.value,
-                                DeviceModel.OnboardingProtocol.MANUAL.value,
-                                DeviceModel.OnboardingProtocol.BROWSER.value,
-                                DeviceModel.OnboardingProtocol.CLI.value]
+        onboarding_protocols = [
+            DeviceModel.OnboardingProtocol.NO_ONBOARDING.value,
+            # DeviceModel.OnboardingProtocol.TP_CLIENT_PW.value,
+            DeviceModel.OnboardingProtocol.MANUAL.value,
+            DeviceModel.OnboardingProtocol.TP_CLIENT_PW.value,
+            # DeviceModel.OnboardingProtocol.BROWSER.value,
+            # DeviceModel.OnboardingProtocol.CLI.value
+
+        ]
 
         print("Starting the process of adding domains and devices...\n")
 
@@ -95,10 +100,15 @@ class Command(BaseCommand):
                 print(f"  - Serial Number: {serial_number}")
                 print(f"  - Onboarding Protocol: {onboarding_protocol}")
 
+                onboarding_status = DeviceModel.OnboardingStatus.NO_ONBOARDING \
+                    if onboarding_protocol == DeviceModel.OnboardingProtocol.NO_ONBOARDING \
+                    else DeviceModel.OnboardingStatus.PENDING
+
                 dev = DeviceModel(
                     unique_name=device_name,
                     serial_number=serial_number,
                     onboarding_protocol=onboarding_protocol,
+                    onboarding_status=onboarding_status,
                     domain=domain
                 )
 

@@ -67,8 +67,10 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
         form_instance = form.instance
-        if form.cleaned_data.get('onboarding_protocol') == DeviceModel.OnboardingProtocol.NO_ONBOARDING:
-            form_instance.onboarding_status =  DeviceModel.OnboardingStatus.NO_ONBOARDING
+        onboarding_protocol = form.cleaned_data.get('onboarding_protocol')
+        form_instance.onboarding_status = DeviceModel.OnboardingStatus.NO_ONBOARDING \
+            if onboarding_protocol == DeviceModel.OnboardingStatus.NO_ONBOARDING \
+            else DeviceModel.OnboardingStatus.PENDING
         return super().form_valid(form)
 
 

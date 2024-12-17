@@ -280,11 +280,16 @@ class DeviceModel(models.Model):
         on_delete=models.PROTECT
     )
 
-    onboarding_protocol = models.IntegerField(verbose_name=_('Onboarding Protocol'), choices=OnboardingProtocol)
+    onboarding_protocol = models.IntegerField(
+        verbose_name=_('Onboarding Protocol'),
+        choices=OnboardingProtocol,
+        null=False,
+        blank=False)
     onboarding_status = models.IntegerField(
         verbose_name=_('Onboarding Status'),
         choices=OnboardingStatus,
-        default=OnboardingStatus.PENDING)
+        blank=False,
+        null=False)
 
     created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
