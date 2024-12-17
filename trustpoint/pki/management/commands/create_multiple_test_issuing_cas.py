@@ -26,6 +26,21 @@ class Command(CertificateCreationCommandMixin, BaseCommand):
         issuing_2, issuing_2_key = self.create_issuing_ca(root_1_key, 'Root CA', 'Issuing CA B')
         issuing_3, issuing_3_key = self.create_issuing_ca(root_1_key, 'Root CA', 'Issuing CA C')
 
-        self.save_issuing_ca(issuing_1, issuing_1_key, 'issuing-ca-a')
-        self.save_issuing_ca(issuing_2, issuing_2_key, 'issuing-ca-b')
-        self.save_issuing_ca(issuing_3, issuing_3_key, 'issuing-ca-c')
+        self.save_issuing_ca(
+            issuing_ca_cert=issuing_1,
+            root_ca_cert=root_1,
+            private_key=issuing_1_key,
+            chain=[],
+            unique_name='issuing-ca-a')
+        self.save_issuing_ca(
+            issuing_ca_cert=issuing_2,
+            root_ca_cert=root_1,
+            private_key=issuing_2_key,
+            chain=[],
+            unique_name='issuing-ca-b')
+        self.save_issuing_ca(
+            issuing_ca_cert=issuing_3,
+            root_ca_cert=root_1,
+            private_key=issuing_3_key,
+            chain=[],
+            unique_name='issuing-ca-c')
