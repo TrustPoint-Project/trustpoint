@@ -6,15 +6,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import django_tables2 as tables
-from django.urls import reverse
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
+import datetime
 
-from devices import DeviceOnboardingStatus
-
-from .exceptions import UnknownOnboardingProtocolError, UnknownOnboardingStatusError
-from .models import Device
-from taggit.managers import TaggableManager
+from devices.models import DeviceModel, IssuedDomainCredentialModel, IssuedApplicationCertificateModel
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
@@ -22,186 +18,52 @@ if TYPE_CHECKING:
 
 CHECKBOX_ATTRS: dict[str, dict[str, str]] = {'th': {'id': 'checkbox-column'}, 'td': {'class': 'row_checkbox'}}
 
-
 class DeviceTable(tables.Table):
-    """Table representation of the Device model."""
+    """Table representation of the Certificate model."""
 
     class Meta:
-        """Table meta class configurations."""
+        """Meta table configurations."""
 
-        model = Device
+        model = DeviceModel
         template_name = 'django_tables2/bootstrap5.html'
         order_by = '-created_at'
         empty_values = ()
         _msg = _('There are no Devices available.')
         empty_text = format_html('<div class="text-center">{}</div>', _msg)
+
         fields = (
             'row_checkbox',
-            'device_name',
-            'device_serial_number',
+            'unique_name',
             'domain',
+            'serial_number',
+            'created_at',
+            'updated_at',
             'onboarding_protocol',
-            'device_onboarding_status',
-            'onboarding_action',
+            'onboarding_status',
+            'onboarding',
+            'clm',
             'details',
-            'edit',
-            'delete',
-            'tags',
+            'configure',
+            'revoke',
         )
 
     row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
-    device_name = tables.Column(empty_values=(), orderable=True, verbose_name=_('Device Name'))
-    device_serial_number = tables.Column(empty_values=(), orderable=True, verbose_name=_('Serial Number'))
-    onboarding_protocol = tables.Column(empty_values=(), orderable=True, verbose_name=_('Onboarding Protocol'))
-    device_onboarding_status = tables.Column(empty_values=(), orderable=True, verbose_name=_('Onboarding Status'))
-    domain = tables.Column(
-        empty_values=(None, ''),
-        orderable=True,
-        accessor='domain.unique_name',
-        verbose_name=_('Domain'),
-    )
-    onboarding_action = tables.Column(empty_values=(), orderable=False, verbose_name=_('Onboarding Action'))
+    onboarding_status = tables.Column(empty_values=(), orderable=True, verbose_name=_('Onboarding Status'))
+    onboarding = tables.Column(empty_values=(), orderable=False, verbose_name=_('Onboarding'))
+    clm = tables.Column(empty_values=(), orderable=False, verbose_name=_('Certificate Lifecycle Management'))
     details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
-    edit = tables.Column(empty_values=(), orderable=False, verbose_name=_('Edit'))
-    delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
-    tags = tables.Column(empty_values=(), orderable=False, verbose_name=_('Tags'), attrs={
-        'td': {'class': 'tags-column'}
-    })
+    configure = tables.Column(empty_values=(), orderable=False, verbose_name=_('Configure'))
+    revoke = tables.Column(empty_values=(), orderable=False, verbose_name=_('Revoke'))
 
     @staticmethod
-    def render_device_onboarding_status(record: Device) -> str:
-        """Creates the html hyperlink for the details-view.
-
-        Args:
-            record (Device): The current record of the Device model.
-
-        Returns:
-            str: The html hyperlink for the details-view.
-        """
-        if not record.domain:
-            return format_html('<span class="text-danger">' + _('Select Domain') + '</span>')
-        return format_html(
-            f'<span class="text-{DeviceOnboardingStatus.get_color(record.device_onboarding_status)}">'
-            f'{record.get_device_onboarding_status_display()}'
-            '</span>'
-        )
-    
-    @staticmethod
-    def _render_manual_onboarding_action(record: Device) -> str:
-        """Renders the device onboarding section for the manual onboarding cases.
-
-        Args:
-            record (Device):
-                Record / instance of the device model.
-
-        Returns:
-            str:
-                The html hyperlink for the details-view.
-
-        Raises:
-            UnknownOnboardingStatusError:
-                Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
-        """
-        if record.device_onboarding_status == DeviceOnboardingStatus.NOT_ONBOARDED:
-            return format_html(
-                '<a href="{}" class="btn btn-success tp-onboarding-btn">{}</a>',
-                reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
-                _('Start Onboarding')
-            )
-        if record.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_FAILED:
-            return format_html(
-                '<a href="{}" class="btn btn-warning tp-onboarding-btn">{}</a>',
-                reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
-                _('Retry Onboarding')
-            )
-        if record.device_onboarding_status == DeviceOnboardingStatus.REVOKED:
-            return format_html(
-                '<a href="{}" class="btn btn-info tp-onboarding-btn">{}</a>',
-                reverse('onboarding:manual-client', kwargs={'device_id': record.pk}),
-                _('Onboard again')
-            )
-        exc_msg = f'Unknown onboarding status {record.device_onboarding_status}. Failed to render entry in table.'
-        raise UnknownOnboardingStatusError(record.device_onboarding_status)
+    def render_onboarding_status(record: DeviceModel) -> SafeString:
+        if record.onboarding_status == DeviceModel.OnboardingStatus.NO_ONBOARDING:
+            return format_html('')
+        return format_html(record.get_onboarding_status_display())
 
     @staticmethod
-    def _render_zero_touch_onboarding_action(record: Device) -> str:
-        """Renders the device onboarding section for the manual onboarding cases.
-
-        Args:
-            record (Device):
-                Record / instance of the device model.
-
-        Returns:
-            str: The html hyperlink for the details-view.
-
-        Raises:
-            UnknownOnboardingStatusError:
-                Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
-        """
-        if record.device_onboarding_status == DeviceOnboardingStatus.NOT_ONBOARDED:
-            return format_html(
-                '<button class="btn btn-success tp-onboarding-btn" disabled>{}</a>',
-                _('Zero-Touch Pending')
-            )
-        if record.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_FAILED:
-            return format_html(
-                '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn">{}</a>',
-                record.pk, _('Reset Context')
-            )
-        if record.device_onboarding_status == DeviceOnboardingStatus.REVOKED:
-            return format_html(
-                '<button class="btn btn-info tp-onboarding-btn" disabled>{}</a>',
-                _('Revoked')
-            )
-        raise UnknownOnboardingStatusError(record.device_onboarding_status)
-
-    def render_onboarding_action(self: DeviceTable, record: Device) -> str:
-        """Creates the html hyperlink for the details-view.
-
-        Args:
-            record (Device): The current record of the Device model.
-
-        Returns:
-            str: The html hyperlink for the details-view.
-
-        Raises:
-            UnknownOnboardingProtocolError:
-                Raised when an unknown onboarding protocol was found and thus cannot be rendered appropriately.
-        """
-        if not record.domain:
-            return ''
-
-        if record.device_onboarding_status == DeviceOnboardingStatus.ONBOARDED:
-            return format_html(
-                '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
-                reverse('onboarding:revoke', kwargs={'device_id': record.pk}),
-                _('Revoke Certificate')
-            )
-        if record.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_RUNNING:
-            return format_html(
-                '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
-                reverse('onboarding:exit', kwargs={'device_id': record.pk}),
-                _('Cancel Onboarding')
-            )
-
-        is_manual = record.onboarding_protocol == Device.OnboardingProtocol.MANUAL
-        is_cli = record.onboarding_protocol == Device.OnboardingProtocol.CLI
-        is_client = record.onboarding_protocol == Device.OnboardingProtocol.TP_CLIENT
-        is_browser = record.onboarding_protocol == Device.OnboardingProtocol.BROWSER
-        if is_cli or is_client or is_manual or is_browser:
-            return self._render_manual_onboarding_action(record)
-
-        is_brski = record.onboarding_protocol == Device.OnboardingProtocol.BRSKI
-        is_aoki = record.onboarding_protocol == Device.OnboardingProtocol.AOKI
-        if is_brski or is_aoki:
-            return self._render_zero_touch_onboarding_action(record)
-
-        #raise UnknownOnboardingProtocolError(record.onboarding_protocol)
-        return format_html('<span class="text-danger">' + _('Unknown onboarding protocol!') + '</span>')
-
-    @staticmethod
-    def render_details(record: Device) -> SafeString:
-        """Creates the html hyperlink for the details-view.
+    def render_onboarding(record: DeviceModel) -> SafeString:
+        """Creates the html hyperlink for the onboarding-view.
 
         Args:
             record (Device): The current record of the Device model.
@@ -209,37 +71,235 @@ class DeviceTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn"">{}</a>',
+        if not record.domain:
+            return format_html(
+                '<span>{}</span>',_('No Domain configured.'))
+        if not record.domain.issuing_ca:
+            return format_html(
+                '<span>{}</span>', _('No Issuing CA configured.')
+            )
+        if record.onboarding_status == DeviceModel.OnboardingStatus.PENDING:
+            return format_html(
+                '<a href="onboarding/manual/{}/" class="btn btn-primary tp-table-btn w-100">{}</a>',
+                record.pk, _('Start Onboarding'))
+        return format_html('')
+
+    @staticmethod
+    def render_clm(record: DeviceModel) -> SafeString:
+        valid_onboarding_statuses = (
+            DeviceModel.OnboardingStatus.NO_ONBOARDING,
+            DeviceModel.OnboardingStatus.ONBOARDED
+        )
+        if record.onboarding_status in valid_onboarding_statuses:
+            return format_html(
+                '<a href="certificate-lifecycle-management/{}/" class="btn btn-primary tp-table-btn w-100">{}</a>',
+                record.pk,
+                _('Manage Issued Certificates'))
+        return format_html('')
+
+    @staticmethod
+    def render_details(record: DeviceModel) -> SafeString:
+        """Creates the html hyperlink for the details-view.
+
+        Args:
+            record: The current record of the Device model.
+
+        Returns:
+            SafeString: The html hyperlink for the details-view.
+        """
+        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn w-100">{}</a>',
                            record.pk, _('Details'))
 
     @staticmethod
-    def render_edit(record: Device) -> SafeString:
-        """Creates the html hyperlink for the edit-view.
+    def render_configure(record: DeviceModel) -> SafeString:
+        """Creates the html hyperlink for the configure-view.
 
         Args:
-            record (Device): The current record of the Device model.
+            record: The current record of the Device model.
 
         Returns:
-            SafeString: The html hyperlink for the edit-view.
+            SafeString: The html hyperlink for the configure-view.
         """
-        return format_html('<a href="edit/{}/" class="btn btn-primary tp-table-btn">{}</a>', record.pk, _('Edit'))
+        return format_html('<a href="configure/{}/" class="btn btn-primary tp-table-btn w-100">{}</a>', record.pk, _('Configure'))
 
     @staticmethod
-    def render_delete(record: Device) -> SafeString:
-        """Creates the html hyperlink for the delete-view.
+    def render_revoke(record: DeviceModel) -> SafeString:
+        """Creates the html hyperlink for the revoke-view.
 
         Args:
-            record (Device): The current record of the Device model.
+            record: The current record of the Device model.
 
         Returns:
-            SafeString: The html hyperlink for the delete-view.
+            SafeString: The html hyperlink for the revoke-view.
         """
-        return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
-                           record.pk, _('Delete'))
+        return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
+                           record.pk, _('Revoke'))
+
+
+class DeviceDomainCredentialsTable(tables.Table):
+    """Lists all domain credentials for a specific device."""
+
+    class Meta:
+        """Meta table configurations."""
+
+        model = IssuedDomainCredentialModel
+        template_name = 'django_tables2/bootstrap5.html'
+        order_by = '-created_at'
+        empty_values = ()
+        _msg = _('There are no issued certificates available.')
+        empty_text = format_html('<div class="text-center">{}</div>', _msg)
+
+        fields = (
+            'row_checkbox',
+            'domain',
+            'common_name',
+            'issued_at',
+            'expiration_date',
+            'expires_in',
+            'details',
+            'revoke',
+        )
+
+    row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
+    issued_at = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Issued At'))
+    common_name = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Common Name (CN)'))
+    expiration_date = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Expiration Date'))
+    expires_in = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Expires In'))
+    details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
+    revoke = tables.Column(empty_values=(), orderable=False, verbose_name=_('Revoke'))
 
     @staticmethod
-    def render_tags(value: TaggableManager):
-        """Renders the tags as a comma-separated list."""
-        if value:
-            return ', '.join([tag.name for tag in value.all()])
-        return '-'
+    def render_common_name(record: IssuedDomainCredentialModel) -> SafeString:
+        return format_html(record.issued_domain_credential_certificate.common_name)
+
+    @staticmethod
+    def render_issued_at(record: IssuedDomainCredentialModel) -> datetime.datetime:
+        return record.created_at
+
+    @staticmethod
+    def render_expiration_date(record: IssuedDomainCredentialModel) -> datetime.datetime:
+        return record.issued_domain_credential_certificate.not_valid_after
+
+    @staticmethod
+    def render_expires_in(record: IssuedDomainCredentialModel) -> SafeString:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if now >= record.issued_domain_credential_certificate.not_valid_after:
+            return format_html('Expired')
+        expire_timedelta = record.issued_domain_credential_certificate.not_valid_after - now
+        days = expire_timedelta.days
+        hours, remainder = divmod(expire_timedelta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return format_html(f'{days} days, {hours}:{minutes}:{seconds}')
+
+    @staticmethod
+    def render_details(record: IssuedDomainCredentialModel) -> SafeString:
+        """Creates the html hyperlink for the details-view.
+
+        Args:
+            record: The current record of the Device model.
+
+        Returns:
+            SafeString: The html hyperlink for the details-view.
+        """
+        return format_html('<a href="/pki/certificates/details/{}/" class="btn btn-primary tp-table-btn w-100">{}</a>',
+                           record.issued_domain_credential_certificate.pk, _('Details'))
+
+    @staticmethod
+    def render_revoke(record: IssuedDomainCredentialModel) -> SafeString:
+        """Creates the html hyperlink for the revoke-view.
+
+        Args:
+            record: The current record of the Device model.
+
+        Returns:
+            SafeString: The html hyperlink for the revoke-view.
+        """
+        return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
+                           record.pk, _('Revoke'))
+
+class DeviceApplicationCertificatesTable(tables.Table):
+    """Lists all issued application certificates for a specific device."""
+
+    class Meta:
+        """Meta table configurations."""
+
+        model = IssuedApplicationCertificateModel
+        template_name = 'django_tables2/bootstrap5.html'
+        order_by = '-created_at'
+        empty_values = ()
+        _msg = _('There are no issued certificates available.')
+        empty_text = format_html('<div class="text-center">{}</div>', _msg)
+
+        fields = (
+            'row_checkbox',
+            'common_name',
+            'certificate_type',
+            'domain',
+            'issued_at',
+            'expiration_date',
+            'expires_in',
+            'details',
+            'revoke',
+        )
+
+    row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
+    issued_at = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Issued At'))
+    common_name = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Common Name (CN)'))
+    certificate_type = tables.Column(empty_values=(), orderable=True, verbose_name=_('Certificate Type'))
+    expiration_date = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Expiration Date'))
+    expires_in = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Expires In'))
+    details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
+    revoke = tables.Column(empty_values=(), orderable=False, verbose_name=_('Revoke'))
+
+    @staticmethod
+    def render_common_name(record: IssuedApplicationCertificateModel) -> SafeString:
+        return format_html(record.issued_application_certificate.common_name)
+
+    @staticmethod
+    def render_certificate_type(record: IssuedApplicationCertificateModel) -> SafeString:
+        return format_html(record.get_issued_application_certificate_type_display())
+
+    @staticmethod
+    def render_issued_at(record: IssuedApplicationCertificateModel) -> datetime.datetime:
+        return record.created_at
+
+    @staticmethod
+    def render_expiration_date(record: IssuedApplicationCertificateModel) -> datetime.datetime:
+        return record.issued_application_certificate.not_valid_after
+
+    @staticmethod
+    def render_expires_in(record: IssuedApplicationCertificateModel) -> SafeString:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if now >= record.issued_application_certificate.not_valid_after:
+            return format_html('Expired')
+        expire_timedelta = record.issued_application_certificate.not_valid_after - now
+        days = expire_timedelta.days
+        hours, remainder = divmod(expire_timedelta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return format_html(f'{days} days, {hours}:{minutes}:{seconds}')
+
+    @staticmethod
+    def render_details(record: IssuedApplicationCertificateModel) -> SafeString:
+        """Creates the html hyperlink for the details-view.
+
+        Args:
+            record: The current record of the Device model.
+
+        Returns:
+            SafeString: The html hyperlink for the details-view.
+        """
+        return format_html('<a href="/pki/certificates/details/{}/" class="btn btn-primary tp-table-btn w-100">{}</a>',
+                           record.issued_application_certificate.pk, _('Details'))
+
+    @staticmethod
+    def render_revoke(record: IssuedApplicationCertificateModel) -> SafeString:
+        """Creates the html hyperlink for the revoke-view.
+
+        Args:
+            record: The current record of the Device model.
+
+        Returns:
+            SafeString: The html hyperlink for the revoke-view.
+        """
+        return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
+                           record.pk, _('Revoke'))

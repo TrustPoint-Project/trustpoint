@@ -8,9 +8,9 @@ from datetime import datetime, timedelta
 from django.contrib import messages
 
 from trustpoint.views.base import TpLoginRequiredMixin
-from .filters import NotificationFilter
 from django.core.management import call_command
 
+from .filters import NotificationFilter
 from .models import NotificationModel, NotificationStatus
 from .tables import NotificationTable
 
@@ -25,7 +25,7 @@ class IndexView(TpLoginRequiredMixin, RedirectView):
 class DashboardView(TpLoginRequiredMixin, TemplateView):
     template_name = 'home/dashboard.html'
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, *args: tuple, **kwargs: dict) -> None:
         super().__init__(*args, **kwargs)
         self.last_week_dates = self.generate_last_week_dates()
 

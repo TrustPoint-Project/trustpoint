@@ -1,191 +1,439 @@
-"""Contains views specific to the devices application."""
-
-
+"""This module contains all views concerning the devices application."""
 from __future__ import annotations
 
+
+from django_tables2 import SingleTableView  # type: ignore[import-untyped]
+from django.views.generic.edit import CreateView, FormView  # type: ignore[import-untyped]
+from django.urls import reverse_lazy, reverse   # type: ignore[import-untyped]
+from django.views.generic.base import RedirectView, TemplateView  # type: ignore[import-untyped]
+from django.views.generic.detail import BaseDetailView, DetailView  # type: ignore[import-untyped]
+from django.http import FileResponse, Http404   # type: ignore[import-untyped]
+from django.contrib import messages # type: ignore[import-untyped]
+from django.shortcuts import redirect   # type: ignore[import-untyped]
+from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
+
+from devices.forms import IssueTlsClientCredentialForm, IssueTlsServerCredentialForm
+from trustpoint.views.base import TpLoginRequiredMixin
+from core.validator.field import UniqueNameValidator
+from devices.models import DeviceModel, IssuedDomainCredentialModel, IssuedApplicationCertificateModel
+from devices.tables import DeviceTable, DeviceDomainCredentialsTable, DeviceApplicationCertificatesTable
 from typing import TYPE_CHECKING
-
-from django_filters.views import FilterView
-from django.shortcuts import redirect
-from django.urls import reverse_lazy
-from django.utils.translation import gettext_lazy as _
-from django.contrib import messages
-from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, UpdateView
-from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
-from django_tables2 import SingleTableView
-
-from devices.forms import DeviceForm
-from trustpoint.views.base import BulkDeletionMixin, ContextDataMixin, TpLoginRequiredMixin
-
-from .filters import DeviceFilter
-from .models import Device
-from .tables import DeviceTable
-
-from pki.validator.field import UniqueNameValidator
+import io
+from core.file_builder.archiver import Archiver
+from core.file_builder.enum import ArchiveFormat
+from cryptography.x509.oid import NameOID
+from devices.models import DeviceModel, IssuedApplicationCertificateModel
 
 if TYPE_CHECKING:
-    from typing import Any
+    from typing import ClassVar
+    from django.http import HttpResponse    # type: ignore[import-untyped]
+    from django.forms import BaseModelForm  # type: ignore[import-untyped]
 
-    from django.db.models import QuerySet
-    from django.http import HttpResponse
+
+class DevicesRedirectView(TpLoginRequiredMixin, RedirectView):
+    """View that redirects to the index of the devices application."""
+
+    permanent = False
+    pattern_name = 'devices:devices'
 
 
-class DeviceContextMixin(TpLoginRequiredMixin, ContextDataMixin):
+class DeviceContextMixin:
     """Mixin which adds context_data for the Devices -> Devices pages."""
 
-    context_page_category = 'devices'
-    context_page_name = 'devices'
+    extra_context: ClassVar = {'page_category': 'devices', 'page_name': 'devices'}
 
 
-class DeviceListView(DeviceContextMixin, TpLoginRequiredMixin, FilterView, SingleTableView):
+class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SingleTableView):
     """Endpoint Profiles List View."""
 
-    model = Device
+    model = DeviceModel
     table_class = DeviceTable
     template_name = 'devices/devices.html'
-
-    filterset_class = DeviceFilter
+    context_object_name = 'devices'
 
 
 class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
     """Device Create View."""
 
-    model = Device
-    fields = ['device_name', 'onboarding_protocol', 'domain', 'tags']  # noqa: RUF012
+    model = DeviceModel
+    fields = ['unique_name', 'serial_number', 'onboarding_protocol', 'domain']
     template_name = 'devices/add.html'
     success_url = reverse_lazy('devices:devices')
 
-    def clean_device_name(self, device_name) -> str:
+    @staticmethod
+    def clean_device_name(device_name: str) -> str:
         UniqueNameValidator(device_name)
         return device_name
 
-
-class EditDeviceView(DeviceContextMixin, TpLoginRequiredMixin, UpdateView):
-    model = Device
-    form_class = DeviceForm  # Custom form to disable fields during onboarding
-    template_name = 'devices/edit.html'
-    success_url = reverse_lazy('devices:devices')
-
-    def form_valid(self, form):
-        messages.success(self.request, _("Settings updated successfully."))
+    def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        form_instance = form.instance
+        onboarding_protocol = form.cleaned_data.get('onboarding_protocol')
+        form_instance.onboarding_status = DeviceModel.OnboardingStatus.NO_ONBOARDING \
+            if onboarding_protocol == DeviceModel.OnboardingStatus.NO_ONBOARDING \
+            else DeviceModel.OnboardingStatus.PENDING
         return super().form_valid(form)
 
 
-class DeviceDetailView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
-    """Detail view for Devices."""
+class DeviceDetailsView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
 
-    model = Device
-    pk_url_kwarg = 'pk'
-    template_name = 'devices/details.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        device: Device = (self.get_object())
-
-        context['onboarding_button'] = device.render_onboarding_action()
-        certs_by_domain = {}
-        #TODO: Iterate through domains, if we have multiple domains associate with one device
-        if device.domain:
-            domain_certs = device.get_all_active_certs_by_domain(device.domain)
-            if domain_certs:
-                certs_by_domain[device.domain] = {
-                    'ldevid': domain_certs['ldevid'],
-                    'other': domain_certs['other'],
-                }
-
-        context['certs_by_domain'] = certs_by_domain
-        return context
-
-
-class DevicesBulkDeleteView(
-    DeviceContextMixin,
-    MultipleObjectTemplateResponseMixin,
-    BulkDeletionMixin,
-    TpLoginRequiredMixin,
-    BaseListView,
-):
-    """View that allows bulk deletion of Devices.
-
-    This view expects a path variable pks containing string with all primary keys separated by forward slashes /.
-    It cannot start with a forward slash, however a trailing forward slash is optional.
-    If one or more primary keys do not have a corresponding object in the database, the user will be redirected
-    to the ignore_url.
-    """
-
-    model = Device
+    model = DeviceModel
     success_url = reverse_lazy('devices:devices')
-    ignore_url = reverse_lazy('devices:devices')
-    template_name = 'devices/confirm_delete.html'
-    context_object_name = 'objects'
+    template_name = 'devices/details.html'
+    context_object_name = 'device'
 
-    def get_ignore_url(self: DevicesBulkDeleteView) -> str:
-        """Gets the get the configured ignore_url.
 
-        If no ignore_url is configured, it will return the success_url.
+class DeviceConfigureView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
 
-        Returns:
-            str:
-                The ignore_url or success_url.
+    model = DeviceModel
+    success_url = reverse_lazy('devices:devices')
+    template_name = 'devices/configure.html'
+    context_object_name = 'device'
 
-        """
-        if self.ignore_url is not None:
-            return str(self.ignore_url)
-        return str(self.success_url)
 
-    def get_pks(self: DevicesBulkDeleteView) -> list[str]:
-        """Gets the primary keys for the objects to delete.
+class ManualOnboardingView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
 
-        Expects a string containing the primary keys delimited by forward slashes.
-        Cannot start with a forward slash.
-        A trailing forward slash is optional.
+    http_method_names = ['get']
 
-        Returns:
-            list[str]:
-                A list of the primary keys as strings.
-        """
-        return self.kwargs['pks'].split('/')
+    model = DeviceModel
+    context_object_name = 'device'
+    template_name = 'devices/onboarding/manual.html'
 
-    def get_queryset(self: DevicesBulkDeleteView, *args: Any, **kwargs: Any) -> QuerySet | None:  # noqa: ARG002
-        """Gets the queryset of the objects to be deleted.
 
-        Args:
-            *args (list):
-                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
-            **kwargs (dict):
-                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
+class ManualOnboardingDownloadView(DeviceContextMixin, TpLoginRequiredMixin, BaseDetailView):
 
-        Returns:
-            QuerySet | None:
-                The queryset of the objects to be deleted.
-                None, if one or more primary keys do not have corresponding objects in the database or
-                if the primary key list pks is empty.
-        """
-        pks = self.get_pks()
-        if not pks:
-            return None
-        queryset = self.model.objects.filter(pk__in=pks)
+    http_method_names = ['get']
 
-        if len(pks) != len(queryset):
-            queryset = None
+    model = DeviceModel
+    context_object_name = 'device'
+    redirect_url_name = 'devices:devices'
 
-        self.queryset = queryset
-        return queryset
+    @staticmethod
+    def _get_file_response(data: io.BytesIO, content_type: str, filename: str) -> FileResponse:
+        return FileResponse(data, content_type=content_type, as_attachment=True, filename=filename)
 
-    def get(self: DevicesBulkDeleteView, *args: Any, **kwargs: Any) -> HttpResponse:
-        """Handles HTTP GET requests.
+    def get(self, *args, **kwargs) -> FileResponse:
+        device = self.get_object()
+        if not device.domain:
+            raise Http404
+        if not device.domain.issuing_ca:
+            raise Http404
+        if device.onboarding_status != DeviceModel.OnboardingStatus.PENDING:
+            raise Http404
 
-        Args:
-            *args (list):
-                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
-            **kwargs (dict):
-                For compatibility. Not used internally in this method. Passed to super().get(*args, **kwargs).
+        domain_credential = device.issue_domain_credential()
 
-        Returns:
-            HttpResponse:
-                The response corresponding to the HTTP GET request.
-        """
-        if self.get_queryset() is None:
-            return redirect(self.get_ignore_url())
+        format_ = self.kwargs['format']
+        if format_ == 'pkcs12':
+            response = FileResponse(
+                io.BytesIO(domain_credential.as_pkcs12()),
+                content_type='application/pkcs12',
+                as_attachment=True,
+                filename=f'trustpoint-domain-credential-{device.unique_name}.p12')
 
+        elif format_ == 'zip':
+            zip_archive = Archiver.archive(
+                data_to_archive={
+                    'domain_credential_private_key.pem': domain_credential.credential_private_key.as_pkcs8_pem(),
+                    'domain_credential_certificate.pem': domain_credential.credential_certificate.as_pem(),
+                    'domain_credential_certificate_chain.pem': domain_credential.additional_certificates.as_pem()
+                },
+                archive_format=ArchiveFormat.ZIP
+            )
+
+            response = self._get_file_response(
+                data=io.BytesIO(zip_archive),
+                content_type=ArchiveFormat.ZIP.mime_type,
+                filename=f'trustpoint-domain-credential-{device.unique_name}{ArchiveFormat.ZIP.file_extension}')
+
+        elif format_ == 'tar_gz':
+            tar_gz_archive = Archiver.archive(
+                data_to_archive={
+                    'domain_credential_private_key.pem': domain_credential.credential_private_key.as_pkcs8_pem(),
+                    'domain_credential_certificate.pem': domain_credential.credential_certificate.as_pem(),
+                    'domain_credential_certificate_chain.pem': domain_credential.additional_certificates.as_pem()
+                },
+                archive_format=ArchiveFormat.TAR_GZ
+            )
+
+            response = self._get_file_response(
+                data=io.BytesIO(tar_gz_archive),
+                content_type=ArchiveFormat.TAR_GZ.mime_type,
+                filename=f'trustpoint-domain-credential-{device.unique_name}{ArchiveFormat.TAR_GZ.file_extension}')
+
+        else:
+            raise Http404
+
+        device.onboarding_status = DeviceModel.OnboardingStatus.ONBOARDED
+        device.save()
+
+        return response
+
+
+class ManualOnboardingSummaryView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
+
+    http_method_names = ['get']
+    model = DeviceModel
+    template_name = 'devices/onboarding/manual_summary.html'
+    context_object_name = 'device'
+
+    def get(self, *args: tuple, **kwargs: dict) -> HttpResponse:
+        device = self.get_object()
+        if device.onboarding_status != DeviceModel.OnboardingStatus.ONBOARDED:
+            raise Http404
+
+        messages.success(self.request, _(f'Device {device.unique_name} successfully onboarded.'))
+
+        return redirect(reverse_lazy('devices:devices'))
+
+
+class DeviceCertificateLifecycleManagementSummaryView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
+
+    http_method_names = ['get']
+    model = DeviceModel
+    template_name = 'devices/certificate_lifecycle_management/summary.html'
+    context_object_name = 'device'
+
+
+    def get(self, *args: tuple, **kwargs: dict) -> HttpResponse:
+        device = self.get_object()
+
+        device_domain_credential_table = DeviceDomainCredentialsTable(IssuedDomainCredentialModel.objects.filter(device=device))
+        device_application_certificates_table = DeviceApplicationCertificatesTable(
+            IssuedApplicationCertificateModel.objects.filter(device=device))
+
+        self.extra_context['device_domain_credential_table'] = device_domain_credential_table
+        self.extra_context['device_application_certificates_table'] = device_application_certificates_table
         return super().get(*args, **kwargs)
+
+
+class DeviceIssueTlsClientCredentialView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+
+    http_method_names = ['get']
+    model = DeviceModel
+    template_name = 'devices/certificate_lifecycle_management/tls_client.html'
+    form_class = IssueTlsClientCredentialForm
+    context_object_name = 'device'
+
+    def get_success_url(self) -> str:
+        return reverse_lazy('devices:clm', kwargs={'pk': self.get_object().id})
+
+    def get_initial(self):
+        device = self.get_object()
+        return {
+            'common_name': '',
+            'pseudonym': 'Trustpoint TLS-Client Certificate',
+            'serial_number': device.serial_number,
+            'dn_qualifier': f'trustpoint.{device.unique_name}.{device.domain.unique_name}.local',
+            'validity': 10
+        }
+
+
+class DeviceDownloadIssuedApplicationTlsClientCredential(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
+
+    model = DeviceModel
+    http_method_names = ['get', 'post']
+    template_name = 'devices/certificate_lifecycle_management/download.html'
+    context_object_name = 'device'
+
+    @staticmethod
+    def _get_file_response(data: io.BytesIO, content_type: str, filename: str) -> FileResponse:
+        return FileResponse(data, content_type=content_type, as_attachment=True, filename=filename)
+
+    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse | FileResponse:
+        device = self.get_object()
+        if not device.domain:
+            raise Http404
+        if not device.domain.issuing_ca:
+            raise Http404
+
+        common_name = self.request.POST.get('common_name')
+        validity_days = self.request.POST.get('validity')
+
+        self.extra_context['common_name'] = common_name
+        self.extra_context['validity'] = validity_days
+        return super().get(*args, **kwargs)
+
+    def get(self, *args: tuple, **kwargs: dict) -> FileResponse:
+        common_name = self.kwargs.get('common_name')
+        validity_days = self.kwargs.get('validity')
+        format_ = self.kwargs.get('format')
+        device = self.get_object()
+
+        distinguished_name = {
+            NameOID.COMMON_NAME: common_name,
+            NameOID.PSEUDONYM: 'Trustpoint TLS-Client Certificate',
+            NameOID.SERIAL_NUMBER: device.serial_number,
+            NameOID.DN_QUALIFIER: f'trustpoint.{device.unique_name}.{device.domain.unique_name}.local'
+        }
+
+        credential = device.issue_application_credential(
+            subject=distinguished_name,
+            validity_days=validity_days,
+            certificate_type=IssuedApplicationCertificateModel.ApplicationCertificateType.TLS_CLIENT
+        )
+
+        if format_ == 'pkcs12':
+            response = FileResponse(
+                io.BytesIO(credential.as_pkcs12()),
+                content_type='application/pkcs12',
+                as_attachment=True,
+                filename=f'trustpoint-domain-credential-{device.unique_name}.p12')
+
+        elif format_ == 'zip':
+            zip_archive = Archiver.archive(
+                data_to_archive={
+                    'tls_client_credential_private_key.pem': credential.credential_private_key.as_pkcs8_pem(),
+                    'tls_client_credential_certificate.pem': credential.credential_certificate.as_pem(),
+                    'tls_client_credential_certificate_chain.pem': credential.additional_certificates.as_pem()
+                },
+                archive_format=ArchiveFormat.ZIP
+            )
+
+            response = self._get_file_response(
+                data=io.BytesIO(zip_archive),
+                content_type=ArchiveFormat.ZIP.mime_type,
+                filename=f'trustpoint-tls_client-credential-{device.unique_name}{ArchiveFormat.ZIP.file_extension}')
+
+        elif format_ == 'tar_gz':
+            tar_gz_archive = Archiver.archive(
+                data_to_archive={
+                    'tls_client_credential_private_key.pem': credential.credential_private_key.as_pkcs8_pem(),
+                    'tls_client_credential_certificate.pem': credential.credential_certificate.as_pem(),
+                    'tls_client_credential_certificate_chain.pem': credential.additional_certificates.as_pem()
+                },
+                archive_format=ArchiveFormat.TAR_GZ
+            )
+
+            response = self._get_file_response(
+                data=io.BytesIO(tar_gz_archive),
+                content_type=ArchiveFormat.TAR_GZ.mime_type,
+                filename=f'trustpoint-tls_client-credential-{device.unique_name}{ArchiveFormat.TAR_GZ.file_extension}')
+
+        else:
+            raise Http404
+
+        return response
+
+
+class DeviceIssueTlsServerCredentialView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+
+    http_method_names = ['get', 'post']
+    model = DeviceModel
+    template_name = 'devices/certificate_lifecycle_management/tls_server.html'
+    form_class = IssueTlsServerCredentialForm
+    context_object_name = 'device'
+
+    _pseudonym: str
+    _serial_number: str
+    _dn_qualifier: str
+
+    @staticmethod
+    def _get_fixed_pseudonym() -> str:
+        return 'Trustpoint TLS-Server Certificate'
+
+    def _get_fixed_serial_number(self) -> str:
+        return self.get_object().serial_number
+
+    def _get_fixed_dn_qualifier(self) -> str:
+        device = self.get_object()
+        return (
+            f'trustpoint.{device.unique_name}.{device.domain.unique_name}.'
+            f'{device.domain.issuing_ca.unique_name}.tls-server.local')
+
+    def get_success_url(self) -> str:
+        return reverse_lazy('devices:clm', kwargs={'pk': self.get_object().id})
+
+    def get_initial(self) -> dict:
+        initial = super().get_initial()
+        return {
+            'pseudonym': self._get_fixed_pseudonym(),
+            'serial_number': self._get_fixed_serial_number(),
+            'dn_qualifier': self._get_fixed_dn_qualifier(),
+        } | initial
+
+    @staticmethod
+    def _get_file_response(data: io.BytesIO, content_type: str, filename: str) -> FileResponse:
+        return FileResponse(data, content_type=content_type, as_attachment=True, filename=filename)
+
+    def post(self, *args: tuple, **kwargs: dict) -> FileResponse:
+        device = self.get_object()
+        if not device.domain:
+            raise Http404
+        if not device.domain.issuing_ca:
+            raise Http404
+
+        form = self.get_form()
+        if not form.is_valid():
+            raise Http404
+
+
+        action = self.request.POST.get('action')
+
+        distinguished_name = {
+            NameOID.COMMON_NAME: form.cleaned_data.get('common_name'),
+            NameOID.PSEUDONYM: self._get_fixed_pseudonym(),
+            NameOID.SERIAL_NUMBER: self._get_fixed_serial_number(),
+            NameOID.DN_QUALIFIER: self._get_fixed_dn_qualifier()
+        }
+
+        credential = device.issue_application_credential(
+            subject=distinguished_name,
+            validity_days=form.cleaned_data.get('validity'),
+            certificate_type=IssuedApplicationCertificateModel.ApplicationCertificateType.TLS_SERVER,
+            ipv4_addresses=form.cleaned_data.get('ipv4_addresses'),
+            ipv6_addresses=form.cleaned_data.get('ipv6_addresses'),
+            domain_names=form.cleaned_data.get('domain_names'),
+        )
+
+        if action == 'pkcs12':
+            return FileResponse(
+                io.BytesIO(credential.as_pkcs12()),
+                content_type='application/pkcs12',
+                as_attachment=True,
+                filename=f'trustpoint-domain-credential-{device.unique_name}.p12')
+        if action == 'zip':
+            zip_archive = Archiver.archive(
+                data_to_archive={
+                    'tls_server_credential_private_key.pem': credential.credential_private_key.as_pkcs8_pem(),
+                    'tls_server_credential_certificate.pem': credential.credential_certificate.as_pem(),
+                    'tls_server_credential_certificate_chain.pem': credential.additional_certificates.as_pem()
+                },
+                archive_format=ArchiveFormat.ZIP
+            )
+
+            return self._get_file_response(
+                data=io.BytesIO(zip_archive),
+                content_type=ArchiveFormat.ZIP.mime_type,
+                filename=f'trustpoint-tls-server-credential-{device.unique_name}{ArchiveFormat.ZIP.file_extension}')
+        if action == 'tar_gz':
+            tar_gz_archive = Archiver.archive(
+                data_to_archive={
+                    'tls_server_credential_private_key.pem': credential.credential_private_key.as_pkcs8_pem(),
+                    'tls_server_credential_certificate.pem': credential.credential_certificate.as_pem(),
+                    'tls_server_credential_certificate_chain.pem': credential.additional_certificates.as_pem()
+                },
+                archive_format=ArchiveFormat.TAR_GZ
+            )
+
+            return self._get_file_response(
+                data=io.BytesIO(tar_gz_archive),
+                content_type=ArchiveFormat.TAR_GZ.mime_type,
+                filename=f'trustpoint-tls-server-credential-{device.unique_name}{ArchiveFormat.TAR_GZ.file_extension}')
+
+        raise Http404
+
+
+class DeviceSuccessfulApplicationIssuanceRedirectView(DeviceContextMixin, TpLoginRequiredMixin, BaseDetailView):
+
+    http_method_names = ['get']
+    model = DeviceModel
+    context_object_name = 'device'
+
+    def get(self, *args: tuple, **kwargs: dict) -> HttpResponse:
+        device = self.get_object()
+
+        messages.success(
+            self.request,
+            _(f'Device {device.unique_name} successfully issued an application certificate.'))
+
+        return redirect(reverse_lazy('devices:devices'))

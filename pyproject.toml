@@ -31,6 +31,7 @@ furo = "^2024.8.6"
 ruff = "^0.7.3"
 pillow = "^11.0.0"
 docutils-stubs = "^0.0.22"
+mypy = "^1.13.0"
 
 [build-system]
 requires = ["poetry-core"]
