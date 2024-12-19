@@ -60,8 +60,8 @@ class CredentialModel(models.Model):
         TRUSTPOINT_TLS_SERVER = 0, _('Trustpoint TLS Server')
         ROOT_CA = 1, _('Root CA')
         ISSUING_CA = 2, _('Issuing CA')
-        ISSUED_DOMAIN_CREDENTIAL_WITH_KEY = 3, _('Issued Domain Credential')
-        ISSUED_DOMAIN_CREDENTIAL_WITHOUT_KEY = 4, _('Issued Domain Credential')
+        DOMAIN_CREDENTIAL = 3, _('Domain Credential')
+        APPLICATION_CREDENTIAL = 4, _('Application Credential')
 
     credential_type = models.IntegerField(
         verbose_name=_('Credential Type'), choices=CredentialTypeChoice

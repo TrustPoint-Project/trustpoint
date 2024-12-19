@@ -80,7 +80,7 @@ class DeviceTable(tables.Table):
             )
         if record.onboarding_status == DeviceModel.OnboardingStatus.PENDING:
             return format_html(
-                '<a href="onboarding/manual/{}/" class="btn btn-primary tp-table-btn w-100">{}</a>',
+                '<a href="onboarding/{}/manual/" class="btn btn-primary tp-table-btn w-100">{}</a>',
                 record.pk, _('Start Onboarding'))
         return format_html('')
 

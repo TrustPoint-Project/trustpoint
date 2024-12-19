@@ -1,8 +1,72 @@
+from __future__ import annotations
+
 from django import forms
 from django.core.exceptions import ValidationError
 import ipaddress
 from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
 
+from core.serializer.credential import CredentialSerializer
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from typing import Any
+
+
+class IssueDomainCredentialForm(forms.Form):
+
+    FILE_FORMAT_CHOICES = [
+        (CredentialSerializer.FileFormat.PKCS12.value, 'PKCS#12'),
+        (CredentialSerializer.FileFormat.PEM_ZIP.value, 'ZIP (PEM)'),
+        (CredentialSerializer.FileFormat.PEM_TAR_GZ.value, 'TAR.GZ (PEM)'),
+    ]
+
+    common_name = forms.CharField(
+        max_length=255,
+        label=_('Common Name'),
+        required=True,
+        disabled=True
+    )
+    domain_component = forms.CharField(
+        max_length=255,
+        label=_('Domain Component'),
+        required=True,
+        disabled=True
+    )
+    serial_number = forms.CharField(
+        max_length=255,
+        label=_('Serial Number'),
+        required=True,
+        disabled=True
+    )
+    file_format = forms.ChoiceField(
+        choices=FILE_FORMAT_CHOICES,
+        label=_('File Format'),
+        required=True
+    )
+    password = forms.CharField(
+        label=_('Password'),
+        widget=forms.PasswordInput,
+        help_text=_('Must be at least 12 characters long.')
+    )
+    confirm_password = forms.CharField(
+        label=_('Confirm Password'),
+        widget=forms.PasswordInput
+    )
+
+    def clean(self) -> dict[str, Any]:
+        cleaned_data = super().clean()
+        password = cleaned_data.get('password')
+        confirm_password = cleaned_data.get('confirm_password')
+
+        if password and confirm_password:
+            if password != confirm_password:
+                self.add_error('confirm_password', _('Passwords do not match.'))
+
+            if len(password) < 12:
+                self.add_error('password', _('Password must be at least 12 characters long.'))
+
+        return cleaned_data
 
 class IssueTlsClientCredentialForm(forms.Form):
     common_name = forms.CharField(

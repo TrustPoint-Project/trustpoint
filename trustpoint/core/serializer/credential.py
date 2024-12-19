@@ -10,12 +10,14 @@ from typing import TYPE_CHECKING
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
+from core.file_builder.archiver import Archiver
 
 from . import CertificateCollectionSerializer, CertificateSerializer, PrivateKey, PrivateKeySerializer, Serializer
 
 if TYPE_CHECKING:
     from cryptography import x509
     from cryptography.hazmat.primitives.serialization import KeySerializationEncryption
+
 
 
 class CredentialSerializer(Serializer):
@@ -41,6 +43,13 @@ class CredentialSerializer(Serializer):
 
         PKCS1 = 'pkcs1'
         PKCS8 = 'pkcs8'
+
+    class FileFormat(enum.Enum):
+        """Supported credential file formats."""
+
+        PKCS12 = 'PKCS12'
+        PEM_ZIP = 'PEM_ZIP'
+        PEM_TAR_GZ = 'PEM_TAR_GZ'
 
     def __init__(
             self,
@@ -162,6 +171,24 @@ class CredentialSerializer(Serializer):
             cert=self._credential_certificate.as_crypto(),
             cas=self._additional_certificates.as_crypto(),
             encryption_algorithm=self._get_encryption_algorithm(password),
+        )
+
+    def as_pem_zip(self, password: None | bytes = None) -> bytes:
+        return Archiver.archive_zip(
+            {
+                'private_key.pem': self.credential_private_key.as_pkcs8_pem(password=password),
+                'certificate.pem': self.credential_certificate.as_pem(),
+                'certificate_chain.pem': self.additional_certificates.as_pem()
+            }
+        )
+
+    def as_pem_tar_gz(self, password: None | bytes = None) -> bytes:
+        return Archiver.archive_tar_gz(
+            {
+                'private_key.pem': self.credential_private_key.as_pkcs8_pem(password=password),
+                'certificate.pem': self.credential_certificate.as_pem(),
+                'certificate_chain.pem': self.additional_certificates.as_pem()
+            }
         )
 
     def __len__(self) -> int:

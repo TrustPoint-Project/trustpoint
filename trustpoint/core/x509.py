@@ -2,18 +2,24 @@ from __future__ import annotations
 
 from cryptography.exceptions import InvalidSignature
 
-from core.serializer import CertificateSerializer, CertificateCollectionSerializer, CredentialSerializer
+from core.serializer import (
+    CertificateSerializer,
+    CertificateCollectionSerializer,
+    CredentialSerializer,
+    PrivateKeySerializer)
 from trustpoint.views.base import LoggerMixin
+from cryptography.hazmat.primitives import hashes
 
+from cryptography.hazmat.primitives.asymmetric import rsa, ec
 
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from cryptography import x509
     from typing import Union
-    from cryptography.hazmat.primitives.asymmetric import rsa, ec
     PrivateKey = Union[ec.EllipticCurvePrivateKey, rsa.RSAPrivateKey]
     PublicKey = Union[ec.EllipticCurvePublicKey, rsa.RSAPublicKey]
+    from pki.models.domain import DomainModel
 
 
 class CertificateChainExtractor(LoggerMixin):
@@ -169,3 +175,30 @@ class CredentialNormalizer(LoggerMixin):
         if private_key.public_key() == certificate.public_key():
             return True
         return False
+
+
+class CryptographyUtils:
+
+    @staticmethod
+    def generate_private_key(domain: DomainModel) -> PrivateKeySerializer:
+        issuing_ca_private_key = domain.issuing_ca.credential.get_private_key()
+        if isinstance(issuing_ca_private_key, rsa.RSAPrivateKey):
+            key_size = issuing_ca_private_key.key_size
+            return PrivateKeySerializer(
+                rsa.generate_private_key(key_size=key_size, public_exponent=65537)
+            )
+        if isinstance(issuing_ca_private_key, ec.EllipticCurvePrivateKey):
+            curve = issuing_ca_private_key.curve
+            return PrivateKeySerializer(
+                ec.generate_private_key(curve=curve)
+            )
+        raise ValueError('Cannot build the domain credential, unknown key type found.')
+
+    @staticmethod
+    def get_hash_algorithm_from_issuing_ca_credential(domain: DomainModel) -> hashes.SHA256 | hashes.SHA384:
+        hash_algorithm = domain.issuing_ca.credential.get_certificate().signature_hash_algorithm
+        if isinstance(hash_algorithm, hashes.SHA256):
+            return hashes.SHA256()
+        if isinstance(hash_algorithm, hashes.SHA384):
+            return hashes.SHA384()
+        raise ValueError('Cannot build the domain credential, unknown hash algorithm found.')
