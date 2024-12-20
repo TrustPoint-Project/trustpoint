@@ -3,21 +3,23 @@
 from datetime import timedelta
 from typing import ClassVar
 
-import django_filters # type: ignore[import-untyped]
-from django.db.models import QuerySet # type: ignore[import-untyped]
-from django.utils import timezone # type: ignore[import-untyped]
+import django_filters  # type: ignore[import-untyped]
+from django.db.models import QuerySet  # type: ignore[import-untyped]
+from django.utils import timezone  # type: ignore[import-untyped]
 
 from home.models import NotificationModel
 
 
 class NotificationFilter(django_filters.FilterSet):
     """Filters notifications based on various criteria such as date range and status."""
+
     notification_type = django_filters.CharFilter(method='filter_by_multiple_types', label='Notification Type')
     notification_source = django_filters.CharFilter(method='filter_by_multiple_sources', label='Notification Source')
     date_range = django_filters.CharFilter(method='filter_by_date_range', label='Date Range')
 
     class Meta:
         """Configures the filter set's model and fields for filtering."""
+
         model = NotificationModel
         fields: ClassVar[list] = ['notification_type', 'notification_source']
 
