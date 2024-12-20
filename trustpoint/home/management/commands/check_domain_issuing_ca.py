@@ -1,19 +1,21 @@
 """Management command to check domains without Issuing CA assignments."""
+
 from __future__ import annotations
 
 from typing import Any
 
-from django.core.management.base import BaseCommand # type: ignore[import-untyped]
-from django.utils import timezone # type: ignore[import-untyped]
+from django.core.management.base import BaseCommand  # type: ignore[import-untyped]
+from django.utils import timezone  # type: ignore[import-untyped]
 from home.models import NotificationModel, NotificationStatus
 from pki.models import DomainModel
 
 
 class Command(BaseCommand):
     """A Django management command to identify domains without an Issuing CA and create notifications for them."""
+
     help = 'Check domains without issuing CA assignments.'
 
-    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None: # noqa: ARG002
+    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None:  # noqa: ARG002
         """Entrypoint for the command."""
         self._check_domain_issuing_ca()
         self.stdout.write(self.style.SUCCESS('Domain Issuing CA check completed.'))
@@ -32,6 +34,6 @@ class Command(BaseCommand):
                     notification_type=NotificationModel.NotificationTypes.INFO,
                     message_type=NotificationModel.NotificationMessageType.DOMAIN_NO_ISSUING_CA,
                     event='DOMAIN_NO_ISSUING_CA',
-                    message_data={'unique_name': domain.unique_name}
+                    message_data={'unique_name': domain.unique_name},
                 )
                 notification.statuses.add(new_status)

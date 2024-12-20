@@ -1,4 +1,5 @@
 """Management command to check for not onboarded devices."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -10,6 +11,7 @@ from home.models import NotificationModel, NotificationStatus
 
 new_status, created = NotificationStatus.objects.get_or_create(status='NEW')
 
+
 class Command(BaseCommand):
     """Management command to check for devices not onboarded.
 
@@ -17,17 +19,17 @@ class Command(BaseCommand):
     and generates informational notifications for each device. If a notification for
     a specific device already exists, it will be skipped.
     """
+
     help = 'Check for devices not onboarded.'
 
-    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None: # noqa: ARG002
+    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None:  # noqa: ARG002
         """Entrypoint for the command."""
         self._check_non_onboarded_devices()
         self.stdout.write(self.style.SUCCESS('Non-onboarded devices check completed.'))
 
     def _check_non_onboarded_devices(self) -> None:
         """Task to create an info notification if a device is not onboarded."""
-        non_onboarded_devices = DeviceModel.objects.filter(
-            onboarding_status=DeviceModel.OnboardingStatus.NO_ONBOARDING)
+        non_onboarded_devices = DeviceModel.objects.filter(onboarding_status=DeviceModel.OnboardingStatus.NO_ONBOARDING)
 
         for device in non_onboarded_devices:
             if not NotificationModel.objects.filter(event='DEVICE_NOT_ONBOARDED', device=device).exists():
@@ -40,6 +42,6 @@ class Command(BaseCommand):
                     notification_type=NotificationModel.NotificationTypes.INFO,
                     message_type=NotificationModel.NotificationMessageType.DEVICE_NOT_ONBOARDED,
                     event='DEVICE_NOT_ONBOARDED',
-                    message_data=message_data
+                    message_data=message_data,
                 )
                 notification.statuses.add(new_status)

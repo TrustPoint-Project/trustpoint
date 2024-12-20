@@ -3,19 +3,11 @@ from django.utils import timezone
 import django_filters
 from home.models import NotificationModel
 
+
 class NotificationFilter(django_filters.FilterSet):
-    notification_type = django_filters.CharFilter(
-        method='filter_by_multiple_types',
-        label="Notification Type"
-    )
-    notification_source = django_filters.CharFilter(
-        method='filter_by_multiple_sources',
-        label="Notification Source"
-    )
-    date_range = django_filters.CharFilter(
-        method='filter_by_date_range',
-        label="Date Range"
-    )
+    notification_type = django_filters.CharFilter(method='filter_by_multiple_types', label='Notification Type')
+    notification_source = django_filters.CharFilter(method='filter_by_multiple_sources', label='Notification Source')
+    date_range = django_filters.CharFilter(method='filter_by_date_range', label='Date Range')
 
     class Meta:
         model = NotificationModel

@@ -1,4 +1,5 @@
 """Management command to check for known security vulnerabilities."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -14,9 +15,10 @@ class Command(BaseCommand):
     This command simulates a security vulnerabilities check and creates
     notifications if any vulnerabilities are detected.
     """
+
     help = 'Check for known security vulnerabilities.'
 
-    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None: # noqa: ARG002
+    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None:  # noqa: ARG002
         """Entrypoint for the command."""
         self._check_for_security_vulnerabilities()
         self.stdout.write(self.style.SUCCESS('Security vulnerabilities check completed.'))
@@ -33,5 +35,5 @@ class Command(BaseCommand):
                 created_at=timezone.now(),
                 notification_source=NotificationModel.NotificationSource.SYSTEM,
                 notification_type=NotificationModel.NotificationTypes.CRITICAL,
-                message_type=NotificationModel.NotificationMessageType.VULNERABILITY
+                message_type=NotificationModel.NotificationMessageType.VULNERABILITY,
             )

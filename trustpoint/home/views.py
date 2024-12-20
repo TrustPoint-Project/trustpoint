@@ -19,7 +19,6 @@ from .models import NotificationModel, NotificationStatus
 from .tables import NotificationTable
 
 
-
 from typing import Any
 
 from devices.models import DeviceModel, IssuedDomainCredentialModel, IssuedApplicationCertificateModel
@@ -32,6 +31,7 @@ from pki.models.extension import AttributeTypeAndValue
 
 SUCCESS = 25
 ERROR = 40
+
 
 class IndexView(TpLoginRequiredMixin, RedirectView):
     permanent = False
@@ -53,7 +53,7 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
     def generate_last_week_dates(self):
         end_date = datetime.now().date()
         start_date = end_date - timedelta(days=6)
-        dates_as_strings = [(start_date + timedelta(days=i)).strftime("%Y-%m-%d") for i in range(7)]
+        dates_as_strings = [(start_date + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
         return dates_as_strings
 
     def get_context_data(self, **kwargs):
@@ -72,12 +72,13 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         filtered_notifications = notification_filter.qs
 
         all_notifications_table = NotificationTable(filtered_notifications)
-        RequestConfig(self.request, paginate={"per_page": 5}).configure(all_notifications_table)
+        RequestConfig(self.request, paginate={'per_page': 5}).configure(all_notifications_table)
 
         context['all_notifications_table'] = all_notifications_table
         context['notification_filter'] = notification_filter
 
         return context
+
 
 @login_required
 def notification_details_view(request, pk):
@@ -96,7 +97,7 @@ def notification_details_view(request, pk):
         'notification': notification,
         'NotificationStatus': NotificationStatus,
         'notification_statuses': notification_statuses,
-        'is_solved': is_solved
+        'is_solved': is_solved,
     }
 
     return render(request, 'home/notification_details.html', context)
@@ -115,12 +116,11 @@ def mark_as_solved(request, pk):
 
     notification_statuses = notification.statuses.values_list('status', flat=True)
 
-
     context = {
         'notification': notification,
         'NotificationStatus': NotificationStatus,
         'notification_statuses': notification_statuses,
-        'is_solved': is_solved
+        'is_solved': is_solved,
     }
 
     return render(request, 'home/notification_details.html', context)
@@ -132,29 +132,22 @@ class AddDomainsAndDevicesView(TpLoginRequiredMixin, TemplateView):
     _logger = logging.getLogger(__name__)
 
     def get(self, request, *args, **kwargs):
-
         try:
             call_command('add_domains_and_devices')
 
-            messages.add_message(
-                request,
-                SUCCESS,
-                'Successfully added test data.'
-            )
+            messages.add_message(request, SUCCESS, 'Successfully added test data.')
         except Exception as e:
             # TODO(AlexHx8472): Catch the correct and proper error messages.
-            messages.add_message(
-                request,
-                ERROR,
-                f'Test data already available in the Database.'
-            )
+            messages.add_message(request, ERROR, f'Test data already available in the Database.')
 
         return redirect('home:dashboard')
+
 
 class DashboardChartsAndCountsView(TemplateView):
     """View to mark the notification as Solved."""
 
     _logger = logging.getLogger(__name__)
+
     def get(self, request, *args, **kwargs):
         """Get dashboard data for panels, tables and charts"""
         start_date: str = request.GET.get('start_date', None)
@@ -167,7 +160,7 @@ class DashboardChartsAndCountsView(TemplateView):
         else:
             tz = timezone.get_current_timezone()
             start_date_object = datetime.now(tz).date()
-        
+
         dashboard_data: dict[str, Any] = {}
 
         device_counts = self.get_device_count_by_onboarding_status(dateparse.parse_date('2023-01-01'))
@@ -227,8 +220,8 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get device count by onboarding status from database"""
         device_os_counts = {str(status): 0 for _, status in DeviceModel.OnboardingStatus.choices}
         try:
-            device_os_qr = (DeviceModel.objects
-                .filter(created_at__gt=start_date)
+            device_os_qr = (
+                DeviceModel.objects.filter(created_at__gt=start_date)
                 .values('onboarding_status')
                 .annotate(count=Count('onboarding_status'))
             )
@@ -241,9 +234,8 @@ class DashboardChartsAndCountsView(TemplateView):
             device_os_counts['total'] = sum(device_os_counts.values())
         except Exception:
             self._logger.exception('Error occurred in device count by onboarding protocol query')
-       
-        return device_os_counts
 
+        return device_os_counts
 
     def get_cert_counts(self) -> dict[str, Any]:
         """Get certificate counts from database"""
@@ -264,13 +256,14 @@ class DashboardChartsAndCountsView(TemplateView):
             self._logger.exception('Error occurred in certificate count query')
         return cert_counts
 
-
     def get_cert_counts_by_status_and_date(self) -> list[dict[str, Any]]:
         """Get certificate counts grouped by issue date and certificate status."""
         cert_counts_by_status = []
         try:
-            cert_status_qr = (CertificateModel.objects
-                .filter(certificate_status__in=['O', 'R'])  # Optional: Filter nach mehreren Statuswerten
+            cert_status_qr = (
+                CertificateModel.objects.filter(
+                    certificate_status__in=['O', 'R']
+                )  # Optional: Filter nach mehreren Statuswerten
                 .annotate(issue_date=TruncDate('not_valid_before'))
                 .values('issue_date', 'certificate_status')
                 .annotate(cert_count=Count('id'))
@@ -291,13 +284,12 @@ class DashboardChartsAndCountsView(TemplateView):
             self._logger.exception('Error occurred in certificate count by status query')
         return cert_counts_by_status
 
-
     def get_cert_counts_by_status(self, start_date: date) -> dict[str, Any]:
         """Get certs count by onboarding status from database"""
         cert_status_counts = {str(status): 0 for _, status in CertificateModel.CertificateStatus.choices}
         try:
-            cert_status_qr = (CertificateModel.objects
-                .filter(created_at__gt=start_date)
+            cert_status_qr = (
+                CertificateModel.objects.filter(created_at__gt=start_date)
                 .values('certificate_status')
                 .annotate(count=Count('certificate_status'))
             )
@@ -308,7 +300,6 @@ class DashboardChartsAndCountsView(TemplateView):
         except Exception:
             self._logger.exception('Error occurred in cert counts by status query')
         return cert_status_counts
-
 
     def get_issuing_ca_counts(self) -> dict[str, Any]:
         """Get issuing CA counts from database"""
@@ -321,12 +312,14 @@ class DashboardChartsAndCountsView(TemplateView):
                 total=Count('id'),
                 active=Count(
                     Case(
-                        When(credential__certificate__not_valid_after__gt=today, then=Value(1)), output_field=IntegerField()
+                        When(credential__certificate__not_valid_after__gt=today, then=Value(1)),
+                        output_field=IntegerField(),
                     )
                 ),
                 expired=Count(
                     Case(
-                        When(credential__certificate__not_valid_after__lte=today, then=Value(1)), output_field=IntegerField()
+                        When(credential__certificate__not_valid_after__lte=today, then=Value(1)),
+                        output_field=IntegerField(),
                     )
                 ),
             )
@@ -335,13 +328,12 @@ class DashboardChartsAndCountsView(TemplateView):
 
         return issuing_ca_counts
 
-
     def get_device_counts_by_date_and_status(self) -> list[dict[str, Any]]:
         """Get device count by date and onboarding status from database"""
         device_counts_by_date_and_os = []
         try:
-            device_date_os_qr = (DeviceModel.objects
-                .annotate(issue_date=TruncDate('created_at'))
+            device_date_os_qr = (
+                DeviceModel.objects.annotate(issue_date=TruncDate('created_at'))
                 .values('issue_date', onboarding_status=F('onboarding_status'))
                 .annotate(device_count=Count('id'))
                 .order_by('issue_date', 'onboarding_status')
@@ -356,8 +348,8 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get device count by onboarding protocol from database"""
         device_op_counts = {str(status): 0 for _, status in DeviceModel.OnboardingProtocol.choices}
         try:
-            device_op_qr = (DeviceModel.objects
-                .filter(created_at__gt=start_date)
+            device_op_qr = (
+                DeviceModel.objects.filter(created_at__gt=start_date)
                 .values('onboarding_protocol')
                 .annotate(count=Count('onboarding_protocol'))
             )
@@ -369,16 +361,17 @@ class DashboardChartsAndCountsView(TemplateView):
             self._logger.exception('Error occurred in device count by onboarding protocol query')
         return device_op_counts
 
-
     def get_device_count_by_domain(self, start_date: date) -> list[dict[str, Any]]:
         """Get count of onboarded devices by domain from the database."""
         try:
-            device_domain_qr = (DeviceModel.objects
-                .filter(Q(onboarding_status=DeviceModel.OnboardingStatus.ONBOARDED) & Q(created_at__gte=start_date))
+            device_domain_qr = (
+                DeviceModel.objects.filter(
+                    Q(onboarding_status=DeviceModel.OnboardingStatus.ONBOARDED) & Q(created_at__gte=start_date)
+                )
                 .values(domain_name=F('domain__unique_name'))
                 .annotate(onboarded_device_count=Count('id'))
-            ) 
-            print("device", device_domain_qr)
+            )
+            print('device', device_domain_qr)
             # Convert the queryset to a list
             return list(device_domain_qr)
         except Exception:
@@ -389,8 +382,8 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get certificate count by issuing ca from database"""
         cert_counts_by_issuing_ca = []
         try:
-            cert_issuing_ca_qr = (CertificateModel.objects
-                .filter(issuer__isnull=False)
+            cert_issuing_ca_qr = (
+                CertificateModel.objects.filter(issuer__isnull=False)
                 .filter(created_at__gt=start_date)
                 .values(ca_name=F('issuer__value'))
                 .annotate(cert_count=Count('id'))
@@ -402,13 +395,12 @@ class DashboardChartsAndCountsView(TemplateView):
 
         return cert_counts_by_issuing_ca
 
-
     def get_cert_counts_by_issuing_ca_and_date(self, start_date: date) -> list[dict[str, Any]]:
         """Get certificate count by issuing ca from database"""
         cert_counts_by_issuing_ca_and_date = []
         try:
-            cert_issuing_ca_and_date_qr = (CertificateModel.objects
-                .filter(issuer__isnull=False)
+            cert_issuing_ca_and_date_qr = (
+                CertificateModel.objects.filter(issuer__isnull=False)
                 .filter(created_at__gt=start_date)
                 .annotate(issue_date=TruncDate('created_at'))
                 .values('issue_date', name=F('issuer__value'))
@@ -421,17 +413,16 @@ class DashboardChartsAndCountsView(TemplateView):
             self._logger.exception('Error occurred in certificate count by issuing ca query')
         return cert_counts_by_issuing_ca_and_date
 
-
     def get_cert_counts_by_domain(self, start_date: date) -> list[dict[str, Any]]:
         """Get certificate count by domain from database"""
         cert_counts_by_domain = []
         try:
-            cert_app_counts = (IssuedApplicationCertificateModel.objects
-                .values(domain_name=F('domain__unique_name'))
-                .annotate(cert_count=Count('id')))
-            cert_domain_counts = (IssuedDomainCredentialModel.objects
-                .values(domain_name=F('domain__unique_name'))
-                .annotate(cert_count=Count('id')))
+            cert_app_counts = IssuedApplicationCertificateModel.objects.values(
+                domain_name=F('domain__unique_name')
+            ).annotate(cert_count=Count('id'))
+            cert_domain_counts = IssuedDomainCredentialModel.objects.values(
+                domain_name=F('domain__unique_name')
+            ).annotate(cert_count=Count('id'))
 
             # Use a union query to combine results
             cert_domain_qr = cert_app_counts.union(cert_domain_counts)
@@ -442,30 +433,34 @@ class DashboardChartsAndCountsView(TemplateView):
             self._logger.exception('Error occurred in certificate count by issuing ca query')
         return cert_counts_by_domain
 
-
     def get_cert_counts_by_template(self, start_date: date) -> dict[str, Any]:
         """Get certificate count by template from database"""
-        cert_counts_by_template = {str(status): 0 for _, status in IssuedApplicationCertificateModel.ApplicationCertificateType.choices}
+        cert_counts_by_template = {
+            str(status): 0 for _, status in IssuedApplicationCertificateModel.ApplicationCertificateType.choices
+        }
         try:
-            cert_template_qr = (IssuedApplicationCertificateModel.objects
-                .filter(issued_application_certificate__created_at__gt=start_date)
-                .values(cert_type = F('issued_application_certificate_type'))
+            cert_template_qr = (
+                IssuedApplicationCertificateModel.objects.filter(
+                    issued_application_certificate__created_at__gt=start_date
+                )
+                .values(cert_type=F('issued_application_certificate_type'))
                 .annotate(count=Count('id'))
             )
             # Mapping from short code to human-readable name
-            template_mapping = {key: str(value) for key, value in IssuedApplicationCertificateModel.ApplicationCertificateType.choices}
+            template_mapping = {
+                key: str(value) for key, value in IssuedApplicationCertificateModel.ApplicationCertificateType.choices
+            }
             cert_counts_by_template = {template_mapping[item['cert_type']]: item['count'] for item in cert_template_qr}
         except Exception:
             self._logger.exception('Error occurred in certificate count by template query')
         return cert_counts_by_template
 
-
     def get_issuing_ca_counts_by_type(self, start_date: date) -> dict[str, Any]:
         """Get issuing ca counts by type from database"""
         issuing_ca_type_counts = {str(cert_type): 0 for _, cert_type in IssuingCaModel.IssuingCaTypeChoice.choices}
         try:
-            ca_type_qr = (IssuingCaModel.objects
-                .filter(created_at__gt=start_date)
+            ca_type_qr = (
+                IssuingCaModel.objects.filter(created_at__gt=start_date)
                 .values('issuing_ca_type')
                 .annotate(count=Count('issuing_ca_type'))
             )
