@@ -177,9 +177,9 @@ class DashboardChartsAndCountsView(TemplateView):
         if cert_counts:
             dashboard_data['cert_counts'] = cert_counts
 
-        # issuing_ca_counts = self.get_issuing_ca_counts()
-        # if issuing_ca_counts:
-        #     dashboard_data['issuing_ca_counts'] = issuing_ca_counts
+        issuing_ca_counts = self.get_issuing_ca_counts()
+        if issuing_ca_counts:
+            dashboard_data['issuing_ca_counts'] = issuing_ca_counts
 
         device_counts_by_os = self.get_device_count_by_onboarding_status(start_date_object)
         if device_counts_by_os:
@@ -321,12 +321,12 @@ class DashboardChartsAndCountsView(TemplateView):
                 total=Count('id'),
                 active=Count(
                     Case(
-                        When(issuing_ca_certificate__not_valid_after__gt=today, then=Value(1)), output_field=IntegerField()
+                        When(credential__certificate__not_valid_after__gt=today, then=Value(1)), output_field=IntegerField()
                     )
                 ),
                 expired=Count(
                     Case(
-                        When(issuing_ca_certificate__not_valid_after__lte=today, then=Value(1)), output_field=IntegerField()
+                        When(credential__certificate__not_valid_after__lte=today, then=Value(1)), output_field=IntegerField()
                     )
                 ),
             )
