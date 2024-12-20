@@ -1,6 +1,8 @@
-from django.urls import path
-from . import views
+"""Defines URL patterns for the Home application, mapping views to URLs."""
 
+from django.urls import path  # type: ignore[import-untyped]
+
+from . import views
 
 app_name = 'home'
 urlpatterns = [
