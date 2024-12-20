@@ -417,12 +417,15 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get certificate count by domain from database"""
         cert_counts_by_domain = []
         try:
-            cert_app_counts = IssuedApplicationCertificateModel.objects.values(
-                domain_name=F('domain__unique_name')
-            ).annotate(cert_count=Count('id'))
-            cert_domain_counts = IssuedDomainCredentialModel.objects.values(
-                domain_name=F('domain__unique_name')
-            ).annotate(cert_count=Count('id'))
+            cert_app_counts = (IssuedApplicationCertificateModel.objects
+                .filter(created_at__gt=start_date)
+                .values(domain_name=F('domain__unique_name'))
+                .annotate(cert_count=Count('id')))
+            
+            cert_domain_counts = (IssuedDomainCredentialModel.objects
+                .filter(created_at__gt=start_date)                  
+                .values(domain_name=F('domain__unique_name'))
+                .annotate(cert_count=Count('id')))
 
             # Use a union query to combine results
             cert_domain_qr = cert_app_counts.union(cert_domain_counts)
