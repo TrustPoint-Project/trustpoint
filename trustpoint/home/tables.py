@@ -4,13 +4,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-import django_tables2 as tables
-from django.utils.functional import lazy
-from django.utils.html import format_html
-from django.utils.translation import gettext_lazy as _
+import django_tables2 as tables  # type: ignore[import-untyped]
+from django.utils.functional import lazy  # type: ignore[import-untyped]
+from django.utils.html import format_html  # type: ignore[import-untyped]
+from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
 
 if TYPE_CHECKING:
-    from django.utils.safestring import SafeString
+    from django.utils.safestring import SafeString  # type: ignore[import-untyped]
 
 
 # CHECKBOX_ATTRS: dict[str, dict[str, str]] =
@@ -57,6 +57,7 @@ class NotificationTable(tables.Table):
 
     @staticmethod
     def render_short_message(record: NotificationModel) -> SafeString:
+        """Renders a short message based on the given notification record."""
         return format_html(record.short_translated)
 
     @staticmethod
