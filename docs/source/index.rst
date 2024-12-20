@@ -40,4 +40,10 @@ Welcome to Trustpoint's documentation!
 
    glossary
 
+.. toctree::
+   :maxdepth: 2
+   :caption: 🧑‍💻 Development :
+
+   poetry_environment
+
 

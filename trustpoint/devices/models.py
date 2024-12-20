@@ -1,322 +1,591 @@
-"""Module that contains all models corresponding to the devices app."""
-
-
 from __future__ import annotations
 
-import logging
-import re
 
-from django.core.exceptions import ObjectDoesNotExist
+from django.db import models    # type: ignore[import-untyped]
+from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
+from django.contrib.contenttypes.fields import GenericForeignKey   # type: ignore[import-untyped]
+from django.contrib.contenttypes.models import ContentType # type: ignore[import-untyped]
+from core.validator.field import UniqueNameValidator
 
-from django.db import models, transaction
-from django.db.models import Count
-from django.urls import reverse
-from django.utils import timezone
-from django.utils.html import format_html
-from django.utils.translation import gettext_lazy as _
-from taggit.managers import TaggableManager
+from pki.models import CertificateModel, DomainModel, CredentialModel, IssuingCaModel
 
-from pki import CertificateStatus, CertificateTypes
+import datetime
+from cryptography import x509
 
 
-from .exceptions import UnknownOnboardingStatusError
+from core.serializer import CredentialSerializer
+from core.x509 import CryptographyUtils
+from pki.models.credential import CredentialModel
 
-from . import DeviceOnboardingStatus
-
-from pki.validator.field import UniqueNameValidator
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from pki.models import DomainModel, IssuedDeviceCertificateModel
-
-log = logging.getLogger('tp.devices')
+    import ipaddress
 
 
-class Device(models.Model):
-    """Device Model."""
+class DeviceModel(models.Model):
 
-    issued_device_certificates: IssuedDeviceCertificateModel
+    def get_domain_credential_issuer(self) -> DomainCredentialIssuer:
+        return DomainCredentialIssuer(device=self, domain=self.domain)
 
-    class OnboardingProtocol(models.TextChoices):
+    def get_application_credential_issuer(
+            self,
+            credential_type: IssuedApplicationCertificateModel.ApplicationCertificateType
+    ) -> TlsClientCredentialIssuer | TlsServerCredentialIssuer:
+        if credential_type == IssuedApplicationCertificateModel.ApplicationCertificateType.TLS_CLIENT:
+            return self.get_tls_client_credential_issuer()
+        if credential_type == IssuedApplicationCertificateModel.ApplicationCertificateType.TLS_SERVER:
+            return self.get_tls_server_credential_issuer()
+        raise ValueError('Unknown issuer type')
+
+    def get_tls_client_credential_issuer(self) -> TlsClientCredentialIssuer:
+        return TlsClientCredentialIssuer(device=self, domain=self.domain)
+
+    def get_tls_server_credential_issuer(self) -> TlsServerCredentialIssuer:
+        return TlsServerCredentialIssuer(device=self, domain=self.domain)
+
+    def __str__(self) -> str:
+        return f'DeviceModel(unique_name={self.unique_name})'
+
+
+    class OnboardingProtocol(models.IntegerChoices):
         """Supported Onboarding Protocols."""
 
-        MANUAL = 'MA', _('Manual download')
-        BROWSER = 'BO', _('Browser download')
-        CLI = 'CI', _('Device CLI')
-        TP_CLIENT = 'TP', _('Trustpoint Client')
-        BRSKI = 'BR', _('BRSKI')
-        AOKI = 'AO', _('AOKI')
+        NO_ONBOARDING = 0, _('No Onboarding')
+        MANUAL = 1, _('Manual download')
+        BROWSER = 2, _('Browser download')
+        CLI = 3, _('Device CLI')
+        TP_CLIENT_PW = 4, _('Trustpoint Client')
+        AOKI = 5, _('AOKI')
+        BRSKI = 6, _('BRSKI')
 
 
-    device_name = models.CharField(
-        _('Device name'), max_length=100, unique=True, default='test', validators=[UniqueNameValidator()]
+    class OnboardingStatus(models.IntegerChoices):
+        """Onboarding status."""
+
+        NO_ONBOARDING = 0, _('No Onboarding')
+        PENDING = 1, _('Pending')
+        ONBOARDED = 2, _('Onboarded')
+
+
+    unique_name = models.CharField(
+        _('Device'), max_length=100, unique=True, default=f'New-Device', validators=[UniqueNameValidator()]
     )
-    device_serial_number = models.CharField(_('Serial number'), max_length=100, blank=True)
-    onboarding_protocol = models.CharField(
-        _('Onboarding protocol'), max_length=2, choices=OnboardingProtocol, default=OnboardingProtocol.MANUAL, blank=True
+    serial_number = models.CharField(_('Serial-Number'), max_length=100)
+    domain = models.ForeignKey(
+        DomainModel,
+        verbose_name=_('Domain'),
+        related_name='devices',
+        blank=True,
+        null=True,
+        on_delete=models.PROTECT
     )
-    device_onboarding_status = models.CharField(verbose_name=_('Device onboarding status'),
-        max_length=16, choices=DeviceOnboardingStatus, default=DeviceOnboardingStatus.NOT_ONBOARDED, blank=True
+
+    onboarding_protocol = models.IntegerField(
+        verbose_name=_('Onboarding Protocol'),
+        choices=OnboardingProtocol,
+        null=False,
+        blank=False)
+    onboarding_status = models.IntegerField(
+        verbose_name=_('Onboarding Status'),
+        choices=OnboardingStatus,
+        blank=False,
+        null=False)
+
+    created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
+    updated_at = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
+
+
+class IssuedDomainCredentialModel(models.Model):
+
+    issued_domain_credential_certificate = models.OneToOneField(
+        CertificateModel,
+        verbose_name=_('Issued Domain Credential'),
+        on_delete=models.PROTECT,
+        related_name='issued_domain_credential')
+    device = models.ForeignKey(
+        DeviceModel,
+        verbose_name=_('Device'),
+        on_delete=models.PROTECT,
+        related_name='issued_domain_credentials')
+    domain = models.ForeignKey(
+        DomainModel,
+        verbose_name=_('Domain'),
+        on_delete=models.PROTECT,
+        related_name='issued_domain_credentials')
+    issuing_ca = models.ForeignKey(
+        IssuingCaModel,
+        verbose_name=_('Issuing CA'),
+        on_delete=models.PROTECT,
+        related_name='issued_domain_credentials')
+
+    # This is only set if the credential, including the key pair, was generated on the Trustpoint itself.
+    credential = models.OneToOneField(
+        CredentialModel,
+        verbose_name=_('Credential'),
+        on_delete=models.PROTECT,
+        related_name='issued_domain_credential',
+        null=True,
+        blank=True
     )
-    domain = models.ForeignKey('pki.DomainModel', verbose_name=_('Domain'), on_delete=models.SET_NULL, blank=True, null=True)
-    created_at = models.DateTimeField(default=timezone.now)
-    tags = TaggableManager(blank=True)
 
-    def __str__(self: Device) -> str:
-        """Returns a Device object in human-readable format.
+    created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
 
-        Returns: A formatted string containing the device name and serial number.
-        """
-        return f'Device({self.device_name}, {self.device_serial_number})'
+    def __str__(self) -> str:
+        return f'IssuedDomainCredential(device={self.device.unique_name}, domain={self.domain.unique_name})'
 
-    def get_current_ldevid_by_domain(self, domain):
-        """Retrieves the current active LDevID certificate for a specified domain.
 
-        Args:
-            domain: The domain for which the current active LDevID certificate should be retrieved.
+class IssuedApplicationCertificateModel(models.Model):
 
-        Returns:
-            The active LDevID certificate if found, otherwise None.
+    class ApplicationCertificateType(models.IntegerChoices):
 
-        Raises:
-            IssuedDeviceCertificateModel.ObjectDoesNotExist: If no active LDevID certificates are found.
-        """
-        try:
-            return self.issued_device_certificates.get(
-                certificate_type=CertificateTypes.LDEVID,
-                domain=domain,
-                certificate__certificate_status=CertificateStatus.OK
-            ).certificate
-        except ObjectDoesNotExist:
-            return None
+        GENERIC = 0, _('Generic')
+        TLS_CLIENT = 1, _('TLS-Client')
+        TLS_SERVER = 2, _('TLS-Server')
 
-    def get_all_active_certs_by_domain(self, domain):
-        """Retrieves all active certificates for a specified domain, grouped by type.
+    issued_application_certificate = models.ForeignKey(
+        CertificateModel,
+        verbose_name=_('Application Certificate'),
+        on_delete=models.CASCADE)
+    device = models.ForeignKey(
+        DeviceModel,
+        on_delete=models.CASCADE,
+        related_name='issued_application_certificates')
+    domain = models.ForeignKey(
+        DomainModel,
+        verbose_name=_('Domain'),
+        on_delete=models.CASCADE,
+        related_name='issued_application_certificates')
+    issuing_ca = models.ForeignKey(
+        IssuingCaModel,
+        verbose_name=_('Issuing CA'),
+        on_delete=models.PROTECT,
+        related_name='issued_application_credentials')
+    issued_application_certificate_type = models.IntegerField(
+        verbose_name=_('Application Certificate Type'),
+        choices=ApplicationCertificateType,
+        null=False,
+        blank=False,)
 
-        Args:
-            domain: The domain for which active certificates should be retrieved.
+    # This is only set if the credential, including the key pair, was generated on the Trustpoint itself.
+    credential = models.OneToOneField(
+        CredentialModel,
+        verbose_name=_('Credential'),
+        on_delete=models.PROTECT,
+        related_name='issued_application_credential',
+        null=True,
+        blank=True
+    )
 
-        Returns:
-            dict: A dictionary containing:
-                - 'domain': The domain for the certificates.
-                - 'ldevid': The current active LDevID certificate or None if unavailable.
-                - 'other': A queryset of other active certificates excluding LDevID certificates.
-        """
-        query_sets = self.issued_device_certificates.filter(
-            domain=domain,
-            certificate__certificate_status=CertificateStatus.OK
-        ).exclude(certificate_type=CertificateTypes.LDEVID)
+    created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
 
-        return {'domain': domain,
-            'ldevid': self.get_current_ldevid_by_domain(domain=domain),
-            'other': query_sets}
+    def __str__(self) -> str:
+        return f'IssuedApplicationCredential(device={self.device.unique_name}, domain={self.domain.unique_name})'
 
-    def save_certificate(self, certificate, certificate_type, domain, template_name, protocol):
-        self.issued_device_certificates.create(
-            certificate=certificate,
-            certificate_type=certificate_type,
-            domain=domain,
-            template_name=template_name,
-            protocol=protocol
+
+class DomainCredentialIssuer:
+
+    _common_name: str = 'Trustpoint Domain Credential'
+    _device: DeviceModel
+    _domain: DomainModel
+
+    _credential: None | CredentialSerializer = None
+    _credential_model: None | CredentialModel = None
+    _issued_domain_credential_model: None | IssuedDomainCredentialModel = None
+
+    def __init__(self, device: DeviceModel, domain: DomainModel) -> None:
+        self._device = device
+        self._domain = domain
+
+    @property
+    def device(self) -> DeviceModel:
+        return self._device
+
+    @property
+    def domain(self) -> DomainModel:
+        return self._domain
+
+    @property
+    def serial_number(self) -> str:
+        return self.device.serial_number
+
+    @property
+    def domain_component(self) -> str:
+        return self.domain.unique_name
+
+    @property
+    def common_name(self) -> str:
+        return self._common_name
+
+    @property
+    def credential(self) -> None | CredentialSerializer:
+        return self._credential
+
+    @property
+    def credential_model(self) -> None | CredentialModel:
+        return self._credential_model
+
+    @property
+    def issued_domain_credential_model(self) -> None | IssuedDomainCredentialModel:
+        return self._issued_domain_credential_model
+
+    def get_fixed_values(self) -> dict[str, str]:
+        return {
+            'common_name': self.common_name,
+            'domain_component': self.domain_component,
+            'serial_number': self.serial_number
+        }
+
+    def issue_domain_credential(self):
+        domain_credential_private_key = CryptographyUtils.generate_private_key(domain=self.domain)
+        hash_algorithm = CryptographyUtils.get_hash_algorithm_from_domain(domain=self.domain)
+        one_day = datetime.timedelta(1, 0, 0)
+
+        certificate_builder = x509.CertificateBuilder()
+        certificate_builder = certificate_builder.subject_name(x509.Name([
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, self.common_name),
+            x509.NameAttribute(x509.NameOID.DOMAIN_COMPONENT, self.domain_component),
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number)
+        ]))
+        certificate_builder = certificate_builder.issuer_name(
+            self.domain.issuing_ca.credential.get_certificate().subject)
+        certificate_builder = certificate_builder.not_valid_before(datetime.datetime.now(datetime.UTC))
+        certificate_builder = certificate_builder.not_valid_after(
+            datetime.datetime.now(datetime.UTC) + (one_day * 365))
+        certificate_builder = certificate_builder.serial_number(x509.random_serial_number())
+        certificate_builder = certificate_builder.public_key(
+            domain_credential_private_key.public_key_serializer.as_crypto())
+
+        certificate_builder = certificate_builder.add_extension(
+            x509.BasicConstraints(ca=False, path_length=None), critical=True
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(
+                    self.domain.issuing_ca.credential.get_private_key_serializer().public_key_serializer.as_crypto()
+            ),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(domain_credential_private_key.public_key_serializer.as_crypto()),
+            critical=False
         )
 
-    def revoke_ldevid(self: Device, revocation_reason) -> bool:
-        """Revokes the LDevID.
-
-        Deletes the LDevID file and sets the device status to REVOKED.
-        Actual revocation (CRL, OCSP) is not yet implemented.
-        """
-        ldevid = self.get_current_ldevid_by_domain(domain=self.domain)
-        if not ldevid:
-            return False
-
-        with transaction.atomic():
-            revocation_success = ldevid.revoke(revocation_reason)
-            ldevid = None
-            if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDED:
-                if revocation_success:
-                    self.device_onboarding_status = DeviceOnboardingStatus.REVOKED
-                else:
-                    # TODO(Air): Check if this makes sense to express the state "cannot revoke since CA is gone"
-                    self.device_onboarding_status = DeviceOnboardingStatus.ONBOARDING_FAILED
-            self.save()
-
-        if not revocation_success:
-            log.error('Failed to revoke LDevID for device %s', self.device_name)
-            return False
-        log.info('Revoked LDevID for device %s', self.device_name)
-        return True
-
-    @classmethod
-    def get_by_id(cls: Device, device_id: int) -> Device | None:
-        """Returns the device with a given ID."""
-        try:
-            return cls.objects.get(pk=device_id)
-        except cls.DoesNotExist:
-            return None
-
-    @classmethod
-    def get_by_name(cls: Device, device_name: str) -> Device | None:
-        """Returns the device with a given name."""
-        try:
-            return cls.objects.get(device_name=device_name)
-        except cls.DoesNotExist:
-            return None
-
-    @classmethod
-    def check_onboarding_prerequisites(
-            cls: Device, device_id: int,
-            allowed_onboarding_protocols: list[Device.OnboardingProtocol]) -> tuple[bool, str | None]:
-        """Checks if criteria for starting the onboarding process are met."""
-        device = cls.get_by_id(device_id)
-
-        if not device:
-            return False, f'Onboarding: Device with ID {device_id} not found.'
-
-        if not device.domain:
-            return False, f'Onboarding: Please select a domain for device {device.device_name} first.'
-
-        if not device.domain.issuing_ca:
-            return False, f'Onboarding: domain {device.domain.unique_name} has no issuing CA set.'
-
-        if device.onboarding_protocol not in allowed_onboarding_protocols:
-            try:
-                label = Device.OnboardingProtocol(device.onboarding_protocol).label
-            except ValueError:
-                return False, _('Onboarding: Please select a valid onboarding protocol.')
-
-            return False, f'Onboarding protocol {label} is not implemented.'
-
-        # check that device is not already onboarded
-        # Re-onboarding might be a valid use case, e.g. to renew a certificate
-        # TODO (Air): Consider allowing re-onboarding,
-        # but needs a way to handle multiple simultaneously active certificates
-        if device.device_onboarding_status == DeviceOnboardingStatus.ONBOARDED:
-            return False, (_('Device %s is already onboarded.') % device.device_name)
-
-        return True, None
-
-    def _render_onboarded_revoke(self) -> str:
-        """Renders the 'Revoke' onboarding action for devices that have status Onboarded.
-
-        Returns:
-            str: The html hyperlink for the details-view.
-        """
-        return format_html(
-            '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
-            reverse('onboarding:revoke', kwargs={'device_id': self.pk}),
-            _('Revoke Certificate')
+        domain_certificate = certificate_builder.sign(
+            private_key=self.domain.issuing_ca.credential.get_private_key_serializer().as_crypto(),
+            algorithm=hash_algorithm
         )
 
-    def _render_running_cancel(self) -> str:
-        """Renders the 'Cancel' action for devices that have status Running.
-
-        Returns:
-            str: The html hyperlink for the details-view.
-        """
-        return format_html(
-            '<a href="{}" class="btn btn-danger tp-onboarding-btn">{}</a>',
-            reverse('onboarding:exit', kwargs={'device_id': self.pk}),
-            _('Cancel Onboarding')
+        self._credential = CredentialSerializer(
+            (
+                domain_credential_private_key,
+                domain_certificate,
+                [self.domain.issuing_ca.credential.get_certificate()] +
+                self.domain.issuing_ca.credential.get_certificate_chain()
+            )
         )
 
-    def render_onboarding_action(self) -> str:
-        """Creates the html hyperlink button for onboarding action.
+    def save(self) -> None:
+        self._credential_model = CredentialModel.save_credential_serializer(
+            credential_serializer=self.credential,
+            credential_type=CredentialModel.CredentialTypeChoice.DOMAIN_CREDENTIAL)
 
-        Returns:
-            str: The html hyperlink for the details-view.
 
-        Raises:
-            UnknownOnboardingProtocolError:
-                Raised when an unknown onboarding protocol was found and thus cannot be rendered appropriately.
-        """
-        if not self.domain:
-            return ''
-        is_manual = self.onboarding_protocol == Device.OnboardingProtocol.MANUAL
-        is_cli = self.onboarding_protocol == Device.OnboardingProtocol.CLI
-        is_client = self.onboarding_protocol == Device.OnboardingProtocol.TP_CLIENT
-        is_browser = self.onboarding_protocol == Device.OnboardingProtocol.BROWSER
-        if is_cli or is_client or is_manual or is_browser:
-            return self._render_manual_onboarding_action()
+        issued_domain_credential = IssuedDomainCredentialModel(
+            issued_domain_credential_certificate=self.credential_model.certificate,
+            device=self.device,
+            domain=self.domain,
+            issuing_ca=self.domain.issuing_ca,
+            credential=self.credential_model
+        )
+        issued_domain_credential.save()
+        self._issued_domain_credential_model = issued_domain_credential
 
-        is_brski = self.onboarding_protocol == Device.OnboardingProtocol.BRSKI
-        is_aoki = self.onboarding_protocol == Device.OnboardingProtocol.AOKI
-        if is_brski or is_aoki:
-            return self._render_zero_touch_onboarding_action()
 
-        return format_html('<span class="text-danger">' + _('Unknown onboarding protocol!') + '</span>')
+class TlsClientCredentialIssuer:
 
-    def _render_zero_touch_onboarding_action(self) -> str:
-        """Renders the device onboarding section for the zero touch onboarding cases.
+    _pseudonym: str = 'Trustpoint Application Credential - TLS Client'
+    _device: DeviceModel
+    _domain: DomainModel
 
-        Returns:
-            str: The html hyperlink for the details-view.
+    _credential: None | CredentialSerializer = None
+    _credential_model: None | CredentialModel = None
+    _issued_application_credential_model: None | IssuedApplicationCertificateModel = None
 
-        Raises:
-            UnknownOnboardingStatusError:
-                Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
-        """
-        if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDED:
-            # TODO (Air): Revoked devices are free to re-onboard, perhaps also delete IDevID from truststore?
-            return self._render_onboarded_revoke()
-        if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_RUNNING:
-            return self._render_running_cancel()
-        if self.device_onboarding_status == DeviceOnboardingStatus.REVOKED:
-            return format_html(
-                '<a href="onboarding/reset/{}/" class="btn btn-info tp-onboarding-btn disabled">{}</a>',
-                self.pk, _('Onboard again')
+    def __init__(self, device: DeviceModel, domain: DomainModel) -> None:
+        self._device = device
+        self._domain = domain
+
+    @property
+    def device(self) -> DeviceModel:
+        return self._device
+
+    @property
+    def domain(self) -> DomainModel:
+        return self._domain
+
+    @property
+    def serial_number(self) -> str:
+        return self.device.serial_number
+
+    @property
+    def domain_component(self) -> str:
+        return self.domain.unique_name
+
+    @property
+    def pseudonym(self) -> str:
+        return self._pseudonym
+
+    @property
+    def credential(self) -> None | CredentialSerializer:
+        return self._credential
+
+    @property
+    def credential_model(self) -> None | CredentialModel:
+        return self._credential_model
+
+    @property
+    def issued_application_credential_model(self) -> None | IssuedApplicationCertificateModel:
+        return self._issued_application_credential_model
+
+    def get_fixed_values(self) -> dict[str, str]:
+        return {
+            'pseudonym': self.pseudonym,
+            'domain_component': self.domain_component,
+            'serial_number': self.serial_number
+        }
+
+    def issue_tls_client_credential(self, common_name: str, validity_days: int) -> None:
+        application_credential_private_key = CryptographyUtils.generate_private_key(domain=self.domain)
+        hash_algorithm = CryptographyUtils.get_hash_algorithm_from_domain(domain=self.domain)
+        one_day = datetime.timedelta(1, 0, 0)
+
+        certificate_builder = x509.CertificateBuilder()
+        certificate_builder = certificate_builder.subject_name(x509.Name([
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, common_name),
+            x509.NameAttribute(x509.NameOID.PSEUDONYM, self.pseudonym),
+            x509.NameAttribute(x509.NameOID.DOMAIN_COMPONENT, self.domain_component),
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number)
+        ]))
+        certificate_builder = certificate_builder.issuer_name(
+            self.domain.issuing_ca.credential.get_certificate().subject)
+        certificate_builder = certificate_builder.not_valid_before(datetime.datetime.now(datetime.UTC))
+        certificate_builder = certificate_builder.not_valid_after(
+            datetime.datetime.now(datetime.UTC) + (one_day * validity_days))
+        certificate_builder = certificate_builder.serial_number(x509.random_serial_number())
+        certificate_builder = certificate_builder.public_key(
+            application_credential_private_key.public_key_serializer.as_crypto())
+
+        certificate_builder = certificate_builder.add_extension(
+            x509.BasicConstraints(ca=False, path_length=None), critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=True,
+                key_cert_sign=False,
+                crl_sign=False,
+                encipher_only=False,
+                decipher_only=False
+            ), critical=True
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(
+                    self.domain.issuing_ca.credential.get_private_key_serializer().public_key_serializer.as_crypto()
+            ),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(application_credential_private_key.public_key_serializer.as_crypto()),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.ExtendedKeyUsage([x509.oid.ExtendedKeyUsageOID.CLIENT_AUTH]), critical=False
+        )
+
+        domain_certificate = certificate_builder.sign(
+            private_key=self.domain.issuing_ca.credential.get_private_key_serializer().as_crypto(),
+            algorithm=hash_algorithm
+        )
+
+        self._credential = CredentialSerializer(
+            (
+                application_credential_private_key,
+                domain_certificate,
+                [self.domain.issuing_ca.credential.get_certificate()] +
+                self.domain.issuing_ca.credential.get_certificate_chain()
             )
-        if self.device_onboarding_status == DeviceOnboardingStatus.NOT_ONBOARDED:
-            return format_html(
-                '<button class="btn btn-success tp-onboarding-btn" disabled>{}</a>',
-                _('Zero-Touch Pending')
-            )
-        if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_FAILED:
-            return format_html(
-                '<a href="onboarding/reset/{}/" class="btn btn-warning tp-onboarding-btn disabled">{}</a>',
-                self.pk, _('Reset Context')
-            )
-        raise UnknownOnboardingStatusError(self.device_onboarding_status)
+        )
 
-    def _render_manual_onboarding_action(self) -> str:
-        """Renders the device onboarding button for manual onboarding cases.
+    def save(self) -> None:
 
-        Returns:
-            str:
-                The html hyperlink for the details-view.
+        self._credential_model = CredentialModel.save_credential_serializer(
+            credential_serializer=self.credential,
+            credential_type=CredentialModel.CredentialTypeChoice.APPLICATION_CREDENTIAL)
 
-        Raises:
-            UnknownOnboardingStatusError:
-                Raised when an unknown onboarding status was found and thus cannot be rendered appropriately.
-        """
-        if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDED:
-            return self._render_onboarded_revoke()
-        if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_RUNNING:
-            return self._render_running_cancel()
-        if self.device_onboarding_status == DeviceOnboardingStatus.NOT_ONBOARDED:
-            return format_html(
-                '<a href="{}" class="btn btn-success tp-onboarding-btn">{}</a>',
-                reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
-                _('Start Onboarding')
-            )
-        if self.device_onboarding_status == DeviceOnboardingStatus.ONBOARDING_FAILED:
-            return format_html(
-                '<a href="{}" class="btn btn-warning tp-onboarding-btn">{}</a>',
-                reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
-                _('Retry Onboarding')
-            )
-        if self.device_onboarding_status == DeviceOnboardingStatus.REVOKED:
-            return format_html(
-                '<a href="{}" class="btn btn-info tp-onboarding-btn">{}</a>',
-                reverse('onboarding:manual-client', kwargs={'device_id': self.pk}),
-                _('Onboard again')
-            )
-        log.error(f'Unknown onboarding status {self.device_onboarding_status}. Failed to render entry in table.')
-        raise UnknownOnboardingStatusError(self.device_onboarding_status)
+        issued_application_credential = IssuedApplicationCertificateModel(
+            issued_application_certificate=self.credential_model.certificate,
+            device=self.device,
+            domain=self.domain,
+            issuing_ca=self.domain.issuing_ca,
+            issued_application_certificate_type=IssuedApplicationCertificateModel.ApplicationCertificateType.TLS_CLIENT,
+            credential=self.credential_model
+        )
+        issued_application_credential.save()
+        self._issued_application_credential_model = issued_application_credential
 
-    @staticmethod
-    def count_devices_by_domain_and_status(domain: DomainModel) -> int:
-        """Returns the number of devices for a given domain, grouped by onboarding status."""
-        return Device.objects.filter(domain=domain) \
-            .values('device_onboarding_status') \
-            .annotate(count=Count('device_onboarding_status'))
+
+class TlsServerCredentialIssuer:
+
+    _pseudonym: str = 'Trustpoint Application Credential - TLS Server'
+    _device: DeviceModel
+    _domain: DomainModel
+
+    _credential: None | CredentialSerializer = None
+    _credential_model: None | CredentialModel = None
+    _issued_application_credential_model: None | IssuedApplicationCertificateModel = None
+
+    def __init__(self, device: DeviceModel, domain: DomainModel) -> None:
+        self._device = device
+        self._domain = domain
+
+    @property
+    def device(self) -> DeviceModel:
+        return self._device
+
+    @property
+    def domain(self) -> DomainModel:
+        return self._domain
+
+    @property
+    def serial_number(self) -> str:
+        return self.device.serial_number
+
+    @property
+    def domain_component(self) -> str:
+        return self.domain.unique_name
+
+    @property
+    def pseudonym(self) -> str:
+        return self._pseudonym
+
+    @property
+    def credential(self) -> None | CredentialSerializer:
+        return self._credential
+
+    @property
+    def credential_model(self) -> None | CredentialModel:
+        return self._credential_model
+
+    @property
+    def issued_application_credential_model(self) -> None | IssuedApplicationCertificateModel:
+        return self._issued_application_credential_model
+
+    def get_fixed_values(self) -> dict[str, str]:
+        return {
+            'pseudonym': self.pseudonym,
+            'domain_component': self.domain_component,
+            'serial_number': self.serial_number
+        }
+
+    def issue_tls_server_credential(
+            self,
+            common_name: str,
+            ipv4_addresses: list[ipaddress.IPv4Address],
+            ipv6_addresses: list[ipaddress.IPv6Address],
+            domain_names: list[str],
+            validity_days: int) -> None:
+        application_credential_private_key = CryptographyUtils.generate_private_key(domain=self.domain)
+        hash_algorithm = CryptographyUtils.get_hash_algorithm_from_domain(domain=self.domain)
+        one_day = datetime.timedelta(1, 0, 0)
+
+        certificate_builder = x509.CertificateBuilder()
+        certificate_builder = certificate_builder.subject_name(x509.Name([
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, common_name),
+            x509.NameAttribute(x509.NameOID.PSEUDONYM, self.pseudonym),
+            x509.NameAttribute(x509.NameOID.DOMAIN_COMPONENT, self.domain_component),
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number)
+        ]))
+        certificate_builder = certificate_builder.issuer_name(
+            self.domain.issuing_ca.credential.get_certificate().subject)
+        certificate_builder = certificate_builder.not_valid_before(datetime.datetime.now(datetime.UTC))
+        certificate_builder = certificate_builder.not_valid_after(
+            datetime.datetime.now(datetime.UTC) + (one_day * validity_days))
+        certificate_builder = certificate_builder.serial_number(x509.random_serial_number())
+        certificate_builder = certificate_builder.public_key(
+            application_credential_private_key.public_key_serializer.as_crypto())
+
+        certificate_builder = certificate_builder.add_extension(
+            x509.BasicConstraints(ca=False, path_length=None), critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=True,
+                key_cert_sign=False,
+                crl_sign=False,
+                encipher_only=False,
+                decipher_only=False
+            ), critical=True
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(
+                    self.domain.issuing_ca.credential.get_private_key_serializer().public_key_serializer.as_crypto()
+            ),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(application_credential_private_key.public_key_serializer.as_crypto()),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.ExtendedKeyUsage([x509.oid.ExtendedKeyUsageOID.CLIENT_AUTH]), critical=False
+        )
+
+        ipv4_addresses = [x509.IPAddress(ipv4_address) for ipv4_address in ipv4_addresses]
+        ipv6_addresses = [x509.IPAddress(ipv6_address) for ipv6_address in ipv6_addresses]
+        domain_names = [x509.DNSName(domain_name) for domain_name in domain_names]
+
+        certificate_builder = certificate_builder.add_extension(
+            x509.SubjectAlternativeName(
+                ipv4_addresses + ipv6_addresses + domain_names
+            ),
+            critical=False
+        )
+
+        domain_certificate = certificate_builder.sign(
+            private_key=self.domain.issuing_ca.credential.get_private_key_serializer().as_crypto(),
+            algorithm=hash_algorithm
+        )
+
+        self._credential = CredentialSerializer(
+            (
+                application_credential_private_key,
+                domain_certificate,
+                [self.domain.issuing_ca.credential.get_certificate()] +
+                self.domain.issuing_ca.credential.get_certificate_chain()
+            )
+        )
+
+    def save(self) -> None:
+
+        self._credential_model = CredentialModel.save_credential_serializer(
+            credential_serializer=self.credential,
+            credential_type=CredentialModel.CredentialTypeChoice.APPLICATION_CREDENTIAL)
+
+        issued_application_credential = IssuedApplicationCertificateModel(
+            issued_application_certificate=self.credential_model.certificate,
+            device=self.device,
+            domain=self.domain,
+            issuing_ca=self.domain.issuing_ca,
+            issued_application_certificate_type=IssuedApplicationCertificateModel.ApplicationCertificateType.TLS_SERVER,
+            credential=self.credential_model
+        )
+        issued_application_credential.save()
+        self._issued_application_credential_model = issued_application_credential
+

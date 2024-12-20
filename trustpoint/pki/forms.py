@@ -4,13 +4,12 @@ from django import forms
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-from pki.initializer import (
-    TrustStoreInitializer,
-    UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer,
-    UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer,
-)
-from pki.models import CMPModel, DomainModel, ESTModel, IssuingCaModel
-from pki.validator.field import UniqueNameValidator
+from core.serializer import CredentialSerializer, CertificateSerializer, PrivateKeySerializer, \
+    CertificateCollectionSerializer
+from trustpoint.views.base import LoggerMixin
+from pki.models import CertificateModel, IssuingCaModel
+from core.validator.field import UniqueNameValidator
+from cryptography.hazmat.primitives import hashes
 
 
 class CertificateDownloadForm(forms.Form):
@@ -45,7 +44,6 @@ class CertificateDownloadForm(forms.Form):
         initial='pem',
         required=True)
 
-
 class IssuingCaAddMethodSelectForm(forms.Form):
 
     method_select = forms.ChoiceField(
@@ -72,7 +70,7 @@ class IssuingCaFileTypeSelectForm(forms.Form):
         required=True)
 
 
-class IssuingCaAddFileImportPkcs12Form(forms.Form):
+class IssuingCaAddFileImportPkcs12Form(LoggerMixin, forms.Form):
 
     unique_name = forms.CharField(
         max_length=256,
@@ -88,20 +86,17 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
         label=_('[Optional] PKCS#12 password'),
         required=False)
 
-    auto_crl = forms.BooleanField(label=_('Generate CRL upon certificate revocation.'), initial=True, required=False)
-
+    @LoggerMixin.log_exceptions
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']
         if IssuingCaModel.objects.filter(unique_name=unique_name).exists():
             raise ValidationError('Unique name is already taken. Choose another one.')
         return unique_name
 
+    @LoggerMixin.log_exceptions
     def clean(self):
         cleaned_data = super().clean()
         unique_name = cleaned_data.get('unique_name')
-        auto_crl = cleaned_data.get('auto_crl')
-        if unique_name is None:
-            raise ValidationError('No Unique Name was specified.')
 
         try:
             pkcs12_raw = cleaned_data.get('pkcs12_file').read()
@@ -121,21 +116,28 @@ class IssuingCaAddFileImportPkcs12Form(forms.Form):
             pkcs12_password = None
 
         try:
-            initializer = UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer(
-                unique_name=cleaned_data['unique_name'],
-                p12=pkcs12_raw,
-                password=pkcs12_password,
-                auto_crl=auto_crl)
+            credential_serializer = CredentialSerializer(pkcs12_raw, pkcs12_password)
         except Exception as exception:
-            raise ValidationError(
-                'Failed to load PKCS#12 file. Either malformed file or wrong password.',
-                code='pkcs12-loading-failed') from exception
+            err_msg = _('Failed to parse and load the uploaded file. Either wrong password or corrupted file.')
+            raise ValidationError(err_msg) from exception
 
-        initializer.initialize()
-        initializer.save()
+        try:
+            IssuingCaModel.create_new_issuing_ca(
+                unique_name=unique_name,
+                credential_serializer=credential_serializer,
+                issuing_ca_type=IssuingCaModel.IssuingCaTypeChoice.LOCAL_UNPROTECTED
+            )
+        # TODO(AlexHx8472): Filter credentials and check if any issuing ca corresponds to it.
+        # TODO(AlexHx8472): If it does get and display the name of the issuing ca in the message.
+        # TODO(AlexHx8472): If not, give information about the credential usage that is already in the db.
+        except ValidationError:
+            raise
+        except Exception as exception:
+            err_msg = str(exception)
+            raise ValidationError(err_msg) from exception
 
 
-class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
+class IssuingCaAddFileImportSeparateFilesForm(LoggerMixin, forms.Form):
 
     unique_name = forms.CharField(
         max_length=256,
@@ -149,229 +151,125 @@ class IssuingCaAddFileImportSeparateFilesForm(forms.Form):
         widget=forms.PasswordInput(attrs={'autocomplete': 'one-time-code'}),
         label=_('[Optional] Private Key File Password'),
         required=False)
-    issuing_ca_certificate = forms.FileField(
+    ca_certificate = forms.FileField(
         label=_('Issuing CA Certificate (.cer, .der, .pem, .p7b, .p7c)'),
         required=True)
-    certificate_chain = forms.FileField(
-        label=_('[Optional] Certificate Chain (.pem, .p7b, .p7c) '), required=False)
-    
-    auto_crl = forms.BooleanField(label=_('Generate CRL upon certificate revocation.'), initial=True, required=False)
+    ca_certificate_chain = forms.FileField(
+        label=_('[Optional] Certificate Chain (.pem, .p7b, .p7c).'), required=False)
 
+    @LoggerMixin.log_exceptions
     def clean_unique_name(self) -> str:
         unique_name = self.cleaned_data['unique_name']
         if IssuingCaModel.objects.filter(unique_name=unique_name).exists():
-            raise ValidationError('Unique name is already taken. Choose another one.')
+            raise ValidationError('Issuing CA with the provided name already exists.')
         return unique_name
 
-    def clean(self):
-        cleaned_data = super().clean()
-        unique_name = cleaned_data.get('unique_name')
-        auto_crl = cleaned_data.get('auto_crl')
-        if unique_name is None:
-            return
+    @LoggerMixin.log_exceptions
+    def clean_private_key_file(self) -> PrivateKeySerializer:
+        private_key_file = self.cleaned_data.get('private_key_file')
+        private_key_file_password = self.data.get('private_key_file_password') \
+            if self.data.get('private_key_file_password') else None
+
+        print('pw type')
+        print(private_key_file_password)
+
+        if not private_key_file:
+            err_msg = 'No private key file was uploaded.'
+            raise forms.ValidationError(err_msg)
+
+        # max size: 64 kiB
+        max_size = 1024 * 64
+        if private_key_file.size > max_size:
+            err_msg = 'Private key file is too large, max. 64 kiB.'
+            raise ValidationError(err_msg)
 
         try:
-            # This should not throw any exceptions, even if invalid data was sent via HTTP POST request.
-            # However, just in case.
-            private_key_file_raw = cleaned_data.get('private_key_file').read()
-            certificate_chain_raw = cleaned_data.get('certificate_chain')
+            return PrivateKeySerializer(private_key_file.read(), private_key_file_password)
+        except Exception as exception:
+            err_msg = _('Failed to parse the private key file. Either wrong password or file corrupted.')
+            raise ValidationError(err_msg) from exception
 
-            if certificate_chain_raw is not None:
-                certificate_chain_raw = certificate_chain_raw.read()
+    @LoggerMixin.log_exceptions
+    def clean_ca_certificate(self) -> CertificateSerializer:
+        ca_certificate = self.cleaned_data['ca_certificate']
 
-            issuing_ca_cert_raw = cleaned_data.get('issuing_ca_certificate').read()
-            private_key_file_password = cleaned_data.get('private_key_file_password')
-        except Exception:
-            raise ValidationError(
-                _('Unexpected error occurred while trying to get file contents. Please see logs for further details.'),
-                code='unexpected-error')
+        if not ca_certificate:
+            err_msg = 'No Issuing CA file was uploaded.'
+            raise forms.ValidationError(err_msg)
 
-        if private_key_file_password:
+        # max size: 64 kiB
+        max_size = 1024 * 64
+        if ca_certificate.size > max_size:
+            err_msg = 'Issuing CA file is too large, max. 64 kiB.'
+            raise ValidationError(err_msg)
+
+
+        try:
+            certificate_serializer = CertificateSerializer(ca_certificate.read())
+            print(certificate_serializer)
+        except Exception as exception:
+            err_msg = _('Failed to parse the Issuing CA certificate. Seems to be corrupted.')
+            raise ValidationError(err_msg) from exception
+        print(certificate_serializer)
+
+        certificate_in_db = CertificateModel.get_cert_by_sha256_fingerprint(
+            certificate_serializer.as_crypto().fingerprint(algorithm=hashes.SHA256()).hex())
+        if certificate_in_db:
+            issuing_ca_in_db = IssuingCaModel.objects.get(certificate=certificate_in_db)
+            if issuing_ca_in_db:
+                err_msg = (
+                    f'Issuing CA {issuing_ca_in_db.unique_name} is already configured '
+                    'with the same Issuing CA certificate.')
+                raise ValidationError(err_msg)
+
+        return certificate_serializer
+
+    @LoggerMixin.log_exceptions
+    def clean_ca_certificate_chain(self) -> None | CertificateCollectionSerializer:
+        ca_certificate_chain = self.cleaned_data['ca_certificate_chain']
+
+        # TODO(AlexHx8472): Validate if full chain is available
+        if ca_certificate_chain:
             try:
-                private_key_file_password = private_key_file_password.encode()
-            except Exception:
-                raise ValidationError('The Private Key File Password contains invalid data, that cannot be encoded in UTF-8.')
-        else:
-            private_key_file_password = None
+                return CertificateCollectionSerializer(ca_certificate_chain.read())
+            except Exception as exception:
+                raise ValidationError('Failed to parse the Issuing CA certificate chain. Seems to be corrupted.')
 
-        try:
-            initializer = UnprotectedFileImportLocalIssuingCaFromSeparateFilesInitializer(
-                unique_name=cleaned_data['unique_name'],
-                auto_crl=auto_crl,
-                private_key_raw=private_key_file_raw,
-                password=private_key_file_password,
-                issuing_ca_certificate_raw=issuing_ca_cert_raw,
-                additional_certificates_raw=certificate_chain_raw)
-        except Exception as e:
-            raise ValidationError(
-                'Failed to load CA from files. Either malformed file or wrong password.',
-                code='pkcs12-loading-failed')
-
-        initializer.initialize()
-        initializer.save()
+        return None
 
 
-class CRLGenerationTimeDeltaForm(forms.ModelForm):
-
-    class Meta:
-        model = IssuingCaModel
-        fields = ['next_crl_generation_time',]
-        labels = {'next_crl_generation_time': '',}
-
-
-class CRLAutoGenerationForm(forms.ModelForm):
-
-    class Meta:
-        model = IssuingCaModel
-        fields = ['auto_crl']
-
-
-class DomainBaseForm(forms.ModelForm):
-    """Base form for DomainModel, containing shared logic and fields."""
-    class Meta:
-        model = DomainModel
-        fields = ['unique_name', 'issuing_ca']  # Base fields
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.fields['unique_name'].label += UniqueNameValidator.form_label
-        self.fields['issuing_ca'].required = True
-
-    def save(self, commit=True):
-        domain_instance = super().save(commit=False)
-
-        if commit:
-            domain_instance.save()
-
-        return domain_instance
-
-
-class DomainCreateForm(DomainBaseForm):
-    """Form for creating DomainModel instances, includes additional fields."""
-    # TODO: validate url_path_segment
-
-    class Meta(DomainBaseForm.Meta):
-        fields = DomainBaseForm.Meta.fields
-
-
-class DomainUpdateForm(DomainBaseForm):
-    """Form for updating DomainModel instances."""
-
-    class Meta(DomainBaseForm.Meta):
-        fields = DomainBaseForm.Meta.fields
-
-
-class TrustStoreAddForm(forms.Form):
-
-    unique_name = forms.CharField(
-        max_length=256,
-        label=_('Unique Name') + ' ' + UniqueNameValidator.form_label,
-        widget=forms.TextInput(attrs={'autocomplete': 'nope'}),
-        required=True,
-        validators=[UniqueNameValidator()])
-
-    trust_store_file = forms.FileField(label=_('PEM or PKCS#7 File'), required=True)
-
-    def clean_unique_name(self) -> str:
-        unique_name = self.cleaned_data['unique_name']
-        if IssuingCaModel.objects.filter(unique_name=unique_name).exists():
-            raise ValidationError('Unique name is already taken. Choose another one.')
-        return unique_name
-
+    @LoggerMixin.log_exceptions
     def clean(self):
-        cleaned_data = super().clean()
-        unique_name = cleaned_data.get('unique_name')
-        if unique_name is None:
-            return
-
         try:
-            # This should not throw any exceptions, even if invalid data was sent via HTTP POST request.
-            # However, just in case.
-            trust_store_file = cleaned_data.get('trust_store_file').read()
-        except Exception:
-            raise ValidationError(
-                _('Unexpected error occurred while trying to get file contents. Please see logs for further details.'),
-                code='unexpected-error')
+            cleaned_data = super().clean()
+            unique_name = cleaned_data.get('unique_name')
+            private_key_file = cleaned_data.get('private_key_file')
+            ca_certificate = cleaned_data.get('ca_certificate')
+            ca_certificate_chain = cleaned_data.get('ca_certificate_chain') \
+                if cleaned_data.get('ca_certificate_chain') else None
 
-        try:
-            initializer = TrustStoreInitializer(
-                unique_name=cleaned_data['unique_name'],
-                trust_store=trust_store_file)
-        except Exception as e:
-            raise ValidationError(
-                'Failed to load file. Seems to be malformed.',
-                code='trust-store-file-loading-failed')
-        try:
-            initializer.save()
-        except Exception:
-            raise ValidationError('Unexpected Error. Failed to save validated Trust Store in DB.')
+            if not unique_name or not private_key_file or not ca_certificate:
+                return
+
+            credential_serializer = CredentialSerializer(
+                (
+                    private_key_file,
+                    ca_certificate,
+                    ca_certificate_chain
+                )
+            )
 
 
-class TruststoresDownloadForm(forms.Form):
-    cert_file_container = forms.ChoiceField(
-        label=_('Select Truststore Container Type'),
-        choices=[
-            ('single_file', _('Single File')),
-            ('zip', _('Separate Certificate Files (as .zip file)')),
-            ('tar_gz', _('Separate Certificate Files (as .tar.gz file)'))
-        ],
-        initial='single_file',
-        required=True)
-
-    cert_file_format = forms.ChoiceField(
-        label=_('Select Truststore File Format'),
-        choices=[
-            ('pem', _('PEM (.pem, .crt, .ca-bundle)')),
-            ('der', _('DER (.der, .cer)')),
-            ('pkcs7_pem', _('PKCS#7 (PEM) (.p7b, .p7c, .keystore)')),
-            ('pkcs7_der', _('PKCS#7 (DER) (.p7b, .p7c, .keystore)'))
-        ],
-        initial='pem',
-        required=True)
-
-
-class CMPForm(forms.ModelForm):
-    class Meta:
-        model = CMPModel
-        fields = ['operation_modes']
-
-    operation_modes = forms.MultipleChoiceField(
-        choices=CMPModel.Operations.choices,
-        widget=forms.CheckboxSelectMultiple,
-        required=False,
-        label="Select Operations"
-    )
-
-    def clean(self):
-        cleaned_data = super().clean()
-
-    def save(self, commit=True):
-        """Override save to store the operations as a comma-separated string."""
-        instance = super().save(commit=False)
-        operations_list = self.cleaned_data['operation_modes']
-        instance.set_operation_list(operations_list)
-        if commit:
-            instance.save()
-        return instance
-
-
-class ESTForm(forms.ModelForm):
-    class Meta:
-        model = ESTModel
-        fields = ['operation_modes']
-
-    operation_modes = forms.MultipleChoiceField(
-        choices=ESTModel.Operations.choices,
-        widget=forms.CheckboxSelectMultiple,
-        required=False,
-        label="Select Operations"
-    )
-
-    def save(self, commit=True):
-        """Override save to store the operations as a comma-separated string."""
-        instance = super().save(commit=False)
-        operations_list = self.cleaned_data['operation_modes']
-        instance.set_operation_list(operations_list)
-        if commit:
-            instance.save()
-        return instance
+            IssuingCaModel.create_new_issuing_ca(
+                unique_name=unique_name,
+                credential_serializer=credential_serializer,
+                issuing_ca_type=IssuingCaModel.IssuingCaTypeChoice.LOCAL_UNPROTECTED
+            )
+        # TODO(AlexHx8472): Filter credentials and check if any issuing ca corresponds to it.
+        # TODO(AlexHx8472): If it does get and display the name of the issuing ca in the message.
+        # TODO(AlexHx8472): If not, give information about the credential usage that is already in the db.
+        except ValidationError:
+            raise
+        except Exception as exception:
+            err_msg = str(exception)
+            raise ValidationError(err_msg) from exception

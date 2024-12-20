@@ -22,7 +22,7 @@ class NotificationTable(tables.Table):
     """Table representation of the Notification model."""
 
     class Meta:
-        """Table meta class configurations."""
+        """Table metaclass configurations."""
 
         model = NotificationModel
         template_name = 'django_tables2/bootstrap5.html'

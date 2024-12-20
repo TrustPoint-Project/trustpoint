@@ -1,5 +1,3 @@
-import os
-
 from django.apps import AppConfig
 
 
@@ -8,4 +6,7 @@ class PkiConfig(AppConfig):
     name = 'pki'
 
     def ready(self) -> None:
-        import pki.signals
+        from pki.signals.issuing_ca import (
+            delete_related_credential_certificate_chain_order_records,
+            delete_related_credential_record
+        )
