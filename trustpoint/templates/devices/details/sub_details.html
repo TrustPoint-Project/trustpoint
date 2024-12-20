@@ -1,0 +1,51 @@
+{% load i18n %}
+{% block sub_details %}
+    {% if short %}
+        <h2 class="text-start">{{ device.device_name }}</h2>
+        <hr class="hr-m">
+    {% endif %}
+    <ul class="tp-kvp-list">
+        <li>
+            <div>{% trans 'Serial Number' %}</div>
+            <div>{{ device.serial_number }}</div>
+        </li>
+        <li>
+            <div>{% trans 'Creation date' %}</div>
+            <div>{{ device.created_at }}</div>
+        </li>
+        {% if short %}
+        <li>
+            <div>{% trans 'Domain' %}</div>
+            <div>
+                {% if device.domain %}
+                    <a href="{% url 'pki:domains-detail' pk=device.domain.id %}">
+                        {{ device.domain.unique_name }}
+                    </a>
+                {% else %}
+                    {% trans 'This device is not part of any domain.' %}
+                {% endif %}
+            </div>
+        </li>
+        {% endif %}
+        <li>
+            <div>{% trans 'Device onboarding status' %}</div>
+            <div>{{ device.get_onboarding_status_display }}</div>
+        </li>
+    </ul>
+
+    {% if not short %}
+    <hr class="hr-m">
+    <ul class="tp-kvp-list">
+        <div>{% trans 'Domain' %}</div>
+        <div>
+            {% if device.domain %}
+                <a href="{% url 'pki:domains-detail' pk=device.domain.id %}">
+                    {{ device.domain.unique_name }}
+                </a>
+            {% else %}
+            <div>{% trans 'This device is not part of any domain.' %}</div>
+            {% endif %}
+        </div>
+    </ul>
+    {% endif %}
+{% endblock sub_details %}
