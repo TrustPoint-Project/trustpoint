@@ -1,6 +1,5 @@
 {% extends 'trustpoint/base.html' %}
 {% load i18n %}
-{% load crispy_forms_filters %}
 
 {% block content %}
 
@@ -8,18 +7,18 @@
 
                 <div class="card-header">
                     <div class="">
-                        <h1>{% trans "Device Details" %}</h1>
+                        <h1>{% trans "Device details" %}</h1>
                     </div>
                 </div>
                 <div class="card-body">
-
+                    {% include 'devices/details/sub_details.html' with short=False %}
                 </div>
 
                 <div class="card-footer">
                     <div class="tp-card-btn-footer">
                         <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
-                        <a href="{% url 'devices:config' pk=device.pk%}" class="btn btn-secondary">{% trans 'Config' %}</a>
                         <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
+                        <a href="{% url 'devices:config' pk=device.pk%}" class="btn btn-secondary">{% trans 'Config' %}</a>
                     </div>
                 </div>
         </div>

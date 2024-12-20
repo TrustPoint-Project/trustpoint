@@ -14,9 +14,9 @@
                     <div class="tp-card-centered-content">           
                         <div class="card-body">
                             <h3>{% trans "Domains" %}</h3>
-                            <hr>
-                            {% if issuing_ca.domain.all %}
-                                {% for domain in issuing_ca.domain.all %}
+                            <hr class="hr-m">
+                            {% if issuing_ca.domain_set.all %} {# TODO #}
+                                {% for domain in issuing_ca.domain_set.all %}
                                     <li class="tp-card-split">
                                         {{ domain.unique_name }}
                                         <div>
@@ -31,9 +31,11 @@
                                     </li>
                                 {% endfor %}
                             {% else %}
-                                <li class="list-group-item text-muted">
-                                    {% trans "No associated domains" %}
-                                </li>
+                                <div class="tp-kvp-list">   
+                                    <div class="text-muted">
+                                        {% trans "No associated domains" %}
+                                    </div>
+                                </div>
                             {% endif %}
 
                         </div>
@@ -42,23 +44,24 @@
                     <div class="tp-card-centered-content">
                         <div class="card-body">
                             <h3>{% trans 'General' %}</h3>
-                            <hr>
-                            <div class="tp-card-split">
-                                <div>{% trans 'Type' %}</div>
-                                <div>{{ issuing_ca.get_issuing_ca_type_display }}</div>
-                            </div>
-                            <div class="tp-card-split">
-                                <div>{% trans 'Updated' %}</div>
-                                <div>{{ issuing_ca.updated_at }}</div>
-                            </div>
-                            <div class="tp-card-split">
-                                <div>{% trans 'Created' %}</div>
-                                <div>{{ issuing_ca.created_at }}</div>
-                            </div>
-                            
-                            <div class="tp-card-split">
-                                <div>{% trans 'Certificates Issued:' %}</div>
-                                <div>-------------------- TODO --------------------</div>
+                            <hr class="hr-m">
+                            <div class="tp-kvp-list">
+                                <div>
+                                    <div>{% trans 'Type' %}</div>
+                                    <div>{{ issuing_ca.get_issuing_ca_type_display }}</div>
+                                </div>
+                                <div>
+                                    <div>{% trans 'Updated' %}</div>
+                                    <div>{{ issuing_ca.updated_at }}</div>
+                                </div>
+                                <div>
+                                    <div>{% trans 'Created' %}</div>
+                                    <div>{{ issuing_ca.created_at }}</div>
+                                </div>
+                                <div>
+                                    <div>{% trans 'Certificates Issued:' %}</div>
+                                    <div>-------------------- TODO --------------------</div>
+                                </div>
                             </div>
                         </div>
                     </div>

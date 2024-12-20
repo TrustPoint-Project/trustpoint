@@ -201,8 +201,8 @@ class DeviceDomainCredentialsTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn w-100">{}</a>',
-                           record.pk, _('Details'))
+        return format_html('<a href="/pki/certificates/details/{}/" class="btn btn-primary tp-table-btn w-100">{}</a>',
+                           record.issued_domain_credential_certificate.pk, _('Details'))
 
     @staticmethod
     def render_revoke(record: IssuedDomainCredentialModel) -> SafeString:
@@ -288,8 +288,8 @@ class DeviceApplicationCertificatesTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn w-100">{}</a>',
-                           record.pk, _('Details'))
+        return format_html('<a href="/pki/certificates/details/{}/" class="btn btn-primary tp-table-btn w-100">{}</a>',
+                           record.issued_application_certificate.pk, _('Details'))
 
     @staticmethod
     def render_revoke(record: IssuedApplicationCertificateModel) -> SafeString:
