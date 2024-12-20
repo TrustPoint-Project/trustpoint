@@ -5,33 +5,30 @@ from __future__ import annotations
 from django_tables2 import SingleTableView  # type: ignore[import-untyped]
 from django.views.generic.edit import CreateView, FormView  # type: ignore[import-untyped]
 from django.urls import reverse_lazy, reverse   # type: ignore[import-untyped]
-from django.views.generic.base import RedirectView, TemplateView  # type: ignore[import-untyped]
+from django.views.generic.base import RedirectView, TemplateView # type: ignore[import-untyped]
 from django.views.generic.detail import BaseDetailView, DetailView  # type: ignore[import-untyped]
 from django.http import FileResponse, Http404   # type: ignore[import-untyped]
 from django.contrib import messages # type: ignore[import-untyped]
-from django.shortcuts import redirect   # type: ignore[import-untyped]
+from django.shortcuts import redirect, render   # type: ignore[import-untyped]
 from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
 
 from core.serializer import CredentialSerializer
-from devices.forms import IssueTlsClientCredentialForm, IssueTlsServerCredentialForm, IssueDomainCredentialForm
+from devices.forms import IssueDomainCredentialForm, CredentialDownloadForm, IssueTlsClientCredentialForm, IssueTlsServerCredentialForm
 from trustpoint.views.base import TpLoginRequiredMixin
 from core.validator.field import UniqueNameValidator
-from devices.models import DeviceModel, IssuedDomainCredentialModel, IssuedApplicationCertificateModel
+from devices.models import IssuedDomainCredentialModel
 from devices.tables import DeviceTable, DeviceDomainCredentialsTable, DeviceApplicationCertificatesTable
 from typing import TYPE_CHECKING
 import io
-from core.file_builder.archiver import Archiver
 from core.file_builder.enum import ArchiveFormat
-from cryptography.x509.oid import NameOID
 from devices.models import DeviceModel, IssuedApplicationCertificateModel
+
+from pki.models.credential import CredentialModel
 
 if TYPE_CHECKING:
     from typing import ClassVar
     from django.http import HttpResponse    # type: ignore[import-untyped]
     from django.forms import BaseModelForm  # type: ignore[import-untyped]
-
-
-ISSUE_TLS_CLIENT_SESSION_KEY = 'issue_tls_client_credential_form_data'
 
 
 class DevicesRedirectView(TpLoginRequiredMixin, RedirectView):
@@ -94,7 +91,7 @@ class DeviceConfigureView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
     context_object_name = 'device'
 
 
-class DeviceManualOnboardingView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+class DeviceManualOnboardingIssueDomainCredentialView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
 
     http_method_names = ['get', 'post']
 
@@ -108,474 +105,308 @@ class DeviceManualOnboardingView(DeviceContextMixin, TpLoginRequiredMixin, Detai
         domain_credential_issuer = self.get_object().get_domain_credential_issuer()
         return initial | domain_credential_issuer.get_fixed_values()
 
-    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse | FileResponse:
+    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse:
         device = self.get_object()
-
-        try:
-            file_format = CredentialSerializer.FileFormat(self.request.POST.get('file_format'))
-        except ValueError:
-            raise Http404
 
         domain_credential_issuer = device.get_domain_credential_issuer()
         domain_credential_issuer.issue_domain_credential()
-
-        password = self.request.POST.get('password').encode()
-
-        if file_format == CredentialSerializer.FileFormat.PKCS12:
-            response = FileResponse(
-                io.BytesIO(domain_credential_issuer.issued_domain_credential.as_pkcs12(password=password)),
-                content_type='application/pkcs12',
-                as_attachment=True,
-                filename=f'trustpoint-domain-credential-{device.unique_name}.p12')
-
-        elif file_format == CredentialSerializer.FileFormat.PEM_ZIP:
-            response = FileResponse(
-                io.BytesIO(domain_credential_issuer.issued_domain_credential.as_pem_zip(password=password)),
-                content_type=ArchiveFormat.ZIP.mime_type,
-                as_attachment=True,
-                filename=f'trustpoint-domain-credential-{device.unique_name}{ArchiveFormat.ZIP.file_extension}'
-            )
-
-        elif file_format == CredentialSerializer.FileFormat.PEM_TAR_GZ:
-            response = FileResponse(
-                io.BytesIO(domain_credential_issuer.issued_domain_credential.as_pem_tar_gz(password=password)),
-                content_type=ArchiveFormat.TAR_GZ.mime_type,
-                as_attachment=True,
-                filename=f'trustpoint-domain-credential-{device.unique_name}{ArchiveFormat.TAR_GZ.file_extension}')
-
-        else:
-            messages.error(
-                self.request,
-                message=_(f'Error occurred. Unknown file format found.')
-            )
-            return self.get(*args, **kwargs)
+        domain_credential_issuer.save()
+        domain_credential_issuer.device.onboarding_status = DeviceModel.OnboardingStatus.ONBOARDED
+        domain_credential_issuer.device.save()
 
         messages.success(
             self.request,
-            message=(
-                f'Successfully issued domain credential for device {device.unique_name} '
-                f'and domain {device.domain.unique_name}')
-        )
-        return response
+            'Successfully issued a domain credential for device '
+            f'{domain_credential_issuer.device.unique_name}')
+
+        return redirect(
+            reverse_lazy(
+                'devices:certificate_lifecycle_management',
+                kwargs={'pk': device.id}))
+
+
+class DeviceDomainCredentialDownloadView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+
+    http_method_names = ['get', 'post']
+
+    model = IssuedDomainCredentialModel
+    template_name = 'devices/credentials/credential_download.html'
+    form_class = CredentialDownloadForm
+    context_object_name = 'credential'
+
+    def get_context_data(self, form, **kwargs: dict) -> dict:
+        credential = self.get_object().credential
+        context = super().get_context_data(form=form, **kwargs)
+        if credential.credential_type == CredentialModel.CredentialTypeChoice.DOMAIN_CREDENTIAL:
+            context['credential_type'] = CredentialModel.CredentialTypeChoice.DOMAIN_CREDENTIAL.name.replace(
+                '_', ' ').title()
+        else:
+            raise Http404
+        domain_credential_issuer = self.get_object().device.get_domain_credential_issuer()
+        context = context | domain_credential_issuer.get_fixed_values()
+
+        context['FileFormat'] = CredentialSerializer.FileFormat.__members__
+        return context
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse | FileResponse:
+        form = self.get_form()
+        self.object = self.get_object()
+
+        if form.is_valid():
+
+            password = self.request.POST.get('password').encode()
+
+            try:
+                file_format = CredentialSerializer.FileFormat(self.request.POST.get('file_format'))
+            except ValueError:
+                raise Http404
+
+            credential_model = self.get_object().credential
+            credential_serializer = credential_model.get_credential_serializer()
+
+            if file_format == CredentialSerializer.FileFormat.PKCS12:
+                response = FileResponse(
+                    io.BytesIO(credential_serializer.as_pkcs12(password=password)),
+                    content_type='application/pkcs12',
+                    as_attachment=True,
+                    filename=f'trustpoint-domain-credential.p12')
+
+            elif file_format == CredentialSerializer.FileFormat.PEM_ZIP:
+                response = FileResponse(
+                    io.BytesIO(credential_serializer.as_pem_zip(password=password)),
+                    content_type=ArchiveFormat.ZIP.mime_type,
+                    as_attachment=True,
+                    filename=f'trustpoint-domain-credential{ArchiveFormat.ZIP.file_extension}'
+                )
+
+            elif file_format == CredentialSerializer.FileFormat.PEM_TAR_GZ:
+                response = FileResponse(
+                    io.BytesIO(credential_serializer.as_pem_tar_gz(password=password)),
+                    content_type=ArchiveFormat.TAR_GZ.mime_type,
+                    as_attachment=True,
+                    filename=f'trustpoint-domain-credential{ArchiveFormat.TAR_GZ.file_extension}')
+
+            else:
+                raise Http404
+
+            return response
+
+        else:
+            return self.form_invalid(form)
+
+
+class DeviceApplicationCredentialDownloadView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+
+    http_method_names = ['get', 'post']
+
+    model = IssuedApplicationCertificateModel
+    template_name = 'devices/credentials/credential_download.html'
+    form_class = CredentialDownloadForm
+    context_object_name = 'credential'
+
+    def get_context_data(self, **kwargs: dict) -> dict:
+        credential = self.get_object().credential
+        context = super().get_context_data(**kwargs)
+        if credential.credential_type == CredentialModel.CredentialTypeChoice.APPLICATION_CREDENTIAL:
+            credential_type = IssuedApplicationCertificateModel.ApplicationCertificateType(
+                self.get_object().issued_application_certificate_type
+            )
+            context['credential_type'] = credential_type.name.replace('_', ' ').title() + ' Credential'
+        else:
+            raise Http404
+        application_credential_issuer = self.get_object().device.get_tls_client_credential_issuer()
+        context = context | application_credential_issuer.get_fixed_values()
+        context['common_name'] = self.object.credential.certificate.common_name
+
+        context['FileFormat'] = CredentialSerializer.FileFormat.__members__
+        return context
+
+    def form_invalid(self, form):
+        return self.render_to_response(super().get_context_data(form=form))
+
+    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse | FileResponse:
+        self.object = self.get_object()
+        form = self.get_form()
+
+        if form.is_valid():
+
+            password = self.request.POST.get('password').encode()
+
+            try:
+                file_format = CredentialSerializer.FileFormat(self.request.POST.get('file_format'))
+            except ValueError:
+                raise Http404
+
+            credential_model = self.get_object().credential
+            credential_serializer = credential_model.get_credential_serializer()
+
+            credential_type = IssuedApplicationCertificateModel.ApplicationCertificateType(
+                self.get_object().issued_application_certificate_type
+            )
+            credential_type_name = credential_type.name.replace('_', '-').lower()
+
+            if file_format == CredentialSerializer.FileFormat.PKCS12:
+                response = FileResponse(
+                    io.BytesIO(credential_serializer.as_pkcs12(password=password)),
+                    content_type='application/pkcs12',
+                    as_attachment=True,
+                    filename=f'trustpoint-{credential_type_name}-credential.p12')
+
+            elif file_format == CredentialSerializer.FileFormat.PEM_ZIP:
+                response = FileResponse(
+                    io.BytesIO(credential_serializer.as_pem_zip(password=password)),
+                    content_type=ArchiveFormat.ZIP.mime_type,
+                    as_attachment=True,
+                    filename=f'trustpoint-{credential_type_name}-credential{ArchiveFormat.ZIP.file_extension}'
+                )
+
+            elif file_format == CredentialSerializer.FileFormat.PEM_TAR_GZ:
+                response = FileResponse(
+                    io.BytesIO(credential_serializer.as_pem_tar_gz(password=password)),
+                    content_type=ArchiveFormat.TAR_GZ.mime_type,
+                    as_attachment=True,
+                    filename=f'trustpoint-{credential_type_name}-credential{ArchiveFormat.TAR_GZ.file_extension}')
+
+            else:
+                raise Http404
+
+            return response
+
+        else:
+            return self.form_invalid(form)
 
 
 
+class DeviceIssueTlsClientCredential(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
 
-# class DeviceManualOnboardingDomainCredentialFormatSelectView(DetailView):
-#     http_method_names = ['get']
-#
-#     model = DeviceModel
-#     context_object_name = 'device'
-#     template_name = 'devices/credentials/onboarding/manual/download.html'
-#
-#
-# class DeviceManualOnboardingDownloadDomainCredentialAsPkcs12(TpLoginRequiredMixin, BaseDetailView):
-#
-#     http_method_names = ['get']
-#
-#     model = DeviceModel
-#     context_object_name = 'device'
-#
-#     def get(self, *args: tuple, **kwargs: dict) -> FileResponse:
-#         pass
-#
-# class DeviceManualOnboardingDownloadDomainCredentialAsZipPem(TpLoginRequiredMixin, BaseDetailView):
-#
-#     http_method_names = ['get']
-#
-#     model = DeviceModel
-#
-#     def get(self, *args: tuple, **kwargs: dict) -> FileResponse:
-#         pass
-#
-#
-# class DeviceManualOnboardingDownloadDomainCredentialAsTarGzPem(TpLoginRequiredMixin, BaseDetailView):
-#
-#     http_method_names = ['get']
-#
-#     model = DeviceModel
-#
-#     def get(self, *args: tuple, **kwargs: dict) -> FileResponse:
-#         pass
+    http_method_names = ['get', 'post']
+
+    model = DeviceModel
+    context_object_name = 'device'
+    template_name = 'devices/credentials/issue_application_credential.html'
+    form_class = IssueTlsClientCredentialForm
+
+    def get_initial(self) -> dict:
+        initial = super().get_initial()
+        tls_client_credential_issuer = self.get_object().get_tls_client_credential_issuer()
+        return initial | tls_client_credential_issuer.get_fixed_values()
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse:
+        device = self.get_object()
+        form = self.get_form()
+
+        if form.is_valid():
+            common_name = form.cleaned_data.get('common_name')
+            validity = form.cleaned_data.get('validity')
+            if not common_name:
+                raise Http404
+
+            tls_client_issuer = device.get_tls_client_credential_issuer()
+            tls_client_issuer.issue_tls_client_credential(common_name=common_name, validity_days=validity)
+            tls_client_issuer.save()
+            messages.success(
+                self.request,
+                'Successfully issued TLS Client credential device '
+                f'{tls_client_issuer.device.unique_name}')
+
+            return redirect(
+                reverse_lazy(
+                    'devices:certificate_lifecycle_management',
+                    kwargs={'pk': device.id}))
+
+        else:
+            return self.form_invalid(form)
 
 
-# class ManualOnboardingDownloadView(DeviceContextMixin, TpLoginRequiredMixin, BaseDetailView):
-#
-#     http_method_names = ['get']
-#
-#     model = DeviceModel
-#     context_object_name = 'device'
-#     redirect_url_name = 'devices:devices'
-#
-#     @staticmethod
-#     def _get_file_response(data: io.BytesIO, content_type: str, filename: str) -> FileResponse:
-#         return FileResponse(data, content_type=content_type, as_attachment=True, filename=filename)
-#
-#     def get(self, *args, **kwargs) -> FileResponse:
-#         device = self.get_object()
-#         if not device.domain:
-#             raise Http404
-#         if not device.domain.issuing_ca:
-#             raise Http404
-#         if device.onboarding_status != DeviceModel.OnboardingStatus.PENDING:
-#             raise Http404
-#
-#         domain_credential = device.issue_domain_credential()
-#
-#         format_ = self.kwargs['format']
-#         if format_ == 'pkcs12':
-#             response = FileResponse(
-#                 io.BytesIO(domain_credential.as_pkcs12()),
-#                 content_type='application/pkcs12',
-#                 as_attachment=True,
-#                 filename=f'trustpoint-domain-credential-{device.unique_name}.p12')
-#
-#         elif format_ == 'zip':
-#             zip_archive = Archiver.archive(
-#                 data_to_archive={
-#                     'domain_credential_private_key.pem': domain_credential.credential_private_key.as_pkcs8_pem(),
-#                     'domain_credential_certificate.pem': domain_credential.credential_certificate.as_pem(),
-#                     'domain_credential_certificate_chain.pem': domain_credential.additional_certificates.as_pem()
-#                 },
-#                 archive_format=ArchiveFormat.ZIP
-#             )
-#
-#             response = self._get_file_response(
-#                 data=io.BytesIO(zip_archive),
-#                 content_type=ArchiveFormat.ZIP.mime_type,
-#                 filename=f'trustpoint-domain-credential-{device.unique_name}{ArchiveFormat.ZIP.file_extension}')
-#
-#         elif format_ == 'tar_gz':
-#             tar_gz_archive = Archiver.archive(
-#                 data_to_archive={
-#                     'domain_credential_private_key.pem': domain_credential.credential_private_key.as_pkcs8_pem(),
-#                     'domain_credential_certificate.pem': domain_credential.credential_certificate.as_pem(),
-#                     'domain_credential_certificate_chain.pem': domain_credential.additional_certificates.as_pem()
-#                 },
-#                 archive_format=ArchiveFormat.TAR_GZ
-#             )
-#
-#             response = self._get_file_response(
-#                 data=io.BytesIO(tar_gz_archive),
-#                 content_type=ArchiveFormat.TAR_GZ.mime_type,
-#                 filename=f'trustpoint-domain-credential-{device.unique_name}{ArchiveFormat.TAR_GZ.file_extension}')
-#
-#         else:
-#             raise Http404
-#
-#         device.onboarding_status = DeviceModel.OnboardingStatus.ONBOARDED
-#         device.save()
-#
-#         return response
-#
-#
-# class ManualOnboardingSummaryView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
-#
-#     http_method_names = ['get']
-#     model = DeviceModel
-#     template_name = 'devices/onboarding/manual_summary.html'
-#     context_object_name = 'device'
-#
-#     def get(self, *args: tuple, **kwargs: dict) -> HttpResponse:
-#         device = self.get_object()
-#         if device.onboarding_status != DeviceModel.OnboardingStatus.ONBOARDED:
-#             raise Http404
-#
-#         messages.success(self.request, _(f'Device {device.unique_name} successfully onboarded.'))
-#
-#         return redirect(reverse_lazy('devices:devices'))
-#
-#
-# class DeviceCertificateLifecycleManagementSummaryView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
-#
-#     http_method_names = ['get']
-#     model = DeviceModel
-#     template_name = 'devices/certificate_lifecycle_management/summary.html'
-#     context_object_name = 'device'
-#
-#
-#     def get(self, *args: tuple, **kwargs: dict) -> HttpResponse:
-#         device = self.get_object()
-#
-#         device_domain_credential_table = DeviceDomainCredentialsTable(IssuedDomainCredentialModel.objects.filter(device=device))
-#         device_application_certificates_table = DeviceApplicationCertificatesTable(
-#             IssuedApplicationCertificateModel.objects.filter(device=device))
-#
-#         self.extra_context['device_domain_credential_table'] = device_domain_credential_table
-#         self.extra_context['device_application_certificates_table'] = device_application_certificates_table
-#         return super().get(*args, **kwargs)
-#
-#
-#
-# class TlsClientCredentialFixedValuesMixin:
-#
-#     get_object: callable
-#
-#     @staticmethod
-#     def _get_fixed_pseudonym() -> str:
-#         return 'Trustpoint TLS-Server Certificate'
-#
-#     def _get_fixed_serial_number(self) -> str:
-#         return self.get_object().serial_number
-#
-#     def _get_fixed_dn_qualifier(self) -> str:
-#         device = self.get_object()
-#         return (
-#             f'trustpoint.{device.unique_name}.{device.domain.unique_name}.'
-#             f'{device.domain.issuing_ca.unique_name}.tls-client')
-#
-#
-# class DeviceIssueTlsClientCredentialFormView(
-#     DeviceContextMixin,
-#     TlsClientCredentialFixedValuesMixin,
-#     TpLoginRequiredMixin,
-#     DetailView,
-#     FormView):
-#
-#     http_method_names = ['get']
-#     model = DeviceModel
-#     template_name = 'devices/certificate_lifecycle_management/tls_client.html'
-#     form_class = IssueTlsClientCredentialForm
-#     context_object_name = 'device'
-#
-#     def get_success_url(self) -> str:
-#         return reverse_lazy('devices:issued_credential_download_format_select')
-#
-#     def get_initial(self) -> dict:
-#         initial = super().get_initial()
-#         return {
-#             'pseudonym': self._get_fixed_pseudonym(),
-#             'serial_number': self._get_fixed_serial_number(),
-#             'dn_qualifier': self._get_fixed_dn_qualifier(),
-#         } | initial
-#
-#
-# class DeviceIssuedCredentialFormatSelectView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
-#     http_method_names = ['get']
-#
-#     model = DeviceModel
-#     template_name = 'devices/certificate_lifecycle_management/download.html'
-#     context_object_name = 'device'
-# #
-# #
-# # class DeviceIssueAndDownloadApplicationCredentialPkcs12(DeviceContextMixin, TpLoginRequiredMixin, BaseDetailView):
-# #
-# #     model = DeviceModel
-# #     context_object_name = 'device'
-# #
-# #     def get(self, *args: tuple, **kwargs: dict) -> FileResponse:
-# #         if not self.request.session.get(ISSUE_TLS_CLIENT_SESSION_KEY):
-# #             redirect('devices:')
-#
-#
-#
-#
-# # return FileResponse(data, content_type=content_type, as_attachment=True, filename=filename)
-# #     def get(self, *args: tuple, **kwargs: dict) -> HttpResponse:
-#
-#
-#
-# # class DownloadIssuedApplicationCredential(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
-#
-#
-#
-#
-# # def post(self, *args: tuple, **kwargs: dict) -> HttpResponse | FileResponse:
-#     #     device = self.get_object()
-#     #     if not device.domain:
-#     #         raise Http404
-#     #     if not device.domain.issuing_ca:
-#     #         raise Http404
-#     #
-#     #     common_name = self.request.POST.get('common_name')
-#     #     validity_days = self.request.POST.get('validity')
-#     #
-#     #     self.extra_context['common_name'] = common_name
-#     #     self.extra_context['validity'] = validity_days
-#     #     return super().get(*args, **kwargs)
-#
-#     # def get(self, *args: tuple, **kwargs: dict) -> FileResponse:
-#     #     common_name = self.kwargs.get('common_name')
-#     #     validity_days = self.kwargs.get('validity')
-#     #     format_ = self.kwargs.get('format')
-#     #     device = self.get_object()
-#     #
-#     #     distinguished_name = {
-#     #         NameOID.COMMON_NAME: common_name,
-#     #         NameOID.PSEUDONYM: 'Trustpoint TLS-Client Certificate',
-#     #         NameOID.SERIAL_NUMBER: device.serial_number,
-#     #         NameOID.DN_QUALIFIER: f'trustpoint.{device.unique_name}.{device.domain.unique_name}.local'
-#     #     }
-#     #
-#     #     credential = device.issue_application_credential(
-#     #         subject=distinguished_name,
-#     #         validity_days=validity_days,
-#     #         certificate_type=IssuedApplicationCertificateModel.ApplicationCertificateType.TLS_CLIENT
-#     #     )
-#     #
-#     #     if format_ == 'pkcs12':
-#     #         response = FileResponse(
-#     #             io.BytesIO(credential.as_pkcs12()),
-#     #             content_type='application/pkcs12',
-#     #             as_attachment=True,
-#     #             filename=f'trustpoint-domain-credential-{device.unique_name}.p12')
-#     #
-#     #     elif format_ == 'zip':
-#     #         zip_archive = Archiver.archive(
-#     #             data_to_archive={
-#     #                 'tls_client_credential_private_key.pem': credential.credential_private_key.as_pkcs8_pem(),
-#     #                 'tls_client_credential_certificate.pem': credential.credential_certificate.as_pem(),
-#     #                 'tls_client_credential_certificate_chain.pem': credential.additional_certificates.as_pem()
-#     #             },
-#     #             archive_format=ArchiveFormat.ZIP
-#     #         )
-#     #
-#     #         response = self._get_file_response(
-#     #             data=io.BytesIO(zip_archive),
-#     #             content_type=ArchiveFormat.ZIP.mime_type,
-#     #             filename=f'trustpoint-tls_client-credential-{device.unique_name}{ArchiveFormat.ZIP.file_extension}')
-#     #
-#     #     elif format_ == 'tar_gz':
-#     #         tar_gz_archive = Archiver.archive(
-#     #             data_to_archive={
-#     #                 'tls_client_credential_private_key.pem': credential.credential_private_key.as_pkcs8_pem(),
-#     #                 'tls_client_credential_certificate.pem': credential.credential_certificate.as_pem(),
-#     #                 'tls_client_credential_certificate_chain.pem': credential.additional_certificates.as_pem()
-#     #             },
-#     #             archive_format=ArchiveFormat.TAR_GZ
-#     #         )
-#     #
-#     #         response = self._get_file_response(
-#     #             data=io.BytesIO(tar_gz_archive),
-#     #             content_type=ArchiveFormat.TAR_GZ.mime_type,
-#     #             filename=f'trustpoint-tls_client-credential-{device.unique_name}{ArchiveFormat.TAR_GZ.file_extension}')
-#     #
-#     #     else:
-#     #         raise Http404
-#     #
-#     #     return response
-#
-#
-#
-# class DeviceIssueTlsServerCredentialView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
-#
-#     http_method_names = ['get', 'post']
-#     model = DeviceModel
-#     template_name = 'devices/certificate_lifecycle_management/tls_server.html'
-#     form_class = IssueTlsServerCredentialForm
-#     context_object_name = 'device'
-#
-#     _pseudonym: str
-#     _serial_number: str
-#     _dn_qualifier: str
-#
-#     @staticmethod
-#     def _get_fixed_pseudonym() -> str:
-#         return 'Trustpoint TLS-Server Certificate'
-#
-#     def _get_fixed_serial_number(self) -> str:
-#         return self.get_object().serial_number
-#
-#     def _get_fixed_dn_qualifier(self) -> str:
-#         device = self.get_object()
-#         return (
-#             f'trustpoint.{device.unique_name}.{device.domain.unique_name}.'
-#             f'{device.domain.issuing_ca.unique_name}.tls-server.local')
-#
-#     def get_success_url(self) -> str:
-#         return reverse_lazy('devices:clm', kwargs={'pk': self.get_object().id})
-#
-#     def get_initial(self) -> dict:
-#         initial = super().get_initial()
-#         return {
-#             'pseudonym': self._get_fixed_pseudonym(),
-#             'serial_number': self._get_fixed_serial_number(),
-#             'dn_qualifier': self._get_fixed_dn_qualifier(),
-#         } | initial
-#
-#     @staticmethod
-#     def _get_file_response(data: io.BytesIO, content_type: str, filename: str) -> FileResponse:
-#         return FileResponse(data, content_type=content_type, as_attachment=True, filename=filename)
-#
-#     def post(self, *args: tuple, **kwargs: dict) -> FileResponse:
-#         device = self.get_object()
-#         if not device.domain:
-#             raise Http404
-#         if not device.domain.issuing_ca:
-#             raise Http404
-#
-#         form = self.get_form()
-#         if not form.is_valid():
-#             raise Http404
-#
-#
-#         action = self.request.POST.get('action')
-#
-#         distinguished_name = {
-#             NameOID.COMMON_NAME: form.cleaned_data.get('common_name'),
-#             NameOID.PSEUDONYM: self._get_fixed_pseudonym(),
-#             NameOID.SERIAL_NUMBER: self._get_fixed_serial_number(),
-#             NameOID.DN_QUALIFIER: self._get_fixed_dn_qualifier()
-#         }
-#
-#         credential = device.issue_application_credential(
-#             subject=distinguished_name,
-#             validity_days=form.cleaned_data.get('validity'),
-#             certificate_type=IssuedApplicationCertificateModel.ApplicationCertificateType.TLS_SERVER,
-#             ipv4_addresses=form.cleaned_data.get('ipv4_addresses'),
-#             ipv6_addresses=form.cleaned_data.get('ipv6_addresses'),
-#             domain_names=form.cleaned_data.get('domain_names'),
-#         )
-#
-#         if action == 'pkcs12':
-#             return FileResponse(
-#                 io.BytesIO(credential.as_pkcs12()),
-#                 content_type='application/pkcs12',
-#                 as_attachment=True,
-#                 filename=f'trustpoint-domain-credential-{device.unique_name}.p12')
-#         if action == 'zip':
-#             zip_archive = Archiver.archive(
-#                 data_to_archive={
-#                     'tls_server_credential_private_key.pem': credential.credential_private_key.as_pkcs8_pem(),
-#                     'tls_server_credential_certificate.pem': credential.credential_certificate.as_pem(),
-#                     'tls_server_credential_certificate_chain.pem': credential.additional_certificates.as_pem()
-#                 },
-#                 archive_format=ArchiveFormat.ZIP
-#             )
-#
-#             return self._get_file_response(
-#                 data=io.BytesIO(zip_archive),
-#                 content_type=ArchiveFormat.ZIP.mime_type,
-#                 filename=f'trustpoint-tls-server-credential-{device.unique_name}{ArchiveFormat.ZIP.file_extension}')
-#         if action == 'tar_gz':
-#             tar_gz_archive = Archiver.archive(
-#                 data_to_archive={
-#                     'tls_server_credential_private_key.pem': credential.credential_private_key.as_pkcs8_pem(),
-#                     'tls_server_credential_certificate.pem': credential.credential_certificate.as_pem(),
-#                     'tls_server_credential_certificate_chain.pem': credential.additional_certificates.as_pem()
-#                 },
-#                 archive_format=ArchiveFormat.TAR_GZ
-#             )
-#
-#             return self._get_file_response(
-#                 data=io.BytesIO(tar_gz_archive),
-#                 content_type=ArchiveFormat.TAR_GZ.mime_type,
-#                 filename=f'trustpoint-tls-server-credential-{device.unique_name}{ArchiveFormat.TAR_GZ.file_extension}')
-#
-#         raise Http404
-#
-#
-# class DeviceSuccessfulApplicationIssuanceRedirectView(DeviceContextMixin, TpLoginRequiredMixin, BaseDetailView):
-#
-#     http_method_names = ['get']
-#     model = DeviceModel
-#     context_object_name = 'device'
-#
-#     def get(self, *args: tuple, **kwargs: dict) -> HttpResponse:
-#         device = self.get_object()
-#
-#         messages.success(
-#             self.request,
-#             _(f'Device {device.unique_name} successfully issued an application certificate.'))
-#
-#         return redirect(reverse_lazy('devices:devices'))
+
+class DeviceIssueTlsServerCredential(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+
+    http_method_names = ['get', 'post']
+
+    model = DeviceModel
+    context_object_name = 'device'
+    template_name = 'devices/credentials/issue_application_credential.html'
+    form_class = IssueTlsServerCredentialForm
+
+    def get_initial(self) -> dict:
+        initial = super().get_initial()
+        tls_server_credential_issuer = self.get_object().get_tls_server_credential_issuer()
+        return initial | tls_server_credential_issuer.get_fixed_values()
+
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form))
+
+    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse:
+        device = self.get_object()
+        form = self.get_form()
+
+        if form.is_valid():
+
+            common_name = form.cleaned_data.get('common_name')
+            ipv4_addresses = form.cleaned_data.get('ipv4_addresses')
+            ipv6_addresses = form.cleaned_data.get('ipv6_addresses')
+            domain_names = form.cleaned_data.get('domain_names')
+            validity = form.cleaned_data.get('validity')
+
+            if not common_name:
+                raise Http404
+
+            tls_server_credential_issuer = device.get_tls_server_credential_issuer()
+            tls_server_credential_issuer.issue_tls_server_credential(
+                common_name=common_name,
+                ipv4_addresses=ipv4_addresses,
+                ipv6_addresses=ipv6_addresses,
+                domain_names=domain_names,
+                validity_days=validity
+            )
+            tls_server_credential_issuer.save()
+            messages.success(
+                self.request,
+                'Successfully issued TLS Server credential device '
+                f'{tls_server_credential_issuer.device.unique_name}')
+
+            return redirect(
+                reverse_lazy(
+                    'devices:certificate_lifecycle_management',
+                    kwargs={'pk': device.id}))
+
+        else:
+            return self.form_invalid(form)
+
+
+class DeviceCertificateLifecycleManagementSummaryView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
+
+    http_method_names = ['get']
+
+    model = DeviceModel
+    template_name = 'devices/credentials/certificate_lifecycle_management.html'
+    context_object_name = 'device'
+
+
+    def get(self, *args: tuple, **kwargs: dict) -> HttpResponse:
+        device = self.get_object()
+
+        device_domain_credential_table = DeviceDomainCredentialsTable(IssuedDomainCredentialModel.objects.filter(device=device))
+        device_application_certificates_table = DeviceApplicationCertificatesTable(
+            IssuedApplicationCertificateModel.objects.filter(device=device))
+
+        self.extra_context['device_domain_credential_table'] = device_domain_credential_table
+        self.extra_context['device_application_certificates_table'] = device_application_certificates_table
+        return super().get(*args, **kwargs)
+
+
+class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, RedirectView):
+
+    http_method_names = ['get']
+    permanent = False
+
+    def get_redirect_url(self, *args: tuple, **kwargs: dict) -> str:
+        messages.error(self.request, 'Revocation is not yet implemented.')
+        referer = self.request.META.get('HTTP_REFERER', '/')
+        return referer

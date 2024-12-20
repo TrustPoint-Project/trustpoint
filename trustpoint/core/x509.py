@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     PrivateKey = Union[ec.EllipticCurvePrivateKey, rsa.RSAPrivateKey]
     PublicKey = Union[ec.EllipticCurvePublicKey, rsa.RSAPublicKey]
     from pki.models.domain import DomainModel
+    from pki.models.credential import CredentialModel
 
 
 class CertificateChainExtractor(LoggerMixin):
@@ -194,9 +195,13 @@ class CryptographyUtils:
             )
         raise ValueError('Cannot build the domain credential, unknown key type found.')
 
+    @classmethod
+    def get_hash_algorithm_from_domain(cls, domain: DomainModel) -> hashes.SHA256 | hashes.SHA384:
+        return cls.get_hash_algorithm_from_credential(domain.issuing_ca.credential)
+
     @staticmethod
-    def get_hash_algorithm_from_issuing_ca_credential(domain: DomainModel) -> hashes.SHA256 | hashes.SHA384:
-        hash_algorithm = domain.issuing_ca.credential.get_certificate().signature_hash_algorithm
+    def get_hash_algorithm_from_credential(credential: CredentialModel) -> hashes.SHA256 | hashes.SHA384:
+        hash_algorithm = credential.get_certificate().signature_hash_algorithm
         if isinstance(hash_algorithm, hashes.SHA256):
             return hashes.SHA256()
         if isinstance(hash_algorithm, hashes.SHA384):

@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-from django import forms
-from django.core.exceptions import ValidationError
+from django import forms    # type: ignore[import-untyped]
 import ipaddress
+from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
-
-from core.serializer.credential import CredentialSerializer
 
 from typing import TYPE_CHECKING
 
@@ -14,12 +12,6 @@ if TYPE_CHECKING:
 
 
 class IssueDomainCredentialForm(forms.Form):
-
-    FILE_FORMAT_CHOICES = [
-        (CredentialSerializer.FileFormat.PKCS12.value, 'PKCS#12'),
-        (CredentialSerializer.FileFormat.PEM_ZIP.value, 'ZIP (PEM)'),
-        (CredentialSerializer.FileFormat.PEM_TAR_GZ.value, 'TAR.GZ (PEM)'),
-    ]
 
     common_name = forms.CharField(
         max_length=255,
@@ -39,11 +31,9 @@ class IssueDomainCredentialForm(forms.Form):
         required=True,
         disabled=True
     )
-    file_format = forms.ChoiceField(
-        choices=FILE_FORMAT_CHOICES,
-        label=_('File Format'),
-        required=True
-    )
+
+class CredentialDownloadForm(forms.Form):
+
     password = forms.CharField(
         label=_('Password'),
         widget=forms.PasswordInput,
@@ -70,26 +60,25 @@ class IssueDomainCredentialForm(forms.Form):
 
 class IssueTlsClientCredentialForm(forms.Form):
     common_name = forms.CharField(
-        max_length=100,
+        max_length=255,
         label=_('Common Name'),
-        initial='',
         required=True,
     )
     pseudonym = forms.CharField(
-        max_length=100,
+        max_length=255,
         label=_('Pseudonym'),
         required=True,
         disabled=True
     )
-    serial_number = forms.CharField(
-        max_length=100,
-        label=_('Serial Number'),
+    domain_component = forms.CharField(
+        max_length=255,
+        label=_('Domain Component'),
         required=True,
         disabled=True
     )
-    dn_qualifier = forms.CharField(
-        max_length=100,
-        label=_('DN Qualifier'),
+    serial_number = forms.CharField(
+        max_length=255,
+        label=_('Serial Number'),
         required=True,
         disabled=True
     )
@@ -126,9 +115,9 @@ class IssueTlsServerCredentialForm(forms.Form):
         required=True,
         disabled=True
     )
-    dn_qualifier = forms.CharField(
-        max_length=100,
-        label=_('DN Qualifier'),
+    domain_component = forms.CharField(
+        max_length=255,
+        label=_('Domain Component'),
         required=True,
         disabled=True
     )

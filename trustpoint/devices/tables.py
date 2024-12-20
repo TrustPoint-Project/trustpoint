@@ -78,9 +78,10 @@ class DeviceTable(tables.Table):
             return format_html(
                 '<span>{}</span>', _('No Issuing CA configured.')
             )
-        if record.onboarding_status == DeviceModel.OnboardingStatus.PENDING:
+        if (record.onboarding_status == DeviceModel.OnboardingStatus.PENDING
+                and record.onboarding_protocol == DeviceModel.OnboardingProtocol.MANUAL):
             return format_html(
-                '<a href="onboarding/{}/manual/" class="btn btn-primary tp-table-btn w-100">{}</a>',
+                '<a href="onboarding/{}/manual/issue-domain-credential" class="btn btn-primary tp-table-btn w-100">{}</a>',
                 record.pk, _('Start Onboarding'))
         return format_html('')
 
@@ -150,22 +151,20 @@ class DeviceDomainCredentialsTable(tables.Table):
         empty_text = format_html('<div class="text-center">{}</div>', _msg)
 
         fields = (
-            'row_checkbox',
             'domain',
             'common_name',
             'issued_at',
             'expiration_date',
             'expires_in',
-            'details',
+            'download',
             'revoke',
         )
 
-    row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
     issued_at = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Issued At'))
     common_name = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Common Name (CN)'))
     expiration_date = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Expiration Date'))
     expires_in = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Expires In'))
-    details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
+    download = tables.Column(empty_values=(), orderable=False, verbose_name=_('Download'))
     revoke = tables.Column(empty_values=(), orderable=False, verbose_name=_('Revoke'))
 
     @staticmethod
@@ -192,17 +191,19 @@ class DeviceDomainCredentialsTable(tables.Table):
         return format_html(f'{days} days, {hours}:{minutes}:{seconds}')
 
     @staticmethod
-    def render_details(record: IssuedDomainCredentialModel) -> SafeString:
-        """Creates the html hyperlink for the details-view.
+    def render_download(record: IssuedDomainCredentialModel) -> SafeString:
+        """Creates the html hyperlink for the download-view.
 
         Args:
             record: The current record of the Device model.
 
         Returns:
-            SafeString: The html hyperlink for the details-view.
+            SafeString: The html hyperlink for the download-view.
         """
-        return format_html('<a href="/pki/certificates/details/{}/" class="btn btn-primary tp-table-btn w-100">{}</a>',
-                           record.issued_domain_credential_certificate.pk, _('Details'))
+        return format_html(
+            '<a href="/devices/domain-credential-download/{}/"'
+            ' class="btn btn-primary tp-table-btn w-100">{}</a>',
+           record.id, _('Download'))
 
     @staticmethod
     def render_revoke(record: IssuedDomainCredentialModel) -> SafeString:
@@ -231,24 +232,22 @@ class DeviceApplicationCertificatesTable(tables.Table):
         empty_text = format_html('<div class="text-center">{}</div>', _msg)
 
         fields = (
-            'row_checkbox',
             'common_name',
             'certificate_type',
             'domain',
             'issued_at',
             'expiration_date',
             'expires_in',
-            'details',
+            'download',
             'revoke',
         )
 
-    row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
     issued_at = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Issued At'))
     common_name = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Common Name (CN)'))
     certificate_type = tables.Column(empty_values=(), orderable=True, verbose_name=_('Certificate Type'))
     expiration_date = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Expiration Date'))
     expires_in = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Expires In'))
-    details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
+    download = tables.Column(empty_values=(), orderable=False, verbose_name=_('Download'))
     revoke = tables.Column(empty_values=(), orderable=False, verbose_name=_('Revoke'))
 
     @staticmethod
@@ -279,7 +278,7 @@ class DeviceApplicationCertificatesTable(tables.Table):
         return format_html(f'{days} days, {hours}:{minutes}:{seconds}')
 
     @staticmethod
-    def render_details(record: IssuedApplicationCertificateModel) -> SafeString:
+    def render_download(record: IssuedApplicationCertificateModel) -> SafeString:
         """Creates the html hyperlink for the details-view.
 
         Args:
@@ -288,8 +287,10 @@ class DeviceApplicationCertificatesTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the details-view.
         """
-        return format_html('<a href="/pki/certificates/details/{}/" class="btn btn-primary tp-table-btn w-100">{}</a>',
-                           record.issued_application_certificate.pk, _('Details'))
+        return format_html(
+            '<a href="/devices/application-credential-download/{}/" '
+            'class="btn btn-primary tp-table-btn w-100">{}</a>',
+            record.id, _('Download'))
 
     @staticmethod
     def render_revoke(record: IssuedApplicationCertificateModel) -> SafeString:
