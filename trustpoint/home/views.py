@@ -201,9 +201,9 @@ class DashboardChartsAndCountsView(TemplateView):
         if cert_counts_by_domain:
             dashboard_data['cert_counts_by_domain'] = cert_counts_by_domain
 
-        # cert_counts_by_template = self.get_cert_counts_by_template(start_date_object)
-        # if cert_counts_by_template:
-        #     dashboard_data['cert_counts_by_template'] = cert_counts_by_template
+        cert_counts_by_template = self.get_cert_counts_by_template(start_date_object)
+        if cert_counts_by_template:
+            dashboard_data['cert_counts_by_template'] = cert_counts_by_template
 
         # cert_counts_by_issuing_ca = self.get_cert_counts_by_issuing_ca(start_date_object)
         # if cert_counts_by_issuing_ca:
@@ -466,21 +466,22 @@ class DashboardChartsAndCountsView(TemplateView):
         return cert_counts_by_domain
 
 
-    # def get_cert_counts_by_template(self, start_date: date) -> dict[str, Any]:
-    #     """Get certificate count by template from database"""
-    #     cert_counts_by_template = {str(status): 0 for _, status in TemplateName.choices}
-    #     try:
-    #         cert_template_qr = (
-    #             IssuedDeviceCertificateModel.objects.filter(certificate__added_at__gt=start_date)
-    #             .values('template_name')
-    #             .annotate(count=Count('template_name'))
-    #         )
-    #         # Mapping from short code to human-readable name
-    #         template_mapping = {key: str(value) for key, value in TemplateName.choices}
-    #         cert_counts_by_template = {template_mapping[item['template_name']]: item['count'] for item in cert_template_qr}
-    #     except Exception:
-    #         self._logger.exception('Error occurred in certificate count by template query')
-    #     return cert_counts_by_template
+    def get_cert_counts_by_template(self, start_date: date) -> dict[str, Any]:
+        """Get certificate count by template from database"""
+        cert_counts_by_template = {str(status): 0 for _, status in IssuedApplicationCertificateModel.ApplicationCertificateType.choices}
+        try:
+            cert_template_qr = (
+                IssuedApplicationCertificateModel.objects
+                .filter(issued_application_certificate__created_at__gt=start_date)
+                .values(cert_type = F('issued_application_certificate_type'))
+                .annotate(count=Count('id'))
+            )
+            # Mapping from short code to human-readable name
+            template_mapping = {key: str(value) for key, value in IssuedApplicationCertificateModel.ApplicationCertificateType.choices}
+            cert_counts_by_template = {template_mapping[item['cert_type']]: item['count'] for item in cert_template_qr}
+        except Exception:
+            self._logger.exception('Error occurred in certificate count by template query')
+        return cert_counts_by_template
 
 
     def get_issuing_ca_counts_by_type(self, start_date: date) -> dict[str, Any]:
