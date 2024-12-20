@@ -374,10 +374,10 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get count of onboarded devices by domain from the database."""
         try:
             device_domain_qr = (DeviceModel.objects
-                .filter(Q(onboarding_status=2) & Q(created_at__gte=start_date))
+                .filter(Q(onboarding_status=DeviceModel.OnboardingStatus.ONBOARDED) & Q(created_at__gte=start_date))
                 .values(domain_name=F('domain__unique_name'))
                 .annotate(onboarded_device_count=Count('id'))
-            )
+            ) 
             print("device", device_domain_qr)
             # Convert the queryset to a list
             return list(device_domain_qr)
