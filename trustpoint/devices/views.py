@@ -134,7 +134,7 @@ class DeviceDomainCredentialDownloadView(DeviceContextMixin, TpLoginRequiredMixi
     form_class = CredentialDownloadForm
     context_object_name = 'credential'
 
-    def get_context_data(self, form, **kwargs: dict) -> dict:
+    def get_context_data(self, form=None, **kwargs: dict) -> dict:
         credential = self.get_object().credential
         context = super().get_context_data(form=form, **kwargs)
         if credential.credential_type == CredentialModel.CredentialTypeChoice.DOMAIN_CREDENTIAL:
