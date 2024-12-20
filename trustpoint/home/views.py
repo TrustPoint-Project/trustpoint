@@ -209,9 +209,9 @@ class DashboardChartsAndCountsView(TemplateView):
         if cert_counts_by_issuing_ca:
             dashboard_data['cert_counts_by_issuing_ca'] = cert_counts_by_issuing_ca
 
-        # cert_counts_by_issuing_ca_and_date = self.get_cert_counts_by_issuing_ca_and_date()
-        # if cert_counts_by_issuing_ca_and_date:
-        #     dashboard_data['cert_counts_by_issuing_ca_and_date'] = cert_counts_by_issuing_ca_and_date
+        cert_counts_by_issuing_ca_and_date = self.get_cert_counts_by_issuing_ca_and_date(start_date_object)
+        if cert_counts_by_issuing_ca_and_date:
+            dashboard_data['cert_counts_by_issuing_ca_and_date'] = cert_counts_by_issuing_ca_and_date
 
         issuing_ca_counts_by_type = self.get_issuing_ca_counts_by_type(start_date_object)
         if issuing_ca_counts_by_type:
@@ -403,23 +403,23 @@ class DashboardChartsAndCountsView(TemplateView):
         return cert_counts_by_issuing_ca
 
 
-    # def get_cert_counts_by_issuing_ca_and_date(self) -> list[dict[str, Any]]:
-    #     """Get certificate count by issuing ca from database"""
-    #     cert_counts_by_issuing_ca_and_date = []
-    #     try:
-    #         cert_issuing_ca_and_date_qr = (
-    #             CertificateModel.objects.filter(issuer_references__issuing_ca_model__isnull=True)
-    #             .annotate(issue_date=TruncDate('added_at'))
-    #             .values('issue_date', name=F('issuing_ca_model__unique_name'))
-    #             .annotate(cert_count=Count('issued_certificate_references'))
-    #             .filter(name__isnull=False)
-    #             .order_by('added_at', 'name')
-    #         )
-    #         # Convert the queryset to a list
-    #         cert_counts_by_issuing_ca_and_date = list(cert_issuing_ca_and_date_qr)
-    #     except Exception:
-    #         self._logger.exception('Error occurred in certificate count by issuing ca query')
-    #     return cert_counts_by_issuing_ca_and_date
+    def get_cert_counts_by_issuing_ca_and_date(self, start_date: date) -> list[dict[str, Any]]:
+        """Get certificate count by issuing ca from database"""
+        cert_counts_by_issuing_ca_and_date = []
+        try:
+            cert_issuing_ca_and_date_qr = (CertificateModel.objects
+                .filter(issuer__isnull=False)
+                .filter(created_at__gt=start_date)
+                .annotate(issue_date=TruncDate('created_at'))
+                .values('issue_date', name=F('issuer__value'))
+                .annotate(cert_count=Count('id'))
+                .order_by('issue_date', 'name')
+            )
+            # Convert the queryset to a list
+            cert_counts_by_issuing_ca_and_date = list(cert_issuing_ca_and_date_qr)
+        except Exception:
+            self._logger.exception('Error occurred in certificate count by issuing ca query')
+        return cert_counts_by_issuing_ca_and_date
 
 
     def get_cert_counts_by_domain(self, start_date: date) -> list[dict[str, Any]]:
