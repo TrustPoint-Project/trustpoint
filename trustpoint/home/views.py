@@ -26,8 +26,8 @@ from devices.models import DeviceModel, IssuedDomainCredentialModel, IssuedAppli
 from django.utils import dateparse, timezone
 from ninja import Router
 from ninja.responses import Response
-#from pki import IssuingCaModel.IssuingCaTypeChoice, CertificateModel.CertificateStatus, TemplateName
-from pki.models import IssuingCaModel, CertificateModel, DomainModel
+from pki.models import IssuingCaModel, CertificateModel
+from pki.models.extension import AttributeTypeAndValue
 
 
 SUCCESS = 25
@@ -205,9 +205,9 @@ class DashboardChartsAndCountsView(TemplateView):
         if cert_counts_by_template:
             dashboard_data['cert_counts_by_template'] = cert_counts_by_template
 
-        # cert_counts_by_issuing_ca = self.get_cert_counts_by_issuing_ca(start_date_object)
-        # if cert_counts_by_issuing_ca:
-        #     dashboard_data['cert_counts_by_issuing_ca'] = cert_counts_by_issuing_ca
+        cert_counts_by_issuing_ca = self.get_cert_counts_by_issuing_ca(start_date_object)
+        if cert_counts_by_issuing_ca:
+            dashboard_data['cert_counts_by_issuing_ca'] = cert_counts_by_issuing_ca
 
         # cert_counts_by_issuing_ca_and_date = self.get_cert_counts_by_issuing_ca_and_date()
         # if cert_counts_by_issuing_ca_and_date:
@@ -390,10 +390,10 @@ class DashboardChartsAndCountsView(TemplateView):
         cert_counts_by_issuing_ca = []
         try:
             cert_issuing_ca_qr = (CertificateModel.objects
-                .filter(issuing_ca_model__isnull=False)
-                .filter(added_at__gt=start_date)
-                .annotate(cert_count=Count('issued_certificate_references'))
-                .values('cert_count', ca_name=F('issuing_ca_model__unique_name'))
+                .filter(issuer__isnull=False)
+                .filter(created_at__gt=start_date)
+                .values(ca_name=F('issuer__value'))
+                .annotate(cert_count=Count('id'))
             )
             # Convert the queryset to a list
             cert_counts_by_issuing_ca = list(cert_issuing_ca_qr)
