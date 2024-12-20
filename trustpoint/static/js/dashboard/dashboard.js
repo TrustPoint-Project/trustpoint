@@ -79,7 +79,7 @@ async function fetchAndUpdateDashboardData(period) {
 
 function toggleChartButtons() {
   const buttons = document.querySelectorAll(".chart-period");
-  console.log("buttons", buttons)
+  //console.log("buttons", buttons)
   buttons.forEach((button) => {
     button.addEventListener("click", () => {
       // Remove active class from all buttons

@@ -306,7 +306,7 @@ function updateCertsByDomainPieChart(certDomainCounts) {
   var chartLabels = [];
   var chartData = [];
   certDomainCounts.forEach((item) => {
-    chartLabels.push(item.unique_name);
+    chartLabels.push(item.domain_name);
     chartData.push(item.cert_count);
   });
   certsByDomainPieChart = new Chart(certsByDomainPieChartEle, {

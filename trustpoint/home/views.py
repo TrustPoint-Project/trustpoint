@@ -2,7 +2,7 @@ from __future__ import annotations
 import logging
 from django.contrib.auth.decorators import login_required
 from django.db.models import Case, Count, F, IntegerField, Q, Value, When
-from django.db.models.functions import TruncDate
+from django.db.models.functions import Coalesce, TruncDate
 from django.views.generic.base import RedirectView, TemplateView
 from django.shortcuts import render, get_object_or_404, redirect
 from django_tables2 import RequestConfig
@@ -22,7 +22,7 @@ from .tables import NotificationTable
 
 from typing import Any
 
-from devices.models import DeviceModel
+from devices.models import DeviceModel, IssuedDomainCredentialModel, IssuedApplicationCertificateModel
 from django.utils import dateparse, timezone
 from ninja import Router
 from ninja.responses import Response
@@ -167,7 +167,7 @@ class DashboardChartsAndCountsView(TemplateView):
         else:
             tz = timezone.get_current_timezone()
             start_date_object = datetime.now(tz).date()
-
+        
         dashboard_data: dict[str, Any] = {}
 
         device_counts = self.get_device_count_by_onboarding_status(dateparse.parse_date('2023-01-01'))
@@ -197,9 +197,9 @@ class DashboardChartsAndCountsView(TemplateView):
         if device_counts_by_domain:
             dashboard_data['device_counts_by_domain'] = device_counts_by_domain
 
-        # cert_counts_by_domain = self.get_cert_counts_by_domain(start_date_object)
-        # if cert_counts_by_domain:
-        #     dashboard_data['cert_counts_by_domain'] = self.cert_counts_by_domain
+        cert_counts_by_domain = self.get_cert_counts_by_domain(start_date_object)
+        if cert_counts_by_domain:
+            dashboard_data['cert_counts_by_domain'] = cert_counts_by_domain
 
         # cert_counts_by_template = self.get_cert_counts_by_template(start_date_object)
         # if cert_counts_by_template:
@@ -383,19 +383,25 @@ class DashboardChartsAndCountsView(TemplateView):
             #     ))
             # .values('domain__unique_name', 'onboarded_device_count'))
 
+            # device_domain_qr = (
+            #     DeviceModel.objects
+            #     .annotate(
+            #         onboarded_device_count=Count(
+            #             filter=Q(onboarding_status=2) & Q(created_at__gt=start_date)
+            #         ),
+            #         domain_name=F('domain__unique_name')
+            #     )
+            #     .values('domain_name', 'onboarded_device_count')
+            #     .order_by('domain_name')
+            # )
             device_domain_qr = (
-                DeviceModel.objects
-                .filter(domain__isnull=False)  # Optional: Ensure domain exists
-                .annotate(
-                    onboarded_device_count=Count(
-                        'unique_name',
-                        filter=Q(onboarding_status=2) & Q(created_at__gt=start_date)
-                    ),
-                    domain_name=F('domain__unique_name')
+                DeviceModel.objects.filter(
+                    Q(onboarding_status=2) & Q(created_at__gte=start_date)
                 )
-                .values('domain_name', 'onboarded_device_count')
-                .order_by('domain_name')
+                .values(domain_name=F('domain__unique_name'))
+                .annotate(onboarded_device_count=Count('id'))
             )
+            print("device", device_domain_qr)
             # Convert the queryset to a list
             return list(device_domain_qr)
         except Exception:
@@ -439,21 +445,25 @@ class DashboardChartsAndCountsView(TemplateView):
     #     return cert_counts_by_issuing_ca_and_date
 
 
-    # def get_cert_counts_by_domain(self, start_date: date) -> list[dict[str, Any]]:
-    #     """Get certificate count by domain from database"""
-    #     cert_counts_by_domain = []
-    #     try:
-    #         cert_domain_qr = (
-    #             IssuedDeviceCertificateModel.objects.filter(certificate__added_at__gt=start_date)
-    #             .values(unique_name=F('domain__unique_name'))
-    #             .annotate(cert_count=Count('domain'))
-    #         )
+    def get_cert_counts_by_domain(self, start_date: date) -> list[dict[str, Any]]:
+        """Get certificate count by domain from database"""
+        cert_counts_by_domain = []
+        try:
+            cert_app_counts = (IssuedApplicationCertificateModel.objects
+                .values(domain_name=F('domain__unique_name'))
+                .annotate(cert_count=Count('id')))
+            cert_domain_counts = (IssuedDomainCredentialModel.objects
+                .values(domain_name=F('domain__unique_name'))
+                .annotate(cert_count=Count('id')))
 
-    #         # Convert the queryset to a list
-    #         cert_counts_by_domain = list(cert_domain_qr)
-    #     except Exception:
-    #         self._logger.exception('Error occurred in certificate count by issuing ca query')
-    #     return cert_counts_by_domain
+            # Use a union query to combine results
+            cert_domain_qr = cert_app_counts.union(cert_domain_counts)
+
+            #   # Convert the queryset to a list
+            cert_counts_by_domain = list(cert_domain_qr)
+        except Exception:
+            self._logger.exception('Error occurred in certificate count by issuing ca query')
+        return cert_counts_by_domain
 
 
     # def get_cert_counts_by_template(self, start_date: date) -> dict[str, Any]:
