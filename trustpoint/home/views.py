@@ -1,62 +1,64 @@
-from __future__ import annotations
-import logging
-from django.contrib.auth.decorators import login_required
-from django.db.models import Case, Count, F, IntegerField, Q, Value, When
-from django.db.models.functions import Coalesce, TruncDate
-from django.views.generic.base import RedirectView, TemplateView
-from django.shortcuts import render, get_object_or_404, redirect
-from django_tables2 import RequestConfig
-from datetime import date, datetime, timedelta
+"""Contains views that handle HTTP requests and return appropriate responses for the application."""
 
-from django.contrib import messages
-from django.http import JsonResponse
+from __future__ import annotations
+
+import logging
+from datetime import date, datetime, timedelta
+from typing import Any
+
+from devices.models import DeviceModel, IssuedApplicationCertificateModel, IssuedDomainCredentialModel
+from django.contrib import messages  # type: ignore[import-untyped]
+from django.contrib.auth.decorators import login_required  # type: ignore[import-untyped]
+from django.core.management import call_command  # type: ignore[import-untyped]
+from django.db.models import Case, Count, F, IntegerField, Q, QuerySet, Value, When  # type: ignore[import-untyped]
+from django.db.models.functions import TruncDate  # type: ignore[import-untyped]
+from django.http import HttpRequest, HttpResponse, JsonResponse  # type: ignore[import-untyped]
+from django.shortcuts import get_object_or_404, redirect, render  # type: ignore[import-untyped]
+from django.utils import dateparse, timezone  # type: ignore[import-untyped]
+from django.views.generic.base import RedirectView, TemplateView  # type: ignore[import-untyped]
+from django_tables2 import RequestConfig  # type: ignore[import-untyped]
+from ninja.responses import Response
+from pki.models import CertificateModel, IssuingCaModel
 
 from trustpoint.views.base import TpLoginRequiredMixin
-from django.core.management import call_command
 
 from .filters import NotificationFilter
 from .models import NotificationModel, NotificationStatus
 from .tables import NotificationTable
-
-
-from typing import Any
-
-from devices.models import DeviceModel, IssuedDomainCredentialModel, IssuedApplicationCertificateModel
-from django.utils import dateparse, timezone
-from ninja import Router
-from ninja.responses import Response
-from pki.models import IssuingCaModel, CertificateModel
-from pki.models.extension import AttributeTypeAndValue
-
 
 SUCCESS = 25
 ERROR = 40
 
 
 class IndexView(TpLoginRequiredMixin, RedirectView):
+    """Redirects authenticated users to the dashboard page."""
+
     permanent = False
     pattern_name = 'home:dashboard'
 
 
 class DashboardView(TpLoginRequiredMixin, TemplateView):
+    """Renders the dashboard page for authenticated users. Uses the 'home/dashboard.html' template."""
+
     template_name = 'home/dashboard.html'
 
     def __init__(self, *args: tuple, **kwargs: dict) -> None:
+        """Initializes the parent class with the given arguments and keyword arguments."""
         super().__init__(*args, **kwargs)
         self.last_week_dates = self.generate_last_week_dates()
 
-    def get_notifications(self):
+    def get_notifications(self) -> QuerySet[NotificationModel]:
         """Fetch notification data for the table."""
-        notifications = NotificationModel.objects.all()
-        return notifications
+        return NotificationModel.objects.all()
 
-    def generate_last_week_dates(self):
-        end_date = datetime.now().date()
+    def generate_last_week_dates(self) -> list[str]:
+        """Generates date strings for last one week"""
+        end_date = timezone.now()
         start_date = end_date - timedelta(days=6)
-        dates_as_strings = [(start_date + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
-        return dates_as_strings
+        return [(start_date + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: dict) -> dict[str, Any]:
+        """Fetch context data"""
         context = super().get_context_data(**kwargs)
 
         context = self.handle_notifications(context)
@@ -65,7 +67,8 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         context['page_name'] = 'dashboard'
         return context
 
-    def handle_notifications(self, context):
+    def handle_notifications(self, context: dict[str, Any]) -> dict[str, Any]:
+        """Handles notifications"""
         all_notifications = NotificationModel.objects.all()
 
         notification_filter = NotificationFilter(self.request.GET, queryset=all_notifications)
@@ -81,7 +84,8 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
 
 
 @login_required
-def notification_details_view(request, pk):
+def notification_details_view(request: HttpRequest, pk: int | str) -> HttpResponse:
+    """Rends notification details view"""
     notification = get_object_or_404(NotificationModel, pk=pk)
 
     notification_statuses = notification.statuses.values_list('status', flat=True)
@@ -104,7 +108,7 @@ def notification_details_view(request, pk):
 
 
 @login_required
-def mark_as_solved(request, pk):
+def mark_as_solved(request: HttpRequest, pk: int | str) -> HttpResponse:
     """View to mark the notification as Solved."""
     notification = get_object_or_404(NotificationModel, pk=pk)
 
@@ -131,24 +135,25 @@ class AddDomainsAndDevicesView(TpLoginRequiredMixin, TemplateView):
 
     _logger = logging.getLogger(__name__)
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:  # noqa: ARG002
+        """Handles GET requests and redirects to the dashboard."""
         try:
             call_command('add_domains_and_devices')
 
             messages.add_message(request, SUCCESS, 'Successfully added test data.')
-        except Exception as e:
+        except Exception:
             # TODO(AlexHx8472): Catch the correct and proper error messages.
-            messages.add_message(request, ERROR, f'Test data already available in the Database.')
+            messages.add_message(request, ERROR, 'Test data already available in the Database.')
 
         return redirect('home:dashboard')
 
 
-class DashboardChartsAndCountsView(TemplateView):
+class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
     """View to mark the notification as Solved."""
 
     _logger = logging.getLogger(__name__)
 
-    def get(self, request, *args, **kwargs):
+    def get(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> dict[str, Any]:  # noqa: ARG002
         """Get dashboard data for panels, tables and charts"""
         start_date: str = request.GET.get('start_date', None)
         start_date_object = None
@@ -166,6 +171,7 @@ class DashboardChartsAndCountsView(TemplateView):
         device_counts = self.get_device_count_by_onboarding_status(dateparse.parse_date('2023-01-01'))
         dashboard_data['device_counts'] = device_counts
         self._logger.info('device counts %s', device_counts)
+
         cert_counts = self.get_cert_counts()
         if cert_counts:
             dashboard_data['cert_counts'] = cert_counts
@@ -174,13 +180,17 @@ class DashboardChartsAndCountsView(TemplateView):
         if issuing_ca_counts:
             dashboard_data['issuing_ca_counts'] = issuing_ca_counts
 
+        self.get_device_charts_data(dashboard_data, start_date_object)
+        self.get_cert_charts_data(dashboard_data, start_date_object)
+        self.get_ca_charts_data(dashboard_data, start_date_object)
+
+        return JsonResponse(dashboard_data)
+
+    def get_device_charts_data(self, dashboard_data: dict[str, Any], start_date_object: date) -> None:
+        """Fetch data from database for device charts"""
         device_counts_by_os = self.get_device_count_by_onboarding_status(start_date_object)
         if device_counts_by_os:
             dashboard_data['device_counts_by_os'] = device_counts_by_os
-
-        # device_counts_by_date_and_os = self.get_device_counts_by_date_and_status()
-        # if device_counts_by_date_and_os:
-        #     dashboard_data['device_counts_by_date_and_os'] = device_counts_by_date_and_os
 
         device_counts_by_op = self.get_device_count_by_onboarding_protocol(start_date_object)
         if device_counts_by_op:
@@ -190,6 +200,12 @@ class DashboardChartsAndCountsView(TemplateView):
         if device_counts_by_domain:
             dashboard_data['device_counts_by_domain'] = device_counts_by_domain
 
+    def get_cert_charts_data(self, dashboard_data: dict[str, Any], start_date_object: date) -> None:
+        """Fetch data from database for certificate charts"""
+        cert_counts_by_status = self.get_cert_counts_by_status(start_date_object)
+        if cert_counts_by_status:
+            dashboard_data['cert_counts_by_status'] = cert_counts_by_status
+
         cert_counts_by_domain = self.get_cert_counts_by_domain(start_date_object)
         if cert_counts_by_domain:
             dashboard_data['cert_counts_by_domain'] = cert_counts_by_domain
@@ -198,6 +214,8 @@ class DashboardChartsAndCountsView(TemplateView):
         if cert_counts_by_template:
             dashboard_data['cert_counts_by_template'] = cert_counts_by_template
 
+    def get_ca_charts_data(self, dashboard_data: dict[str, Any], start_date_object: date) -> None:
+        """Fetch data from database for issuing ca charts"""
         cert_counts_by_issuing_ca = self.get_cert_counts_by_issuing_ca(start_date_object)
         if cert_counts_by_issuing_ca:
             dashboard_data['cert_counts_by_issuing_ca'] = cert_counts_by_issuing_ca
@@ -209,12 +227,6 @@ class DashboardChartsAndCountsView(TemplateView):
         issuing_ca_counts_by_type = self.get_issuing_ca_counts_by_type(start_date_object)
         if issuing_ca_counts_by_type:
             dashboard_data['ca_counts_by_type'] = issuing_ca_counts_by_type
-
-        cert_counts_by_status = self.get_cert_counts_by_status(start_date_object)
-        if cert_counts_by_status:
-            dashboard_data['cert_counts_by_status'] = cert_counts_by_status
-
-        return JsonResponse(dashboard_data)
 
     def get_device_count_by_onboarding_status(self, start_date: date) -> dict[str, Any]:
         """Get device count by onboarding status from database"""
@@ -371,7 +383,7 @@ class DashboardChartsAndCountsView(TemplateView):
                 .values(domain_name=F('domain__unique_name'))
                 .annotate(onboarded_device_count=Count('id'))
             )
-            print('device', device_domain_qr)
+
             # Convert the queryset to a list
             return list(device_domain_qr)
         except Exception:
@@ -417,15 +429,17 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get certificate count by domain from database"""
         cert_counts_by_domain = []
         try:
-            cert_app_counts = (IssuedApplicationCertificateModel.objects
-                .filter(created_at__gt=start_date)
+            cert_app_counts = (
+                IssuedApplicationCertificateModel.objects.filter(created_at__gt=start_date)
                 .values(domain_name=F('domain__unique_name'))
-                .annotate(cert_count=Count('id')))
-            
-            cert_domain_counts = (IssuedDomainCredentialModel.objects
-                .filter(created_at__gt=start_date)                  
+                .annotate(cert_count=Count('id'))
+            )
+
+            cert_domain_counts = (
+                IssuedDomainCredentialModel.objects.filter(created_at__gt=start_date)
                 .values(domain_name=F('domain__unique_name'))
-                .annotate(cert_count=Count('id')))
+                .annotate(cert_count=Count('id'))
+            )
 
             # Use a union query to combine results
             cert_domain_qr = cert_app_counts.union(cert_domain_counts)
