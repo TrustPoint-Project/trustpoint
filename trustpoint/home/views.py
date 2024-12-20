@@ -227,8 +227,8 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get device count by onboarding status from database"""
         device_os_counts = {str(status): 0 for _, status in DeviceModel.OnboardingStatus.choices}
         try:
-            device_os_qr = (
-                DeviceModel.objects.filter(created_at__gt=start_date)
+            device_os_qr = (DeviceModel.objects
+                .filter(created_at__gt=start_date)
                 .values('onboarding_status')
                 .annotate(count=Count('onboarding_status'))
             )
@@ -269,10 +269,8 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get certificate counts grouped by issue date and certificate status."""
         cert_counts_by_status = []
         try:
-            cert_status_qr = (
-                CertificateModel.objects.filter(
-                    certificate_status__in=['O', 'R']
-                )  # Optional: Filter nach mehreren Statuswerten
+            cert_status_qr = (CertificateModel.objects
+                .filter(certificate_status__in=['O', 'R'])  # Optional: Filter nach mehreren Statuswerten
                 .annotate(issue_date=TruncDate('not_valid_before'))
                 .values('issue_date', 'certificate_status')
                 .annotate(cert_count=Count('id'))
@@ -298,8 +296,8 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get certs count by onboarding status from database"""
         cert_status_counts = {str(status): 0 for _, status in CertificateModel.CertificateStatus.choices}
         try:
-            cert_status_qr = (
-                CertificateModel.objects.filter(created_at__gt=start_date)
+            cert_status_qr = (CertificateModel.objects
+                .filter(created_at__gt=start_date)
                 .values('certificate_status')
                 .annotate(count=Count('certificate_status'))
             )
@@ -342,8 +340,8 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get device count by date and onboarding status from database"""
         device_counts_by_date_and_os = []
         try:
-            device_date_os_qr = (
-                DeviceModel.objects.annotate(issue_date=TruncDate('created_at'))
+            device_date_os_qr = (DeviceModel.objects
+                .annotate(issue_date=TruncDate('created_at'))
                 .values('issue_date', onboarding_status=F('onboarding_status'))
                 .annotate(device_count=Count('id'))
                 .order_by('issue_date', 'onboarding_status')
@@ -358,8 +356,8 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get device count by onboarding protocol from database"""
         device_op_counts = {str(status): 0 for _, status in DeviceModel.OnboardingProtocol.choices}
         try:
-            device_op_qr = (
-                DeviceModel.objects.filter(created_at__gt=start_date)
+            device_op_qr = (DeviceModel.objects
+                .filter(created_at__gt=start_date)
                 .values('onboarding_protocol')
                 .annotate(count=Count('onboarding_protocol'))
             )
@@ -375,29 +373,8 @@ class DashboardChartsAndCountsView(TemplateView):
     def get_device_count_by_domain(self, start_date: date) -> list[dict[str, Any]]:
         """Get count of onboarded devices by domain from the database."""
         try:
-            # device_domain_qr = (DeviceModel.objects
-            # .annotate(
-            #     onboarded_device_count=Count(
-            #         'unique_name', 
-            #         filter=Q(onboarding_status = 2) & Q(created_at__gt=start_date)
-            #     ))
-            # .values('domain__unique_name', 'onboarded_device_count'))
-
-            # device_domain_qr = (
-            #     DeviceModel.objects
-            #     .annotate(
-            #         onboarded_device_count=Count(
-            #             filter=Q(onboarding_status=2) & Q(created_at__gt=start_date)
-            #         ),
-            #         domain_name=F('domain__unique_name')
-            #     )
-            #     .values('domain_name', 'onboarded_device_count')
-            #     .order_by('domain_name')
-            # )
-            device_domain_qr = (
-                DeviceModel.objects.filter(
-                    Q(onboarding_status=2) & Q(created_at__gte=start_date)
-                )
+            device_domain_qr = (DeviceModel.objects
+                .filter(Q(onboarding_status=2) & Q(created_at__gte=start_date))
                 .values(domain_name=F('domain__unique_name'))
                 .annotate(onboarded_device_count=Count('id'))
             )
@@ -412,8 +389,8 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get certificate count by issuing ca from database"""
         cert_counts_by_issuing_ca = []
         try:
-            cert_issuing_ca_qr = (
-                CertificateModel.objects.filter(issuing_ca_model__isnull=False)
+            cert_issuing_ca_qr = (CertificateModel.objects
+                .filter(issuing_ca_model__isnull=False)
                 .filter(added_at__gt=start_date)
                 .annotate(cert_count=Count('issued_certificate_references'))
                 .values('cert_count', ca_name=F('issuing_ca_model__unique_name'))
@@ -470,8 +447,7 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get certificate count by template from database"""
         cert_counts_by_template = {str(status): 0 for _, status in IssuedApplicationCertificateModel.ApplicationCertificateType.choices}
         try:
-            cert_template_qr = (
-                IssuedApplicationCertificateModel.objects
+            cert_template_qr = (IssuedApplicationCertificateModel.objects
                 .filter(issued_application_certificate__created_at__gt=start_date)
                 .values(cert_type = F('issued_application_certificate_type'))
                 .annotate(count=Count('id'))
@@ -488,8 +464,8 @@ class DashboardChartsAndCountsView(TemplateView):
         """Get issuing ca counts by type from database"""
         issuing_ca_type_counts = {str(cert_type): 0 for _, cert_type in IssuingCaModel.IssuingCaTypeChoice.choices}
         try:
-            ca_type_qr = (
-                IssuingCaModel.objects.filter(created_at__gt=start_date)
+            ca_type_qr = (IssuingCaModel.objects
+                .filter(created_at__gt=start_date)
                 .values('issuing_ca_type')
                 .annotate(count=Count('issuing_ca_type'))
             )
