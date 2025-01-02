@@ -537,8 +537,6 @@ class IssuerAlternativeNameExtension(CertificateExtension, models.Model):
     See RFC5280 for more information.
     """
 
-    _general_name_type = 'IssuerAlternativeNameExtension'
-
     @property
     def extension_oid(self) -> str:
         return CertificateExtensionOid.ISSUER_ALTERNATIVE_NAME.dotted_string
@@ -557,7 +555,7 @@ class IssuerAlternativeNameExtension(CertificateExtension, models.Model):
     
     def __str__(self) -> str:
         return (
-            f'{self._general_name_type}(critical={self.critical}, '
+            f'{self.__class__.__name__}(critical={self.critical}, '
             f'oid={self.extension_oid})')
 
 
@@ -596,8 +594,6 @@ class SubjectAlternativeNameExtension(CertificateExtension, models.Model):
     See RFC5280 for more information.
     """
 
-    _general_name_type = 'SubjectAlternativeNameExtension'
-
     @property
     def extension_oid(self) -> str:
         return CertificateExtensionOid.SUBJECT_ALTERNATIVE_NAME.dotted_string
@@ -615,7 +611,7 @@ class SubjectAlternativeNameExtension(CertificateExtension, models.Model):
 
     def __str__(self) -> str:
         return (
-            f'{self._general_name_type}(critical={self.critical}, '
+            f'{self.__class__.__name__}(critical={self.critical}, '
             f'oid={self.extension_oid})')
 
     @classmethod
@@ -735,7 +731,7 @@ class SubjectKeyIdentifierExtension(CertificateExtension, models.Model):
 
     Stores the Subject Key Identifier (SKI) extension of an X.509 certificate.
     """
-
+    # TODO Add critical and storage mechanism
     @property
     def extension_oid(self) -> str:
         return CertificateExtensionOid.SUBJECT_KEY_IDENTIFIER.dotted_string
@@ -811,6 +807,7 @@ class CPSUriModel(models.Model):
 class QualifierModel(models.Model):
     """Generic model to represent either a CPS URI or a User Notice."""
     # TODO(BytesWelder): Maybe use cps_uri directly as CharField. Discuss differences
+    #  Disscued: Change to charfield
     cps_uri = models.ForeignKey(CPSUriModel, null=True, blank=True, on_delete=models.CASCADE, related_name='qualifiers')
     user_notice = models.ForeignKey(UserNotice, null=True, blank=True, on_delete=models.CASCADE, related_name='qualifiers')
 
