@@ -989,12 +989,7 @@ class ExtendedKeyUsageExtension(models.Model):
             return None
 
 
-class GeneralSubtree(models.Model):
-    """Represents a single GeneralSubtree as per RFC5280.
-
-    Base is a single GeneralName.
-    minimum defaults to 0 and maximum is optional.
-    """
+class GeneralNameModel(models.Model):
     rfc822_name = models.ForeignKey(GeneralNameRFC822Name, null=True, blank=True, on_delete=models.CASCADE)
     dns_name = models.ForeignKey(GeneralNameDNSName, null=True, blank=True, on_delete=models.CASCADE)
     directory_name = models.ForeignKey(GeneralNameDirectoryName, null=True, blank=True, on_delete=models.CASCADE)
@@ -1002,9 +997,6 @@ class GeneralSubtree(models.Model):
     ip_address = models.ForeignKey(GeneralNameIpAddress, null=True, blank=True, on_delete=models.CASCADE)
     registered_id = models.ForeignKey(GeneralNameRegisteredId, null=True, blank=True, on_delete=models.CASCADE)
     other_name = models.ForeignKey(GeneralNameOtherName, null=True, blank=True, on_delete=models.CASCADE)
-
-    minimum = models.PositiveIntegerField(default=0, editable=False)
-    maximum = models.PositiveIntegerField(null=True, blank=True, editable=False, default=None)
 
     def __str__(self):
         return f"GeneralSubtree(GeneralName={self.get_str()}, min={self.minimum}, max={self.maximum})"
@@ -1025,6 +1017,104 @@ class GeneralSubtree(models.Model):
         if self.other_name:
             return f"otherName={self.other_name.type_id}"
         return "No GeneralName set"
+
+    def get_value(self):
+        if self.rfc822_name:
+            return self.rfc822_name.value
+        if self.dns_name:
+            return self.dns_name.value
+        if self.directory_name:
+            return ','.join(str(n) for n in self.directory_name.names.all())
+        if self.uri:
+            return self.uri.value
+        if self.ip_address:
+            return self.ip_address.value
+        if self.registered_id:
+            return self.registered_id.value
+        if self.other_name:
+            return self.other_name.type_id
+        return "No GeneralName set"
+
+    @classmethod
+    def from_x509_general_name(cls, gname: x509.GeneralName) -> GeneralNameModel:
+        """Creates and returns a GeneralNameModel instance from a cryptography.x509.GeneralName.
+
+        Args:
+            gname (x509.GeneralName): The cryptography GeneralName object.
+
+        Returns:
+            GeneralNameModel: A newly created or updated GeneralNameModel.
+        """
+        gn_model = cls()
+        gn_model.save()
+
+        if isinstance(gname, x509.RFC822Name):
+            obj, _ = GeneralNameRFC822Name.objects.get_or_create(value=gname.value)
+            gn_model.rfc822_name = obj
+
+        elif isinstance(gname, x509.DNSName):
+            obj, _ = GeneralNameDNSName.objects.get_or_create(value=gname.value)
+            gn_model.dns_name = obj
+
+        elif isinstance(gname, x509.DirectoryName):
+            dir_name = GeneralNameDirectoryName()
+            dir_name.save()
+            for rdn in gname.value.rdns:
+                for attr in rdn:
+                    # Possibly store attribute in your DB
+                    atv = AttributeTypeAndValue.objects.filter(
+                        oid=attr.oid.dotted_string, value=attr.value
+                    ).first()
+                    if not atv:
+                        atv = AttributeTypeAndValue(oid=attr.oid.dotted_string, value=attr.value)
+                        atv.save()
+                    dir_name.names.add(atv)
+            dir_name.save()
+            gn_model.directory_name = dir_name
+
+        elif isinstance(gname, x509.UniformResourceIdentifier):
+            obj, _ = GeneralNameUniformResourceIdentifier.objects.get_or_create(value=gname.value)
+            gn_model.uri = obj
+
+        elif isinstance(gname, x509.IPAddress):
+            ip_str = str(gname.value)
+            ip_type = (
+                GeneralNameIpAddress.IpType.IPV4_ADDRESS
+                if gname.value.version == 4
+                else GeneralNameIpAddress.IpType.IPV6_ADDRESS
+            )
+            obj, _ = GeneralNameIpAddress.objects.get_or_create(ip_type=ip_type, value=ip_str)
+            gn_model.ip_address = obj
+
+        elif isinstance(gname, x509.RegisteredID):
+            obj, _ = GeneralNameRegisteredId.objects.get_or_create(value=gname.value.dotted_string)
+            gn_model.registered_id = obj
+
+        elif isinstance(gname, x509.OtherName):
+            # Convert the value to hex
+            hex_val = gname.value.hex().upper()
+            obj, _ = GeneralNameOtherName.objects.get_or_create(
+                type_id=gname.type_id.dotted_string, value=hex_val
+            )
+            gn_model.other_name = obj
+
+        else:
+            raise TypeError(gname)
+
+        gn_model.save()
+        return gn_model
+
+
+class GeneralSubtree(models.Model):
+    """Represents a single GeneralSubtree as per RFC5280.
+
+    Base is a single GeneralName.
+    minimum defaults to 0 and maximum is optional.
+    """
+    base = models.ForeignKey(GeneralNameModel, on_delete=models.CASCADE)
+
+    minimum = models.PositiveIntegerField(default=0, editable=False)
+    maximum = models.PositiveIntegerField(null=True, blank=True, editable=False, default=None)
 
 
 class NameConstraintsExtension(CertificateExtension, models.Model):
@@ -1057,54 +1147,8 @@ class NameConstraintsExtension(CertificateExtension, models.Model):
             nc_ext.save()
 
             def save_general_subtree(general_name: x509.GeneralName):
-                subtree = GeneralSubtree(minimum=0, maximum=None)
-                subtree.save()
-
-                if isinstance(general_name, x509.RFC822Name):
-                    from pki.models.extension import GeneralNameRFC822Name
-                    obj, _ = GeneralNameRFC822Name.objects.get_or_create(value=general_name.value)
-                    subtree.rfc822_name = obj
-
-                elif isinstance(general_name, x509.DNSName):
-                    from pki.models.extension import GeneralNameDNSName
-                    obj, _ = GeneralNameDNSName.objects.get_or_create(value=general_name.value)
-                    subtree.dns_name = obj
-
-                elif isinstance(general_name, x509.DirectoryName):
-                    dir_name = GeneralNameDirectoryName()
-                    dir_name.save()
-                    for rdn in general_name.value.rdns:
-                        for attr in rdn:
-                            atv = AttributeTypeAndValue.objects.filter(oid=attr.oid.dotted_string, value=attr.value).first()
-                            if not atv:
-                                atv = AttributeTypeAndValue(oid=attr.oid.dotted_string, value=attr.value)
-                                atv.save()
-                            dir_name.names.add(atv)
-                    dir_name.save()
-                    subtree.directory_name = dir_name
-
-                elif isinstance(general_name, x509.UniformResourceIdentifier):
-                    obj, _ = GeneralNameUniformResourceIdentifier.objects.get_or_create(value=general_name.value)
-                    subtree.uri = obj
-
-                elif isinstance(general_name, x509.IPAddress):
-                    ip_str = str(general_name.value)
-                    ip_type = GeneralNameIpAddress.IpType.IPV4_ADDRESS if general_name.value.version == 4 \
-                        else GeneralNameIpAddress.IpType.IPV6_ADDRESS
-                    obj, _ = GeneralNameIpAddress.objects.get_or_create(ip_type=ip_type, value=ip_str)
-                    subtree.ip_address = obj
-
-                elif isinstance(general_name, x509.RegisteredID):
-                    from pki.models.extension import GeneralNameRegisteredId
-                    obj, _ = GeneralNameRegisteredId.objects.get_or_create(value=general_name.value.dotted_string)
-                    subtree.registered_id = obj
-
-                elif isinstance(general_name, x509.OtherName):
-                    from pki.models.extension import GeneralNameOtherName
-                    hex_val = general_name.value.hex().upper()
-                    obj, _ = GeneralNameOtherName.objects.get_or_create(type_id=general_name.type_id.dotted_string, value=hex_val)
-                    subtree.other_name = obj
-
+                gn_model = GeneralNameModel.from_x509_general_name(general_name)
+                subtree = GeneralSubtree(base=gn_model, minimum=0, maximum=None)
                 subtree.save()
                 return subtree
 
@@ -1292,14 +1336,103 @@ class CrlDistributionPointsExtension(CertificateExtension, models.Model):
         except ExtensionNotFound:
             return None
 
+class AccessDescriptionModel(CertificateExtension, models.Model):
+    access_method = models.CharField(max_length=256, editable=False, verbose_name='Access Method OID')
+    access_location = models.ForeignKey(GeneralNameModel, verbose_name='Access Location', on_delete=models.CASCADE)
 
-#
-# class AuthorityInformationAccessExtension(CertificateExtension, models.Model):
-#     pass
-#
-#
-# class SubjectInformationAccessExtension(CertificateExtension, models.Model):
-#     pass
+    def __str__(self):
+        return f"AccessDescription(method={self.access_method}, location={self.access_location})"
+
+
+class AuthorityInformationAccessExtension(CertificateExtension, models.Model):
+    critical = models.BooleanField(verbose_name='Critical', editable=False)
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.AUTHORITY_INFORMATION_ACCESS.dotted_string
+
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
+    authority_info_access_syntax = models.ManyToManyField(
+        AccessDescriptionModel,
+        related_name='authority_info_access_syntax',
+        blank=True
+    )
+
+    def __str__(self):
+        return f'AuthorityInformationAccessExtension(critical={self.critical}, #authority_info_access_syntax={self.authority_info_access_syntax.count()})'
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) -> AuthorityInformationAccessExtension | None:
+        """Creates an AuthorityInformationAccessExtension from the cryptography.x509.AuthorityInformationAccess object."""
+
+        if not isinstance(extension.value, x509.AuthorityInformationAccess):
+            raise ValueError("Expected an AuthorityInformationAccess extension.")
+
+        aia_ext = cls(critical=extension.critical)
+        aia_ext.save()
+
+        for access_desc in extension.value:
+            adm = AccessDescriptionModel()
+            adm.access_method = access_desc.access_method.dotted_string
+
+            gn_model = None
+            if access_desc.access_location is not None:
+                gn_model = GeneralNameModel.from_x509_general_name(access_desc.access_location)
+
+            adm.access_location = gn_model
+            adm.save()
+
+            aia_ext.authority_info_access_syntax.add(adm)
+
+        aia_ext.save()
+        return aia_ext
+
+
+class SubjectInformationAccessExtension(CertificateExtension, models.Model):
+    """Represents the SubjectInformationAccess extension (SIA)."""
+    critical = models.BooleanField(verbose_name='Critical', editable=False)
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.SUBJECT_INFORMATION_ACCESS.dotted_string
+
+    subject_info_access_syntax = models.ManyToManyField(
+        AccessDescriptionModel,
+        related_name='subject_info_access_syntax',
+        blank=True
+    )
+
+    def __str__(self):
+        return f'SubjectInformationAccessExtension(critical={self.critical}, #subject_info_access_syntax={self.subject_info_access_syntax.count()})'
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) -> SubjectInformationAccessExtension | None:
+        """
+        Creates a SubjectInformationAccessExtension from the cryptography.x509.SubjectInformationAccess object.
+        """
+
+        if not isinstance(extension.value, x509.SubjectInformationAccess):
+            raise ValueError("Expected a SubjectInformationAccess extension.")
+
+        sia_ext = cls(critical=extension.critical)
+        sia_ext.save()
+
+        for access_desc in extension.value:
+            adm = AccessDescriptionModel()
+            adm.access_method = access_desc.access_method.dotted_string
+
+            gn_model = None
+            if access_desc.access_location is not None:
+                gn_model = GeneralNameModel.from_x509_general_name(access_desc.access_location)
+
+            adm.access_location = gn_model
+            adm.save()
+
+            sia_ext.subject_info_access_syntax.add(adm)
+
+        sia_ext.save()
+        return sia_ext
 #
 #
 # class InhibitAnyPolicyExtension(CertificateExtension, models.Model):

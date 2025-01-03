@@ -30,6 +30,7 @@ from cryptography.x509 import (
 from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID, ObjectIdentifier
 from pyasn1.codec.der.encoder import encode  # type: ignore  # noqa: PGH003
 from pyasn1.type import char  # type: ignore  # noqa: PGH003
+from cryptography.x509.oid import SubjectInformationAccessOID
 
 from pki.tests import (
     COMMON_NAME,
@@ -74,7 +75,6 @@ def ec_private_key() -> ec.EllipticCurvePrivateKey:
 # Basic Self-Signed Certificate Fixture
 # ----------------------------
 
-@pytest.mark.django_db
 @pytest.fixture(scope="function")
 def self_signed_cert_basic(rsa_private_key) -> CertificateModel:
     """Creates a self-signed CA certificate with minimal extensions and saves it to the database once per module.
@@ -201,6 +201,24 @@ def self_signed_cert_with_ext(rsa_private_key) -> x509.Certificate:
         excluded_subtrees=[directory_name, registered_id, other_name]
     )
 
+    aia = x509.AuthorityInformationAccess([
+        x509.AccessDescription(
+            access_method=x509.AuthorityInformationAccessOID.CA_ISSUERS,
+            access_location=x509.DNSName(DNS_NAME_VALUE)
+        ),
+        x509.AccessDescription(
+            access_method=x509.AuthorityInformationAccessOID.OCSP,
+            access_location=x509.UniformResourceIdentifier(URI_VALUE)
+        )
+    ])
+
+    sia = x509.SubjectInformationAccess([
+        x509.AccessDescription(
+            access_method=SubjectInformationAccessOID.CA_REPOSITORY,
+            access_location=x509.DNSName(DNS_NAME_VALUE)
+        )
+    ])
+
     cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
@@ -218,6 +236,8 @@ def self_signed_cert_with_ext(rsa_private_key) -> x509.Certificate:
         .add_extension(cp, critical=True)
         .add_extension(eku, critical=False)
         .add_extension(name_constraints, critical=True)
+        .add_extension(aia, critical=False)
+        .add_extension(sia, critical=False)
         .sign(private_key=rsa_private_key, algorithm=hashes.SHA256())
     )
     return cert

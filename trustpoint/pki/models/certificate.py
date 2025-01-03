@@ -14,6 +14,7 @@ from django.utils.translation import gettext_lazy as _
 
 from pki.models.extension import (
     AttributeTypeAndValue,
+    AuthorityInformationAccessExtension,
     AuthorityKeyIdentifierExtension,
     BasicConstraintsExtension,
     CertificatePoliciesExtension,
@@ -23,6 +24,7 @@ from pki.models.extension import (
     KeyUsageExtension,
     NameConstraintsExtension,
     SubjectAlternativeNameExtension,
+    SubjectInformationAccessExtension,
     SubjectKeyIdentifierExtension,
 )
 from trustpoint.views.base import LoggerMixin
@@ -286,7 +288,6 @@ class CertificateModel(LoggerMixin, models.Model):
         on_delete=models.CASCADE
     )
 
-    
     crl_distribution_points_extension = models.ForeignKey(
         CrlDistributionPointsExtension,
         related_name='certificates',
@@ -296,9 +297,17 @@ class CertificateModel(LoggerMixin, models.Model):
         on_delete=models.CASCADE
     )
 
+    authority_information_access_extension = models.ForeignKey(
+        AuthorityInformationAccessExtension,
+        null=True, blank=True, on_delete=models.CASCADE
+    )
+
+    subject_information_access_extension = models.ForeignKey(
+        SubjectInformationAccessExtension,
+        null=True, blank=True, on_delete=models.CASCADE
+    )
+
     # ext_policy_mappings = None
-    # ext_subject_alternative_name = None
-    # ext_issuer_alternative_name = None
     # ext_subject_directory_attributes = None
     # ext_policy_constraints = None
     # ext_inhibit_any_policy = None
@@ -506,6 +515,10 @@ class CertificateModel(LoggerMixin, models.Model):
                 cert_model.name_constraints_extension = NameConstraintsExtension.save_from_crypto_extensions(extension)
             elif isinstance(extension.value, x509.CRLDistributionPoints):
                 cert_model.crl_distribution_points_extension = CrlDistributionPointsExtension.save_from_crypto_extensions(extension)
+            elif isinstance(extension.value, x509.AuthorityInformationAccess):
+                cert_model.authority_information_access_extension = AuthorityInformationAccessExtension.save_from_crypto_extensions(extension)
+            elif isinstance(extension.value, x509.SubjectInformationAccess):
+                cert_model.subject_information_access_extension = SubjectInformationAccessExtension.save_from_crypto_extensions(extension)
 
     @classmethod
     @transaction.atomic

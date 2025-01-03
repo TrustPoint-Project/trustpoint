@@ -1,10 +1,8 @@
 import hashlib
 
 import pytest  # type: ignore  # noqa: PGH003
+from cryptography import x509
 from cryptography.hazmat.primitives import serialization
-from cryptography.x509 import ExtendedKeyUsageOID
-
-# Aus Ihrem Projekt
 from pki.models.certificate import CertificateModel
 from pki.tests import (
     DNS_NAME_VALUE,
@@ -19,6 +17,7 @@ from pki.tests import (
 from pki.tests.fixtures import self_signed_cert_with_ext  # noqa: F401
 from pyasn1.codec.der.decoder import decode  # type: ignore  # noqa: PGH003
 from pyasn1.type import char  # type: ignore  # noqa: PGH003
+from cryptography.x509.oid import SubjectInformationAccessOID
 
 
 @pytest.mark.django_db
@@ -196,12 +195,12 @@ def test_extended_key_usage_ext(self_signed_cert_with_ext) -> None:
     assert eku_ext.critical is False
 
     expected_oids = {
-        ExtendedKeyUsageOID.SERVER_AUTH.dotted_string,
-        ExtendedKeyUsageOID.CLIENT_AUTH.dotted_string,
-        ExtendedKeyUsageOID.CODE_SIGNING.dotted_string,
-        ExtendedKeyUsageOID.EMAIL_PROTECTION.dotted_string,
-        ExtendedKeyUsageOID.TIME_STAMPING.dotted_string,
-        ExtendedKeyUsageOID.OCSP_SIGNING.dotted_string,
+        x509.ExtendedKeyUsageOID.SERVER_AUTH.dotted_string,
+        x509.ExtendedKeyUsageOID.CLIENT_AUTH.dotted_string,
+        x509.ExtendedKeyUsageOID.CODE_SIGNING.dotted_string,
+        x509.ExtendedKeyUsageOID.EMAIL_PROTECTION.dotted_string,
+        x509.ExtendedKeyUsageOID.TIME_STAMPING.dotted_string,
+        x509.ExtendedKeyUsageOID.OCSP_SIGNING.dotted_string,
     }
     saved_oids = {kp.oid for kp in eku_ext.key_purpose_ids.all()}
     assert saved_oids == expected_oids
@@ -216,27 +215,71 @@ def test_name_constraints_ext(self_signed_cert_with_ext) -> None:
 
     # permittedSubtrees
     assert nc_ext.permitted_subtrees.count() == 3
-    assert any(st.rfc822_name.value == RFC822_EMAIL if st.rfc822_name else False
-               for st in nc_ext.permitted_subtrees.all())
-    assert any(st.dns_name.value == DNS_NAME_VALUE if st.dns_name else False
-               for st in nc_ext.permitted_subtrees.all())
-    assert any(st.uri.value == URI_VALUE if st.uri else False
-               for st in nc_ext.permitted_subtrees.all())
+    assert any(
+        st.base.rfc822_name.value == RFC822_EMAIL if st.base.rfc822_name else False
+        for st in nc_ext.permitted_subtrees.all()
+    )
+    assert any(
+        st.base.dns_name.value == DNS_NAME_VALUE if st.base.dns_name else False
+        for st in nc_ext.permitted_subtrees.all()
+    )
+    assert any(
+        st.base.uri.value == URI_VALUE if st.base.uri else False
+        for st in nc_ext.permitted_subtrees.all()
+    )
 
     # excludedSubtrees
     assert nc_ext.excluded_subtrees.count() == 3
-    excluded_directory = nc_ext.excluded_subtrees.filter(directory_name__isnull=False).first()
+    excluded_directory = nc_ext.excluded_subtrees.filter(base__directory_name__isnull=False).first()
     assert excluded_directory is not None
-    assert any(attr.value == ORGANIZATION_NAME for attr in excluded_directory.directory_name.names.all())
+    assert any(attr.value == ORGANIZATION_NAME for attr in excluded_directory.base.directory_name.names.all())
 
-    assert any(st.registered_id.value == REGISTERED_ID_OID if st.registered_id else False
-               for st in nc_ext.excluded_subtrees.all())
+    assert any(
+        st.base.registered_id.value == REGISTERED_ID_OID if st.base.registered_id else False
+        for st in nc_ext.excluded_subtrees.all()
+    )
 
-    excluded_other_name = nc_ext.excluded_subtrees.filter(other_name__isnull=False).first()
+    excluded_other_name = nc_ext.excluded_subtrees.filter(base__other_name__isnull=False).first()
     assert excluded_other_name is not None
-    assert excluded_other_name.other_name.type_id == OTHER_NAME_OID
-    from pyasn1.codec.der.decoder import decode
-    from pyasn1.type import char
-    decoded_asn1, _ = decode(bytes.fromhex(excluded_other_name.other_name.value), asn1Spec=char.UTF8String())
+    assert excluded_other_name.base.other_name.type_id == OTHER_NAME_OID
+    decoded_asn1, _ = decode(
+        bytes.fromhex(excluded_other_name.base.other_name.value), asn1Spec=char.UTF8String()
+    )
     assert str(decoded_asn1) == OTHER_NAME_CONTENT
+
+
+@pytest.mark.django_db
+def test_authority_information_access_extension(self_signed_cert_with_ext):
+    """Test that the AIA extension is parsed and stored correctly in the database."""
+    cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
+    ext = cert_model.authority_information_access_extension
+    assert ext is not None
+    assert ext.authority_info_access_syntax.count() == 2
+
+    ad_list = ext.authority_info_access_syntax.all().order_by('id')
+    ad1 = ad_list[0]
+    assert ad1.access_method == x509.AuthorityInformationAccessOID.CA_ISSUERS.dotted_string
+    assert ad1.access_location is not None
+    assert ad1.access_location.dns_name is not None
+    assert ad1.access_location.dns_name.value == DNS_NAME_VALUE
+
+    ad2 = ad_list[1]
+    assert ad2.access_method == x509.AuthorityInformationAccessOID.OCSP.dotted_string
+    assert ad2.access_location is not None
+    assert ad2.access_location.uri.value == URI_VALUE
+
+
+@pytest.mark.django_db
+def test_subject_information_access_extension(self_signed_cert_with_ext):
+    """Test that the SIA extension is parsed and stored correctly in the database."""
+    cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
+    ext = cert_model.subject_information_access_extension
+    assert ext is not None
+    assert ext.subject_info_access_syntax.count() == 1
+
+    ad = ext.subject_info_access_syntax.first()
+    assert ad.access_method == SubjectInformationAccessOID.CA_REPOSITORY.dotted_string
+    assert ad.access_location is not None
+    assert ad.access_location.dns_name is not None
+    assert ad.access_location.dns_name.value == DNS_NAME_VALUE
 
