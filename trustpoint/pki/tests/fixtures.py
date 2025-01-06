@@ -2,7 +2,6 @@ import hashlib
 import ipaddress
 from datetime import datetime, timedelta, timezone
 
-from pki.models.certificate import CertificateModel
 import pytest  # type: ignore  # noqa: PGH003
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes, serialization
@@ -27,11 +26,11 @@ from cryptography.x509 import (
     UniformResourceIdentifier,
     UserNotice,
 )
-from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID, ObjectIdentifier
+from cryptography.x509.oid import ExtendedKeyUsageOID, NameOID, ObjectIdentifier, SubjectInformationAccessOID
 from pyasn1.codec.der.encoder import encode  # type: ignore  # noqa: PGH003
 from pyasn1.type import char  # type: ignore  # noqa: PGH003
-from cryptography.x509.oid import SubjectInformationAccessOID
 
+from pki.models.certificate import CertificateModel
 from pki.tests import (
     COMMON_NAME,
     COUNTRY_NAME,
@@ -48,31 +47,6 @@ from pki.tests import (
     RFC822_EMAIL,
     URI_VALUE,
 )
-
-# ----------------------------
-# RSA Private Key Fixture
-# ----------------------------
-
-@pytest.fixture(scope="function")
-def rsa_private_key() -> rsa.RSAPrivateKey:
-    """
-    Generate a reusable RSA private key.
-    """
-    return rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048,
-    )
-
-# ----------------------------
-# EC Private Key Fixture
-# ----------------------------
-
-@pytest.fixture(scope="function")
-def ec_private_key() -> ec.EllipticCurvePrivateKey:
-    """
-    Generate a reusable EC private key.
-    """
-    return ec.generate_private_key(ec.SECP256R1())
 
 # ----------------------------
 # Basic Self-Signed Certificate Fixture
