@@ -36,12 +36,15 @@ from pki.tests import (
     COMMON_NAME,
     COUNTRY_NAME,
     DNS_NAME_VALUE,
+    INHIBIT_ANY_POLICY_VALUE,
+    INHIBIT_POLICY_MAPPING,
     IP_ADDRESS_VALUE,
     KEY_USAGE_FLAGS,
     ORGANIZATION_NAME,
     OTHER_NAME_CONTENT,
     OTHER_NAME_OID,
     REGISTERED_ID_OID,
+    REQUIRE_EXPLICIT_POLICY,
     RFC822_EMAIL,
     URI_VALUE,
 )
@@ -219,6 +222,29 @@ def self_signed_cert_with_ext(rsa_private_key) -> x509.Certificate:
         )
     ])
 
+    iap = x509.InhibitAnyPolicy(INHIBIT_ANY_POLICY_VALUE)
+
+    # policy_mappings = x509.PolicyMappings([
+    #     x509.PolicyMapping(
+    #         issuer_domain_policy=ObjectIdentifier("1.2.3.4.5"),
+    #         subject_domain_policy=ObjectIdentifier("1.2.3.4.6")
+    #     ),
+    #     x509.PolicyMapping(
+    #         issuer_domain_policy=ObjectIdentifier("1.2.3.4.7"),
+    #         subject_domain_policy=ObjectIdentifier("1.2.3.4.8")
+    #     )
+    # ])
+
+    policy_constraints = x509.PolicyConstraints(
+        inhibit_policy_mapping=INHIBIT_POLICY_MAPPING,
+        require_explicit_policy=REQUIRE_EXPLICIT_POLICY
+    )
+
+
+    # freshest_crl = x509.FreshestCRL()
+    # CRLDistribution
+
+
     cert = (
         x509.CertificateBuilder()
         .subject_name(subject)
@@ -238,6 +264,8 @@ def self_signed_cert_with_ext(rsa_private_key) -> x509.Certificate:
         .add_extension(name_constraints, critical=True)
         .add_extension(aia, critical=False)
         .add_extension(sia, critical=False)
+        .add_extension(iap, critical=False)
+        .add_extension(policy_constraints, critical=False)
         .sign(private_key=rsa_private_key, algorithm=hashes.SHA256())
     )
     return cert

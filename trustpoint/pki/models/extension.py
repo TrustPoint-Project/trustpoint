@@ -1215,8 +1215,6 @@ class DistributionPointModel(CertificateExtension, models.Model):
         verbose_name=_('CRL Issuer')
     )
 
-
-class CrlDistributionPointsExtension(CertificateExtension, models.Model):
     mapping = {
         "unused": 0,
         "keyCompromise": 1,
@@ -1229,31 +1227,17 @@ class CrlDistributionPointsExtension(CertificateExtension, models.Model):
         "aACompromise": 8
     }
 
-    @property
-    def extension_oid(self) -> str:
-        return CertificateExtensionOid.CRL_DISTRIBUTION_POINTS.dotted_string
-    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
-
-    critical = models.BooleanField(verbose_name=_('Critical'), editable=False)
-
-    distribution_points = models.ManyToManyField(
-        DistributionPointModel,
-        verbose_name='Distribution Points',
-        blank=True
-    )
-
-    def __str__(self) -> str:
-        return f'CRLDistributionPointsExtension(critical={self.critical}, dp_count={self.distribution_points.count()})'
-
-    def reasons_list_to_bitstring(self, reasons_list: list[str]) -> str:
+    @classmethod
+    def reasons_list_to_bitstring(cls, reasons_list: list[str]) -> str:
         bits = ['0'] * 9
         for reason in reasons_list:
-            idx = self.mapping[reason]
+            idx = cls.mapping[reason]
             bits[idx] = '1'
         return ''.join(bits)
 
-    def bitstring_to_reasons_list(self, bitstr: str) -> list[str]:
-        reverse_mapping = {v: k for k, v in self.mapping.items()}
+    @classmethod
+    def bitstring_to_reasons_list(cls, bitstr: str) -> list[str]:
+        reverse_mapping = {v: k for k, v in cls.mapping.items()}
         reasons = []
         for i, bit in enumerate(bitstr):
             if bit == '1':
@@ -1263,39 +1247,52 @@ class CrlDistributionPointsExtension(CertificateExtension, models.Model):
     def set_reasons_on_distribution_point(self, dp_obj, reasons_list: list[str]) -> None:
         dp_obj.reasons = self.reasons_list_to_bitstring(reasons_list)
 
+
     @classmethod
-    def save_from_crypto_extensions(cls, extension: x509.Extension) -> CrlDistributionPointsExtension | None:
+    def parse_distribution_points(cls, extension: x509.Extension) -> list[DistributionPointModel]:
+        """Parses and stores DistributionPoints from an x509.Extension.
+
+        Args:
+            extension (x509.Extension): An x509.Extension containing DistributionPoints.
+
+        Returns:
+            List[DistributionPointModel]: List of created DistributionPoint objects.
+        """
+        if not isinstance(extension, x509.CRLDistributionPoints):
+            raise TypeError(extension)
+
+        distribution_points = []
         dp: x509.DistributionPoint
-        try:
-            cdp_ext = cls(critical=extension.critical)
-            cdp_ext.save()
 
-            for dp in extension.value:
+        for dp in extension.value:
+            dpn = DistributionPointName()
+            dpn.save()
 
-                dpn = DistributionPointName()
+            if dp.full_name:
+                gn = GeneralNamesModel()
+                gn.save()
+                GeneralNamesModel.save_general_names(gn, dp.full_name)
+                dpn.full_name = gn
+                dpn.save()
+            elif dp.relative_name:
+                for atv in dp.relative_name:
+                    attr, _ = AttributeTypeAndValue.objects.get_or_create(
+                        oid=atv.oid.dotted_string,
+                        value=atv.value
+                    )
+                    dpn.name_relative_to_crl_issuer.add(attr)
                 dpn.save()
 
-                if dp.full_name is not None:
-                    gn = GeneralNamesModel()
-                    gn.save()
-                    GeneralNamesModel.save_general_names(gn, dp.full_name)
-                    dpn.full_name = gn
-                    dpn.save()
-                elif dp.relative_name is not None:
-                    for atv in dp.relative_name:
-                        attr = AttributeTypeAndValue.objects.filter(
-                            oid=atv.oid.dotted_string,
-                            value=atv.value
-                        ).first()
-                        if not attr:
-                            attr = AttributeTypeAndValue(oid=atv.oid.dotted_string, value=atv.value)
-                            attr.save()
-                        dpn.name_relative_to_crl_issuer.add(attr)
-                    dpn.save()
+            crl_issuer = None
+            if dp.crl_issuer:
+                crl_issuer = GeneralNamesModel()
+                crl_issuer.save()
+                GeneralNamesModel.save_general_names(crl_issuer, dp.crl_issuer)
 
-                # TODO: Check if x509 is using the correct ReasonFlags for Distribution Point. -> It is commented out?
-                reasons_list = ['']
-                # if dp.reasons is not None:
+
+            # TODO: Check if x509 is using the correct ReasonFlags for Distribution Point. -> It is commented out?
+            reasons_list = ['']
+            # if dp.reasons:
                 #     reasons_list = []
                 #     if x509.ReasonFlags.unused in dp.reasons:
                 #         reasons_list.append("unused")
@@ -1315,26 +1312,48 @@ class CrlDistributionPointsExtension(CertificateExtension, models.Model):
                 #         reasons_list.append("privilegeWithdrawn")
                 #     if x509.ReasonFlags.aA_compromise in dp.reasons:
                 #         reasons_list.append("aACompromise")
+                # reasons_list = cls.reasons_list_to_bitstring(dp.reasons)
 
-                crl_issuer = None
-                # cRLIssuer falls vorhanden
-                if dp.crl_issuer is not None:
-                    # crl_issuer ist eine Liste von GeneralNames
-                    crl_issuer = GeneralNamesModel()
-                    GeneralNamesModel.save_general_names(gn, dp.crl_issuer)
+            dp_model = DistributionPointModel.objects.get_or_create(
+                distribution_point_name=dpn,
+                reasons=reasons_list,
+                crl_issuer=crl_issuer
+            )
+            distribution_points.append(dp_model)
 
-                dp_model, _ = DistributionPointModel.objects.get_or_create(
-                    distribution_point_name=dpn,
-                    reasons=cdp_ext.reasons_list_to_bitstring(reasons_list),
-                    crl_issuer=crl_issuer
-                )
+        return distribution_points
 
-                cdp_ext.distribution_points.add(dp_model)
 
-            cdp_ext.save()
-            return cdp_ext
-        except ExtensionNotFound:
-            return None
+class CrlDistributionPointsExtension(CertificateExtension, models.Model):
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.CRL_DISTRIBUTION_POINTS.dotted_string
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
+    critical = models.BooleanField(verbose_name=_('Critical'), editable=False)
+
+    distribution_points = models.ManyToManyField(
+        DistributionPointModel,
+        verbose_name='Distribution Points',
+        blank=True
+    )
+
+    def __str__(self) -> str:
+        return f'CRLDistributionPointsExtension(critical={self.critical}, dp_count={self.distribution_points.count()})'
+
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) -> CrlDistributionPointsExtension | None:
+        if not isinstance(extension.value, x509.CRLDistributionPoints):
+            raise ValueError("Expected a CRLDistributionPoints extension.")
+
+        ext_instance = cls(critical=extension.critical)
+        ext_instance.save()
+        distribution_points = DistributionPointModel.parse_distribution_points(extension)
+        ext_instance.distribution_points.add(*distribution_points)
+        ext_instance.save()
+        return ext_instance
 
 class AccessDescriptionModel(CertificateExtension, models.Model):
     access_method = models.CharField(max_length=256, editable=False, verbose_name='Access Method OID')
@@ -1397,6 +1416,8 @@ class SubjectInformationAccessExtension(CertificateExtension, models.Model):
     def extension_oid(self) -> str:
         return CertificateExtensionOid.SUBJECT_INFORMATION_ACCESS.dotted_string
 
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
     subject_info_access_syntax = models.ManyToManyField(
         AccessDescriptionModel,
         related_name='subject_info_access_syntax',
@@ -1408,10 +1429,7 @@ class SubjectInformationAccessExtension(CertificateExtension, models.Model):
 
     @classmethod
     def save_from_crypto_extensions(cls, extension: x509.Extension) -> SubjectInformationAccessExtension | None:
-        """
-        Creates a SubjectInformationAccessExtension from the cryptography.x509.SubjectInformationAccess object.
-        """
-
+        """Creates a SubjectInformationAccessExtension from the cryptography.x509.SubjectInformationAccess object."""
         if not isinstance(extension.value, x509.SubjectInformationAccess):
             raise ValueError("Expected a SubjectInformationAccess extension.")
 
@@ -1433,12 +1451,228 @@ class SubjectInformationAccessExtension(CertificateExtension, models.Model):
 
         sia_ext.save()
         return sia_ext
-#
-#
-# class InhibitAnyPolicyExtension(CertificateExtension, models.Model):
-#     pass
-#
-#
+
+class InhibitAnyPolicyExtension(CertificateExtension, models.Model):
+    critical = models.BooleanField(verbose_name='Critical', editable=False)
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.INHIBIT_ANY_POLICY.dotted_string
+
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
+    inhibit_any_policy = models.PositiveIntegerField(blank=True,null=True, verbose_name='InhibitAnyPolicy', editable=False)
+
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) -> InhibitAnyPolicyExtension | None:
+        """Creates a InhibitAnyPolicyExtension from the cryptography.x509.InhibitAnyPolicy object."""
+        if not isinstance(extension.value, x509.InhibitAnyPolicy):
+            raise TypeError("Expected a InhibitAnyPolicy extension.")
+
+        if not isinstance(extension.value.skip_certs, int):
+            raise TypeError(extension.value.skip_certs)
+        iap_ext = cls(critical=extension.critical, inhibit_any_policy=extension.value.skip_certs)
+        iap_ext.save()
+
+        return iap_ext
+
+
+class PolicyMappingModel(models.Model):
+    """Represents a single Policy Mapping as per RFC5280.
+
+    Each mapping includes an issuerDomainPolicy and a subjectDomainPolicy.
+    """
+    issuer_domain_policy = models.CharField(
+        max_length=256,
+        verbose_name='Issuer Domain Policy OID',
+        editable=False
+    )
+    subject_domain_policy = models.CharField(
+        max_length=256,
+        verbose_name='Subject Domain Policy OID',
+        editable=False
+    )
+
+    class Meta:
+        unique_together = ('issuer_domain_policy', 'subject_domain_policy')
+
+    def __str__(self):
+        return f"PolicyMapping(issuerDomainPolicy={self.issuer_domain_policy}, subjectDomainPolicy={self.subject_domain_policy})"
+
+
+class PolicyMappingsExtension(CertificateExtension, models.Model):
+    critical = models.BooleanField(verbose_name='Critical', editable=False)
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.POLICY_MAPPINGS.dotted_string
+
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
+    policy_mappings = models.ManyToManyField(
+        PolicyMappingModel,
+        related_name='policy_mappings_extension',
+        editable=False
+    )
+
+    def __str__(self) -> str:
+        mappings = ", ".join(
+            f"{mapping.issuer_domain_policy} -> {mapping.subject_domain_policy}"
+            for mapping in self.policy_mappings.all()
+        )
+        return f"PolicyMappingsExtension(critical={self.critical}, mappings=[{mappings}])"
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) -> None | PolicyMappingsExtension:
+        """Stores the PolicyMappingsExtension in the database.
+
+        Args:
+            extension (x509.Extension): The x509.Extension object containing PolicyMappings.
+
+        Returns:
+            PolicyMappingsExtension: The saved instance of PolicyMappingsExtension or None.
+        """
+        if not isinstance(extension.value, x509.PolicyMappings):
+            raise ValueError("Expected a PolicyMappings extension.")
+
+        try:
+            mappings_ext = cls(critical=extension.critical)
+            mappings_ext.save()
+
+            for mapping in extension.value:
+                issuer_policy = mapping.issuer_domain_policy.dotted_string
+                subject_policy = mapping.subject_domain_policy.dotted_string
+
+                policy_mapping, _ = PolicyMappingModel.objects.get_or_create(
+                    issuer_domain_policy=issuer_policy,
+                    subject_domain_policy=subject_policy
+                )
+                mappings_ext.policy_mappings.add(policy_mapping)
+
+            mappings_ext.save()
+            return mappings_ext
+
+        except x509.ExtensionNotFound:
+            return None
+
+
+class PolicyConstraintsExtension(CertificateExtension, models.Model):
+    critical = models.BooleanField(verbose_name='Critical', editable=False)
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.POLICY_CONSTRAINTS.dotted_string
+
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
+    require_explicit_policy = models.PositiveIntegerField(blank=True,null=True, verbose_name='requireExplicitPolicy', editable=False)
+    inhibit_policy_mapping = models.PositiveIntegerField(blank=True,null=True, verbose_name='inhibitPolicyMapping', editable=False)
+
+    def __str__(self) -> str:
+        mappings = ", ".join(
+            f"{mapping.issuer_domain_policy} -> {mapping.subject_domain_policy}"
+            for mapping in self.policy_mappings.all()
+        )
+        return f"PolicyMappingsExtension(critical={self.critical}, mappings=[{mappings}])"
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) -> None | PolicyConstraintsExtension:
+        """Stores the PolicyMappingsExtension in the database.
+
+        Args:
+            extension (x509.Extension): The x509.Extension object containing PolicyConstraints.
+
+        Returns:
+            PolicyConstraintsExtension: The saved instance of PolicyConstraintsExtension or None.
+        """
+        if not isinstance(extension.value, x509.PolicyConstraints):
+            raise ValueError("Expected a PolicyConstraints extension.")
+
+        try:
+            policy_constraint_ext = cls(
+                critical=extension.critical,
+                require_explicit_policy=extension.value.require_explicit_policy,
+                inhibit_policy_mapping=extension.value.inhibit_policy_mapping
+            )
+            policy_constraint_ext.save()
+            return policy_constraint_ext
+
+        except x509.ExtensionNotFound:
+            return None
+
+
+class SubjectDirectoryAttributesExtension(CertificateExtension, models.Model):
+    critical = models.BooleanField(verbose_name='Critical', editable=False)
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.SUBJECT_DIRECTORY_ATTRIBUTES.dotted_string
+
+    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+
+    subject_directory_attributes  = models.ManyToManyField(
+        AttributeTypeAndValue,
+        verbose_name=_('Subject Directory Attributes'),
+        editable=False,
+        blank=True
+    )
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) -> None | SubjectDirectoryAttributesExtension:
+        """Stores the SubjectDirectoryAttributesExtension in the database.
+
+        Args:
+            extension (x509.Extension): The x509.Extension object containing SubjectDirectoryAttributes.
+
+        Returns:
+            SubjectDirectoryAttributesExtension: The saved instance of SubjectDirectoryAttributesExtension or None.
+        """
+        # if not isinstance(extension.value, x509.SubjectDire):
+            # raise ValueError("Expected a SubjectDirectoryAttributes extension.")
+
+        try:
+            subject_directory_attributes = cls(critical=extension.critical)
+
+            for sdae in extension.value:
+                oid = sdae.oid.dotted_string
+                value = sdae.value
+
+                attr_type_and_val = AttributeTypeAndValue(oid=oid, value=value)
+                subject_directory_attributes.subject_directory_attributes.add(attr_type_and_val)
+
+            subject_directory_attributes.save()
+            return subject_directory_attributes
+
+        except x509.ExtensionNotFound:
+            return None
+
+
+class FreshestCrlExtension(CertificateExtension, models.Model):
+    """Freshest CRL Extension (RFC5280)."""
+    critical = models.BooleanField(verbose_name='Critical', editable=False)
+    distribution_points = models.ManyToManyField(DistributionPointModel, blank=True)
+
+    @property
+    def extension_oid(self) -> str:
+        return CertificateExtensionOid.FRESHEST_CRL.dotted_string
+
+    @classmethod
+    def save_from_crypto_extensions(cls, extension: x509.Extension) -> FreshestCrlExtension | None:
+        if not isinstance(extension.value, x509.FreshestCRL):
+            raise ValueError("Expected a FreshestCRL extension.")
+
+        ext_instance = cls(critical=extension.critical)
+        ext_instance.save()
+        distribution_points = DistributionPointModel.parse_distribution_points(extension)
+        ext_instance.distribution_points.add(*distribution_points)
+        ext_instance.save()
+        return ext_instance
+
+
+
+
+
 # class OcspNoCheckExtension(CertificateExtension, models.Model):
 #     pass
 #
@@ -1476,10 +1710,6 @@ class SubjectInformationAccessExtension(CertificateExtension, models.Model):
 #
 #
 # class IssuingDistributionPointsExtension(CertificateExtension, models.Model):
-#     pass
-#
-#
-# class PolicyMappingsExtension(CertificateExtension, models.Model):
 #     pass
 #
 #

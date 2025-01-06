@@ -3,21 +3,24 @@ import hashlib
 import pytest  # type: ignore  # noqa: PGH003
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
+from cryptography.x509.oid import SubjectInformationAccessOID
 from pki.models.certificate import CertificateModel
 from pki.tests import (
     DNS_NAME_VALUE,
+    INHIBIT_ANY_POLICY_VALUE,
+    INHIBIT_POLICY_MAPPING,
     IP_ADDRESS_VALUE,
     ORGANIZATION_NAME,
     OTHER_NAME_CONTENT,
     OTHER_NAME_OID,
     REGISTERED_ID_OID,
+    REQUIRE_EXPLICIT_POLICY,
     RFC822_EMAIL,
     URI_VALUE,
 )
 from pki.tests.fixtures import self_signed_cert_with_ext  # noqa: F401
 from pyasn1.codec.der.decoder import decode  # type: ignore  # noqa: PGH003
 from pyasn1.type import char  # type: ignore  # noqa: PGH003
-from cryptography.x509.oid import SubjectInformationAccessOID
 
 
 @pytest.mark.django_db
@@ -282,4 +285,68 @@ def test_subject_information_access_extension(self_signed_cert_with_ext):
     assert ad.access_location is not None
     assert ad.access_location.dns_name is not None
     assert ad.access_location.dns_name.value == DNS_NAME_VALUE
+
+
+
+@pytest.mark.django_db
+def test_inhibit_any_policy(self_signed_cert_with_ext):
+    """Test that the Inhibit anyPolicy extension is parsed and stored correctly in the database."""
+    cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
+    ext = cert_model.inhibit_any_policy_extension
+    assert ext.inhibit_any_policy == INHIBIT_ANY_POLICY_VALUE
+
+
+# @pytest.mark.django_db
+# def test_policy_mappings_ext(self_signed_cert_with_ext):
+#     """Test that the PolicyMappings extension is parsed and stored correctly in the database."""
+#     cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
+#     pm_ext = cert_model.policy_mappings_extension
+#     assert pm_ext is not None
+#     assert pm_ext.critical is True
+
+#     expected_mappings = {
+#         ("1.2.3.4.5", "1.2.3.4.6"),
+#         ("1.2.3.4.7", "1.2.3.4.8"),
+#     }
+
+#     saved_mappings = {
+#         (mapping.issuer_domain_policy, mapping.subject_domain_policy)
+#         for mapping in pm_ext.policy_mappings.all()
+#     }
+
+#     assert saved_mappings == expected_mappings
+
+
+@pytest.mark.django_db
+def test_policy_constraints(self_signed_cert_with_ext):
+    """Test that the Inhibit anyPolicy extension is parsed and stored correctly in the database."""
+    cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
+    ext = cert_model.policy_constraints_extension
+    assert ext.require_explicit_policy == REQUIRE_EXPLICIT_POLICY
+    assert ext.inhibit_policy_mapping == INHIBIT_POLICY_MAPPING
+
+
+# No cryptography support
+# @pytest.mark.django_db
+# def test_subject_directory_attributes_extension(self_signed_cert_with_ext) -> None:
+#     cert_model = CertificateModel.save_certificate(self_signed_cert_with_ext)
+#     sda_ext = cert_model.subject_directory_attributes_extension
+#     assert sda_ext is not None
+#     assert sda_ext.critical is False
+
+#     attributes = sda_ext.attributes.all()
+#     assert attributes.count() == 2
+
+#     attr1 = attributes[0]
+#     assert attr1.type == "some_oid"
+#     assert attr1.value == "some_value"
+
+#     attr2 = attributes[1]
+#     assert attr2.type == "oid"
+#     assert attr2.value == "some_value"
+
+
+@pytest.mark.django_db
+def test_freshest_crl(self_signed_cert_with_ext):
+    """A"""
 

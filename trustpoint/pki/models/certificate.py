@@ -20,10 +20,14 @@ from pki.models.extension import (
     CertificatePoliciesExtension,
     CrlDistributionPointsExtension,
     ExtendedKeyUsageExtension,
+    FreshestCrlExtension,
+    InhibitAnyPolicyExtension,
     IssuerAlternativeNameExtension,
     KeyUsageExtension,
     NameConstraintsExtension,
+    PolicyConstraintsExtension,
     SubjectAlternativeNameExtension,
+    SubjectDirectoryAttributesExtension,
     SubjectInformationAccessExtension,
     SubjectKeyIdentifierExtension,
 )
@@ -307,15 +311,39 @@ class CertificateModel(LoggerMixin, models.Model):
         null=True, blank=True, on_delete=models.CASCADE
     )
 
-    # ext_policy_mappings = None
-    # ext_subject_directory_attributes = None
-    # ext_policy_constraints = None
-    # ext_inhibit_any_policy = None
-    # ext_freshest_crl = None
+    inhibit_any_policy_extension = models.ForeignKey(
+        InhibitAnyPolicyExtension,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
 
-    # Private Internet Access
-    # ext_authority_information_access = None
-    # ext_subject_information_access = None
+    policy_constraints_extension = models.ForeignKey(
+        PolicyConstraintsExtension,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
+    subject_directory_attributes_extension = models.ForeignKey(
+        SubjectDirectoryAttributesExtension,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
+
+    freshest_crl_extension = models.ForeignKey(
+        FreshestCrlExtension,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE
+    )
+
+    # --------------------------------------------- No Cryptography support -------------------------------------
+
+    # policy_mappings = None
+    # ext_subject_directory_attributes = None
 
     # --------------------------------------------------- Properties ---------------------------------------------------
 
@@ -519,6 +547,14 @@ class CertificateModel(LoggerMixin, models.Model):
                 cert_model.authority_information_access_extension = AuthorityInformationAccessExtension.save_from_crypto_extensions(extension)
             elif isinstance(extension.value, x509.SubjectInformationAccess):
                 cert_model.subject_information_access_extension = SubjectInformationAccessExtension.save_from_crypto_extensions(extension)
+            elif isinstance(extension.value, x509.InhibitAnyPolicy):
+                cert_model.inhibit_any_policy_extension = InhibitAnyPolicyExtension.save_from_crypto_extensions(extension)
+            # elif isinstance(extension.value, x509.PolicyMappings):  # no x509 PolicyMapping implemented
+            #     cert_model.pol = InhibitAnyPolicyExtension.save_from_crypto_extensions(extension)
+            elif isinstance(extension.value, x509.PolicyConstraints):
+                cert_model.policy_constraints_extension = PolicyConstraintsExtension.save_from_crypto_extensions(extension)
+            elif isinstance(extension.value, x509.FreshestCRL):
+                cert_model.freshest_crl_extension = FreshestCrlExtension.save_from_crypto_extensions(extension)
 
     @classmethod
     @transaction.atomic
