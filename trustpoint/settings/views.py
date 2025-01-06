@@ -106,7 +106,10 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
 
     @LoggerMixin.log_exceptions
     def get_queryset(self) -> list[dict[str, str]]:
-        return [self._get_log_file_data(log_file_name) for log_file_name in os.listdir(LOG_DIR_PATH)]
+        all_files = os.listdir(LOG_DIR_PATH)
+        valid_log_files = [f for f in all_files if re.compile(r'^trustpoint\.log(?:\.\d+)?$').match(f)]
+
+        return [self._get_log_file_data(log_file_name) for log_file_name in valid_log_files]
 
 
 class LoggingFilesDetailsView(LoggerMixin, LoggingContextMixin, TpLoginRequiredMixin, TemplateView):
