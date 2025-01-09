@@ -124,18 +124,76 @@ class DeviceManualOnboardingIssueDomainCredentialView(DeviceContextMixin, TpLogi
                 kwargs={'pk': device.id}))
 
 
-class DeviceDomainCredentialDownloadView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
-
+class DeviceBaseCredentialDownloadView(DeviceContextMixin, DetailView, FormView):
     http_method_names = ['get', 'post']
 
-    model = IssuedDomainCredentialModel
     template_name = 'devices/credentials/credential_download.html'
     form_class = CredentialDownloadForm
     context_object_name = 'credential'
 
-    def get_context_data(self, form=None, **kwargs: dict) -> dict:
+    def form_invalid(self, form):
+        return self.render_to_response(self.get_context_data(form=form))
+    
+    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse | FileResponse:
+        self.object = self.get_object()
+        form = self.get_form()
+
+        if not form.is_valid():
+            return self.form_invalid(form)
+
+        password = self.request.POST.get('password').encode()
+
+        try:
+            file_format = CredentialSerializer.FileFormat(self.request.POST.get('file_format'))
+        except ValueError:
+            raise Http404
+
+        credential_model = self.get_object().credential
+        credential_serializer = credential_model.get_credential_serializer()
+        credential_type = credential_model.credential_type
+        credential_type_name = 'domain' # TODO: more generic
+
+        if self.model == IssuedApplicationCertificateModel:
+            credential_type = IssuedApplicationCertificateModel.ApplicationCertificateType(
+                self.get_object().issued_application_certificate_type
+            )
+            credential_type_name = credential_type.name.replace('_', '-').lower()
+
+        if file_format == CredentialSerializer.FileFormat.PKCS12:
+            response = FileResponse(
+                io.BytesIO(credential_serializer.as_pkcs12(password=password)),
+                content_type='application/pkcs12',
+                as_attachment=True,
+                filename=f'trustpoint-{credential_type_name}-credential.p12')
+
+        elif file_format == CredentialSerializer.FileFormat.PEM_ZIP:
+            response = FileResponse(
+                io.BytesIO(credential_serializer.as_pem_zip(password=password)),
+                content_type=ArchiveFormat.ZIP.mime_type,
+                as_attachment=True,
+                filename=f'trustpoint-{credential_type_name}-credential{ArchiveFormat.ZIP.file_extension}'
+            )
+
+        elif file_format == CredentialSerializer.FileFormat.PEM_TAR_GZ:
+            response = FileResponse(
+                io.BytesIO(credential_serializer.as_pem_tar_gz(password=password)),
+                content_type=ArchiveFormat.TAR_GZ.mime_type,
+                as_attachment=True,
+                filename=f'trustpoint-{credential_type_name}-credential{ArchiveFormat.TAR_GZ.file_extension}')
+
+        else:
+            raise Http404
+
+        return response
+
+
+class DeviceDomainCredentialDownloadView(TpLoginRequiredMixin, DeviceBaseCredentialDownloadView):
+
+    model = IssuedDomainCredentialModel
+
+    def get_context_data(self, **kwargs: dict) -> dict:
         credential = self.get_object().credential
-        context = super().get_context_data(form=form, **kwargs)
+        context = super().get_context_data(**kwargs)
         if credential.credential_type == CredentialModel.CredentialTypeChoice.DOMAIN_CREDENTIAL:
             context['credential_type'] = CredentialModel.CredentialTypeChoice.DOMAIN_CREDENTIAL.name.replace(
                 '_', ' ').title()
@@ -145,66 +203,13 @@ class DeviceDomainCredentialDownloadView(DeviceContextMixin, TpLoginRequiredMixi
         context = context | domain_credential_issuer.get_fixed_values()
 
         context['FileFormat'] = CredentialSerializer.FileFormat.__members__
+        context['show_browser_dl'] = True
         return context
 
-    def form_invalid(self, form):
-        return self.render_to_response(self.get_context_data(form=form))
 
-    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse | FileResponse:
-        form = self.get_form()
-        self.object = self.get_object()
-
-        if form.is_valid():
-
-            password = self.request.POST.get('password').encode()
-
-            try:
-                file_format = CredentialSerializer.FileFormat(self.request.POST.get('file_format'))
-            except ValueError:
-                raise Http404
-
-            credential_model = self.get_object().credential
-            credential_serializer = credential_model.get_credential_serializer()
-
-            if file_format == CredentialSerializer.FileFormat.PKCS12:
-                response = FileResponse(
-                    io.BytesIO(credential_serializer.as_pkcs12(password=password)),
-                    content_type='application/pkcs12',
-                    as_attachment=True,
-                    filename=f'trustpoint-domain-credential.p12')
-
-            elif file_format == CredentialSerializer.FileFormat.PEM_ZIP:
-                response = FileResponse(
-                    io.BytesIO(credential_serializer.as_pem_zip(password=password)),
-                    content_type=ArchiveFormat.ZIP.mime_type,
-                    as_attachment=True,
-                    filename=f'trustpoint-domain-credential{ArchiveFormat.ZIP.file_extension}'
-                )
-
-            elif file_format == CredentialSerializer.FileFormat.PEM_TAR_GZ:
-                response = FileResponse(
-                    io.BytesIO(credential_serializer.as_pem_tar_gz(password=password)),
-                    content_type=ArchiveFormat.TAR_GZ.mime_type,
-                    as_attachment=True,
-                    filename=f'trustpoint-domain-credential{ArchiveFormat.TAR_GZ.file_extension}')
-
-            else:
-                raise Http404
-
-            return response
-
-        else:
-            return self.form_invalid(form)
-
-
-class DeviceApplicationCredentialDownloadView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
-
-    http_method_names = ['get', 'post']
+class DeviceApplicationCredentialDownloadView(TpLoginRequiredMixin, DeviceBaseCredentialDownloadView):
 
     model = IssuedApplicationCertificateModel
-    template_name = 'devices/credentials/credential_download.html'
-    form_class = CredentialDownloadForm
-    context_object_name = 'credential'
 
     def get_context_data(self, **kwargs: dict) -> dict:
         credential = self.get_object().credential
@@ -221,63 +226,8 @@ class DeviceApplicationCredentialDownloadView(DeviceContextMixin, TpLoginRequire
         context['common_name'] = self.object.credential.certificate.common_name
 
         context['FileFormat'] = CredentialSerializer.FileFormat.__members__
+        context['show_browser_dl'] = False
         return context
-
-    def form_invalid(self, form):
-        return self.render_to_response(super().get_context_data(form=form))
-
-    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse | FileResponse:
-        self.object = self.get_object()
-        form = self.get_form()
-
-        if form.is_valid():
-
-            password = self.request.POST.get('password').encode()
-
-            try:
-                file_format = CredentialSerializer.FileFormat(self.request.POST.get('file_format'))
-            except ValueError:
-                raise Http404
-
-            credential_model = self.get_object().credential
-            credential_serializer = credential_model.get_credential_serializer()
-
-            credential_type = IssuedApplicationCertificateModel.ApplicationCertificateType(
-                self.get_object().issued_application_certificate_type
-            )
-            credential_type_name = credential_type.name.replace('_', '-').lower()
-
-            if file_format == CredentialSerializer.FileFormat.PKCS12:
-                response = FileResponse(
-                    io.BytesIO(credential_serializer.as_pkcs12(password=password)),
-                    content_type='application/pkcs12',
-                    as_attachment=True,
-                    filename=f'trustpoint-{credential_type_name}-credential.p12')
-
-            elif file_format == CredentialSerializer.FileFormat.PEM_ZIP:
-                response = FileResponse(
-                    io.BytesIO(credential_serializer.as_pem_zip(password=password)),
-                    content_type=ArchiveFormat.ZIP.mime_type,
-                    as_attachment=True,
-                    filename=f'trustpoint-{credential_type_name}-credential{ArchiveFormat.ZIP.file_extension}'
-                )
-
-            elif file_format == CredentialSerializer.FileFormat.PEM_TAR_GZ:
-                response = FileResponse(
-                    io.BytesIO(credential_serializer.as_pem_tar_gz(password=password)),
-                    content_type=ArchiveFormat.TAR_GZ.mime_type,
-                    as_attachment=True,
-                    filename=f'trustpoint-{credential_type_name}-credential{ArchiveFormat.TAR_GZ.file_extension}')
-
-            else:
-                raise Http404
-
-            return response
-
-        else:
-            return self.form_invalid(form)
-
-
 
 class DeviceIssueTlsClientCredential(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
 
