@@ -71,7 +71,6 @@ class Command(BaseCommand):
             # DeviceModel.OnboardingProtocol.TP_CLIENT_PW.value,
             DeviceModel.OnboardingProtocol.MANUAL.value,
             DeviceModel.OnboardingProtocol.TP_CLIENT_PW.value,
-            # DeviceModel.OnboardingProtocol.BROWSER.value,
             # DeviceModel.OnboardingProtocol.CLI.value
 
         ]

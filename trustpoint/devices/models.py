@@ -10,6 +10,8 @@ from core.validator.field import UniqueNameValidator
 from pki.models import CertificateModel, DomainModel, CredentialModel, IssuingCaModel
 
 import datetime
+import logging
+import secrets
 from cryptography import x509
 
 
@@ -21,6 +23,8 @@ from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import ipaddress
+
+logger = logging.getLogger(__name__)
 
 
 class DeviceModel(models.Model):
@@ -53,11 +57,10 @@ class DeviceModel(models.Model):
 
         NO_ONBOARDING = 0, _('No Onboarding')
         MANUAL = 1, _('Manual download')
-        BROWSER = 2, _('Browser download')
-        CLI = 3, _('Device CLI')
-        TP_CLIENT_PW = 4, _('Trustpoint Client')
-        AOKI = 5, _('AOKI')
-        BRSKI = 6, _('BRSKI')
+        CLI = 2, _('Device CLI')
+        TP_CLIENT_PW = 3, _('Trustpoint Client')
+        AOKI = 4, _('AOKI')
+        BRSKI = 5, _('BRSKI')
 
 
     class OnboardingStatus(models.IntegerChoices):
@@ -589,3 +592,43 @@ class TlsServerCredentialIssuer:
         issued_application_credential.save()
         self._issued_application_credential_model = issued_application_credential
 
+
+class RemoteDeviceCredentialDownloadModel(models.Model):
+    BROWSER_MAX_OTP_ATTEMPTS = 3
+
+    issued_credential_model = models.OneToOneField(IssuedDomainCredentialModel, on_delete=models.CASCADE)
+    otp = models.CharField(_('OTP'), max_length=32)
+    device = models.ForeignKey(DeviceModel, on_delete=models.CASCADE)
+    attempts = models.IntegerField(_('Attempts'), default=0)
+    # download_token = (generated at runtime)
+
+    def save(self, *args: dict, **kwargs: dict) -> None:
+        if not self.otp:
+            self.otp = secrets.token_urlsafe(8)
+        super().save(*args, **kwargs)
+
+    def get_otp_display(self) -> str:
+        return f'{self.issued_credential_model.id}.{self.otp}'
+    
+    def check_otp(self, otp: str) -> bool:
+        matches = otp == self.otp
+        if not matches:
+            self.attempts += 1
+            logger.warning(
+                f'Incorrect OTP attempt {self.attempts} for browser credential download for device {self.device.unique_name} (credential id={self.issued_credential_model.id})'
+            )
+            if self.attempts >= self.BROWSER_MAX_OTP_ATTEMPTS:
+                self.delete()
+                logger.warning('Too many incorrect OTP attempts. Download invalidated.')
+            else:
+                self.save()
+            return False
+
+        logger.info(
+            f'Correct OTP entered for browser credential download for device {self.device.unique_name} (credential id={self.issued_credential_model.id})'
+        )
+        self.download_token = secrets.token_urlsafe(32)
+        #self.delete()
+        return True
+
+    # def check_otp

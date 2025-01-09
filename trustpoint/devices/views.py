@@ -13,15 +13,14 @@ from django.shortcuts import redirect, render   # type: ignore[import-untyped]
 from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
 
 from core.serializer import CredentialSerializer
-from devices.forms import IssueDomainCredentialForm, CredentialDownloadForm, IssueTlsClientCredentialForm, IssueTlsServerCredentialForm
+from devices.forms import IssueDomainCredentialForm, CredentialDownloadForm, IssueTlsClientCredentialForm, IssueTlsServerCredentialForm, BrowserLoginForm
 from trustpoint.views.base import TpLoginRequiredMixin
 from core.validator.field import UniqueNameValidator
-from devices.models import IssuedDomainCredentialModel
 from devices.tables import DeviceTable, DeviceDomainCredentialsTable, DeviceApplicationCertificatesTable
 from typing import TYPE_CHECKING
 import io
 from core.file_builder.enum import ArchiveFormat
-from devices.models import DeviceModel, IssuedApplicationCertificateModel
+from devices.models import DeviceModel, IssuedApplicationCertificateModel, IssuedDomainCredentialModel, RemoteDeviceCredentialDownloadModel
 
 from pki.models.credential import CredentialModel
 
@@ -410,3 +409,86 @@ class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, RedirectVie
         messages.error(self.request, 'Revocation is not yet implemented.')
         referer = self.request.META.get('HTTP_REFERER', '/')
         return referer
+    
+
+class DeviceBrowserOnboardingOTPView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, RedirectView):
+    """View to display the OTP for remote credential download (aka. browser onboarding)."""
+
+    model = IssuedDomainCredentialModel
+    template_name = 'devices/credentials/onboarding/browser/otp_view.html'
+    redirection_view = 'devices:devices'
+    context_object_name = 'credential'
+
+    def get(self, request, *args: dict, **kwargs: dict) -> HttpResponse:  # noqa: ARG002
+        """Renders a template view for displaying the OTP."""
+        # TODO: checks: does this credential exist? Is it allowed to generate a new OTP for it? (maybe should be allowed only once)
+
+        credential = self.get_object()
+        device = credential.device
+        cdm, _ = RemoteDeviceCredentialDownloadModel.objects.get_or_create(issued_credential_model=credential, device=device)
+
+        context = {
+            'device_name': device.unique_name,
+            'device_id': device.id,
+            'otp': cdm.get_otp_display(),
+            'download_url': request.build_absolute_uri(reverse('devices:browser_login')),
+        }
+
+        return render(request, self.template_name, context)
+
+
+class DeviceBrowserOnboardingCancelView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, RedirectView):
+    """View to cancel the browser onboarding process and delete the associated RemoteDeviceCredentialDownloadModel."""
+    
+    model = IssuedDomainCredentialModel
+    redirection_view = 'devices:domain_credential_download'
+    context_object_name = 'credential'
+
+    def get_redirect_url(self, *args, **kwargs):
+        pk = self.kwargs.get('pk')
+        return reverse(self.redirection_view, kwargs={'pk': pk})
+
+    def get(self, request, *args: dict, **kwargs: dict) -> HttpResponse:  # noqa: ARG002
+        """Cancels the browser onboarding process and deletes the associated RemoteDeviceCredentialDownloadModel."""
+        credential = self.get_object()
+        device = credential.device
+        try:
+            cdm = RemoteDeviceCredentialDownloadModel.objects.get(issued_credential_model=credential, device=device)
+            cdm.delete()
+            messages.info(request, 'The browser onboarding process was canceled.')
+        except RemoteDeviceCredentialDownloadModel.DoesNotExist:
+            messages.error(request, 'The browser onboarding process was not found.')
+
+        return redirect(self.get_redirect_url())
+
+class DeviceOnboardingBrowserLoginView(FormView):
+    """View to handle certificate download requests."""
+
+    template_name = 'devices/credentials/onboarding/browser/login.html'
+    form_class = BrowserLoginForm
+
+    def fail(self):
+        messages.error(self.request, _('The provided password is not valid.'))
+        return redirect(self.request.path)
+
+    def post(self, request, *args, **kwargs):
+        """Handles POST request for browser login form submission."""
+        form = BrowserLoginForm(request.POST)
+        if not form.is_valid():
+            return self.fail()
+ 
+        cred_id = form.cleaned_data['cred_id']
+        otp = form.cleaned_data['otp']
+        try:
+            credential_download = RemoteDeviceCredentialDownloadModel.objects.get(issued_credential_model=cred_id)
+        except RemoteDeviceCredentialDownloadModel.DoesNotExist:
+            return self.fail()
+        
+        if not credential_download.check_otp(otp):
+            return self.fail()
+        
+        #return BrowserDownloadView.as_view()(request, device_id=credential_download.device.id, *args, **kwargs)
+
+
+        messages.success(request, 'OTP correct')
+        return redirect(request.path)

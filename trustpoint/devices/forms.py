@@ -187,3 +187,24 @@ class IssueTlsServerCredentialForm(forms.Form):
         domain_names = cleaned_data.get('domain_names')
         if not (ipv4_addresses or ipv6_addresses or domain_names):
             raise forms.ValidationError('At least one SAN entry is required.')
+        
+
+class BrowserLoginForm(forms.Form):
+    otp = forms.CharField(widget=forms.PasswordInput(), label='OTP', max_length=32)
+
+    def clean(self):
+        # splits the submitted OTP, which is in the format 'credential_id.otp'
+        cleaned_data = super().clean()
+        otp = cleaned_data.get('otp')
+        if not otp:
+            self.add_error('otp', _('This field is required.'))
+        otp_parts = otp.split('.')
+        if len(otp_parts) != 2:
+            raise forms.ValidationError(_('The provided OTP is invalid.'))
+        try:
+            cred_id = int(otp_parts[0])
+        except ValueError:
+            raise forms.ValidationError(_('The provided OTP is invalid.'))
+        cleaned_data['cred_id'] = cred_id
+        cleaned_data['otp'] = otp_parts[1]
+        return cleaned_data
