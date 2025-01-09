@@ -597,10 +597,10 @@ class RemoteDeviceCredentialDownloadModel(models.Model):
     BROWSER_MAX_OTP_ATTEMPTS = 3
 
     issued_credential_model = models.OneToOneField(IssuedDomainCredentialModel, on_delete=models.CASCADE)
-    otp = models.CharField(_('OTP'), max_length=32)
+    otp = models.CharField(_('OTP'), max_length=32, null=True)
     device = models.ForeignKey(DeviceModel, on_delete=models.CASCADE)
     attempts = models.IntegerField(_('Attempts'), default=0)
-    # download_token = (generated at runtime)
+    download_token = models.CharField(_('Download Token'), max_length=64, null=True)
 
     def save(self, *args: dict, **kwargs: dict) -> None:
         if not self.otp:
@@ -608,9 +608,13 @@ class RemoteDeviceCredentialDownloadModel(models.Model):
         super().save(*args, **kwargs)
 
     def get_otp_display(self) -> str:
+        if not self.otp or self.otp == '-':
+            return 'OTP no longer valid'
         return f'{self.issued_credential_model.id}.{self.otp}'
     
     def check_otp(self, otp: str) -> bool:
+        if not self.otp or self.otp == '-':
+            return False
         matches = otp == self.otp
         if not matches:
             self.attempts += 1
@@ -627,7 +631,9 @@ class RemoteDeviceCredentialDownloadModel(models.Model):
         logger.info(
             f'Correct OTP entered for browser credential download for device {self.device.unique_name} (credential id={self.issued_credential_model.id})'
         )
+        self.otp = '-'
         self.download_token = secrets.token_urlsafe(32)
+        self.save()
         #self.delete()
         return True
 

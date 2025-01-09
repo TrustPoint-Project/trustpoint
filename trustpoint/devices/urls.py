@@ -13,6 +13,7 @@ urlpatterns = [
     path('configure/<int:pk>/', views.DeviceConfigureView.as_view(), name='config'),
     path('onboarding/<int:pk>/manual/issue-domain-credential/', views.DeviceManualOnboardingIssueDomainCredentialView.as_view(), name='manual_issue_domain_credential'),
     path('browser/', views.DeviceOnboardingBrowserLoginView.as_view(), name='browser_login'),
+    path('browser/domain-credential-download/<int:pk>/', views.DeviceBrowserDomainCredentialDownloadView.as_view(), name='browser_domain_credential_download'),
     path('domain-credential-download/browser/<int:pk>/', views.DeviceBrowserOnboardingOTPView.as_view(), name='browser_otp_view'),
     path('domain-credential-download/browser/<int:pk>/cancel', views.DeviceBrowserOnboardingCancelView.as_view(), name='browser_cancel'),
     path('domain-credential-download/<int:pk>/', views.DeviceDomainCredentialDownloadView.as_view(), name='domain_credential_download'),
