@@ -2,6 +2,7 @@ from __future__ import annotations
 
 
 from django.db import models    # type: ignore[import-untyped]
+from django.utils import timezone    # type: ignore[import-untyped]
 from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
 from django.contrib.contenttypes.fields import GenericForeignKey   # type: ignore[import-untyped]
 from django.contrib.contenttypes.models import ContentType # type: ignore[import-untyped]
@@ -595,12 +596,14 @@ class TlsServerCredentialIssuer:
 
 class RemoteDeviceCredentialDownloadModel(models.Model):
     BROWSER_MAX_OTP_ATTEMPTS = 3
+    TOKEN_VALIDITY = datetime.timedelta(minutes=3)
 
     issued_credential_model = models.OneToOneField(IssuedDomainCredentialModel, on_delete=models.CASCADE)
     otp = models.CharField(_('OTP'), max_length=32, null=True)
     device = models.ForeignKey(DeviceModel, on_delete=models.CASCADE)
     attempts = models.IntegerField(_('Attempts'), default=0)
     download_token = models.CharField(_('Download Token'), max_length=64, null=True)
+    token_created_at = models.DateTimeField(_('Token Created'), null=True)
 
     def save(self, *args: dict, **kwargs: dict) -> None:
         if not self.otp:
@@ -633,8 +636,15 @@ class RemoteDeviceCredentialDownloadModel(models.Model):
         )
         self.otp = '-'
         self.download_token = secrets.token_urlsafe(32)
+        self.token_created_at = timezone.now()
         self.save()
-        #self.delete()
         return True
 
-    # def check_otp
+    def check_token(self, token: str) -> bool:
+        if not self.download_token:
+            return False
+        if timezone.now() - self.token_created_at > self.TOKEN_VALIDITY:
+            self.delete()
+            return False
+
+        return token == self.download_token

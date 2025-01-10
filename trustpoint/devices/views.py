@@ -51,17 +51,11 @@ class DownloadTokenRequiredMixin:
         try:
             self.credential_download = RemoteDeviceCredentialDownloadModel.objects.get(issued_credential_model=kwargs.get('pk'))
         except RemoteDeviceCredentialDownloadModel.DoesNotExist:
-            raise Http404
-        if not token or token != self.credential_download.download_token:
-            raise Http404
+            return redirect('devices:browser_login')
+        if not token or not self.credential_download.check_token(token):
+            messages.warning(request, 'Invalid download token.')
+            return redirect('devices:browser_login')
         return super().dispatch(request, *args, **kwargs)
-    
-    def post(self, request, *args: tuple, **kwargs: dict):
-        response = super().post(request, *args, **kwargs)
-        # token invalidation
-        # TODO: also triggers on form validation errors / unexpected 404 when trying to download another format
-        # self.credential_download.delete()
-        return response
 
 
 class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SingleTableView):
@@ -472,8 +466,6 @@ class DeviceOnboardingBrowserLoginView(FormView):
         if not credential_download.check_otp(otp):
             return self.fail()
         
-        # must redirect to the download view GET instead
-        #return redirect('devices:browser_domain_credential_download', pk=cred_id)
         token = credential_download.download_token
         url = f"{reverse('devices:browser_domain_credential_download', kwargs={'pk': cred_id})}?token={token}"
         return redirect(url)
