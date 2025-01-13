@@ -51,6 +51,7 @@ class DownloadTokenRequiredMixin:
         try:
             self.credential_download = RemoteDeviceCredentialDownloadModel.objects.get(issued_credential_model=kwargs.get('pk'))
         except RemoteDeviceCredentialDownloadModel.DoesNotExist:
+            messages.warning(request, 'Invalid download token.')
             return redirect('devices:browser_login')
         if not token or not self.credential_download.check_token(token):
             messages.warning(request, 'Invalid download token.')
