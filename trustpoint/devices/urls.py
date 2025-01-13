@@ -1,6 +1,6 @@
 """URL configuration for the devices' application."""
 
-from django.urls import path, re_path  # type: ignore[import-untyped]
+from django.urls import path  # type: ignore[import-untyped]
 
 from . import views
 

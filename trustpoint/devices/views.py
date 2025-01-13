@@ -2,53 +2,42 @@
 
 from __future__ import annotations
 
-
-from django_tables2 import SingleTableView  # type: ignore[import-untyped]
-from django.views.generic.edit import CreateView, FormView  # type: ignore[import-untyped]
-from django.urls import reverse_lazy, reverse   # type: ignore[import-untyped]
-from django.views.generic.base import RedirectView, TemplateView # type: ignore[import-untyped]
-from django.views.generic.detail import BaseDetailView, DetailView  # type: ignore[import-untyped]
-from django.http import FileResponse, Http404   # type: ignore[import-untyped]
-from django.contrib import messages # type: ignore[import-untyped]
-from django.shortcuts import redirect, render   # type: ignore[import-untyped]
-from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
-
-from core.serializer import CredentialSerializer
-from devices.forms import IssueDomainCredentialForm, CredentialDownloadForm, IssueTlsClientCredentialForm, IssueTlsServerCredentialForm, BrowserLoginForm
-from trustpoint.views.base import TpLoginRequiredMixin
-from core.validator.field import UniqueNameValidator
-from devices.tables import DeviceTable, DeviceDomainCredentialsTable, DeviceApplicationCertificatesTable
-from typing import TYPE_CHECKING
 import io
 from typing import TYPE_CHECKING, cast
 
 from core.file_builder.enum import ArchiveFormat
-from devices.models import DeviceModel, IssuedApplicationCertificateModel, IssuedDomainCredentialModel, RemoteDeviceCredentialDownloadModel
 from core.serializer import CredentialSerializer
 from core.validator.field import UniqueNameValidator
-from django.contrib import messages
-from django.http import FileResponse, Http404, HttpResponse
-from django.urls import reverse_lazy
-from django.utils.translation import gettext_lazy as _
-from django.views.generic.base import RedirectView
-from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, FormView
-from django_tables2 import SingleTableView  # type: ignore[import-untyped]
-
+from django.contrib import messages  # type: ignore[import-untyped]
+from django.http import FileResponse, Http404, HttpResponse  # type: ignore[import-untyped]
+from django.shortcuts import redirect, render  # type: ignore[import-untyped]
+from django.urls import reverse, reverse_lazy  # type: ignore[import-untyped]
+from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
+from django.views.generic.base import RedirectView  # type: ignore[import-untyped]
+from django.views.generic.detail import DetailView  # type: ignore[import-untyped]
+from django.views.generic.edit import CreateView, FormView  # type: ignore[import-untyped]
+from django_tables2 import SingleTableView  # type: ignore[import-untyped]  # type: ignore[import-untyped]
 from pki.models.credential import CredentialModel
 
 from devices.forms import (
+    BrowserLoginForm,
     CredentialDownloadForm,
     IssueDomainCredentialForm,
     IssueTlsClientCredentialForm,
     IssueTlsServerCredentialForm,
 )
-from devices.models import DeviceModel, IssuedApplicationCertificateModel, IssuedDomainCredentialModel
+from devices.models import (
+    DeviceModel,
+    IssuedApplicationCertificateModel,
+    IssuedDomainCredentialModel,
+    RemoteDeviceCredentialDownloadModel,
+)
 from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCredentialsTable, DeviceTable
 from trustpoint.views.base import TpLoginRequiredMixin
 
 if TYPE_CHECKING:
     from typing import ClassVar
+
     from django.forms import BaseModelForm
     from django.http.request import HttpRequest
 
@@ -261,7 +250,7 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin, DetailView, FormView)
         context['show_browser_dl'] = self.show_browser_dl
         context['is_browser_dl'] = self.is_browser_download
         return context
-    
+
     def post(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:
         """Processing of all POST requests, i.e. the expected form data.
 

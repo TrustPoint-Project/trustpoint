@@ -3,14 +3,14 @@
 
 from __future__ import annotations
 
+import datetime
 from typing import TYPE_CHECKING
 
 import django_tables2 as tables
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-import datetime
 
-from devices.models import DeviceModel, IssuedDomainCredentialModel, IssuedApplicationCertificateModel
+from devices.models import DeviceModel, IssuedApplicationCertificateModel, IssuedDomainCredentialModel
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString

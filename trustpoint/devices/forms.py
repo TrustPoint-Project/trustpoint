@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from django import forms    # type: ignore[import-untyped]
 import ipaddress
+from typing import TYPE_CHECKING
+
+from django import forms  # type: ignore[import-untyped]
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from typing import Any
@@ -187,7 +187,7 @@ class IssueTlsServerCredentialForm(forms.Form):
         domain_names = cleaned_data.get('domain_names')
         if not (ipv4_addresses or ipv6_addresses or domain_names):
             raise forms.ValidationError('At least one SAN entry is required.')
-        
+
 
 class BrowserLoginForm(forms.Form):
     otp = forms.CharField(widget=forms.PasswordInput(), label='OTP', max_length=32)

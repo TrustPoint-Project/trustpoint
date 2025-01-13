@@ -1,26 +1,18 @@
 from __future__ import annotations
 
-
-from django.db import models    # type: ignore[import-untyped]
-from django.utils import timezone    # type: ignore[import-untyped]
-from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
-from django.contrib.contenttypes.fields import GenericForeignKey   # type: ignore[import-untyped]
-from django.contrib.contenttypes.models import ContentType # type: ignore[import-untyped]
-from core.validator.field import UniqueNameValidator
-
-from pki.models import CertificateModel, DomainModel, CredentialModel, IssuingCaModel
-
 import datetime
 import logging
 import secrets
-from cryptography import x509
-
+from typing import TYPE_CHECKING
 
 from core.serializer import CredentialSerializer
+from core.validator.field import UniqueNameValidator
 from core.x509 import CryptographyUtils
-from pki.models.credential import CredentialModel
-
-from typing import TYPE_CHECKING
+from cryptography import x509
+from django.db import models  # type: ignore[import-untyped]
+from django.utils import timezone  # type: ignore[import-untyped]
+from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
+from pki.models import CertificateModel, CredentialModel, DomainModel, IssuingCaModel
 
 if TYPE_CHECKING:
     import ipaddress
@@ -73,7 +65,7 @@ class DeviceModel(models.Model):
 
 
     unique_name = models.CharField(
-        _('Device'), max_length=100, unique=True, default=f'New-Device', validators=[UniqueNameValidator()]
+        _('Device'), max_length=100, unique=True, default='New-Device', validators=[UniqueNameValidator()]
     )
     serial_number = models.CharField(_('Serial-Number'), max_length=100)
     domain = models.ForeignKey(
@@ -169,7 +161,7 @@ class IssuedApplicationCertificateModel(models.Model):
         verbose_name=_('Application Certificate Type'),
         choices=ApplicationCertificateType,
         null=False,
-        blank=False,)
+        blank=False)
 
     # This is only set if the credential, including the key pair, was generated on the Trustpoint itself.
     credential = models.OneToOneField(

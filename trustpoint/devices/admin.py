@@ -1,5 +1,6 @@
 from django.contrib import admin
-from .models import DeviceModel, IssuedDomainCredentialModel, IssuedApplicationCertificateModel
+
+from .models import DeviceModel, IssuedApplicationCertificateModel, IssuedDomainCredentialModel
 
 
 class DeviceModelAdmin(admin.ModelAdmin):
