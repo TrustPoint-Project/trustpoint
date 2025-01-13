@@ -7,6 +7,7 @@ import datetime
 from pathlib import Path
 from typing import Union
 
+from core.serializer import CredentialSerializer
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
@@ -18,9 +19,7 @@ from cryptography.hazmat.primitives.serialization import (
     pkcs12,
 )
 from cryptography.x509.oid import NameOID
-
-from core.serializer import CredentialSerializer
-from pki.models import CertificateModel, IssuingCaModel, CredentialModel
+from pki.models import CertificateModel, CredentialModel, IssuingCaModel
 
 PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
 PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
@@ -30,12 +29,14 @@ class CertificateCreationCommandMixin:
 
     @staticmethod
     def create_root_ca(cn: str,
-            validity_days: int = 7300) -> tuple[x509.Certificate, rsa.RSAPrivateKey]:
+            validity_days: int = 7300,
+            private_key: None | rsa.RSAPrivateKey = None) -> tuple[x509.Certificate, rsa.RSAPrivateKey]:
         one_day = datetime.timedelta(1, 0, 0)
-        private_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048,
-        )
+        if private_key is None:
+            private_key = rsa.generate_private_key(
+                public_exponent=65537,
+                key_size=2048,
+            )
         public_key = private_key.public_key()
         builder = x509.CertificateBuilder()
         builder = builder.subject_name(x509.Name([
@@ -65,7 +66,8 @@ class CertificateCreationCommandMixin:
     @staticmethod
     def create_issuing_ca(
             issuer_private_key: rsa.RSAPrivateKey,
-            issuer_cn: str, subject_cn,
+            issuer_cn: str,
+            subject_cn: str,
             private_key: None | rsa.RSAPrivateKey = None,
             validity_days: int = 3650
     ) -> tuple[x509.Certificate, rsa.RSAPrivateKey]:
@@ -134,7 +136,7 @@ class CertificateCreationCommandMixin:
             root_ca_cert: x509.Certificate,
             chain: list[x509.Certificate],
             private_key: rsa.RSAPrivateKey,
-            unique_name: str ='issuing_ca') -> None:
+            unique_name: str ='issuing_ca') -> IssuingCaModel:
 
         issuing_ca_credential_serializer = CredentialSerializer(
             (
@@ -144,13 +146,15 @@ class CertificateCreationCommandMixin:
             )
         )
 
-        IssuingCaModel.create_new_issuing_ca(
+        issuing_ca = IssuingCaModel.create_new_issuing_ca(
             unique_name=unique_name,
             credential_serializer=issuing_ca_credential_serializer,
             issuing_ca_type=IssuingCaModel.IssuingCaTypeChoice.LOCAL_UNPROTECTED
         )
 
         print(f"Issuing CA '{unique_name}' saved successfully.")
+
+        return issuing_ca
 
 
     @staticmethod

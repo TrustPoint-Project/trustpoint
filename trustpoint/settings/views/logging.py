@@ -1,48 +1,31 @@
 """Django Views"""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from django.shortcuts import render
-from django.utils.translation import gettext as _
-from django.views.generic.base import RedirectView
-
-import os
-from pathlib import Path
 import datetime
 import io
+import os
 import re
-import zipfile
 import tarfile
+import zipfile
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from django.http import Http404, HttpResponse
+from django.shortcuts import render
+from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
+from django.views.generic.base import RedirectView
 from django_tables2 import SingleTableView
 
-from trustpoint.settings import LOG_DIR_PATH, DATE_FORMAT
+from trustpoint.settings import DATE_FORMAT, LOG_DIR_PATH
+from trustpoint.views.base import LoggerMixin, TpLoginRequiredMixin
 
-from .tables import LogFileTable
-from trustpoint.views.base import TpLoginRequiredMixin, LoggerMixin
+from ..tables import LogFileTable
 
 if TYPE_CHECKING:
-    from django.http import HttpRequest, HttpResponse
     from typing import Any
 
-
-class IndexView(RedirectView):
-    """Index view"""
-    permanent = True
-    pattern_name = 'settings:language'
-
-
-def language(request: HttpRequest) -> HttpResponse:
-    """Handle language Configuration
-
-    Returns: HTTPResponse
-    """
-    context = {'page_category': 'settings', 'page_name': 'language'}
-    return render(request, 'settings/language.html', context=context)
-
+    from django.http import HttpRequest, HttpResponse
 # ------------------------------------------------------- Logging ------------------------------------------------------
 
 
@@ -195,3 +178,5 @@ class LoggingFilesDownloadMultipleView(LoggerMixin, LoggingContextMixin, TpLogin
         response = HttpResponse(bytes_io.getvalue(), content_type='application/gzip')
         response['Content-Disposition'] = f'attachment; filename=trustpoint-logs.tar.gz'
         return response
+
+
