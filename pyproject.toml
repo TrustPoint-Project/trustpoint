@@ -19,6 +19,10 @@ django-tables2 = "^2.7.0"
 croniter = "^6.0.0"
 zeroconf = "^0.139.0"
 cryptography = "^44.0.0"
+behave-django = "^1.5.0"
+pytest-django = "^4.9.0"
+behave = "^1.2.6"
+allure-behave = "^2.13.5"
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^8.1.3"
