@@ -45,7 +45,7 @@ class DeviceContextMixin:
 
 class DownloadTokenRequiredMixin:
     """Mixin which checks the token included in the URL for browser download views."""
-    
+
     def dispatch(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:
         token = request.GET.get('token')
         try:
@@ -179,7 +179,7 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin, DetailView, FormView)
 
     def form_invalid(self, form):
         return self.render_to_response(self.get_context_data(form=form))
-    
+
     def post(self, *args: tuple, **kwargs: dict) -> HttpResponse | FileResponse:
         self.object = self.get_object()
         form = self.get_form()
@@ -302,7 +302,6 @@ class DeviceIssueTlsClientCredential(DeviceContextMixin, TpLoginRequiredMixin, D
             return self.form_invalid(form)
 
 
-
 class DeviceIssueTlsServerCredential(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
 
     http_method_names = ['get', 'post']
@@ -388,7 +387,7 @@ class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, RedirectVie
         messages.error(self.request, 'Revocation is not yet implemented.')
         referer = self.request.META.get('HTTP_REFERER', '/')
         return referer
-    
+
 
 class DeviceBrowserOnboardingOTPView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, RedirectView):
     """View to display the OTP for remote credential download (aka. browser onboarding)."""
@@ -418,16 +417,16 @@ class DeviceBrowserOnboardingOTPView(DeviceContextMixin, TpLoginRequiredMixin, D
 
 class DeviceBrowserOnboardingCancelView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, RedirectView):
     """View to cancel the browser onboarding process and delete the associated RemoteDeviceCredentialDownloadModel."""
-    
+
     model = IssuedDomainCredentialModel
     redirection_view = 'devices:domain_credential_download'
     context_object_name = 'credential'
 
-    def get_redirect_url(self, *args, **kwargs):
+    def get_redirect_url(self, *args: tuple, **kwargs: dict):
         pk = self.kwargs.get('pk')
         return reverse(self.redirection_view, kwargs={'pk': pk})
 
-    def get(self, request, *args: dict, **kwargs: dict) -> HttpResponse:  # noqa: ARG002
+    def get(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:  # noqa: ARG002
         """Cancels the browser onboarding process and deletes the associated RemoteDeviceCredentialDownloadModel."""
         credential = self.get_object()
         device = credential.device
@@ -440,6 +439,7 @@ class DeviceBrowserOnboardingCancelView(DeviceContextMixin, TpLoginRequiredMixin
 
         return redirect(self.get_redirect_url())
 
+
 class DeviceOnboardingBrowserLoginView(FormView):
     """View to handle certificate download requests."""
 
@@ -447,25 +447,26 @@ class DeviceOnboardingBrowserLoginView(FormView):
     form_class = BrowserLoginForm
 
     def fail(self):
+        """On login failure, redirect back to the login page with an error message."""
         messages.error(self.request, _('The provided password is not valid.'))
         return redirect(self.request.path)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:
         """Handles POST request for browser login form submission."""
         form = BrowserLoginForm(request.POST)
         if not form.is_valid():
             return self.fail()
- 
+
         cred_id = form.cleaned_data['cred_id']
         otp = form.cleaned_data['otp']
         try:
             credential_download = RemoteDeviceCredentialDownloadModel.objects.get(issued_credential_model=cred_id)
         except RemoteDeviceCredentialDownloadModel.DoesNotExist:
             return self.fail()
-        
+
         if not credential_download.check_otp(otp):
             return self.fail()
-        
+
         token = credential_download.download_token
         url = f"{reverse('devices:browser_domain_credential_download', kwargs={'pk': cred_id})}?token={token}"
         return redirect(url)

@@ -614,7 +614,7 @@ class RemoteDeviceCredentialDownloadModel(models.Model):
         if not self.otp or self.otp == '-':
             return 'OTP no longer valid'
         return f'{self.issued_credential_model.id}.{self.otp}'
-    
+
     def check_otp(self, otp: str) -> bool:
         if not self.otp or self.otp == '-':
             return False
@@ -641,7 +641,7 @@ class RemoteDeviceCredentialDownloadModel(models.Model):
         return True
 
     def check_token(self, token: str) -> bool:
-        if not self.download_token:
+        if not self.download_token or not self.token_created_at:
             return False
         if timezone.now() - self.token_created_at > self.TOKEN_VALIDITY:
             self.delete()
