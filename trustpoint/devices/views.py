@@ -294,34 +294,37 @@ class DeviceIssueTlsClientCredential(DeviceContextMixin, TpLoginRequiredMixin, D
         tls_client_credential_issuer = self.get_object().get_tls_client_credential_issuer()
         return initial | tls_client_credential_issuer.get_fixed_values()
 
-    def form_invalid(self, form):
-        return self.render_to_response(self.get_context_data(form=form))
+    def get(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:
+        """Handles GET requests, which will display the download view and form."""
+        self.object = self.get_object()
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
 
-    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse:
+    def post(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:
+        """Handles POST requests and processes the form received."""
+        self.object = self.get_object()
+        return FormView.post(self, request, *args, **kwargs)
+
+    def form_valid(self, form) -> HttpResponse:
         device = self.get_object()
-        form = self.get_form()
 
-        if form.is_valid():
-            common_name = form.cleaned_data.get('common_name')
-            validity = form.cleaned_data.get('validity')
-            if not common_name:
-                raise Http404
+        common_name = form.cleaned_data.get('common_name')
+        validity = form.cleaned_data.get('validity')
+        if not common_name:
+            raise Http404
 
-            tls_client_issuer = device.get_tls_client_credential_issuer()
-            tls_client_issuer.issue_tls_client_credential(common_name=common_name, validity_days=validity)
-            tls_client_issuer.save()
-            messages.success(
-                self.request,
-                'Successfully issued TLS Client credential device '
-                f'{tls_client_issuer.device.unique_name}')
+        tls_client_issuer = device.get_tls_client_credential_issuer()
+        tls_client_issuer.issue_tls_client_credential(common_name=common_name, validity_days=validity)
+        tls_client_issuer.save()
+        messages.success(
+            self.request,
+            'Successfully issued TLS Client credential device '
+            f'{tls_client_issuer.device.unique_name}')
 
-            return redirect(
-                reverse_lazy(
-                    'devices:certificate_lifecycle_management',
-                    kwargs={'pk': device.id}))
-
-        else:
-            return self.form_invalid(form)
+        return redirect(
+            reverse_lazy(
+                'devices:certificate_lifecycle_management',
+                kwargs={'pk': device.id}))
 
 
 class DeviceIssueTlsServerCredential(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
@@ -338,45 +341,48 @@ class DeviceIssueTlsServerCredential(DeviceContextMixin, TpLoginRequiredMixin, D
         tls_server_credential_issuer = self.get_object().get_tls_server_credential_issuer()
         return initial | tls_server_credential_issuer.get_fixed_values()
 
-    def form_invalid(self, form):
-        return self.render_to_response(self.get_context_data(form=form))
+    def get(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:
+        """Handles GET requests, which will display the download view and form."""
+        self.object = self.get_object()
+        context = self.get_context_data(object=self.object)
+        return self.render_to_response(context)
 
-    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse:
+    def post(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:
+        """Handles POST requests and processes the form received."""
+        self.object = self.get_object()
+        return FormView.post(self, request, *args, **kwargs)
+
+    def form_valid(self, form) -> HttpResponse:
         device = self.get_object()
-        form = self.get_form()
 
-        if form.is_valid():
+        common_name = form.cleaned_data.get('common_name')
+        ipv4_addresses = form.cleaned_data.get('ipv4_addresses')
+        ipv6_addresses = form.cleaned_data.get('ipv6_addresses')
+        domain_names = form.cleaned_data.get('domain_names')
+        validity = form.cleaned_data.get('validity')
 
-            common_name = form.cleaned_data.get('common_name')
-            ipv4_addresses = form.cleaned_data.get('ipv4_addresses')
-            ipv6_addresses = form.cleaned_data.get('ipv6_addresses')
-            domain_names = form.cleaned_data.get('domain_names')
-            validity = form.cleaned_data.get('validity')
+        if not common_name:
+            raise Http404
 
-            if not common_name:
-                raise Http404
+        tls_server_credential_issuer = device.get_tls_server_credential_issuer()
+        tls_server_credential_issuer.issue_tls_server_credential(
+            common_name=common_name,
+            ipv4_addresses=ipv4_addresses,
+            ipv6_addresses=ipv6_addresses,
+            domain_names=domain_names,
+            validity_days=validity
+        )
+        tls_server_credential_issuer.save()
+        messages.success(
+            self.request,
+            'Successfully issued TLS Server credential device '
+            f'{tls_server_credential_issuer.device.unique_name}')
 
-            tls_server_credential_issuer = device.get_tls_server_credential_issuer()
-            tls_server_credential_issuer.issue_tls_server_credential(
-                common_name=common_name,
-                ipv4_addresses=ipv4_addresses,
-                ipv6_addresses=ipv6_addresses,
-                domain_names=domain_names,
-                validity_days=validity
-            )
-            tls_server_credential_issuer.save()
-            messages.success(
-                self.request,
-                'Successfully issued TLS Server credential device '
-                f'{tls_server_credential_issuer.device.unique_name}')
+        return redirect(
+            reverse_lazy(
+                'devices:certificate_lifecycle_management',
+                kwargs={'pk': device.id}))
 
-            return redirect(
-                reverse_lazy(
-                    'devices:certificate_lifecycle_management',
-                    kwargs={'pk': device.id}))
-
-        else:
-            return self.form_invalid(form)
 
 
 class DeviceCertificateLifecycleManagementSummaryView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
