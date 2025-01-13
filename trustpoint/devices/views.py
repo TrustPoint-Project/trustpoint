@@ -1,34 +1,38 @@
 """This module contains all views concerning the devices application."""
+
 from __future__ import annotations
 
-
-from django_tables2 import SingleTableView  # type: ignore[import-untyped]
-from django.views.generic.edit import CreateView, FormView  # type: ignore[import-untyped]
-from django.urls import reverse_lazy, reverse   # type: ignore[import-untyped]
-from django.views.generic.base import RedirectView, TemplateView # type: ignore[import-untyped]
-from django.views.generic.detail import BaseDetailView, DetailView  # type: ignore[import-untyped]
-from django.http import FileResponse, Http404   # type: ignore[import-untyped]
-from django.contrib import messages # type: ignore[import-untyped]
-from django.shortcuts import redirect, render   # type: ignore[import-untyped]
-from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
-
-from core.serializer import CredentialSerializer
-from devices.forms import IssueDomainCredentialForm, CredentialDownloadForm, IssueTlsClientCredentialForm, IssueTlsServerCredentialForm
-from trustpoint.views.base import TpLoginRequiredMixin
-from core.validator.field import UniqueNameValidator
-from devices.models import IssuedDomainCredentialModel
-from devices.tables import DeviceTable, DeviceDomainCredentialsTable, DeviceApplicationCertificatesTable
-from typing import TYPE_CHECKING
 import io
+from typing import TYPE_CHECKING, cast
+
 from core.file_builder.enum import ArchiveFormat
-from devices.models import DeviceModel, IssuedApplicationCertificateModel
+from core.serializer import CredentialSerializer
+from core.validator.field import UniqueNameValidator
+from django.contrib import messages
+from django.http import FileResponse, Http404, HttpResponse
+from django.urls import reverse_lazy
+from django.utils.translation import gettext_lazy as _
+from django.views.generic.base import RedirectView
+from django.views.generic.detail import DetailView
+from django.views.generic.edit import CreateView, FormView
+from django_tables2 import SingleTableView  # type: ignore[import-untyped]
 
 from pki.models.credential import CredentialModel
 
+from devices.forms import (
+    CredentialDownloadForm,
+    IssueDomainCredentialForm,
+    IssueTlsClientCredentialForm,
+    IssueTlsServerCredentialForm,
+)
+from devices.models import DeviceModel, IssuedApplicationCertificateModel, IssuedDomainCredentialModel
+from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCredentialsTable, DeviceTable
+from trustpoint.views.base import TpLoginRequiredMixin
+
 if TYPE_CHECKING:
     from typing import ClassVar
-    from django.http import HttpResponse    # type: ignore[import-untyped]
-    from django.forms import BaseModelForm  # type: ignore[import-untyped]
+    from django.forms import BaseModelForm
+    from django.http.request import HttpRequest
 
 
 class DevicesRedirectView(TpLoginRequiredMixin, RedirectView):
@@ -47,6 +51,8 @@ class DeviceContextMixin:
 class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SingleTableView):
     """Endpoint Profiles List View."""
 
+    http_method_names = ('get',)
+
     model = DeviceModel
     table_class = DeviceTable
     template_name = 'devices/devices.html'
@@ -56,26 +62,51 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SingleTableView)
 class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
     """Device Create View."""
 
+    http_method_names = ('get',)
+
     model = DeviceModel
-    fields = ['unique_name', 'serial_number', 'onboarding_protocol', 'domain']
+    fields = ('unique_name', 'serial_number', 'onboarding_protocol', 'domain')
     template_name = 'devices/add.html'
     success_url = reverse_lazy('devices:devices')
 
     @staticmethod
     def clean_device_name(device_name: str) -> str:
+        """Validates the device name, i.e. checks if it is unique.
+
+        Args:
+            device_name: The desired name of the new device.
+
+        Returns:
+            The device name if it passed the checks.
+        """
         UniqueNameValidator(device_name)
         return device_name
 
     def form_valid(self, form: BaseModelForm) -> HttpResponse:
+        """Processing the valid form data.
+
+        This will use the contained form data to issue a new TLS server credential.
+
+        Args:
+            form: The valid form including the cleaned data.
+
+        Returns:
+            If successful, this will start the file download. Otherwise, a Http404 will be raised and displayed.
+        """
         form_instance = form.instance
         onboarding_protocol = form.cleaned_data.get('onboarding_protocol')
-        form_instance.onboarding_status = DeviceModel.OnboardingStatus.NO_ONBOARDING \
-            if onboarding_protocol == DeviceModel.OnboardingStatus.NO_ONBOARDING \
+        form_instance.onboarding_status = (
+            DeviceModel.OnboardingStatus.NO_ONBOARDING
+            if onboarding_protocol == DeviceModel.OnboardingStatus.NO_ONBOARDING
             else DeviceModel.OnboardingStatus.PENDING
+        )
         return super().form_valid(form)
 
 
 class DeviceDetailsView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
+    """Device Details View."""
+
+    http_method_names = ('get',)
 
     model = DeviceModel
     success_url = reverse_lazy('devices:devices')
@@ -84,6 +115,9 @@ class DeviceDetailsView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
 
 
 class DeviceConfigureView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
+    """Device Configuration View."""
+
+    http_method_names = ('get',)
 
     model = DeviceModel
     success_url = reverse_lazy('devices:devices')
@@ -92,8 +126,9 @@ class DeviceConfigureView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
 
 
 class DeviceManualOnboardingIssueDomainCredentialView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+    """View to issue a new domain credential."""
 
-    http_method_names = ['get', 'post']
+    http_method_names = ('get', 'post')
 
     model = DeviceModel
     context_object_name = 'device'
@@ -101,11 +136,44 @@ class DeviceManualOnboardingIssueDomainCredentialView(DeviceContextMixin, TpLogi
     form_class = IssueDomainCredentialForm
 
     def get_initial(self) -> dict:
+        """Gets the initial data for the form.
+
+        Returns:
+            Dictionary containing the initial form data.
+        """
         initial = super().get_initial()
         domain_credential_issuer = self.get_object().get_domain_credential_issuer()
         return initial | domain_credential_issuer.get_fixed_values()
 
-    def post(self, *args: tuple, **kwargs: dict) -> HttpResponse:
+    def get_success_url(self) -> str:
+        """Returns the URL to redirect to if the form is valid and was successfully processed."""
+        return reverse_lazy('devices:certificate_lifecycle_management', kwargs={'pk': self.get_object().id})
+
+    def post(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:
+        """Processing of all POST requests, i.e. the expected form data.
+
+        Args:
+            request: The POST request to process.
+            *args: Any positional arguments are passed to super().get().
+            **kwargs: Any keyword arguments are passed to super().get().
+
+        Returns:
+            The HttpResponse to display the view.
+        """
+        self.object = self.get_object()
+        return FormView.post(self, request, *args, **kwargs)
+
+    def form_valid(self, form: IssueDomainCredentialForm) -> HttpResponse:
+        """Processing the valid form data.
+
+        This will use the contained form data to issue a new domain credential.
+
+        Args:
+            form: The valid form including the cleaned data.
+
+        Returns:
+            If successful, this will start the file download. Otherwise, a Http404 will be raised and displayed.
+        """
         device = self.get_object()
 
         domain_credential_issuer = device.get_domain_credential_issuer()
@@ -116,91 +184,19 @@ class DeviceManualOnboardingIssueDomainCredentialView(DeviceContextMixin, TpLogi
 
         messages.success(
             self.request,
-            'Successfully issued a domain credential for device '
-            f'{domain_credential_issuer.device.unique_name}')
+            'Successfully issued a domain credential for device ' f'{domain_credential_issuer.device.unique_name}',
+        )
 
-        return redirect(
-            reverse_lazy(
-                'devices:certificate_lifecycle_management',
-                kwargs={'pk': device.id}))
-
-
-class DeviceDomainCredentialDownloadView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
-
-    http_method_names = ['get', 'post']
-
-    model = IssuedDomainCredentialModel
-    template_name = 'devices/credentials/credential_download.html'
-    form_class = CredentialDownloadForm
-    context_object_name = 'credential'
-
-    def get_context_data(self, **kwargs: dict) -> dict:
-        context = super().get_context_data(**kwargs)
-        credential = self.get_object().credential
-        if credential.credential_type == CredentialModel.CredentialTypeChoice.DOMAIN_CREDENTIAL:
-            context['credential_type'] = CredentialModel.CredentialTypeChoice.DOMAIN_CREDENTIAL.name.replace(
-                '_', ' ').title()
-        else:
-            raise Http404('Nope. Fail!')
-
-        domain_credential_issuer = self.get_object().device.get_domain_credential_issuer()
-        context = context | domain_credential_issuer.get_fixed_values()
-        context['FileFormat'] = CredentialSerializer.FileFormat.__members__
-        return context
-
-    def get(self, request, *args, **kwargs):
-        """Handles GET requests, which will display the download view and form."""
-        self.object = self.get_object()
-        context = self.get_context_data(object=self.object)
-        return self.render_to_response(context)
-
-    def post(self, request, *args, **kwargs):
-        """Handles POST requests and processes the form received."""
-        self.object = self.get_object()
-        return FormView.post(self, request, *args, **kwargs)
-
-    def form_valid(self, form):
-        password = self.request.POST.get('password').encode()
-
-        try:
-            file_format = CredentialSerializer.FileFormat(self.request.POST.get('file_format'))
-        except ValueError:
-            raise Http404
-
-        credential_model = self.get_object().credential
-        credential_serializer = credential_model.get_credential_serializer()
-
-        if file_format == CredentialSerializer.FileFormat.PKCS12:
-            response = FileResponse(
-                io.BytesIO(credential_serializer.as_pkcs12(password=password)),
-                content_type='application/pkcs12',
-                as_attachment=True,
-                filename=f'trustpoint-domain-credential.p12')
-
-        elif file_format == CredentialSerializer.FileFormat.PEM_ZIP:
-            response = FileResponse(
-                io.BytesIO(credential_serializer.as_pem_zip(password=password)),
-                content_type=ArchiveFormat.ZIP.mime_type,
-                as_attachment=True,
-                filename=f'trustpoint-domain-credential{ArchiveFormat.ZIP.file_extension}'
-            )
-
-        elif file_format == CredentialSerializer.FileFormat.PEM_TAR_GZ:
-            response = FileResponse(
-                io.BytesIO(credential_serializer.as_pem_tar_gz(password=password)),
-                content_type=ArchiveFormat.TAR_GZ.mime_type,
-                as_attachment=True,
-                filename=f'trustpoint-domain-credential{ArchiveFormat.TAR_GZ.file_extension}')
-
-        else:
-            raise Http404
-
-        return response
+        return super().form_valid(form)
 
 
 class DeviceApplicationCredentialDownloadView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+    """View to download a password protected application credential in the desired format.
 
-    http_method_names = ['get', 'post']
+    Note that a redirect occurs directly after the download starts. However, this is implemented in JavaScript.
+    """
+
+    http_method_names = ('get', 'post')
 
     model = IssuedApplicationCertificateModel
     template_name = 'devices/credentials/credential_download.html'
@@ -208,8 +204,16 @@ class DeviceApplicationCredentialDownloadView(DeviceContextMixin, TpLoginRequire
     context_object_name = 'credential'
 
     def get_context_data(self, **kwargs: dict) -> dict:
-        credential = self.get_object().credential
+        """Gets the context data depending on the credential.
+
+        Args:
+            **kwargs: Keyword arguments are passed to super().get_context_data(**kwargs).
+
+        Returns:
+            The context data for the view.
+        """
         context = super().get_context_data(**kwargs)
+        credential = self.get_object().credential
         if credential.credential_type == CredentialModel.CredentialTypeChoice.APPLICATION_CREDENTIAL:
             credential_type = IssuedApplicationCertificateModel.ApplicationCertificateType(
                 self.get_object().issued_application_certificate_type
@@ -223,29 +227,42 @@ class DeviceApplicationCredentialDownloadView(DeviceContextMixin, TpLoginRequire
         context['FileFormat'] = CredentialSerializer.FileFormat.__members__
         return context
 
-    def get(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:
-        """Handles GET requests, which will display the download view and form."""
-        self.object = self.get_object()
-        context = self.get_context_data(object=self.object)
-        return self.render_to_response(context)
+    def post(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:
+        """Processing of all POST requests, i.e. the expected form data.
 
-    def post(self, request, *args: tuple, **kwargs: dict) -> HttpResponse | FileResponse:
-        """Handles POST requests and processes the form received."""
+        Args:
+            request: The POST request to process.
+            *args: Any positional arguments are passed to super().get().
+            **kwargs: Any keyword arguments are passed to super().get().
+
+        Returns:
+            The HttpResponse to display the view.
+        """
         self.object = self.get_object()
         return FormView.post(self, request, *args, **kwargs)
 
-    def form_valid(self, form) -> HttpResponse | FileResponse:
+    def form_valid(self, form: CredentialDownloadForm) -> HttpResponse:
+        """Processing the valid form data.
+
+        This will use the contained form data to start the download process of the desired file.
+
+        Args:
+            form: The valid form including the cleaned data.
+
+        Returns:
+            If successful, this will start the file download. Otherwise, a Http404 will be raised and displayed.
+        """
         self.object = self.get_object()
 
-        password = self.request.POST.get('password').encode()
+        password = form.cleaned_data['password'].encode()
 
         try:
             file_format = CredentialSerializer.FileFormat(self.request.POST.get('file_format'))
         except ValueError:
-            raise Http404
+            err_msg = _('Unknown file format.')
+            raise Http404(err_msg) from ValueError
 
         credential_model = self.get_object().credential
-        credential_serializer = credential_model.get_credential_serializer()
 
         credential_type = IssuedApplicationCertificateModel.ApplicationCertificateType(
             self.get_object().issued_application_certificate_type
@@ -254,35 +271,141 @@ class DeviceApplicationCredentialDownloadView(DeviceContextMixin, TpLoginRequire
 
         if file_format == CredentialSerializer.FileFormat.PKCS12:
             response = FileResponse(
-                io.BytesIO(credential_serializer.as_pkcs12(password=password)),
+                io.BytesIO(credential_model.get_credential_serializer().as_pkcs12(password=password)),
                 content_type='application/pkcs12',
                 as_attachment=True,
-                filename=f'trustpoint-{credential_type_name}-credential.p12')
+                filename=f'trustpoint-{credential_type_name}-credential.p12',
+            )
 
         elif file_format == CredentialSerializer.FileFormat.PEM_ZIP:
             response = FileResponse(
-                io.BytesIO(credential_serializer.as_pem_zip(password=password)),
+                io.BytesIO(credential_model.get_credential_serializer().as_pem_zip(password=password)),
                 content_type=ArchiveFormat.ZIP.mime_type,
                 as_attachment=True,
-                filename=f'trustpoint-{credential_type_name}-credential{ArchiveFormat.ZIP.file_extension}'
+                filename=f'trustpoint-{credential_type_name}-credential{ArchiveFormat.ZIP.file_extension}',
             )
 
         elif file_format == CredentialSerializer.FileFormat.PEM_TAR_GZ:
             response = FileResponse(
-                io.BytesIO(credential_serializer.as_pem_tar_gz(password=password)),
+                io.BytesIO(credential_model.get_credential_serializer().as_pem_tar_gz(password=password)),
                 content_type=ArchiveFormat.TAR_GZ.mime_type,
                 as_attachment=True,
-                filename=f'trustpoint-{credential_type_name}-credential{ArchiveFormat.TAR_GZ.file_extension}')
+                filename=f'trustpoint-{credential_type_name}-credential{ArchiveFormat.TAR_GZ.file_extension}',
+            )
 
         else:
-            raise Http404('Unknown file format found.')
+            err_msg = _('Unknown file format.')
+            raise Http404(err_msg)
 
-        return response
+        return cast(HttpResponse, response)
+
+
+class DeviceDomainCredentialDownloadView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+    """View to download a password protected domain credential in the desired format.
+
+    Note that a redirect occurs directly after the download starts. However, this is implemented in JavaScript.
+    """
+
+    http_method_names = ('get', 'post')
+
+    model = IssuedDomainCredentialModel
+    template_name = 'devices/credentials/credential_download.html'
+    form_class = CredentialDownloadForm
+    context_object_name = 'credential'
+
+    def get_context_data(self, **kwargs: dict) -> dict:
+        """Gets the context data depending on the credential.
+
+        Args:
+            **kwargs: Keyword arguments are passed to super().get_context_data(**kwargs).
+
+        Returns:
+            The context data for the view.
+        """
+        context = super().get_context_data(**kwargs)
+        credential = self.get_object().credential
+        if credential.credential_type == CredentialModel.CredentialTypeChoice.DOMAIN_CREDENTIAL:
+            context['credential_type'] = CredentialModel.CredentialTypeChoice.DOMAIN_CREDENTIAL.name.replace(
+                '_', ' '
+            ).title()
+        else:
+            err_msg = _('Unknown credential type.')
+            raise Http404(err_msg)
+
+        domain_credential_issuer = self.get_object().device.get_domain_credential_issuer()
+        context = context | domain_credential_issuer.get_fixed_values()
+        context['FileFormat'] = CredentialSerializer.FileFormat.__members__
+        return context
+
+    def post(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:
+        """Processing of all POST requests, i.e. the expected form data.
+
+        Args:
+            request: The POST request to process.
+            *args: Any positional arguments are passed to super().get().
+            **kwargs: Any keyword arguments are passed to super().get().
+
+        Returns:
+            The HttpResponse to display the view.
+        """
+        self.object = self.get_object()
+        return FormView.post(self, request, *args, **kwargs)
+
+    def form_valid(self, form: CredentialDownloadForm) -> HttpResponse:
+        """Processing the valid form data.
+
+        This will use the contained form data to start the download process of the desired file.
+
+        Args:
+            form: The valid form including the cleaned data.
+
+        Returns:
+            If successful, this will start the file download. Otherwise, a Http404 will be raised and displayed.
+        """
+        password = form.cleaned_data['password'].encode()
+
+        try:
+            file_format = CredentialSerializer.FileFormat(self.request.POST.get('file_format'))
+        except ValueError:
+            err_msg = _('Unknown file format.')
+            raise Http404(err_msg) from ValueError
+
+        credential_model = self.get_object().credential
+
+        if file_format == CredentialSerializer.FileFormat.PKCS12:
+            response = FileResponse(
+                io.BytesIO(credential_model.get_credential_serializer().as_pkcs12(password=password)),
+                content_type='application/pkcs12',
+                as_attachment=True,
+                filename='trustpoint-domain-credential.p12',
+            )
+
+        elif file_format == CredentialSerializer.FileFormat.PEM_ZIP:
+            response = FileResponse(
+                io.BytesIO(credential_model.get_credential_serializer().as_pem_zip(password=password)),
+                content_type=ArchiveFormat.ZIP.mime_type,
+                as_attachment=True,
+                filename=f'trustpoint-domain-credential{ArchiveFormat.ZIP.file_extension}',
+            )
+
+        elif file_format == CredentialSerializer.FileFormat.PEM_TAR_GZ:
+            response = FileResponse(
+                io.BytesIO(credential_model.get_credential_serializer().as_pem_tar_gz(password=password)),
+                content_type=ArchiveFormat.TAR_GZ.mime_type,
+                as_attachment=True,
+                filename=f'trustpoint-domain-credential{ArchiveFormat.TAR_GZ.file_extension}',
+            )
+
+        else:
+            raise Http404
+
+        return cast(HttpResponse, response)
 
 
 class DeviceIssueTlsClientCredential(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+    """View to issue a new TLS client credential."""
 
-    http_method_names = ['get', 'post']
+    http_method_names = ('get', 'post')
 
     model = DeviceModel
     context_object_name = 'device'
@@ -290,22 +413,44 @@ class DeviceIssueTlsClientCredential(DeviceContextMixin, TpLoginRequiredMixin, D
     form_class = IssueTlsClientCredentialForm
 
     def get_initial(self) -> dict:
+        """Gets the initial data for the form.
+
+        Returns:
+            Dictionary containing the initial form data.
+        """
         initial = super().get_initial()
         tls_client_credential_issuer = self.get_object().get_tls_client_credential_issuer()
         return initial | tls_client_credential_issuer.get_fixed_values()
 
-    def get(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:
-        """Handles GET requests, which will display the download view and form."""
-        self.object = self.get_object()
-        context = self.get_context_data(object=self.object)
-        return self.render_to_response(context)
+    def get_success_url(self) -> str:
+        """Returns the URL to redirect to if the form is valid and was successfully processed."""
+        return reverse_lazy('devices:certificate_lifecycle_management', kwargs={'pk': self.get_object().id})
 
-    def post(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:
-        """Handles POST requests and processes the form received."""
+    def post(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:
+        """Processing of all POST requests, i.e. the expected form data.
+
+        Args:
+            request: The POST request to process.
+            *args: Any positional arguments are passed to super().get().
+            **kwargs: Any keyword arguments are passed to super().get().
+
+        Returns:
+            The HttpResponse to display the view.
+        """
         self.object = self.get_object()
         return FormView.post(self, request, *args, **kwargs)
 
-    def form_valid(self, form) -> HttpResponse:
+    def form_valid(self, form: IssueTlsClientCredentialForm) -> HttpResponse:
+        """Processing the valid form data.
+
+        This will use the contained form data to issue a new TLS client credential.
+
+        Args:
+            form: The valid form including the cleaned data.
+
+        Returns:
+            The HttpResponse that will display the CLM summary view.
+        """
         device = self.get_object()
 
         common_name = form.cleaned_data.get('common_name')
@@ -317,19 +462,15 @@ class DeviceIssueTlsClientCredential(DeviceContextMixin, TpLoginRequiredMixin, D
         tls_client_issuer.issue_tls_client_credential(common_name=common_name, validity_days=validity)
         tls_client_issuer.save()
         messages.success(
-            self.request,
-            'Successfully issued TLS Client credential device '
-            f'{tls_client_issuer.device.unique_name}')
-
-        return redirect(
-            reverse_lazy(
-                'devices:certificate_lifecycle_management',
-                kwargs={'pk': device.id}))
+            self.request, 'Successfully issued TLS Client credential device ' f'{tls_client_issuer.device.unique_name}'
+        )
+        return super().form_valid(form)
 
 
 class DeviceIssueTlsServerCredential(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+    """View to issue a new TLS server credential."""
 
-    http_method_names = ['get', 'post']
+    http_method_names = ('get', 'post')
 
     model = DeviceModel
     context_object_name = 'device'
@@ -337,22 +478,44 @@ class DeviceIssueTlsServerCredential(DeviceContextMixin, TpLoginRequiredMixin, D
     form_class = IssueTlsServerCredentialForm
 
     def get_initial(self) -> dict:
+        """Gets the initial data for the form.
+
+        Returns:
+            Dictionary containing the initial form data.
+        """
         initial = super().get_initial()
         tls_server_credential_issuer = self.get_object().get_tls_server_credential_issuer()
         return initial | tls_server_credential_issuer.get_fixed_values()
 
-    def get(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:
-        """Handles GET requests, which will display the download view and form."""
-        self.object = self.get_object()
-        context = self.get_context_data(object=self.object)
-        return self.render_to_response(context)
+    def get_success_url(self) -> str:
+        """Returns the URL to redirect to if the form is valid and was successfully processed."""
+        return reverse_lazy('devices:certificate_lifecycle_management', kwargs={'pk': self.get_object().id})
 
-    def post(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:
-        """Handles POST requests and processes the form received."""
+    def post(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:
+        """Processing of all POST requests, i.e. the expected form data.
+
+        Args:
+            request: The POST request to process.
+            *args: Any positional arguments are passed to super().get().
+            **kwargs: Any keyword arguments are passed to super().get().
+
+        Returns:
+            The HttpResponse to display the view.
+        """
         self.object = self.get_object()
         return FormView.post(self, request, *args, **kwargs)
 
-    def form_valid(self, form) -> HttpResponse:
+    def form_valid(self, form: IssueTlsServerCredentialForm) -> HttpResponse:
+        """Processing the valid form data.
+
+        This will use the contained form data to issue a new TLS server credential.
+
+        Args:
+            form: The valid form including the cleaned data.
+
+        Returns:
+            The HttpResponse that will display the CLM summary view.
+        """
         device = self.get_object()
 
         common_name = form.cleaned_data.get('common_name')
@@ -370,48 +533,66 @@ class DeviceIssueTlsServerCredential(DeviceContextMixin, TpLoginRequiredMixin, D
             ipv4_addresses=ipv4_addresses,
             ipv6_addresses=ipv6_addresses,
             domain_names=domain_names,
-            validity_days=validity
+            validity_days=validity,
         )
         tls_server_credential_issuer.save()
         messages.success(
             self.request,
-            'Successfully issued TLS Server credential device '
-            f'{tls_server_credential_issuer.device.unique_name}')
+            'Successfully issued TLS Server credential device ' f'{tls_server_credential_issuer.device.unique_name}',
+        )
 
-        return redirect(
-            reverse_lazy(
-                'devices:certificate_lifecycle_management',
-                kwargs={'pk': device.id}))
-
+        return super().form_valid(form)
 
 
 class DeviceCertificateLifecycleManagementSummaryView(DeviceContextMixin, TpLoginRequiredMixin, DetailView):
+    """This is the CLM summary view in the devices section."""
 
-    http_method_names = ['get']
+    http_method_names = ('get',)
 
     model = DeviceModel
     template_name = 'devices/credentials/certificate_lifecycle_management.html'
     context_object_name = 'device'
 
+    def get(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:
+        """Processing of all GET requests.
 
-    def get(self, *args: tuple, **kwargs: dict) -> HttpResponse:
+        Args:
+            request: The GET request to process.
+            *args: Any positional arguments are passed to super().get().
+            **kwargs: Any keyword arguments are passed to super().get().
+
+        Returns:
+            The HttpResponse to display the view.
+        """
         device = self.get_object()
 
-        device_domain_credential_table = DeviceDomainCredentialsTable(IssuedDomainCredentialModel.objects.filter(device=device))
+        device_domain_credential_table = DeviceDomainCredentialsTable(
+            IssuedDomainCredentialModel.objects.filter(device=device)
+        )
         device_application_certificates_table = DeviceApplicationCertificatesTable(
-            IssuedApplicationCertificateModel.objects.filter(device=device))
+            IssuedApplicationCertificateModel.objects.filter(device=device)
+        )
 
         self.extra_context['device_domain_credential_table'] = device_domain_credential_table
         self.extra_context['device_application_certificates_table'] = device_application_certificates_table
-        return super().get(*args, **kwargs)
+        return super().get(request, *args, **kwargs)
 
 
 class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, RedirectView):
+    """Used to add the revocation not implemented error to the message system."""
 
-    http_method_names = ['get']
+    http_method_names = ('get',)
     permanent = False
 
-    def get_redirect_url(self, *args: tuple, **kwargs: dict) -> str:
+    def get_redirect_url(self, *args: tuple, **kwargs: dict) -> str:  # noqa: ARG002
+        """Adds the revocation error message.
+
+        Args:
+            *args: Any positional arguments are disregarded.
+            **kwargs: Any keyword arguments are disregarded.
+
+        Returns:
+            The url to redirect to, which is the HTTP_REFERER.
+        """
         messages.error(self.request, 'Revocation is not yet implemented.')
-        referer = self.request.META.get('HTTP_REFERER', '/')
-        return referer
+        return self.request.META.get('HTTP_REFERER', '/')
