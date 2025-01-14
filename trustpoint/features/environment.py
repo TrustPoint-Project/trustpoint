@@ -2,6 +2,6 @@ from django.core.management import call_command
 
 # Environment file which sets up data before running scenario.
 
-def before_all(context):
+# def before_all(context):
     # Set up test environment
-    call_command('migrate', verbosity=0)
+    # call_command('migrate', verbosity=0)
