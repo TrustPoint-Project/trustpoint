@@ -16,6 +16,8 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormView
+
+# TODO(AlexHx8472): Remove django_tables2 dependency, and thus remove the type: ignore[misc]
 from django_tables2 import SingleTableView  # type: ignore[import-untyped]
 from pki.models.credential import CredentialModel
 
@@ -50,6 +52,7 @@ class DeviceContextMixin:
     extra_context: ClassVar = {'page_category': 'devices', 'page_name': 'devices'}
 
 
+# TODO(AlexHx8472): Remove django_tables2 dependency, and thus remove the type: ignore[misc]
 class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SingleTableView):  # type: ignore[misc]
     """Endpoint Profiles List View."""
 
