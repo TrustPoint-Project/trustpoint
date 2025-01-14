@@ -1,9 +1,12 @@
 import unittest
 from unittest.mock import patch
 from cryptography import x509
+from cryptography.hazmat.primitives.hashes import SHA512
 from cryptography.x509.oid import NameOID
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.hazmat.primitives import serialization
+from pyasn1_modules.rfc7508 import Algorithm
+
 # Example code for a function which handles the CSR
 # from est.services import handle_csr
 
@@ -16,21 +19,24 @@ class TestESTServices(unittest.TestCase):
     def setUp(self):
         """Set up a sample CSR for testing."""
         # Generate a private key
-        self.private_key = rsa.generate_private_key(
-            public_exponent=65537,
-            key_size=2048,
-        )
+        # self.private_key = rsa.generate_private_key(
+        #     public_exponent=65537,
+        #     key_size=2048,
+        # )
+        #
+        # # Create a CSR
+        # self.csr = x509.CertificateSigningRequestBuilder().subject_name(
+        #     x509.Name([
+        #         x509.NameAttribute(NameOID.COMMON_NAME, u"test.example.com"),
+        #         x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Test Org"),
+        #     ])
+        # ).sign(self.private_key, None)
+        #
+        # # Convert CSR to PEM format
+        # self.csr_pem = self.csr.public_bytes(serialization.Encoding.PEM)
 
-        # Create a CSR
-        self.csr = x509.CertificateSigningRequestBuilder().subject_name(
-            x509.Name([
-                x509.NameAttribute(NameOID.COMMON_NAME, u"test.example.com"),
-                x509.NameAttribute(NameOID.ORGANIZATION_NAME, u"Test Org"),
-            ])
-        ).sign(self.private_key, None)
-
-        # Convert CSR to PEM format
-        self.csr_pem = self.csr.public_bytes(serialization.Encoding.PEM)
+    def test_output(self):
+        print("Test")
 
     # # Example method which should sign the certificate
     # @patch('est.services.sign_certificate')
