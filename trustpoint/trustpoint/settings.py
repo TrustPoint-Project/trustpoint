@@ -16,6 +16,12 @@ from django.core.management.utils import get_random_secret_key
 import logging
 import time
 
+import django_stubs_ext
+
+# Monkeypatching Django, so stubs will work for all generics,
+# see: https://github.com/typeddjango/django-stubs
+django_stubs_ext.monkeypatch()
+
 DOCKER_CONTAINER = False
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -51,6 +57,9 @@ INSTALLED_APPS = [
     'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
     'pki.apps.PkiConfig',
+    'cmp.apps.CmpConfig',
+    'est.apps.EstConfig',
+    'onboarding.apps.OnboardingConfig',
     'settings.apps.SettingsConfig',
     'django.contrib.admin',
     'django.contrib.auth',

@@ -43,6 +43,7 @@ urlpatterns += [
     path('pki/', include('pki.urls.pki')),
     path('.well-known/est/', include('pki.urls.est')),
     path('.well-known/cmp/', include('cmp.urls')),
+    # path('onboarding/', include('onboarding.urls')),
     path('home/', include('home.urls')),
     path('devices/', include('devices.urls')),
     path('settings/', include('settings.urls')),
