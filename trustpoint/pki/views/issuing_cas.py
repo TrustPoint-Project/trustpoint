@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse_lazy
-from django.utils.translation import gettext as _
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormView
 from django_tables2 import SingleTableView
@@ -68,11 +66,14 @@ class IssuingCaAddFileImportSeparateFilesView(IssuingCaContextMixin, TpLoginRequ
 
 class IssuingCaDetailView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):
 
+    http_method_names = ['get']
+
     model = IssuingCaModel
     success_url = reverse_lazy('pki:issuing_cas')
     ignore_url = reverse_lazy('pki:issuing_cas')
     template_name = 'pki/issuing_cas/details.html'
     context_object_name = 'issuing_ca'
+
 
 
 class IssuingCaConfigView(LoggerMixin, IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):

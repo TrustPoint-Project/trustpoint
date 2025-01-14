@@ -19,6 +19,12 @@ import psycopg2
 from django.core.management.utils import get_random_secret_key
 from django.utils.translation import gettext_lazy as _
 
+import django_stubs_ext
+
+# Monkeypatching Django, so stubs will work for all generics,
+# see: https://github.com/typeddjango/django-stubs
+django_stubs_ext.monkeypatch()
+
 DOCKER_CONTAINER = False
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -85,6 +91,7 @@ def is_postgre_available() -> bool:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 ADMIN_ENABLED = True if DEBUG else False
+DEVELOPMENT_ENV = False
 
 # SECURITY WARNING: keep the secret key used in production secret!
 if DEBUG:
@@ -99,16 +106,17 @@ ALLOWED_HOSTS = ['*']
 ADVERTISED_HOST = '127.0.0.1'
 ADVERTISED_PORT = 443
 
-DOCKER_CONTAINER = False
-
 # Application definition
 
 INSTALLED_APPS = [
     'setup_wizard.apps.SetupWizardConfig',
     'users.apps.UsersConfig',
-    # 'home.apps.HomeConfig',
-    # 'devices.apps.DevicesConfig',
+    'home.apps.HomeConfig',
+    'devices.apps.DevicesConfig',
     'pki.apps.PkiConfig',
+    'cmp.apps.CmpConfig',
+    'est.apps.EstConfig',
+    'onboarding.apps.OnboardingConfig',
     'settings.apps.SettingsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -118,16 +126,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'crispy_bootstrap5',
-    'django_tables2',
-    # TODO(Aircoookie): Required only for HTTPS testing with Django runserver_plus, remove for production
-    'django_extensions',
-    # use "python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server.crt
-    # --key-file ../tests/data/x509/https_server.pem" to run with HTTPS
-    # note: replaces default exception debug page with worse one
-    # 'taggit',
-    # 'django_filters',
-    # ensure startup is the last app in the list so that ready() is called after all other apps are initialized
+    'django_tables2'
 ]
+
+if DEVELOPMENT_ENV:
+    INSTALLED_APPS.append('django_extensions')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',

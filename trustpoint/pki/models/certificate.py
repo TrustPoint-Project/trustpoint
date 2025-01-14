@@ -202,7 +202,7 @@ class CertificateModel(LoggerMixin, models.Model):
         editable=False,
         null=True,
         blank=True,
-        on_delete=models.CASCADE)
+        on_delete=models.PROTECT)
 
     subject_alternative_name_extension = models.ForeignKey(
         verbose_name=CertificateExtensionOid.SUBJECT_ALTERNATIVE_NAME.verbose_name,
@@ -211,7 +211,7 @@ class CertificateModel(LoggerMixin, models.Model):
         editable=False,
         null=True,
         blank=True,
-        on_delete=models.CASCADE
+        on_delete=models.PROTECT
     )
 
     issuer_alternative_name_extension = models.ForeignKey(
@@ -221,7 +221,7 @@ class CertificateModel(LoggerMixin, models.Model):
         editable=False,
         null=True,
         blank=True,
-        on_delete=models.CASCADE
+        on_delete=models.PROTECT
     )
 
     basic_constraints_extension = models.ForeignKey(
@@ -231,7 +231,7 @@ class CertificateModel(LoggerMixin, models.Model):
         editable=False,
         null=True,
         blank=True,
-        on_delete=models.CASCADE)
+        on_delete=models.PROTECT)
 
     # ext_authority_key_id = None
     # ext_subject_key_id = None
@@ -276,7 +276,7 @@ class CertificateModel(LoggerMixin, models.Model):
         return self.common_name
 
     @classmethod
-    def _get_cert_by_sha256_fingerprint(cls, sha256_fingerprint: str) -> None | CertificateModel:
+    def get_cert_by_sha256_fingerprint(cls, sha256_fingerprint: str) -> None | CertificateModel:
         sha256_fingerprint = sha256_fingerprint.upper()
         return cls.objects.filter(sha256_fingerprint=sha256_fingerprint).first()
 
@@ -325,7 +325,7 @@ class CertificateModel(LoggerMixin, models.Model):
 
         # ------------------------------------------------ Exist Checks ------------------------------------------------
 
-        certificate_in_db = cls._get_cert_by_sha256_fingerprint(certificate.fingerprint(algorithm=hashes.SHA256()).hex())
+        certificate_in_db = cls.get_cert_by_sha256_fingerprint(certificate.fingerprint(algorithm=hashes.SHA256()).hex())
         if certificate_in_db:
             return certificate_in_db
 

@@ -3,19 +3,18 @@
 from __future__ import annotations
 
 import enum
-import io
-import tarfile
-import zipfile
 from typing import TYPE_CHECKING
 
 from cryptography.hazmat.primitives import serialization
 from cryptography.hazmat.primitives.serialization import pkcs12
+from core.file_builder.archiver import Archiver
 
 from . import CertificateCollectionSerializer, CertificateSerializer, PrivateKey, PrivateKeySerializer, Serializer
 
 if TYPE_CHECKING:
     from cryptography import x509
     from cryptography.hazmat.primitives.serialization import KeySerializationEncryption
+
 
 
 class CredentialSerializer(Serializer):
@@ -41,6 +40,13 @@ class CredentialSerializer(Serializer):
 
         PKCS1 = 'pkcs1'
         PKCS8 = 'pkcs8'
+
+    class FileFormat(enum.Enum):
+        """Supported credential file formats."""
+
+        PKCS12 = 'PKCS12'
+        PEM_ZIP = 'PEM_ZIP'
+        PEM_TAR_GZ = 'PEM_TAR_GZ'
 
     def __init__(
             self,
@@ -164,6 +170,24 @@ class CredentialSerializer(Serializer):
             encryption_algorithm=self._get_encryption_algorithm(password),
         )
 
+    def as_pem_zip(self, password: None | bytes = None) -> bytes:
+        return Archiver.archive_zip(
+            {
+                'private_key.pem': self.credential_private_key.as_pkcs8_pem(password=password),
+                'certificate.pem': self.credential_certificate.as_pem(),
+                'certificate_chain.pem': self.additional_certificates.as_pem()
+            }
+        )
+
+    def as_pem_tar_gz(self, password: None | bytes = None) -> bytes:
+        return Archiver.archive_tar_gz(
+            {
+                'private_key.pem': self.credential_private_key.as_pkcs8_pem(password=password),
+                'certificate.pem': self.credential_certificate.as_pem(),
+                'certificate_chain.pem': self.additional_certificates.as_pem()
+            }
+        )
+
     def __len__(self) -> int:
         """Returns the number of certificates contained in this credential."""
         if self._additional_certificates is None:
@@ -208,88 +232,6 @@ class CredentialSerializer(Serializer):
             private_key_pem,
             self.credential_certificate.as_pem(),
             self.additional_certificates.as_pem())
-
-
-    def as_pem_zip(
-            self,
-            private_key_format: PrivateKeyFormat = PrivateKeyFormat.PKCS8,
-            password: None | bytes = None
-    ) -> bytes:
-        """Gets the credential as bytes in zip format containing all credential files in PEM format.
-
-        Contains the certificate chain and the credential certificate in separate PEM files. The private key file is
-        stored in the format that is specified.
-
-        Note:
-            Only the private key is encrypted and protected utilizing the password. The best available encryption
-            is used, if a password is provided.
-            The zip itself is NOT encrypted or protected by the password.
-
-        Args:
-            password: A password used to encrypt the private key.
-            private_key_format: Enum CredentialSerializer.PrivateKeyFormat to specify the format of the private key.
-
-        Returns:
-            bytes: The zip file containing all credential files in PEM format.
-        """
-        key_pem, cert_pem, additional_certs_pem = self.get_as_separate_pem_files(private_key_format, password)
-
-        bytes_io = io.BytesIO()
-        zip_file = zipfile.ZipFile(bytes_io, 'w')
-        zip_file.writestr('private_key.pem', key_pem)
-        zip_file.writestr('certificate.pem', cert_pem)
-
-        if self.additional_certificates:
-            zip_file.writestr('additional_certificates.pem', additional_certs_pem)
-
-        zip_file.close()
-
-        return bytes_io.getvalue()
-
-    def as_pem_tar_gz(
-            self,
-            private_key_format: PrivateKeyFormat = PrivateKeyFormat.PKCS8,
-            password: None | bytes = None
-    ) -> bytes:
-        """Gets the credential as bytes in tar.gz format containing all credential files in PEM format.
-
-        Contains the certificate chain and the credential certificate in separate PEM files. The private key file is
-        stored in the format that is specified.
-
-        Note:
-            Only the private key is encrypted and protected utilizing the password. The best available encryption
-            is used, if a password is provided.
-            The zip itself is NOT encrypted or protected by the password.
-
-        Args:
-            password: A password used to encrypt the private key.
-            private_key_format: Enum CredentialSerializer.PrivateKeyFormat to specify the format of the private key.
-
-        Returns:
-            bytes: The tar.gz file containing all credential files in PEM format.
-        """
-        key_pem, cert_pem, additional_certs_pem = self.get_as_separate_pem_files(private_key_format, password)
-
-        bytes_io = io.BytesIO()
-        with tarfile.open(fileobj=bytes_io, mode='w:gz') as tar:
-
-            key_io_bytes = io.BytesIO(key_pem)
-            key_io_bytes_info = tarfile.TarInfo('private_key.pem')
-            key_io_bytes_info.size = len(key_pem)
-            tar.addfile(key_io_bytes_info, key_io_bytes)
-
-            cert_io_bytes = io.BytesIO(cert_pem)
-            cert_io_bytes_info = tarfile.TarInfo('certificate.pem')
-            cert_io_bytes_info.size = len(cert_pem)
-            tar.addfile(cert_io_bytes_info, cert_io_bytes)
-
-            if self.additional_certificates:
-                additional_certs_io_bytes = io.BytesIO(additional_certs_pem)
-                additional_certs_io_bytes_info = tarfile.TarInfo('additional_certificates.pem')
-                additional_certs_io_bytes_info.size = len(additional_certs_pem)
-                tar.addfile(additional_certs_io_bytes_info, additional_certs_io_bytes)
-
-        return bytes_io.getvalue()
 
     @property
     def credential_private_key(self) -> PrivateKeySerializer:

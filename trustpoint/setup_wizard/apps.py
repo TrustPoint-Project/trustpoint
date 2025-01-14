@@ -1,6 +1,4 @@
 import logging
-import os
-import signal
 
 from django.apps import AppConfig
 

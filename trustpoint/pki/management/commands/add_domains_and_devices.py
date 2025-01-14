@@ -1,13 +1,12 @@
-# add_domains_and_devices.py
+"""Adds Issuing CAs, Domains and Devices with different onboarding protocols."""
+
 import random
 import string
-from pathlib import Path
 from django.core.management.base import BaseCommand
 
 from pki.models import DomainModel, IssuingCaModel
-from devices_deprecated.models import Device
+from devices.models import DeviceModel
 from django.core.management import call_command
-from pki.initializer import UnprotectedFileImportLocalIssuingCaFromPkcs12Initializer
 
 
 class Command(BaseCommand):
@@ -67,7 +66,15 @@ class Command(BaseCommand):
         }
 
         # onboarding_protocols = [protocol.value for protocol in Device.OnboardingProtocol]
-        onboarding_protocols = [Device.OnboardingProtocol.TP_CLIENT.value, Device.OnboardingProtocol.MANUAL.value]
+        onboarding_protocols = [
+            DeviceModel.OnboardingProtocol.NO_ONBOARDING.value,
+            # DeviceModel.OnboardingProtocol.TP_CLIENT_PW.value,
+            DeviceModel.OnboardingProtocol.MANUAL.value,
+            DeviceModel.OnboardingProtocol.TP_CLIENT_PW.value,
+            # DeviceModel.OnboardingProtocol.BROWSER.value,
+            # DeviceModel.OnboardingProtocol.CLI.value
+
+        ]
 
         print("Starting the process of adding domains and devices...\n")
 
@@ -93,10 +100,15 @@ class Command(BaseCommand):
                 print(f"  - Serial Number: {serial_number}")
                 print(f"  - Onboarding Protocol: {onboarding_protocol}")
 
-                dev = Device(
-                    device_name=device_name,
-                    device_serial_number=serial_number,
+                onboarding_status = DeviceModel.OnboardingStatus.NO_ONBOARDING \
+                    if onboarding_protocol == DeviceModel.OnboardingProtocol.NO_ONBOARDING \
+                    else DeviceModel.OnboardingStatus.PENDING
+
+                dev = DeviceModel(
+                    unique_name=device_name,
+                    serial_number=serial_number,
                     onboarding_protocol=onboarding_protocol,
+                    onboarding_status=onboarding_status,
                     domain=domain
                 )
 

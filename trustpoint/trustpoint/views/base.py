@@ -21,14 +21,11 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic.base import RedirectView
 from django.views.generic.edit import FormMixin
 from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
-from django.db.models import QuerySet
 
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
-    from django.db.models import Model
-
+    from django.db.models import QuerySet
 
 class IndexView(RedirectView):
     """View that redirects to the index home page."""
@@ -122,28 +119,25 @@ class BaseBulkDeleteView(BulkDeletionMixin, FormMixin, BaseListView):
         return HttpResponseRedirect(success_url)
 
 
-class PrimaryKeyFromUrlToQuerysetMixin:
+class PrimaryKeyListFromPrimaryKeyString:
 
-    kwargs: dict
-    queryset: QuerySet
-    model: Model
-
-    def get_pks(self) -> list[str]:
-        pks = self.get_pks_path()
+    @staticmethod
+    def get_pks_as_list(pks: str) -> list[str]:
         if pks:
             pks_list = pks.split('/')
 
-            # removing possible trailing emtpy string
+            # removing possible trailing empty string
             if pks_list[-1] == '':
                 del pks_list[-1]
 
             if len(pks_list) != len(set(pks_list)):
-                raise Http404('Duplicate Issuing CA primary keys found.')
+                raise Http404('Duplicates in query primary key list found.')
 
             return pks_list
 
         return []
-
+    
+class PrimaryKeyQuerysetFromUrlMixin(PrimaryKeyListFromPrimaryKeyString):
     def get_pks_path(self) -> str:
         return self.kwargs.get('pks')
 
@@ -151,7 +145,7 @@ class PrimaryKeyFromUrlToQuerysetMixin:
         if self.queryset:
             return self.queryset
 
-        pks = self.get_pks()
+        pks = self.get_pks_as_list(self.get_pks_path())
         if not pks:
             return self.model.objects.all()
         queryset = self.model.objects.filter(pk__in=pks)
@@ -163,7 +157,7 @@ class PrimaryKeyFromUrlToQuerysetMixin:
         return queryset
 
 
-class BulkDeleteView(MultipleObjectTemplateResponseMixin, PrimaryKeyFromUrlToQuerysetMixin, BaseBulkDeleteView):
+class BulkDeleteView(MultipleObjectTemplateResponseMixin, PrimaryKeyQuerysetFromUrlMixin, BaseBulkDeleteView):
     pass
 
 

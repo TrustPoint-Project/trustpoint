@@ -609,6 +609,10 @@ svg.theme-icon {
     min-width: 40rem;
 }
 
+.min-width-42 {
+    min-width: 42rem;
+}
+
 
 
 .tp-grid { /* unused class */

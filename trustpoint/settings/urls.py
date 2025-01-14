@@ -20,6 +20,4 @@ urlpatterns = [
         r'^logging/files/download/(?P<archive_format>tar\.gz|zip)(?P<filenames>(?:/trustpoint\.log(\.\d{1,5})?)+)/?$',
         views.LoggingFilesDownloadMultipleView.as_view(),
         name='logging-files-download-multiple'),
-    path('security/', views.security, name='security'),
-
 ]

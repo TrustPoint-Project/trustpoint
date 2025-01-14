@@ -15,19 +15,23 @@ from core.serializer import (
 from django.core.exceptions import ValidationError  # type: ignore[import-untyped]
 from django.db import models, transaction  # type: ignore[import-untyped]
 from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
-from core.util.x509 import CredentialNormalizer
+from core.x509 import CredentialNormalizer
 from pki.models import CertificateModel
 
 if TYPE_CHECKING:
     from typing import Any, ClassVar, Union
-
     from cryptography import x509
     from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
-
     PrivateKey = Union[ec.EllipticCurvePrivateKey, rsa.RSAPrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
-__all__ = ['CredentialModel', 'CertificateChainOrderModel']
+__all__ = ['CredentialAlreadyExistsError', 'CredentialModel', 'CertificateChainOrderModel']
+
+
+class CredentialAlreadyExistsError(ValidationError):
+
+    def __init__(self, *args: tuple, **kwargs: dict) -> None:
+        super().__init__(message=_('Credential already exists.'), *args, **kwargs)
 
 
 class CredentialModel(models.Model):
@@ -38,6 +42,12 @@ class CredentialModel(models.Model):
 
     PKCS#11 credentials are not yet supported.
     """
+
+    class Meta:
+        """Metaclass configurations."""
+        constraints = [
+            models.UniqueConstraint(fields=['certificate'], name='unique_certificate'),
+        ]
 
     class CredentialTypeChoice(models.IntegerChoices):
         """The CredentialTypeChoice defines the type of the credential and thus implicitly restricts its usage.
@@ -50,28 +60,37 @@ class CredentialModel(models.Model):
         TRUSTPOINT_TLS_SERVER = 0, _('Trustpoint TLS Server')
         ROOT_CA = 1, _('Root CA')
         ISSUING_CA = 2, _('Issuing CA')
-        AUTOGEN_ROOT_CA = 3, _('Auto-Generated Root CA')
-        AUTOGEN_ISSUING_CA = 4, _('Auto-Generated ISSUING CA')
+        DOMAIN_CREDENTIAL = 3, _('Domain Credential')
+        APPLICATION_CREDENTIAL = 4, _('Application Credential')
 
     credential_type = models.IntegerField(
         verbose_name=_('Credential Type'), choices=CredentialTypeChoice
     )
     private_key = models.CharField(verbose_name='Private key (PEM)', max_length=65536, editable=False)
+
     certificate = models.ForeignKey(
-        CertificateModel, on_delete=models.CASCADE, editable=False, blank=False, null=False, related_name='credentials'
+        CertificateModel,
+        on_delete=models.PROTECT,
+        editable=False,
+        blank=False,
+        null=False,
+        related_name='credentials'
     )
     certificate_chain = models.ManyToManyField(
-        CertificateModel, blank=True, through='CertificateChainOrderModel', related_name='credential_certificate_chains'
+        CertificateModel,
+        blank=True,
+        through='CertificateChainOrderModel',
+        related_name='credential_certificate_chains'
     )
 
     created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
-    updated_at = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
 
     def __repr__(self) -> str:
         return (
             f'CredentialModel(credential_type={self.credential_type}, '
             f'certificate={self.certificate})'
         )
+
     def __str__(self) -> str:
         """Returns a human-readable string that represents this CertificateChainOrderModel entry.
 
@@ -79,6 +98,14 @@ class CredentialModel(models.Model):
             str: Human-readable string that represents this CertificateChainOrderModel entry.
         """
         return self.__repr__()
+
+    def save(self, *args: tuple, **kwargs: dict) -> None:
+        if self.pk:
+            err_msg = _('Editing existing credentials is not supported.')
+            raise ValidationError(err_msg)
+        if CredentialModel.objects.filter(certificate=self.certificate).exists():
+            raise CredentialAlreadyExistsError()
+        super().save(*args, **kwargs)
 
     @classmethod
     def save_credential_serializer(
@@ -123,7 +150,6 @@ class CredentialModel(models.Model):
         certificate = CertificateModel.save_certificate(
             normalized_credential_serializer.credential_certificate
         )
-
         # TODO(AlexHx8472): Verify that the credential is valid in respect to the credential_type!!!
 
         credential_model = cls.objects.create(
@@ -154,6 +180,18 @@ class CredentialModel(models.Model):
         """
         if self.private_key:
             return PrivateKeySerializer(self.private_key).as_crypto()
+
+        err_msg = 'Failed to get private key information.'
+        raise RuntimeError(err_msg)
+
+    def get_private_key_serializer(self) -> PrivateKeySerializer:
+        """Gets a serializer of the credential private key.
+
+        Returns:
+            PrivateKey: The credential private key abstraction.
+        """
+        if self.private_key:
+            return PrivateKeySerializer(self.private_key)
 
         err_msg = 'Failed to get private key information.'
         raise RuntimeError(err_msg)
@@ -196,14 +234,21 @@ class CredentialModel(models.Model):
             ],
         )
 
-
+    def get_credential_serializer(self) -> CredentialSerializer:
+        return CredentialSerializer(
+            (
+                self.get_private_key_serializer(),
+                self.get_certificate_serializer(),
+                self.get_certificate_chain_serializer()
+            )
+        )
 
 
 class CertificateChainOrderModel(models.Model):
     """This Model is used to preserve the order of certificates in credential certificate chains."""
 
-    certificate = models.ForeignKey(CertificateModel, on_delete=models.CASCADE, null=False, blank=False, editable=False)
-    credential = models.ForeignKey(CredentialModel, on_delete=models.CASCADE, null=False, blank=False, editable=False)
+    certificate = models.ForeignKey(CertificateModel, on_delete=models.PROTECT, null=False, blank=False, editable=False)
+    credential = models.ForeignKey(CredentialModel, on_delete=models.PROTECT, null=False, blank=False, editable=False)
     order = models.PositiveIntegerField(null=False, blank=False, editable=False)
 
     class Meta:
