@@ -37,7 +37,6 @@ jobs:
       run: |
         echo "y" | poetry run python trustpoint/manage.py reset_db
         poetry run python trustpoint/manage.py collectstatic --noinput
-        poetry run python trustpoint/manage.py runserver     
 
     - name: Run unit and integration tests
       run: |
