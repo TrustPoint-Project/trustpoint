@@ -23,6 +23,7 @@ behave-django = "^1.5.0"
 pytest-django = "^4.9.0"
 behave = "^1.2.6"
 allure-behave = "^2.13.5"
+behave-html-formatter = "^0.9.10"
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^8.1.3"
