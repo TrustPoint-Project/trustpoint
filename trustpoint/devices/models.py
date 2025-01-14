@@ -22,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 class DeviceModel(models.Model):
 
-    objects: models.Manager['DeviceModel']
+    objects: models.Manager[DeviceModel]
 
     def get_domain_credential_issuer(self) -> DomainCredentialIssuer:
         return DomainCredentialIssuer(device=self, domain=self.domain)
@@ -96,7 +96,7 @@ class DeviceModel(models.Model):
 
 class IssuedDomainCredentialModel(models.Model):
 
-    objects: models.Manager['IssuedDomainCredentialModel']
+    objects: models.Manager[IssuedDomainCredentialModel]
 
     id = models.AutoField(primary_key=True)
     issued_domain_credential_certificate = models.OneToOneField(
@@ -138,7 +138,7 @@ class IssuedDomainCredentialModel(models.Model):
 
 class IssuedApplicationCertificateModel(models.Model):
 
-    objects: models.Manager['IssuedApplicationCertificateModel']
+    objects: models.Manager[IssuedApplicationCertificateModel]
 
     class ApplicationCertificateType(models.IntegerChoices):
 
@@ -595,35 +595,46 @@ class TlsServerCredentialIssuer:
 
 
 class RemoteDeviceCredentialDownloadModel(models.Model):
+    """Model to associate a credential model with an OTP and token for unauthenticated remoted download."""
     BROWSER_MAX_OTP_ATTEMPTS = 3
     TOKEN_VALIDITY = datetime.timedelta(minutes=3)
 
     issued_credential_model = models.OneToOneField(IssuedDomainCredentialModel, on_delete=models.CASCADE)
-    otp = models.CharField(_('OTP'), max_length=32, null=True)
+    otp = models.CharField(_('OTP'), max_length=32, default='')
     device = models.ForeignKey(DeviceModel, on_delete=models.CASCADE)
     attempts = models.IntegerField(_('Attempts'), default=0)
-    download_token = models.CharField(_('Download Token'), max_length=64, null=True)
+    download_token = models.CharField(_('Download Token'), max_length=64, default='')
     token_created_at = models.DateTimeField(_('Token Created'), null=True)
 
+    def __str__(self) -> str:
+        """Return a string representation of the model."""
+        return f'RemoteDeviceCredentialDownloadModel(credential={self.issued_credential_model.id})'
+
     def save(self, *args: dict, **kwargs: dict) -> None:
+        """Generates a new random OTP on initial save of the model."""
         if not self.otp:
             self.otp = secrets.token_urlsafe(8)
         super().save(*args, **kwargs)
 
     def get_otp_display(self) -> str:
+        """Return the OTP in the format 'credential_id.otp' for display within the admin view."""
         if not self.otp or self.otp == '-':
             return 'OTP no longer valid'
         return f'{self.issued_credential_model.id}.{self.otp}'
 
     def check_otp(self, otp: str) -> bool:
+        """Check if the provided OTP matches the stored OTP."""
         if not self.otp or self.otp == '-':
             return False
         matches = otp == self.otp
         if not matches:
             self.attempts += 1
-            logger.warning(
-                f'Incorrect OTP attempt {self.attempts} for browser credential download for device {self.device.unique_name} (credential id={self.issued_credential_model.id})'
+            log_msg = (
+                f'Incorrect OTP attempt {self.attempts} for browser credential download '
+                f'for device {self.device.unique_name} (credential id={self.issued_credential_model.id})'
             )
+            logger.warning(log_msg)
+
             if self.attempts >= self.BROWSER_MAX_OTP_ATTEMPTS:
                 self.delete()
                 logger.warning('Too many incorrect OTP attempts. Download invalidated.')
@@ -631,9 +642,11 @@ class RemoteDeviceCredentialDownloadModel(models.Model):
                 self.save()
             return False
 
-        logger.info(
-            f'Correct OTP entered for browser credential download for device {self.device.unique_name} (credential id={self.issued_credential_model.id})'
+        log_msg = (
+            f'Correct OTP entered for browser credential download for device {self.device.unique_name}'
+            f'(credential id={self.issued_credential_model.id})'
         )
+        logger.info(log_msg)
         self.otp = '-'
         self.download_token = secrets.token_urlsafe(32)
         self.token_created_at = timezone.now()
@@ -641,6 +654,7 @@ class RemoteDeviceCredentialDownloadModel(models.Model):
         return True
 
     def check_token(self, token: str) -> bool:
+        """Check if the provided token matches the stored token and whether it is still valid."""
         if not self.download_token or not self.token_created_at:
             return False
         if timezone.now() - self.token_created_at > self.TOKEN_VALIDITY:

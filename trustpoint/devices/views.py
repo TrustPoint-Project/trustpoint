@@ -8,19 +8,11 @@ from typing import TYPE_CHECKING, cast
 from core.file_builder.enum import ArchiveFormat
 from core.serializer import CredentialSerializer
 from core.validator.field import UniqueNameValidator
-from django.contrib import messages  # type: ignore[import-untyped]
-from django.http import FileResponse, Http404, HttpResponse  # type: ignore[import-untyped]
-from django.shortcuts import redirect, render  # type: ignore[import-untyped]
-from django.urls import reverse, reverse_lazy  # type: ignore[import-untyped]
-from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
-from django.views.generic.base import RedirectView  # type: ignore[import-untyped]
-from django.views.generic.detail import DetailView  # type: ignore[import-untyped]
-from django.views.generic.edit import CreateView, FormView  # type: ignore[import-untyped]
-from django_tables2 import SingleTableView  # type: ignore[import-untyped]  # type: ignore[import-untyped]
 from django.contrib import messages
 from django.forms import BaseModelForm
 from django.http import FileResponse, Http404, HttpResponse
-from django.urls import reverse_lazy
+from django.shortcuts import redirect, render
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
@@ -48,9 +40,6 @@ from trustpoint.views.base import TpLoginRequiredMixin
 
 if TYPE_CHECKING:
     # noinspection PyUnresolvedReferences
-    from typing import ClassVar
-
-    from django.forms import BaseModelForm
     import ipaddress
     from typing import Any, ClassVar
 
@@ -73,10 +62,13 @@ class DeviceContextMixin:
 class DownloadTokenRequiredMixin:
     """Mixin which checks the token included in the URL for browser download views."""
 
-    def dispatch(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:
+    def dispatch(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:
+        """Checks the validity of the token included in the URL for browser download views."""
         token = request.GET.get('token')
         try:
-            self.credential_download = RemoteDeviceCredentialDownloadModel.objects.get(issued_credential_model=kwargs.get('pk'))
+            self.credential_download = RemoteDeviceCredentialDownloadModel.objects.get(
+                                          issued_credential_model=kwargs.get('pk')
+                                       )
         except RemoteDeviceCredentialDownloadModel.DoesNotExist:
             messages.warning(request, 'Invalid download token.')
             return redirect('devices:browser_login')
@@ -234,8 +226,9 @@ class DeviceManualOnboardingIssueDomainCredentialView(
 
 class DeviceBaseCredentialDownloadView(DeviceContextMixin, DetailView, FormView[CredentialDownloadForm]):
     """View to download a password protected application credential in the desired format.
-    
-    Inherited by the domain and application credential download views."""
+
+    Inherited by the domain and application credential download views.
+    """
 
     http_method_names = ('get', 'post')
 
@@ -261,7 +254,8 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin, DetailView, FormView[
                 context['credential_type'] = CredentialModel.CredentialTypeChoice.DOMAIN_CREDENTIAL.name.replace(
                     '_', ' ').title()
             else:
-                raise Http404('IssuedDomainCredentialModel has credential_type != DOMAIN_CREDENTIAL')
+                err_msg = 'IssuedDomainCredentialModel has credential_type != DOMAIN_CREDENTIAL'
+                raise Http404(err_msg)
             domain_credential_issuer = self.get_object().device.get_domain_credential_issuer()
             context = context | domain_credential_issuer.get_fixed_values()
 
@@ -272,7 +266,8 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin, DetailView, FormView[
                 )
                 context['credential_type'] = credential_type.name.replace('_', ' ').title() + ' Credential'
             else:
-                raise Http404('IssuedApplicationCertificateModel has credential_type != APPLICATION_CREDENTIAL')
+                err_msg = 'IssuedApplicationCertificateModel has credential_type != APPLICATION_CREDENTIAL'
+                raise Http404(err_msg)
             application_credential_issuer = self.get_object().device.get_tls_client_credential_issuer()
             context = context | application_credential_issuer.get_fixed_values()
             context['common_name'] = self.object.credential.certificate.common_name
@@ -312,17 +307,19 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin, DetailView, FormView[
         try:
             file_format = CredentialSerializer.FileFormat(self.request.POST.get('file_format'))
         except ValueError:
-            raise Http404
+            err_msg = _('Unknown file format.')
+            raise Http404(err_msg) from ValueError
 
         credential_model = self.get_object().credential
         credential_serializer = credential_model.get_credential_serializer()
         credential_type = credential_model.credential_type
-        credential_type_name = 'domain' # TODO: more generic
+        credential_type_name = 'domain'
 
         if self.model == IssuedApplicationCertificateModel:
             credential_type = IssuedApplicationCertificateModel.ApplicationCertificateType(
                 self.get_object().issued_application_certificate_type
             )
+            credential_type_name = credential_type.name.replace('_', '-').lower()
 
         if file_format == CredentialSerializer.FileFormat.PKCS12:
             response = FileResponse(
@@ -368,6 +365,7 @@ class DeviceApplicationCredentialDownloadView(TpLoginRequiredMixin, DeviceBaseCr
 
 # DeviceBrower Credential Download Views intentionally do not require authentication
 class DeviceBrowserDomainCredentialDownloadView(DownloadTokenRequiredMixin, DeviceBaseCredentialDownloadView):
+    """View to download a password protected domain credential in the desired format from a remote client."""
 
     model = IssuedDomainCredentialModel
     show_browser_dl = False
@@ -375,9 +373,6 @@ class DeviceBrowserDomainCredentialDownloadView(DownloadTokenRequiredMixin, Devi
 
 
 # class DeviceBrowserApplicationCredentialDownloadView(DeviceBaseCredentialDownloadView):
-
-#     model = IssuedApplicationCertificateModel
-#     show_browser_dl = False
 
 
 class DeviceIssueTlsClientCredential(
@@ -591,13 +586,14 @@ class DeviceBrowserOnboardingOTPView(DeviceContextMixin, TpLoginRequiredMixin, D
     redirection_view = 'devices:devices'
     context_object_name = 'credential'
 
-    def get(self, request, *args: dict, **kwargs: dict) -> HttpResponse:  # noqa: ARG002
+    def get(self, request: HttpRequest, *args: dict, **kwargs: dict) -> HttpResponse:  # noqa: ARG002
         """Renders a template view for displaying the OTP."""
-        # TODO: checks: does this credential exist? Is it allowed to generate a new OTP for it? (maybe should be allowed only once)
+        # TODO(Air): checks: Is it allowed to generate a new OTP for it? (maybe should be allowed only once)
 
         credential = self.get_object()
         device = credential.device
-        cdm, _ = RemoteDeviceCredentialDownloadModel.objects.get_or_create(issued_credential_model=credential, device=device)
+        cdm, _ = RemoteDeviceCredentialDownloadModel.objects.get_or_create(
+                    issued_credential_model=credential, device=device)
 
         context = {
             'device_name': device.unique_name,
@@ -616,11 +612,12 @@ class DeviceBrowserOnboardingCancelView(DeviceContextMixin, TpLoginRequiredMixin
     redirection_view = 'devices:domain_credential_download'
     context_object_name = 'credential'
 
-    def get_redirect_url(self, *args: tuple, **kwargs: dict):
+    def get_redirect_url(self, *args: tuple, **kwargs: dict) -> str:  # noqa: ARG002
+        """Returns the URL to redirect to after the browser onboarding process was canceled."""
         pk = self.kwargs.get('pk')
         return reverse(self.redirection_view, kwargs={'pk': pk})
 
-    def get(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:  # noqa: ARG002
+    def get(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:  # noqa: ARG002
         """Cancels the browser onboarding process and deletes the associated RemoteDeviceCredentialDownloadModel."""
         credential = self.get_object()
         device = credential.device
@@ -640,26 +637,26 @@ class DeviceOnboardingBrowserLoginView(FormView):
     template_name = 'devices/credentials/onboarding/browser/login.html'
     form_class = BrowserLoginForm
 
-    def fail(self):
+    def fail_redirect(self) -> HttpResponse:
         """On login failure, redirect back to the login page with an error message."""
         messages.error(self.request, _('The provided password is not valid.'))
         return redirect(self.request.path)
 
-    def post(self, request, *args: tuple, **kwargs: dict) -> HttpResponse:
+    def post(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:  # noqa: ARG002
         """Handles POST request for browser login form submission."""
         form = BrowserLoginForm(request.POST)
         if not form.is_valid():
-            return self.fail()
+            return self.fail_redirect()
 
         cred_id = form.cleaned_data['cred_id']
         otp = form.cleaned_data['otp']
         try:
             credential_download = RemoteDeviceCredentialDownloadModel.objects.get(issued_credential_model=cred_id)
         except RemoteDeviceCredentialDownloadModel.DoesNotExist:
-            return self.fail()
+            return self.fail_redirect()
 
         if not credential_download.check_otp(otp):
-            return self.fail()
+            return self.fail_redirect()
 
         token = credential_download.download_token
         url = f"{reverse('devices:browser_domain_credential_download', kwargs={'pk': cred_id})}?token={token}"
