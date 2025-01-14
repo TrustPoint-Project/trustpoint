@@ -1,4 +1,3 @@
-import os
 import tarfile
 import zipfile
 from io import BytesIO
@@ -9,8 +8,8 @@ from core.file_builder.enum import ArchiveFormat
 
 # Test data
 SAMPLE_DATA = {
-    'certificate-1.pem': b"-----BEGIN CERTIFICATE-----\nMIIBIjAN...",
-    'certificate-2.pem': b"-----BEGIN CERTIFICATE-----\nMIICDjCCAX...",
+    'certificate-1.pem': b'-----BEGIN CERTIFICATE-----\nMIIBIjAN...',
+    'certificate-2.pem': b'-----BEGIN CERTIFICATE-----\nMIICDjCCAX...',
 }
 EXPECTED_FILES = ['certificate-1.pem', 'certificate-2.pem']
 
