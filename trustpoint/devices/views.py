@@ -30,6 +30,7 @@ from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCrede
 from trustpoint.views.base import TpLoginRequiredMixin
 
 if TYPE_CHECKING:
+    # noinspection PyUnresolvedReferences
     import ipaddress
     from typing import Any, ClassVar
 
