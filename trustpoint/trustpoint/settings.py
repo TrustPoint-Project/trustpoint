@@ -15,6 +15,7 @@ import socket
 import time
 from pathlib import Path
 
+import psycopg2
 from django.core.management.utils import get_random_secret_key
 from django.utils.translation import gettext_lazy as _
 
@@ -23,8 +24,8 @@ DOCKER_CONTAINER = False
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# Settings for postgresql database
-POSTGRES = False
+# Settings for postgreql database
+POSTGRESQL = True
 DATABASE_ENGINE = 'django.db.backends.postgresql'
 DATABASE_HOST = 'localhost'
 DATABASE_PORT = '5432'
@@ -32,14 +33,51 @@ DATABASE_NAME = 'trustpoint_db'
 DATABASE_USER = 'admin'
 DATABASE_PASSWORD = 'testing321'  # noqa: S105
 
-def is_postgres_available():
-    try:
-        host = os.environ.get('DATABASE_HOST', DATABASE_HOST)
-        port = int(os.environ.get('DATABASE_PORT', DATABASE_PORT))
-        with socket.create_connection((host, port), timeout=1):
-            return True
-    except Exception:
+def is_postgre_available() -> bool:
+    """Checks whether PostgreSQL is available and issues differentiated error messages.
+
+    Returns:
+        bool: True, if PostgreSQL is available and accessible.
+
+    Raises:
+        RuntimeError: If PostgreSQL is deactivated, not reachable or not accessible.
+    """
+    if not POSTGRESQL:
+        print('PostgreSQL is disabled. Set POSTGRESQL=True in settings.')
         return False
+
+    host = os.environ.get('DATABASE_HOST', DATABASE_HOST)
+    port = int(os.environ.get('DATABASE_PORT', DATABASE_PORT))
+    user = os.environ.get('DATABASE_USER', DATABASE_USER)
+    password = os.environ.get('DATABASE_PASSWORD', DATABASE_PASSWORD)
+    db_name = os.environ.get('DATABASE_NAME', DATABASE_NAME)
+
+    try:
+        print(f'Trying to connect to {host}:{port}...')
+        with socket.create_connection((host, port), timeout=5):
+            print(f"Connection to {host}:{port} successful.")
+    except socket.error as e:
+        msg = f'PostgreSQL host {host} on port {port} is unreachable. Error: {e}'
+        print(msg)
+        return False
+
+    try:
+        print(f"Attempting database login with user '{user}'...")
+        conn = psycopg2.connect(
+            dbname=db_name,
+            user=user,
+            password=password,
+            host=host,
+            port=port,
+        )
+        conn.close()
+        print('Database login successful.')
+    except psycopg2.OperationalError as e:
+        msg = f'Failed to log in to PostgreSQL database "{db_name}" as user "{user}". Error: {e}'
+        print(msg)
+        return False
+
+    return True
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -127,7 +165,7 @@ WSGI_APPLICATION = 'trustpoint.wsgi.application'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
 
-if (POSTGRES or DEBUG is False) and is_postgres_available():
+if is_postgre_available():
     DATABASES = {
         'default': {
             'ENGINE': os.environ.get('DATABASE_ENGINE', DATABASE_ENGINE),
@@ -139,8 +177,6 @@ if (POSTGRES or DEBUG is False) and is_postgres_available():
         }
     }
 else:
-    # TODO(): Use logging after refactoring
-    print('No postgres found. Using sqlite')
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
