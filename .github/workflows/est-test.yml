@@ -44,26 +44,26 @@ jobs:
 
     - name: Run Behave tests
       run: |
-        poetry run behave trustpoint/features/
+        poetry run behave -f html -o behave-report.html
 
-    - name: Generate Allure reports
-      run: |
-        mkdir -p trustpoint/reports/allure
-        poetry run behave trustpoint/features/ --no-capture --format allure_behave.formatter:AllureFormatter -o trustpoint/reports/allure
+#    - name: Generate Allure reports
+#      run: |
+#        mkdir -p trustpoint/reports/allure
+#        poetry run behave trustpoint/features/ --no-capture --format allure_behave.formatter:AllureFormatter -o trustpoint/reports/allure
+#
+#    - name: Install Allure CLI
+#      run: |
+#        wget https://github.com/allure-framework/allure2/releases/download/2.32.0/allure-2.32.0.zip
+#        unzip allure-2.32.0.zip
+#        sudo mv allure-2.32.0 /opt/allure
+#        sudo ln -s /opt/allure/bin/allure /usr/bin/allure
+#
+#    - name: Generate Allure report
+#      run: |
+#        allure generate trustpoint/reports/allure -o trustpoint/reports/allure-report --clean
 
-    - name: Install Allure CLI
-      run: |
-        wget https://github.com/allure-framework/allure2/releases/download/2.32.0/allure-2.32.0.zip
-        unzip allure-2.32.0.zip
-        sudo mv allure-2.32.0 /opt/allure
-        sudo ln -s /opt/allure/bin/allure /usr/bin/allure
-
-    - name: Generate Allure report
-      run: |
-        allure generate trustpoint/reports/allure -o trustpoint/reports/allure-report --clean
-
-    - name: Upload Allure results
+    - name: Upload results
       uses: actions/upload-artifact@v3
       with:
-        name: allure-report
-        path: trustpoint/reports/allure-report
+        name: Report
+        path: behave-report.html
