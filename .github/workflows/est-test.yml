@@ -1,0 +1,61 @@
+name: EST Protocol Tests
+
+on:
+  pull_request:
+    branches:
+      - main
+      - dev_est_test
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.10
+
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        export PATH="$HOME/.local/bin:$PATH"
+
+    - name: Install dependencies with Poetry
+      run: |
+        poetry install
+      env:
+        POETRY_VIRTUALENVS_CREATE: true
+        POETRY_VIRTUALENVS_IN_PROJECT: true
+
+    - name: Run database migrations
+      run: |
+        poetry run python trustpoint/manage.py reset_db
+        poetry run python trustpoint/manage.py collectstatic --noinput
+        poetry run python trustpoint/manage.py runserver     
+
+    - name: Run unit and integration tests
+      run: |
+        poetry run pytest trustpoint/est/tests/
+
+    - name: Run Behave tests
+      run: |
+        poetry run behave trustpoint/features/
+
+    - name: Generate Allure reports
+      run: |
+        mkdir -p reports/allure
+        poetry run behave --no-capture --format allure_behave.formatter:AllureFormatter -o trustpoint/reports/allure
+
+    - name: Generate Allure report
+      run: |
+        allure generate trustpoint/reports/allure -o trustpoint/reports/allure-report --clean
+
+    - name: Upload Allure results
+      uses: actions/upload-artifact@v3
+      with:
+        name: allure-report
+        path: trustpoint/reports/allure-report
