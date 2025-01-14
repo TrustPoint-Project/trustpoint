@@ -44,14 +44,13 @@ jobs:
 
     - name: Run Behave Tests and Generate HTML Report
       run: |
-        mkdir -p reports
-        poetry run behave -f behave_html_formatter -o reports/behave-report.html
+        poetry run behave -f html -o behave-report.html
 
     - name: Upload HTML Report
       uses: actions/upload-artifact@v3
       with:
         name: behave-html-report
-        path: reports/behave-report.html
+        path: behave-report.html
 
 #    - name: Run Behave tests
 #      run: |
