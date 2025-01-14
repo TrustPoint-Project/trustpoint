@@ -53,7 +53,7 @@ jobs:
 
     - name: Generate Allure report
       run: |
-        allure generate trustpoint/reports/allure -o trustpoint/reports/allure-report --clean
+        poetry run allure generate trustpoint/reports/allure -o trustpoint/reports/allure-report --clean
 
     - name: Upload Allure results
       uses: actions/upload-artifact@v3
