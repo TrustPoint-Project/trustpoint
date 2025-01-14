@@ -49,7 +49,7 @@ jobs:
     - name: Generate Allure reports
       run: |
         mkdir -p trustpoint/reports/allure
-        poetry run behave --no-capture --format allure_behave.formatter:AllureFormatter -o trustpoint/reports/allure
+        poetry run behave trustpoint/features/ --no-capture --format allure_behave.formatter:AllureFormatter -o trustpoint/reports/allure
 
     - name: Generate Allure report
       run: |
