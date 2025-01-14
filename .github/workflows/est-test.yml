@@ -35,7 +35,7 @@ jobs:
 
     - name: Run database migrations
       run: |
-        poetry run python trustpoint/manage.py reset_db
+        echo "y" | poetry run python trustpoint/manage.py reset_db
         poetry run python trustpoint/manage.py collectstatic --noinput
         poetry run python trustpoint/manage.py runserver     
 
