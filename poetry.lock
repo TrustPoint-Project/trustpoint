@@ -29,6 +29,22 @@ allure-python-commons = "2.13.5"
 behave = ">=1.2.5"
 
 [[package]]
+name = "allure-pytest"
+version = "2.13.5"
+description = "Allure pytest integration"
+optional = false
+python-versions = "*"
+groups = ["main"]
+files = [
+    {file = "allure-pytest-2.13.5.tar.gz", hash = "sha256:0ef8e1790c44a988db6b83c4d4f5e91451e2c4c8ea10601dfa88528d23afcf6e"},
+    {file = "allure_pytest-2.13.5-py3-none-any.whl", hash = "sha256:94130bac32964b78058e62cf4b815ad97a5ac82a065e6dd2d43abac2be7640fc"},
+]
+
+[package.dependencies]
+allure-python-commons = "2.13.5"
+pytest = ">=4.5.0"
+
+[[package]]
 name = "allure-python-commons"
 version = "2.13.5"
 description = "('Contains the API for end users as well as helper functions and classes to build Allure adapters for Python test frameworks',)"
@@ -1848,4 +1864,4 @@ ifaddr = ">=0.1.7"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "20f3b7394b9efd3a408b207f8813e19fed7c3bc5ced9b841012f68d1bba8acad"
+content-hash = "a63eac688fa6183bf8c0cfff295b5ec6d593277f8818dab7b19fc6b660b65b8d"
