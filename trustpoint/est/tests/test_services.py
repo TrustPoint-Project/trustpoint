@@ -24,7 +24,6 @@ class TestESTServices(unittest.TestCase):
         #     key_size=2048,
         # )
         #
-
         # # Create a CSR
         # self.csr = x509.CertificateSigningRequestBuilder().subject_name(
         #     x509.Name([
