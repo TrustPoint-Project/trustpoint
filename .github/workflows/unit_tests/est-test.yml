@@ -33,11 +33,6 @@ jobs:
         POETRY_VIRTUALENVS_CREATE: true
         POETRY_VIRTUALENVS_IN_PROJECT: true
 
-    - name: Run database migrations
-      run: |
-        echo "y" | poetry run python trustpoint/manage.py reset_db
-        poetry run python trustpoint/manage.py collectstatic --noinput
-
-    - name: Run unit and integration tests for the EST protocol
+    - name: Run unit tests for the EST protocol
       run: |
         poetry run pytest trustpoint/est/tests/
