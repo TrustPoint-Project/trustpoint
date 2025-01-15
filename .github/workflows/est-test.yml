@@ -3,7 +3,7 @@ name: EST Protocol Tests
 on:
   push:
     paths:
-      - trustpoint/est
+      - trustpoint/est/*
 
 jobs:
   test:
