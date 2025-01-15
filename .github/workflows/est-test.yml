@@ -44,7 +44,7 @@ jobs:
 
     - name: Run Behave Tests and Generate HTML Report
       run: |
-        poetry run behave trustpoint/features/ -f html -o behave-report.html
+        poetry run behave --no-capture -f html -o behave-report.html
 
     - name: Upload HTML Report
       uses: actions/upload-artifact@v3
