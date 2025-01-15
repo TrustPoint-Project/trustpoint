@@ -1,4 +1,4 @@
-name: EST Protocol Tests
+name: Behave Feature Tests
 
 on:
   push:
@@ -38,10 +38,6 @@ jobs:
         echo "y" | poetry run python trustpoint/manage.py reset_db
         poetry run python trustpoint/manage.py collectstatic --noinput
 
-    - name: Run unit and integration tests
-      run: |
-        poetry run pytest trustpoint/est/tests/
-
     - name: Run Behave Tests and Generate HTML Report
       run: |
         poetry run behave trustpoint/features/ --no-capture -f behave_html_formatter:HTMLFormatter -o behave-report.html
@@ -51,29 +47,3 @@ jobs:
       with:
         name: behave-html-report
         path: behave-report.html
-
-#    - name: Run Behave tests
-#      run: |
-#        poetry run behave -f html -o behave-report.html
-
-#    - name: Generate Allure reports
-#      run: |
-#        mkdir -p trustpoint/reports/allure
-#        poetry run behave trustpoint/features/ --no-capture --format allure_behave.formatter:AllureFormatter -o trustpoint/reports/allure
-#
-#    - name: Install Allure CLI
-#      run: |
-#        wget https://github.com/allure-framework/allure2/releases/download/2.32.0/allure-2.32.0.zip
-#        unzip allure-2.32.0.zip
-#        sudo mv allure-2.32.0 /opt/allure
-#        sudo ln -s /opt/allure/bin/allure /usr/bin/allure
-#
-#    - name: Generate Allure report
-#      run: |
-#        allure generate trustpoint/reports/allure -o trustpoint/reports/allure-report --clean
-
-#    - name: Upload results
-#      uses: actions/upload-artifact@v3
-#      with:
-#        name: Report
-#        path: behave-report.html
