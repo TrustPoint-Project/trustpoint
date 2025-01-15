@@ -178,7 +178,7 @@ def test_credential_private_key_setter(rsa_private_key: RSAPrivateKey, self_sign
     new_key_serializer = PrivateKeySerializer(rsa_private_key)
     serializer.credential_private_key = new_key_serializer
     updated = serializer.credential_private_key.as_crypto().private_numbers()
-    assert updated != original
+    assert updated is not original
 
 
 def test_credential_certificate_setter(rsa_private_key: RSAPrivateKey, self_signed_cert: Certificate, second_self_signed_cert: Certificate) -> None:
