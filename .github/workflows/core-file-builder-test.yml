@@ -2,11 +2,8 @@ name: Core File Builder Tests
 
 on:
   push:
-    branches:
-      - "dev_est_test"
-  pull_request:
-    branches:
-      - "main"
+    paths:
+      - "trustpoint/core"
 
 jobs:
   test:
