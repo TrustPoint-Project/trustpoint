@@ -25,6 +25,8 @@ if TYPE_CHECKING:
 
 class DeviceModel(models.Model):
 
+    objects: models.Manager['DeviceModel']
+
     def get_domain_credential_issuer(self) -> DomainCredentialIssuer:
         return DomainCredentialIssuer(device=self, domain=self.domain)
 
@@ -67,7 +69,7 @@ class DeviceModel(models.Model):
         PENDING = 1, _('Pending')
         ONBOARDED = 2, _('Onboarded')
 
-
+    id = models.AutoField(primary_key=True)
     unique_name = models.CharField(
         _('Device'), max_length=100, unique=True, default=f'New-Device', validators=[UniqueNameValidator()]
     )
@@ -98,6 +100,9 @@ class DeviceModel(models.Model):
 
 class IssuedDomainCredentialModel(models.Model):
 
+    objects: models.Manager['IssuedDomainCredentialModel']
+
+    id = models.AutoField(primary_key=True)
     issued_domain_credential_certificate = models.OneToOneField(
         CertificateModel,
         verbose_name=_('Issued Domain Credential'),
@@ -137,12 +142,15 @@ class IssuedDomainCredentialModel(models.Model):
 
 class IssuedApplicationCertificateModel(models.Model):
 
+    objects: models.Manager['IssuedApplicationCertificateModel']
+
     class ApplicationCertificateType(models.IntegerChoices):
 
         GENERIC = 0, _('Generic')
         TLS_CLIENT = 1, _('TLS-Client')
         TLS_SERVER = 2, _('TLS-Server')
 
+    id = models.AutoField(primary_key=True)
     issued_application_certificate = models.ForeignKey(
         CertificateModel,
         verbose_name=_('Application Certificate'),
@@ -236,7 +244,7 @@ class DomainCredentialIssuer:
             'serial_number': self.serial_number
         }
 
-    def issue_domain_credential(self):
+    def issue_domain_credential(self) -> None:
         domain_credential_private_key = CryptographyUtils.generate_private_key(domain=self.domain)
         hash_algorithm = CryptographyUtils.get_hash_algorithm_from_domain(domain=self.domain)
         one_day = datetime.timedelta(1, 0, 0)
