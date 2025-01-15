@@ -3,7 +3,7 @@ name: Core File Builder Tests
 on:
   push:
     paths:
-      - "trustpoint/core"
+      - trustpoint/core/**
 
 jobs:
   test:

@@ -3,7 +3,7 @@ name: Core Serializer Tests
 on:
   push:
     paths:
-      - "trustpoint/core"
+      - trustpoint/core/**
 
 jobs:
   test:
