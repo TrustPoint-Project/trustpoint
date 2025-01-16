@@ -1,48 +1,28 @@
 from __future__ import annotations
 
-from django import forms    # type: ignore[import-untyped]
 import ipaddress
-from django.core.exceptions import ValidationError
-from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
-
 from typing import TYPE_CHECKING
+
+from django import forms
+from django.utils.translation import gettext_lazy as _
+
+from devices.models import DeviceModel, IssuedCredentialModel
 
 if TYPE_CHECKING:
     from typing import Any
 
 
 class IssueDomainCredentialForm(forms.Form):
+    common_name = forms.CharField(max_length=255, label=_('Common Name'), required=True, disabled=True)
+    domain_component = forms.CharField(max_length=255, label=_('Domain Component'), required=True, disabled=True)
+    serial_number = forms.CharField(max_length=255, label=_('Serial Number'), required=True, disabled=True)
 
-    common_name = forms.CharField(
-        max_length=255,
-        label=_('Common Name'),
-        required=True,
-        disabled=True
-    )
-    domain_component = forms.CharField(
-        max_length=255,
-        label=_('Domain Component'),
-        required=True,
-        disabled=True
-    )
-    serial_number = forms.CharField(
-        max_length=255,
-        label=_('Serial Number'),
-        required=True,
-        disabled=True
-    )
 
 class CredentialDownloadForm(forms.Form):
-
     password = forms.CharField(
-        label=_('Password'),
-        widget=forms.PasswordInput,
-        help_text=_('Must be at least 12 characters long.')
+        label=_('Password'), widget=forms.PasswordInput, help_text=_('Must be at least 12 characters long.')
     )
-    confirm_password = forms.CharField(
-        label=_('Confirm Password'),
-        widget=forms.PasswordInput
-    )
+    confirm_password = forms.CharField(label=_('Confirm Password'), widget=forms.PasswordInput)
 
     def clean(self) -> dict[str, Any]:
         cleaned_data = super().clean()
@@ -58,94 +38,72 @@ class CredentialDownloadForm(forms.Form):
 
         return cleaned_data
 
+
 class IssueTlsClientCredentialForm(forms.Form):
+    def __init__(self, *args: Any, device: DeviceModel, **kwargs: Any) -> None:
+        """Overwrite the constructor to accept the current device instance."""
+        self.device = device
+        super().__init__(*args, **kwargs)
+
     common_name = forms.CharField(
         max_length=255,
         label=_('Common Name'),
         required=True,
     )
-    pseudonym = forms.CharField(
-        max_length=255,
-        label=_('Pseudonym'),
-        required=True,
-        disabled=True
-    )
-    domain_component = forms.CharField(
-        max_length=255,
-        label=_('Domain Component'),
-        required=True,
-        disabled=True
-    )
-    serial_number = forms.CharField(
-        max_length=255,
-        label=_('Serial Number'),
-        required=True,
-        disabled=True
-    )
-    validity = forms.IntegerField(
-        label=_('Validity (days)'),
-        initial=10,
-        required=True
-    )
+    pseudonym = forms.CharField(max_length=255, label=_('Pseudonym'), required=True, disabled=True)
+    domain_component = forms.CharField(max_length=255, label=_('Domain Component'), required=True, disabled=True)
+    serial_number = forms.CharField(max_length=255, label=_('Serial Number'), required=True, disabled=True)
+    validity = forms.IntegerField(label=_('Validity (days)'), initial=10, required=True)
+
+    def clean_common_name(self) -> str:
+        common_name = self.cleaned_data['common_name']
+        if IssuedCredentialModel.objects.filter(common_name=common_name, device=self.device).exists():
+            err_msg = (
+                f'Credential with common name {common_name} ' f'already exists for device {self.device.unique_name}.'
+            )
+            raise forms.ValidationError(err_msg)
+        return common_name
 
     def clean_validity(self):
         validity = self.cleaned_data['validity']
         if validity <= 0:
             err_msg = _('Validity must be a positive integer.')
-            raise ValidationError(err_msg)
+            raise forms.ValidationError(err_msg)
         return validity
 
 
 class IssueTlsServerCredentialForm(forms.Form):
+    def __init__(self, *args: Any, device: DeviceModel, **kwargs: Any) -> None:
+        """Overwrite the constructor to accept the current device instance."""
+        self.device = device
+        super().__init__(*args, **kwargs)
 
-    common_name = forms.CharField(
-        max_length=100,
-        label=_('Common Name'),
-        required=True
-    )
-    pseudonym = forms.CharField(
-        max_length=100,
-        label=_('Pseudonym'),
-        required=True,
-        disabled=True
-    )
-    serial_number = forms.CharField(
-        max_length=100,
-        label=_('Serial Number'),
-        required=True,
-        disabled=True
-    )
-    domain_component = forms.CharField(
-        max_length=255,
-        label=_('Domain Component'),
-        required=True,
-        disabled=True
-    )
-    validity = forms.IntegerField(
-        label=_('Validity (days)'),
-        initial=10,
-        required=True
-    )
+    common_name = forms.CharField(max_length=100, label=_('Common Name'), required=True)
+    pseudonym = forms.CharField(max_length=100, label=_('Pseudonym'), required=True, disabled=True)
+    serial_number = forms.CharField(max_length=100, label=_('Serial Number'), required=True, disabled=True)
+    domain_component = forms.CharField(max_length=255, label=_('Domain Component'), required=True, disabled=True)
+    validity = forms.IntegerField(label=_('Validity (days)'), initial=10, required=True)
     ipv4_addresses = forms.CharField(
-        label=_('IPv4-Addresses (comma-separated list)'),
-        initial='127.0.0.1, ',
-        required=False
+        label=_('IPv4-Addresses (comma-separated list)'), initial='127.0.0.1, ', required=False
     )
-    ipv6_addresses = forms.CharField(
-        label=_('IPv6-Addresses (comma-separated list)'),
-        initial='::1, ',
-        required=False
-    )
+    ipv6_addresses = forms.CharField(label=_('IPv6-Addresses (comma-separated list)'), initial='::1, ', required=False)
     domain_names = forms.CharField(
-        label=_('Domain-Names (comma-separated list)'),
-        initial='localhost, ',
-        required=False
+        label=_('Domain-Names (comma-separated list)'), initial='localhost, ', required=False
     )
+
+    def clean_common_name(self) -> str:
+        common_name = self.cleaned_data['common_name']
+        if IssuedCredentialModel.objects.filter(common_name=common_name, device=self.device).exists():
+            err_msg = (
+                f'Credential with common name {common_name} ' f'already exists for device {self.device.unique_name}.'
+            )
+            raise forms.ValidationError(err_msg)
+        return common_name
 
     def clean_validity(self):
         validity = self.cleaned_data['validity']
         if validity <= 0:
-            raise ValidationError('Validity must be a positive integer.')
+            raise forms.ValidationError('Validity must be a positive integer.')
         return validity
 
     def clean_ipv4_addresses(self):
@@ -178,7 +136,6 @@ class IssueTlsServerCredentialForm(forms.Form):
         domain_names = data.split(',')
         # TODO(AlexHx8472): Check for valid domains.
         return [domain_name.strip() for domain_name in domain_names if domain_name.strip() != '']
-
 
     def clean(self):
         cleaned_data = super().clean()

@@ -1,0 +1,396 @@
+from __future__ import annotations
+
+import datetime
+from cryptography import x509
+
+
+from core.serializer import CredentialSerializer
+from core.x509 import CryptographyUtils
+
+from devices.models import DeviceModel, DomainModel, IssuedCredentialModel
+from pki.models import CredentialModel
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import ipaddress
+
+
+class SaveCredentialToDbMixin:
+
+    device: DeviceModel
+    domain: DomainModel
+
+    def _save(
+            self,
+            credential: CredentialSerializer,
+            common_name: str,
+            issued_credential_type: IssuedCredentialModel.IssuedCredentialType,
+            issued_credential_purpose: IssuedCredentialModel.IssuedCredentialPurpose
+    ) -> IssuedCredentialModel:
+
+        credential_model = CredentialModel.save_credential_serializer(
+            credential_serializer=credential,
+            credential_type=CredentialModel.CredentialTypeChoice.ISSUED_CREDENTIAL
+        )
+
+        issued_credential_model = IssuedCredentialModel(
+            issued_credential_type=issued_credential_type,
+            issued_credential_purpose=issued_credential_purpose,
+            common_name=common_name,
+            credential=credential_model,
+            device=self.device,
+            domain=self.domain
+        )
+
+        issued_credential_model.save()
+
+        return issued_credential_model
+
+
+class LocalDomainCredentialIssuer(SaveCredentialToDbMixin):
+
+    _common_name: str = 'Trustpoint Domain Credential'
+    _device: DeviceModel
+    _domain: DomainModel
+
+    _credential: None | CredentialSerializer = None
+    _credential_model: None | CredentialModel = None
+    _issued_domain_credential_model: None | LocalDomainCredentialIssuer = None
+
+    def __init__(self, device: DeviceModel, domain: DomainModel) -> None:
+        self._device = device
+        self._domain = domain
+
+    @property
+    def device(self) -> DeviceModel:
+        return self._device
+
+    @property
+    def domain(self) -> DomainModel:
+        return self._domain
+
+    @property
+    def serial_number(self) -> str:
+        return self.device.serial_number
+
+    @property
+    def domain_component(self) -> str:
+        return self.domain.unique_name
+
+    @property
+    def common_name(self) -> str:
+        return self._common_name
+
+    @classmethod
+    def get_fixed_values(cls, device: DeviceModel, domain: DomainModel) -> dict[str, str]:
+        return {
+            'common_name': cls._common_name,
+            'domain_component': domain.unique_name,
+            'serial_number': device.serial_number
+        }
+
+    def issue_domain_credential(self) -> IssuedCredentialModel:
+        domain_credential_private_key = CryptographyUtils.generate_private_key(domain=self.domain)
+        hash_algorithm = CryptographyUtils.get_hash_algorithm_from_domain(domain=self.domain)
+        one_day = datetime.timedelta(1, 0, 0)
+
+        certificate_builder = x509.CertificateBuilder()
+        certificate_builder = certificate_builder.subject_name(x509.Name([
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, self.common_name),
+            x509.NameAttribute(x509.NameOID.DOMAIN_COMPONENT, self.domain_component),
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number)
+        ]))
+        certificate_builder = certificate_builder.issuer_name(
+            self.domain.issuing_ca.credential.get_certificate().subject)
+        certificate_builder = certificate_builder.not_valid_before(datetime.datetime.now(datetime.UTC))
+        certificate_builder = certificate_builder.not_valid_after(
+            datetime.datetime.now(datetime.UTC) + (one_day * 365))
+        certificate_builder = certificate_builder.serial_number(x509.random_serial_number())
+        certificate_builder = certificate_builder.public_key(
+            domain_credential_private_key.public_key_serializer.as_crypto())
+
+        certificate_builder = certificate_builder.add_extension(
+            x509.BasicConstraints(ca=False, path_length=None), critical=True
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(
+                    self.domain.issuing_ca.credential.get_private_key_serializer().public_key_serializer.as_crypto()
+            ),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(domain_credential_private_key.public_key_serializer.as_crypto()),
+            critical=False
+        )
+
+        domain_certificate = certificate_builder.sign(
+            private_key=self.domain.issuing_ca.credential.get_private_key_serializer().as_crypto(),
+            algorithm=hash_algorithm
+        )
+
+        credential = CredentialSerializer(
+            (
+                domain_credential_private_key,
+                domain_certificate,
+                [self.domain.issuing_ca.credential.get_certificate()] +
+                self.domain.issuing_ca.credential.get_certificate_chain()
+            )
+        )
+
+        issued_domain_credential = self._save(
+            credential=credential,
+            common_name=self.common_name,
+            issued_credential_type=IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL,
+            issued_credential_purpose=IssuedCredentialModel.IssuedCredentialPurpose.DOMAIN_CREDENTIAL
+        )
+
+        self.device.onboarding_status = self.device.OnboardingStatus.ONBOARDED
+        self.device.save()
+
+        return issued_domain_credential
+
+
+class LocalTlsClientCredentialIssuer(SaveCredentialToDbMixin):
+
+    _pseudonym: str = 'Trustpoint Application Credential - TLS Client'
+    _device: DeviceModel
+    _domain: DomainModel
+
+    _credential: None | CredentialSerializer = None
+    _credential_model: None | CredentialModel = None
+    _issued_application_credential_model: None | IssuedCredentialModel = None
+
+    def __init__(self, device: DeviceModel, domain: DomainModel) -> None:
+        self._device = device
+        self._domain = domain
+
+    @property
+    def device(self) -> DeviceModel:
+        return self._device
+
+    @property
+    def domain(self) -> DomainModel:
+        return self._domain
+
+    @property
+    def serial_number(self) -> str:
+        return self.device.serial_number
+
+    @property
+    def domain_component(self) -> str:
+        return self.domain.unique_name
+
+    @property
+    def pseudonym(self) -> str:
+        return self._pseudonym
+
+    @classmethod
+    def get_fixed_values(cls, domain: DomainModel, device: DeviceModel) -> dict[str, str]:
+        return {
+            'pseudonym': cls._pseudonym,
+            'domain_component': domain.unique_name,
+            'serial_number': device.serial_number
+        }
+
+    def issue_tls_client_credential(self, common_name: str, validity_days: int) -> IssuedCredentialModel:
+        application_credential_private_key = CryptographyUtils.generate_private_key(domain=self.domain)
+        hash_algorithm = CryptographyUtils.get_hash_algorithm_from_domain(domain=self.domain)
+        one_day = datetime.timedelta(1, 0, 0)
+
+        certificate_builder = x509.CertificateBuilder()
+        certificate_builder = certificate_builder.subject_name(x509.Name([
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, common_name),
+            x509.NameAttribute(x509.NameOID.PSEUDONYM, self.pseudonym),
+            x509.NameAttribute(x509.NameOID.DOMAIN_COMPONENT, self.domain_component),
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number)
+        ]))
+        certificate_builder = certificate_builder.issuer_name(
+            self.domain.issuing_ca.credential.get_certificate().subject)
+        certificate_builder = certificate_builder.not_valid_before(datetime.datetime.now(datetime.UTC))
+        certificate_builder = certificate_builder.not_valid_after(
+            datetime.datetime.now(datetime.UTC) + (one_day * validity_days))
+        certificate_builder = certificate_builder.serial_number(x509.random_serial_number())
+        certificate_builder = certificate_builder.public_key(
+            application_credential_private_key.public_key_serializer.as_crypto())
+
+        certificate_builder = certificate_builder.add_extension(
+            x509.BasicConstraints(ca=False, path_length=None), critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=True,
+                key_cert_sign=False,
+                crl_sign=False,
+                encipher_only=False,
+                decipher_only=False
+            ), critical=True
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(
+                    self.domain.issuing_ca.credential.get_private_key_serializer().public_key_serializer.as_crypto()
+            ),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(application_credential_private_key.public_key_serializer.as_crypto()),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.ExtendedKeyUsage([x509.oid.ExtendedKeyUsageOID.CLIENT_AUTH]), critical=False
+        )
+
+        domain_certificate = certificate_builder.sign(
+            private_key=self.domain.issuing_ca.credential.get_private_key_serializer().as_crypto(),
+            algorithm=hash_algorithm
+        )
+
+        credential = CredentialSerializer(
+            (
+                application_credential_private_key,
+                domain_certificate,
+                [self.domain.issuing_ca.credential.get_certificate()] +
+                self.domain.issuing_ca.credential.get_certificate_chain()
+            )
+        )
+
+        return self._save(
+            credential=credential,
+            common_name=common_name,
+            issued_credential_type=IssuedCredentialModel.IssuedCredentialType.APPLICATION_CREDENTIAL,
+            issued_credential_purpose=IssuedCredentialModel.IssuedCredentialPurpose.TLS_CLIENT
+        )
+
+
+class LocalTlsServerCredentialIssuer(SaveCredentialToDbMixin):
+
+    _pseudonym: str = 'Trustpoint Application Credential - TLS Server'
+    _device: DeviceModel
+    _domain: DomainModel
+
+    _credential: None | CredentialSerializer = None
+    _credential_model: None | CredentialModel = None
+    _issued_application_credential_model: None | IssuedCredentialModel = None
+
+    def __init__(self, device: DeviceModel, domain: DomainModel) -> None:
+        self._device = device
+        self._domain = domain
+
+    @property
+    def device(self) -> DeviceModel:
+        return self._device
+
+    @property
+    def domain(self) -> DomainModel:
+        return self._domain
+
+    @property
+    def serial_number(self) -> str:
+        return self.device.serial_number
+
+    @property
+    def domain_component(self) -> str:
+        return self.domain.unique_name
+
+    @property
+    def pseudonym(self) -> str:
+        return self._pseudonym
+
+    @classmethod
+    def get_fixed_values(cls, device: DeviceModel, domain: DomainModel) -> dict[str, str]:
+        return {
+            'pseudonym': cls._pseudonym,
+            'domain_component': domain.unique_name,
+            'serial_number': device.serial_number
+        }
+
+    def issue_tls_server_credential(
+            self,
+            common_name: str,
+            ipv4_addresses: list[ipaddress.IPv4Address],
+            ipv6_addresses: list[ipaddress.IPv6Address],
+            domain_names: list[str],
+            validity_days: int) -> IssuedCredentialModel:
+        application_credential_private_key = CryptographyUtils.generate_private_key(domain=self.domain)
+        hash_algorithm = CryptographyUtils.get_hash_algorithm_from_domain(domain=self.domain)
+        one_day = datetime.timedelta(1, 0, 0)
+
+        certificate_builder = x509.CertificateBuilder()
+        certificate_builder = certificate_builder.subject_name(x509.Name([
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, common_name),
+            x509.NameAttribute(x509.NameOID.PSEUDONYM, self.pseudonym),
+            x509.NameAttribute(x509.NameOID.DOMAIN_COMPONENT, self.domain_component),
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number)
+        ]))
+        certificate_builder = certificate_builder.issuer_name(
+            self.domain.issuing_ca.credential.get_certificate().subject)
+        certificate_builder = certificate_builder.not_valid_before(datetime.datetime.now(datetime.UTC))
+        certificate_builder = certificate_builder.not_valid_after(
+            datetime.datetime.now(datetime.UTC) + (one_day * validity_days))
+        certificate_builder = certificate_builder.serial_number(x509.random_serial_number())
+        certificate_builder = certificate_builder.public_key(
+            application_credential_private_key.public_key_serializer.as_crypto())
+
+        certificate_builder = certificate_builder.add_extension(
+            x509.BasicConstraints(ca=False, path_length=None), critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.KeyUsage(
+                digital_signature=True,
+                content_commitment=False,
+                key_encipherment=False,
+                data_encipherment=False,
+                key_agreement=True,
+                key_cert_sign=False,
+                crl_sign=False,
+                encipher_only=False,
+                decipher_only=False
+            ), critical=True
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(
+                    self.domain.issuing_ca.credential.get_private_key_serializer().public_key_serializer.as_crypto()
+            ),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(application_credential_private_key.public_key_serializer.as_crypto()),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.ExtendedKeyUsage([x509.oid.ExtendedKeyUsageOID.SERVER_AUTH]), critical=False
+        )
+
+        ipv4_addresses = [x509.IPAddress(ipv4_address) for ipv4_address in ipv4_addresses]
+        ipv6_addresses = [x509.IPAddress(ipv6_address) for ipv6_address in ipv6_addresses]
+        domain_names = [x509.DNSName(domain_name) for domain_name in domain_names]
+
+        certificate_builder = certificate_builder.add_extension(
+            x509.SubjectAlternativeName(
+                ipv4_addresses + ipv6_addresses + domain_names
+            ),
+            critical=False
+        )
+        domain_certificate = certificate_builder.sign(
+            private_key=self.domain.issuing_ca.credential.get_private_key_serializer().as_crypto(),
+            algorithm=hash_algorithm
+        )
+        credential = CredentialSerializer(
+            (
+                application_credential_private_key,
+                domain_certificate,
+                [self.domain.issuing_ca.credential.get_certificate()] +
+                self.domain.issuing_ca.credential.get_certificate_chain()
+            )
+        )
+
+        return self._save(
+            credential=credential,
+            common_name=common_name,
+            issued_credential_type=IssuedCredentialModel.IssuedCredentialType.APPLICATION_CREDENTIAL,
+            issued_credential_purpose=IssuedCredentialModel.IssuedCredentialPurpose.TLS_SERVER
+        )
