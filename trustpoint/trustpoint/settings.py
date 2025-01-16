@@ -126,7 +126,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'crispy_bootstrap5',
-    'django_tables2'
+    'django_tables2',
+    'behave_django'
 ]
 
 if DEVELOPMENT_ENV:
@@ -306,3 +307,5 @@ LOGGING = {
         },
     },
 }
+
+TEST_RUNNER = "django_behave.runner.DjangoBehaveTestSuiteRunner"
