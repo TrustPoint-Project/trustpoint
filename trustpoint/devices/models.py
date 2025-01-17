@@ -14,7 +14,6 @@ from pki.models import CertificateModel, DomainModel, CredentialModel, IssuingCa
 from pki.models.credential import CredentialModel
 
 
-
 class DeviceModel(models.Model):
 
     objects: models.Manager['DeviceModel']

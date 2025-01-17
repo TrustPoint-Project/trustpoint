@@ -108,9 +108,13 @@ class CredentialModel(models.Model):
         Returns:
             CredentialModel: The stored credential model.
         """
-        normalized_credential_serializer = CredentialNormalizer(credential_serializer).normalized_credential
+        # normalized_credential_serializer = CredentialNormalizer(credential_serializer).normalized_credential
+        # import logging
+        # logger = logging.getLogger('tp')
+        # logger.error(normalized_credential_serializer.additional_certificates.as_pem())
+        # logger.error(credential_serializer.additional_certificates.as_pem())
         return cls._save_normalized_credential_serializer(
-            normalized_credential_serializer=normalized_credential_serializer,
+            normalized_credential_serializer=credential_serializer,
             credential_type=credential_type
         )
 
@@ -218,7 +222,7 @@ class CredentialModel(models.Model):
         Returns:
             CertificateSerializer: The credential certificate.
         """
-        return self.certificate.certificate.get_certificate_serializer()
+        return self.certificate.get_certificate_serializer()
 
     def get_certificate_chain_serializer(self) -> CertificateCollectionSerializer:
         """Gets the credential certificate chain as CertificateCollectionSerializer instance.
