@@ -35,8 +35,6 @@ from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCrede
 from trustpoint.views.base import TpLoginRequiredMixin
 
 if TYPE_CHECKING:
-    # noinspection PyUnresolvedReferences
-    import ipaddress
     from typing import Any, ClassVar
 
     from django.http.request import HttpRequest
@@ -70,7 +68,7 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SingleTableView)
 class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView[DeviceModel, BaseModelForm[DeviceModel]]):
     """Device Create View."""
 
-    http_method_names = ('get',)
+    http_method_names = ('get', 'post')
 
     model = DeviceModel
     fields = ('unique_name', 'serial_number', 'onboarding_protocol', 'domain')
