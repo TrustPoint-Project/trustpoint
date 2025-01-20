@@ -8,7 +8,7 @@ Feature: Lightweight Certificate Management Protocol (LCMP)
   So that I can ensure compliance with RFC 9483 and secure communication
 
   # Background: Common setup for all scenarios
-  # This ensures the server is reachable and initializes common data.
+  # This ensures that the server is reachable and initializes common data.
   Background:
     Given the LCMP server is running and reachable
     And I have the necessary client credentials for authentication
