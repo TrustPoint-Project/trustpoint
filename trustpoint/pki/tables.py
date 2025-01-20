@@ -98,11 +98,6 @@ class IssuingCaTable(tables.Table):
         accessor='credential__certificate__created_at'
     )
 
-    created_at = tables.Column(
-        verbose_name=_('Created'),
-        accessor='credential__certificate__created_at'
-    )
-
     class Meta:
         """Table metaclass configurations."""
 

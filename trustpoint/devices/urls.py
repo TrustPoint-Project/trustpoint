@@ -37,5 +37,19 @@ urlpatterns = [
          name='revocation_not_implemented'),
     path('revoke/<int:pk>/',
          views.DeviceRevocationView.as_view(),
-         name='revocation_not_implemented')
+         name='revocation_not_implemented'),
+    path(
+        'onboarding/<int:pk>/trustpoint-client/',
+        views.TrustPointClientOnboardingSelectAuthenticationMethodView.as_view(),
+        name='trustpoint_client_auth_method_select'),
+    path(
+        'onboarding/<int:pk>/trustpoint-client/password-based-mac/',
+        views.TrustpointClientOnboardingPasswordBasedMacView.as_view(),
+        name='trustpoint_client_password_based_mac'
+    ),
+    path(
+        'onboarding/<int:pk>/trustpoint-client/cancel/',
+        views.TrustpointClientCancelOnboardingProcessView.as_view(),
+        name='trustpoint_client_cancel_onboarding_process'
+    )
 ]

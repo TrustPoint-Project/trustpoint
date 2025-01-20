@@ -6,11 +6,11 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 import django_tables2 as tables
-from django.utils.html import format_html
+from django.utils.html import format_html, mark_safe
 from django.utils.translation import gettext_lazy as _
 import datetime
 
-from devices.models import DeviceModel, IssuedCredentialModel
+from devices.models import DeviceModel, IssuedCredentialModel, TrustpointClientOnboardingProcessModel
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
@@ -56,10 +56,10 @@ class DeviceTable(tables.Table):
     revoke = tables.Column(empty_values=(), orderable=False, verbose_name=_('Revoke'))
 
     @staticmethod
-    def render_onboarding_status(record: DeviceModel) -> SafeString:
+    def render_onboarding_status(record: DeviceModel) -> str:
         if record.onboarding_status == DeviceModel.OnboardingStatus.NO_ONBOARDING:
-            return format_html('')
-        return format_html(record.get_onboarding_status_display())
+            return mark_safe('')
+        return mark_safe(record.get_onboarding_status_display())
 
     @staticmethod
     def render_onboarding(record: DeviceModel) -> SafeString:
@@ -73,16 +73,29 @@ class DeviceTable(tables.Table):
         """
         if not record.domain:
             return format_html(
-                '<span>{}</span>',_('No Domain configured.'))
+                '<span>{}</span>', _('No Domain configured.'))
         if not record.domain.issuing_ca:
             return format_html(
                 '<span>{}</span>', _('No Issuing CA configured.')
             )
-        if (record.onboarding_status == DeviceModel.OnboardingStatus.PENDING
-                and record.onboarding_protocol == DeviceModel.OnboardingProtocol.MANUAL):
-            return format_html(
-                '<a href="onboarding/{}/manual/issue-domain-credential" class="btn btn-primary tp-table-btn w-100">{}</a>',
-                record.pk, _('Start Onboarding'))
+        if record.onboarding_status == DeviceModel.OnboardingStatus.PENDING:
+            if record.onboarding_protocol == DeviceModel.OnboardingProtocol.MANUAL:
+                return format_html(
+                    '<a href="onboarding/{}/manual/issue-domain-credential/" class="btn btn-primary tp-table-btn w-100">{}</a>',
+                    record.pk, _('Start Onboarding'))
+            elif record.onboarding_protocol == DeviceModel.OnboardingProtocol.TP_CLIENT:
+                onboarding_process_model = TrustpointClientOnboardingProcessModel.objects.filter(device=record.pk)
+                if onboarding_process_model.exists():
+                    return format_html(
+                        '<a href="onboarding/{}/trustpoint-client/" class="btn btn-primary tp-table-btn w-100 mb-2">{}</a>'
+                        '<br>'
+                        '<a href="onboarding/{}/trustpoint-client/cancel/" class="btn btn-danger tp-table-btn w-100">{}</a>',
+                        record.pk, _('Continue Onboarding'), record.pk, _('Cancel Onboarding'))
+                else:
+                    return format_html(
+                        '<a href="onboarding/{}/trustpoint-client/" class="btn btn-primary tp-table-btn w-100">{}</a>',
+                        record.pk, _('Start Onboarding')
+                    )
         return format_html('')
 
     @staticmethod

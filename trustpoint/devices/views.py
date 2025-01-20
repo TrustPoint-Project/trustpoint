@@ -5,22 +5,23 @@ from __future__ import annotations
 import io
 from typing import TYPE_CHECKING, cast
 
+import secrets
 from core.file_builder.enum import ArchiveFormat
 from core.serializer import CredentialSerializer
 from core.validator.field import UniqueNameValidator
+from django.shortcuts import redirect
 from django.contrib import messages
 from django.forms import BaseModelForm
 from django.http import FileResponse, Http404, HttpResponse
 from django.urls import reverse_lazy
 from django.utils.translation import gettext_lazy as _
-from django.views.generic.base import RedirectView
+from django.views.generic.base import RedirectView, TemplateView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormView
 from django.db.models import Q
 
 # TODO(AlexHx8472): Remove django_tables2 dependency, and thus remove the type: ignore[misc]
 from django_tables2 import SingleTableView  # type: ignore[import-untyped]
-from pki.models.credential import CredentialModel
 
 from devices.issuer import LocalTlsClientCredentialIssuer, LocalTlsServerCredentialIssuer, LocalDomainCredentialIssuer
 
@@ -30,7 +31,7 @@ from devices.forms import (
     IssueTlsClientCredentialForm,
     IssueTlsServerCredentialForm,
 )
-from devices.models import DeviceModel, IssuedCredentialModel
+from devices.models import DeviceModel, IssuedCredentialModel, TrustpointClientOnboardingProcessModel
 from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCredentialsTable, DeviceTable
 from trustpoint.views.base import TpLoginRequiredMixin
 
@@ -614,3 +615,91 @@ class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, RedirectVie
         """
         messages.error(self.request, 'Revocation is not yet implemented.')
         return cast('str', self.request.META.get('HTTP_REFERER', '/'))
+
+
+class TrustPointClientOnboardingSelectAuthenticationMethodView(DeviceContextMixin, TpLoginRequiredMixin, DetailView[DeviceModel]):
+    """View of the selection of the desired authentication method for the Trustpoint-Client onboarding."""
+
+    http_method_names = ('get',)
+    model = DeviceModel
+    template_name = 'devices/credentials/onboarding/trustpoint_client/secret_type_select.html'
+    context_object_name = 'device'
+
+
+class TrustpointClientOnboardingPasswordBasedMacView(DeviceContextMixin, TpLoginRequiredMixin, DetailView[DeviceModel]):
+    """View of the Trustpoint-Client onboarding using the Password Based MAC authentication method."""
+
+    http_method_names = ('get',)
+    model = DeviceModel
+    template_name = 'devices/credentials/onboarding/trustpoint_client/password_based_mac.html'
+    context_object_name = 'device'
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Processing of all GET requests.
+
+        Args:
+            request: The GET request to process.
+            *args: Dismissed.
+            **kwargs: Dismissed.
+
+        Returns:
+            The HttpResponse to display the view.
+        """
+        device = self.get_object()
+        self.object = device
+
+        if not device.onboarding_protocol == device.OnboardingProtocol.TP_CLIENT.value:
+            return redirect('devices:devices', permanent=False)
+
+        if device.onboarding_status == device.OnboardingStatus.ONBOARDED.value:
+            messages.success(request, f'Device {device.unique_name} successfully onboarded.')
+            return redirect('devices:trustpoint_client_successful_onboarding_process', permanent=False)
+
+        trustpoint_onboarding_process = TrustpointClientOnboardingProcessModel.objects.filter(device=device)
+        if not trustpoint_onboarding_process.exists():
+
+            # TODO(AlexHx8472): The password is currently stored in plain text, since we need it to derive the key.
+            # TODO(AlexHx8472): This shall be mitigated as soon as we support PKCS#11 by storing it as data in the HSM.
+            TrustpointClientOnboardingProcessModel.objects.create(
+                device=device,
+                auth_method=TrustpointClientOnboardingProcessModel.AuthenticationMethod.PASSWORD_BASED_MAC,
+                password=secrets.token_urlsafe(nbytes=12)
+            )
+            trustpoint_onboarding_process = TrustpointClientOnboardingProcessModel.objects.get(device=device)
+
+        else:
+            trustpoint_onboarding_process = trustpoint_onboarding_process.first()
+
+
+        context = super().get_context_data(**kwargs)
+        context['password'] = trustpoint_onboarding_process.password
+        return self.render_to_response(context=context)
+
+
+class TrustpointClientCancelOnboardingProcessView(
+    DeviceContextMixin,
+    TpLoginRequiredMixin,
+    DetailView[DeviceModel]):
+    """Used to cancel a current Trustpoint-Client onboarding process."""
+
+    http_method_names = ('get',)
+    model = DeviceModel
+    context_object_name = 'device'
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Processing of all GET requests.
+
+        Args:
+            request: The GET request to process.
+            *args: Dismissed.
+            **kwargs: Dismissed.
+
+        Returns:
+            The HttpResponse to display the view.
+        """
+        device = self.get_object()
+        trustpoint_onboarding_process = TrustpointClientOnboardingProcessModel.objects.get(device=device)
+        trustpoint_onboarding_process.delete()
+
+        messages.success(request, f'Onboarding process for device {device.unique_name} cancelled.')
+        return redirect('devices:devices', permanent=False)
