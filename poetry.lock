@@ -13,54 +13,6 @@ files = [
 ]
 
 [[package]]
-name = "allure-behave"
-version = "2.13.5"
-description = "Allure behave integration"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "allure-behave-2.13.5.tar.gz", hash = "sha256:338ca2cc7395d1ee3dd72f5d7d92d8920f1ade0e07ddebc637b38e61e06dc8dc"},
-    {file = "allure_behave-2.13.5-py3-none-any.whl", hash = "sha256:8b04291f435af536b46c3cbd20d33e61b27f5e25dd2fff2fdc1dc3fa2474e23e"},
-]
-
-[package.dependencies]
-allure-python-commons = "2.13.5"
-behave = ">=1.2.5"
-
-[[package]]
-name = "allure-pytest"
-version = "2.13.5"
-description = "Allure pytest integration"
-optional = false
-python-versions = "*"
-groups = ["main"]
-files = [
-    {file = "allure-pytest-2.13.5.tar.gz", hash = "sha256:0ef8e1790c44a988db6b83c4d4f5e91451e2c4c8ea10601dfa88528d23afcf6e"},
-    {file = "allure_pytest-2.13.5-py3-none-any.whl", hash = "sha256:94130bac32964b78058e62cf4b815ad97a5ac82a065e6dd2d43abac2be7640fc"},
-]
-
-[package.dependencies]
-allure-python-commons = "2.13.5"
-pytest = ">=4.5.0"
-
-[[package]]
-name = "allure-python-commons"
-version = "2.13.5"
-description = "('Contains the API for end users as well as helper functions and classes to build Allure adapters for Python test frameworks',)"
-optional = false
-python-versions = ">=3.6"
-groups = ["main"]
-files = [
-    {file = "allure-python-commons-2.13.5.tar.gz", hash = "sha256:a232e7955811f988e49a4c1dd6c16cce7e9b81d0ea0422b1e5654d3254e2caf3"},
-    {file = "allure_python_commons-2.13.5-py3-none-any.whl", hash = "sha256:8b0e837b6e32d810adec563f49e1d04127a5b6770e0232065b7cb09b9953980d"},
-]
-
-[package.dependencies]
-attrs = ">=16.0.0"
-pluggy = ">=0.4.0"
-
-[[package]]
 name = "annotated-types"
 version = "0.7.0"
 description = "Reusable constraint types to use with typing.Annotated"
@@ -121,26 +73,6 @@ files = [
     {file = "async_timeout-5.0.1-py3-none-any.whl", hash = "sha256:39e3809566ff85354557ec2398b55e096c8364bacac9405a7a1fa429e77fe76c"},
     {file = "async_timeout-5.0.1.tar.gz", hash = "sha256:d9321a7a3d5a6a5e187e824d2fa0793ce379a202935782d555d6e9d2735677d3"},
 ]
-
-[[package]]
-name = "attrs"
-version = "24.3.0"
-description = "Classes Without Boilerplate"
-optional = false
-python-versions = ">=3.8"
-groups = ["main"]
-files = [
-    {file = "attrs-24.3.0-py3-none-any.whl", hash = "sha256:ac96cd038792094f438ad1f6ff80837353805ac950cd2aa0e0625ef19850c308"},
-    {file = "attrs-24.3.0.tar.gz", hash = "sha256:8f5c07333d543103541ba7be0e2ce16eeee8130cb0b3f9238ab904ce1e85baff"},
-]
-
-[package.extras]
-benchmark = ["cloudpickle", "hypothesis", "mypy (>=1.11.1)", "pympler", "pytest (>=4.3.0)", "pytest-codspeed", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
-cov = ["cloudpickle", "coverage[toml] (>=5.3)", "hypothesis", "mypy (>=1.11.1)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
-dev = ["cloudpickle", "hypothesis", "mypy (>=1.11.1)", "pre-commit-uv", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
-docs = ["cogapp", "furo", "myst-parser", "sphinx", "sphinx-notfound-page", "sphinxcontrib-towncrier", "towncrier (<24.7)"]
-tests = ["cloudpickle", "hypothesis", "mypy (>=1.11.1)", "pympler", "pytest (>=4.3.0)", "pytest-mypy-plugins", "pytest-xdist[psutil]"]
-tests-mypy = ["mypy (>=1.11.1)", "pytest-mypy-plugins"]
 
 [[package]]
 name = "babel"
@@ -225,19 +157,21 @@ behave = {version = ">=1.2.7.dev6", extras = ["toml"]}
 django = ">=4.2"
 
 [[package]]
-name = "behave-html-formatter"
-version = "0.9.10"
-description = "HTML formatter for Behave"
+name = "behave-html-pretty-formatter"
+version = "1.12.3"
+description = "Pretty HTML Formatter for Behave"
 optional = false
 python-versions = ">=3.6"
 groups = ["main"]
 files = [
-    {file = "behave-html-formatter-0.9.10.tar.gz", hash = "sha256:c5a9ad3edcac7be5766b14aacce46794885c749c4741fc93f8fc3a4bf2a891aa"},
-    {file = "behave_html_formatter-0.9.10-py3-none-any.whl", hash = "sha256:fff7ac2118463701423645ad5a12636845bfd6c8a2dd52097b524b4f290aa7c8"},
+    {file = "behave_html_pretty_formatter-1.12.3-py3-none-any.whl", hash = "sha256:12399875c6099ffc38b1b4c99507e73b128de8d061f4652e2fcca123760d4965"},
+    {file = "behave_html_pretty_formatter-1.12.3.tar.gz", hash = "sha256:c06114a89b347f9cd6f2836cfd13898b1a83bd3ae89d4dc62621523a237e7ef6"},
 ]
 
 [package.dependencies]
 behave = "*"
+dominate = "2.9.0"
+markdown = "*"
 
 [[package]]
 name = "certifi"
@@ -766,6 +700,18 @@ files = [
 docutils = ">=0.14"
 
 [[package]]
+name = "dominate"
+version = "2.9.0"
+description = "Dominate is a Python library for creating and manipulating HTML documents using an elegant DOM API."
+optional = false
+python-versions = ">=3.4"
+groups = ["main"]
+files = [
+    {file = "dominate-2.9.0-py2.py3-none-any.whl", hash = "sha256:2346cc27dc0fd9d279abd004b29da80ee294782619d1ca1aaccf4fb02439e6f8"},
+    {file = "dominate-2.9.0.tar.gz", hash = "sha256:b15791ebea432218543a1702d76ae45d2ff95ff994e52014b8686a69dad772fd"},
+]
+
+[[package]]
 name = "exceptiongroup"
 version = "1.2.2"
 description = "Backport of PEP 654 (exception groups)"
@@ -882,6 +828,22 @@ MarkupSafe = ">=2.0"
 
 [package.extras]
 i18n = ["Babel (>=2.7)"]
+
+[[package]]
+name = "markdown"
+version = "3.7"
+description = "Python implementation of John Gruber's Markdown."
+optional = false
+python-versions = ">=3.8"
+groups = ["main"]
+files = [
+    {file = "Markdown-3.7-py3-none-any.whl", hash = "sha256:7eb6df5690b81a1d7942992c97fad2938e956e79df20cbc6186e9c3a77b1c803"},
+    {file = "markdown-3.7.tar.gz", hash = "sha256:2ae2471477cfd02dbbf038d5d9bc226d40def84b4fe2986e49b59b6b472bbed2"},
+]
+
+[package.extras]
+docs = ["mdx-gh-links (>=0.2)", "mkdocs (>=1.5)", "mkdocs-gen-files", "mkdocs-literate-nav", "mkdocs-nature (>=0.6)", "mkdocs-section-index", "mkdocstrings[python]"]
+testing = ["coverage", "pyyaml"]
 
 [[package]]
 name = "markupsafe"
@@ -1917,4 +1879,4 @@ ifaddr = ">=0.1.7"
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "12a3123c931e177f6027697ae1cf87cebcbe71ccc3dd24198476bae22088fe72"
+content-hash = "198e6253fd30557aff0433adcbeae30ce16865ac1a52606ca154c731d8ae6708"
