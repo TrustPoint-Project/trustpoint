@@ -248,11 +248,12 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin,
         credential = issued_credential.credential
 
         if credential.credential_type != CredentialModel.CredentialTypeChoice.ISSUED_CREDENTIAL: # sanity check
-            raise Http404('Credential is not an issued credential')
-        
+            err_msg = 'Credential is not an issued credential'
+            raise Http404(err_msg)
+
         credential_purpose = IssuedCredentialModel.IssuedCredentialPurpose(
             issued_credential.issued_credential_purpose
-        ).name
+        ).label
 
         domain_credential_value = IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL.value
         application_credential_value = IssuedCredentialModel.IssuedCredentialType.APPLICATION_CREDENTIAL.value
@@ -260,23 +261,17 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin,
         if issued_credential.issued_credential_type == domain_credential_value:
             context['credential_type'] = credential_purpose
 
-            #domain_credential_issuer = issued_credential.device.get_domain_credential_issuer()
-            #context = context | domain_credential_issuer.get_fixed_values()
-
         elif issued_credential.issued_credential_type == application_credential_value:
             context['credential_type'] = credential_purpose + ' Credential'
 
-            #application_credential_issuer = self.get_object().device.get_tls_client_credential_issuer()
-            #context = context | application_credential_issuer.get_fixed_values()
-            context['common_name'] = self.object.credential.certificate.common_name
-
         else:
-            raise Http404('Unknown IssuedCredentialType')
+            err_msg = 'Unknown IssuedCredentialType'
+            raise Http404(err_msg)
 
         context['FileFormat'] = CredentialSerializer.FileFormat.__members__
         context['show_browser_dl'] = self.show_browser_dl
         context['is_browser_dl'] = self.is_browser_download
-        #context['issued_credential'] = issued_credential
+        context['issued_credential'] = issued_credential
         return context
 
     def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
@@ -316,8 +311,10 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin,
 
         credential_model = self.get_object().credential
         credential_serializer = credential_model.get_credential_serializer()
-        #credential_type = credential_model.credential_type
-        credential_type_name = self.get_object().credential_type # from context
+        credential_purpose = IssuedCredentialModel.IssuedCredentialPurpose(
+            self.get_object().issued_credential_purpose
+        ).label
+        credential_type_name = credential_purpose.replace(' ', '-').lower().replace('-credential', '')
 
         if file_format == CredentialSerializer.FileFormat.PKCS12:
             response = FileResponse(
@@ -357,7 +354,7 @@ class DeviceDomainCredentialDownloadView(TpLoginRequiredMixin, DeviceBaseCredent
 class DeviceApplicationCredentialDownloadView(TpLoginRequiredMixin, DeviceBaseCredentialDownloadView):
     """View to download a password protected application credential in the desired format."""
 
-    show_browser_dl = False
+    show_browser_dl = True
 
 # DeviceBrower Credential Download Views intentionally do not require authentication
 class DeviceBrowserDomainCredentialDownloadView(DownloadTokenRequiredMixin, DeviceBaseCredentialDownloadView):
