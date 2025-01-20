@@ -1,6 +1,9 @@
 name: Behave Feature Tests
 
 on:
+  push:
+    paths:
+      - trustpoint/features/**
   pull_request:
     branches:
       - "main"
