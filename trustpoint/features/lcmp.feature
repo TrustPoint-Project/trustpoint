@@ -17,10 +17,10 @@ Feature: Lightweight Certificate Management Protocol (LCMP)
   # These scenarios test valid and invalid requests.
   @request_handling
   Scenario Outline: Certificate Request Handling
-    Given I have a certificate signing request (CSR) with "<request_type>" parameters
+    Given I have a certificate signing request (CSR) with <request_type> parameters
     When I send the CSR to the LCMP server
-    Then the server should return a response indicating "<expected_result>"
-    And "<response_data>" should be included in the server's response
+    Then the server should return a response indicating <expected_result>
+    And <response_data> should be included in the server's response
 
     Examples:
       | request_type | expected_result  | response_data                |
@@ -31,10 +31,10 @@ Feature: Lightweight Certificate Management Protocol (LCMP)
   # This tests revocation of valid and invalid certificates.
   @certificate_revocation
   Scenario Outline: Certificate Revocation
-    Given I have a certificate ID for "<certificate_type>" certificate
+    Given I have a certificate ID for <certificate_type> certificate
     When I send a revocation request to the server
-    Then the server should return a response indicating "<expected_result>"
-    And the certificate should be "<revocation_status>"
+    Then the server should return a response indicating <expected_result>
+    And the certificate should be <revocation_status>
 
     Examples:
       | certificate_type | expected_result | revocation_status |
@@ -54,9 +54,9 @@ Feature: Lightweight Certificate Management Protocol (LCMP)
   # This ensures authentication and encryption are enforced.
   @security
   Scenario Outline: Authentication and Authorization
-    Given I attempt to send a request with "<auth_status>" credentials
+    Given I attempt to send a request with <auth_status> credentials
     When the server processes the request
-    Then the server should return "<expected_response>"
+    Then the server should return <expected_response>
 
     Examples:
       | auth_status  | expected_response     |
