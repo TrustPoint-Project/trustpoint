@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import io
+import ipaddress
 from typing import TYPE_CHECKING, cast
 
 from core.file_builder.enum import ArchiveFormat
@@ -17,10 +18,13 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormView
+from django.db.models import Q
 
 # TODO(AlexHx8472): Remove django_tables2 dependency, and thus remove the type: ignore[misc]
 from django_tables2 import SingleTableView  # type: ignore[import-untyped]
 from pki.models.credential import CredentialModel
+
+from devices.issuer import LocalTlsClientCredentialIssuer, LocalTlsServerCredentialIssuer, LocalDomainCredentialIssuer
 
 from devices.forms import (
     BrowserLoginForm,
@@ -29,18 +33,11 @@ from devices.forms import (
     IssueTlsClientCredentialForm,
     IssueTlsServerCredentialForm,
 )
-from devices.models import (
-    DeviceModel,
-    IssuedApplicationCertificateModel,
-    IssuedDomainCredentialModel,
-    RemoteDeviceCredentialDownloadModel,
-)
+from devices.models import DeviceModel, IssuedCredentialModel, RemoteDeviceCredentialDownloadModel
 from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCredentialsTable, DeviceTable
 from trustpoint.views.base import TpLoginRequiredMixin
 
 if TYPE_CHECKING:
-    # noinspection PyUnresolvedReferences
-    import ipaddress
     from typing import Any, ClassVar
 
     from django.http.request import HttpRequest
@@ -93,7 +90,7 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SingleTableView)
 class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView[DeviceModel, BaseModelForm[DeviceModel]]):
     """Device Create View."""
 
-    http_method_names = ('get','post')
+    http_method_names = ('get', 'post')
 
     model = DeviceModel
     fields = ('unique_name', 'serial_number', 'onboarding_protocol', 'domain')
@@ -175,8 +172,9 @@ class DeviceManualOnboardingIssueDomainCredentialView(
             Dictionary containing the initial form data.
         """
         initial = super().get_initial()
-        domain_credential_issuer = self.get_object().get_domain_credential_issuer()
-        return initial | domain_credential_issuer.get_fixed_values()
+        device = self.get_object()
+        initial.update(LocalDomainCredentialIssuer.get_fixed_values(device=device, domain=device.domain))
+        return initial
 
     def get_success_url(self) -> str:
         """Returns the URL to redirect to if the form is valid and was successfully processed."""
@@ -210,21 +208,19 @@ class DeviceManualOnboardingIssueDomainCredentialView(
         """
         device = self.get_object()
 
-        domain_credential_issuer = device.get_domain_credential_issuer()
-        domain_credential_issuer.issue_domain_credential()
-        domain_credential_issuer.save()
-        domain_credential_issuer.device.onboarding_status = DeviceModel.OnboardingStatus.ONBOARDED
-        domain_credential_issuer.device.save()
-
+        domain_credential_issuer = LocalDomainCredentialIssuer(device=device, domain=device.domain)
+        _ = domain_credential_issuer.issue_domain_credential()
         messages.success(
             self.request,
-            'Successfully issued a domain credential for device ' f'{domain_credential_issuer.device.unique_name}',
+            'Successfully issued domain credential for device ' f'{domain_credential_issuer.device.unique_name}'
         )
-
         return super().form_valid(form)
 
 
-class DeviceBaseCredentialDownloadView(DeviceContextMixin, DetailView, FormView[CredentialDownloadForm]):
+class DeviceBaseCredentialDownloadView(DeviceContextMixin,
+                                       DetailView[IssuedCredentialModel],
+                                       FormView[CredentialDownloadForm]
+):
     """View to download a password protected application credential in the desired format.
 
     Inherited by the domain and application credential download views.
@@ -232,6 +228,7 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin, DetailView, FormView[
 
     http_method_names = ('get', 'post')
 
+    model = IssuedCredentialModel
     template_name = 'devices/credentials/credential_download.html'
     form_class = CredentialDownloadForm
     context_object_name = 'credential'
@@ -247,37 +244,42 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin, DetailView, FormView[
             The context data for the view.
         """
         context = super().get_context_data(**kwargs)
-        credential = self.get_object().credential
+        issued_credential = self.get_object()
+        credential = issued_credential.credential
 
-        if self.model == IssuedDomainCredentialModel:
-            if credential.credential_type == CredentialModel.CredentialTypeChoice.DOMAIN_CREDENTIAL:
-                context['credential_type'] = CredentialModel.CredentialTypeChoice.DOMAIN_CREDENTIAL.name.replace(
-                    '_', ' ').title()
-            else:
-                err_msg = 'IssuedDomainCredentialModel has credential_type != DOMAIN_CREDENTIAL'
-                raise Http404(err_msg)
-            domain_credential_issuer = self.get_object().device.get_domain_credential_issuer()
-            context = context | domain_credential_issuer.get_fixed_values()
+        if credential.credential_type != CredentialModel.CredentialTypeChoice.ISSUED_CREDENTIAL: # sanity check
+            raise Http404('Credential is not an issued credential')
+        
+        credential_purpose = IssuedCredentialModel.IssuedCredentialPurpose(
+            issued_credential.issued_credential_purpose
+        ).name
 
-        if self.model == IssuedApplicationCertificateModel:
-            if credential.credential_type == CredentialModel.CredentialTypeChoice.APPLICATION_CREDENTIAL:
-                credential_type = IssuedApplicationCertificateModel.ApplicationCertificateType(
-                    self.get_object().issued_application_certificate_type
-                )
-                context['credential_type'] = credential_type.name.replace('_', ' ').title() + ' Credential'
-            else:
-                err_msg = 'IssuedApplicationCertificateModel has credential_type != APPLICATION_CREDENTIAL'
-                raise Http404(err_msg)
-            application_credential_issuer = self.get_object().device.get_tls_client_credential_issuer()
-            context = context | application_credential_issuer.get_fixed_values()
+        domain_credential_value = IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL.value
+        application_credential_value = IssuedCredentialModel.IssuedCredentialType.APPLICATION_CREDENTIAL.value
+
+        if issued_credential.issued_credential_type == domain_credential_value:
+            context['credential_type'] = credential_purpose
+
+            #domain_credential_issuer = issued_credential.device.get_domain_credential_issuer()
+            #context = context | domain_credential_issuer.get_fixed_values()
+
+        elif issued_credential.issued_credential_type == application_credential_value:
+            context['credential_type'] = credential_purpose + ' Credential'
+
+            #application_credential_issuer = self.get_object().device.get_tls_client_credential_issuer()
+            #context = context | application_credential_issuer.get_fixed_values()
             context['common_name'] = self.object.credential.certificate.common_name
+
+        else:
+            raise Http404('Unknown IssuedCredentialType')
 
         context['FileFormat'] = CredentialSerializer.FileFormat.__members__
         context['show_browser_dl'] = self.show_browser_dl
         context['is_browser_dl'] = self.is_browser_download
+        #context['issued_credential'] = issued_credential
         return context
 
-    def post(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:
+    def post(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         """Processing of all POST requests, i.e. the expected form data.
 
         Args:
@@ -302,6 +304,8 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin, DetailView, FormView[
         Returns:
             If successful, this will start the file download. Otherwise, a Http404 will be raised and displayed.
         """
+        self.object = self.get_object()
+
         password = form.cleaned_data['password'].encode()
 
         try:
@@ -312,14 +316,8 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin, DetailView, FormView[
 
         credential_model = self.get_object().credential
         credential_serializer = credential_model.get_credential_serializer()
-        credential_type = credential_model.credential_type
-        credential_type_name = 'domain'
-
-        if self.model == IssuedApplicationCertificateModel:
-            credential_type = IssuedApplicationCertificateModel.ApplicationCertificateType(
-                self.get_object().issued_application_certificate_type
-            )
-            credential_type_name = credential_type.name.replace('_', '-').lower()
+        #credential_type = credential_model.credential_type
+        credential_type_name = self.get_object().credential_type # from context
 
         if file_format == CredentialSerializer.FileFormat.PKCS12:
             response = FileResponse(
@@ -353,21 +351,18 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin, DetailView, FormView[
 class DeviceDomainCredentialDownloadView(TpLoginRequiredMixin, DeviceBaseCredentialDownloadView):
     """View to download a password protected domain credential in the desired format."""
 
-    model = IssuedDomainCredentialModel
     show_browser_dl = True
 
 
 class DeviceApplicationCredentialDownloadView(TpLoginRequiredMixin, DeviceBaseCredentialDownloadView):
     """View to download a password protected application credential in the desired format."""
 
-    model = IssuedApplicationCertificateModel
     show_browser_dl = False
 
 # DeviceBrower Credential Download Views intentionally do not require authentication
 class DeviceBrowserDomainCredentialDownloadView(DownloadTokenRequiredMixin, DeviceBaseCredentialDownloadView):
     """View to download a password protected domain credential in the desired format from a remote client."""
 
-    model = IssuedDomainCredentialModel
     show_browser_dl = False
     is_browser_download = True
 
@@ -394,9 +389,14 @@ class DeviceIssueTlsClientCredential(
             Dictionary containing the initial form data.
         """
         initial = super().get_initial()
-        tls_client_credential_issuer = self.get_object().get_tls_client_credential_issuer()
-        initial.update(tls_client_credential_issuer.get_fixed_values())
+        device = self.get_object()
+        initial.update(LocalTlsClientCredentialIssuer.get_fixed_values(device=device, domain=device.domain))
         return initial
+
+    def get_form_kwargs(self) -> dict[str, Any]:
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs.update({'device': self.get_object()})
+        return form_kwargs
 
     def get_success_url(self) -> str:
         """Returns the URL to redirect to if the form is valid and was successfully processed."""
@@ -432,9 +432,8 @@ class DeviceIssueTlsClientCredential(
         common_name = cast('str', form.cleaned_data.get('common_name'))
         validity = cast('int', form.cleaned_data.get('validity'))
 
-        tls_client_issuer = device.get_tls_client_credential_issuer()
-        tls_client_issuer.issue_tls_client_credential(common_name=common_name, validity_days=validity)
-        tls_client_issuer.save()
+        tls_client_issuer = LocalTlsClientCredentialIssuer(device=device, domain=device.domain)
+        _ = tls_client_issuer.issue_tls_client_credential(common_name=common_name, validity_days=validity)
         messages.success(
             self.request, 'Successfully issued TLS Client credential device ' f'{tls_client_issuer.device.unique_name}'
         )
@@ -460,9 +459,14 @@ class DeviceIssueTlsServerCredential(
             Dictionary containing the initial form data.
         """
         initial = super().get_initial()
-        tls_server_credential_issuer = self.get_object().get_tls_server_credential_issuer()
-        initial.update(tls_server_credential_issuer.get_fixed_values())
+        device = self.get_object()
+        initial.update(LocalTlsServerCredentialIssuer.get_fixed_values(device=device, domain=device.domain))
         return initial
+
+    def get_form_kwargs(self) -> dict[str, Any]:
+        form_kwargs = super().get_form_kwargs()
+        form_kwargs.update({'device': self.get_object()})
+        return form_kwargs
 
     def get_success_url(self) -> str:
         """Returns the URL to redirect to if the form is valid and was successfully processed."""
@@ -505,15 +509,14 @@ class DeviceIssueTlsServerCredential(
         if not common_name:
             raise Http404
 
-        tls_server_credential_issuer = device.get_tls_server_credential_issuer()
-        tls_server_credential_issuer.issue_tls_server_credential(
+        tls_server_credential_issuer = LocalTlsServerCredentialIssuer(device=device, domain=device.domain)
+        _ = tls_server_credential_issuer.issue_tls_server_credential(
             common_name=common_name,
             ipv4_addresses=ipv4_addresses,
             ipv6_addresses=ipv6_addresses,
             domain_names=domain_names,
             validity_days=validity,
         )
-        tls_server_credential_issuer.save()
         messages.success(
             self.request,
             'Successfully issued TLS Server credential device ' f'{tls_server_credential_issuer.device.unique_name}',
@@ -547,10 +550,16 @@ class DeviceCertificateLifecycleManagementSummaryView(
         device = self.get_object()
 
         device_domain_credential_table = DeviceDomainCredentialsTable(
-            IssuedDomainCredentialModel.objects.filter(device=device)
+            IssuedCredentialModel.objects.filter(
+                Q(device=device) &
+                Q(issued_credential_type=IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL.value)
+            )
         )
         device_application_certificates_table = DeviceApplicationCertificatesTable(
-            IssuedApplicationCertificateModel.objects.filter(device=device)
+            IssuedCredentialModel.objects.filter(
+                Q(device=device) &
+                Q(issued_credential_type=IssuedCredentialModel.IssuedCredentialType.APPLICATION_CREDENTIAL.value)
+            )
         )
 
         self.extra_context['device_domain_credential_table'] = device_domain_credential_table
@@ -581,7 +590,7 @@ class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, RedirectVie
 class DeviceBrowserOnboardingOTPView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, RedirectView):
     """View to display the OTP for remote credential download (aka. browser onboarding)."""
 
-    model = IssuedDomainCredentialModel
+    model = IssuedCredentialModel
     template_name = 'devices/credentials/onboarding/browser/otp_view.html'
     redirection_view = 'devices:devices'
     context_object_name = 'credential'
@@ -608,7 +617,7 @@ class DeviceBrowserOnboardingOTPView(DeviceContextMixin, TpLoginRequiredMixin, D
 class DeviceBrowserOnboardingCancelView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, RedirectView):
     """View to cancel the browser onboarding process and delete the associated RemoteDeviceCredentialDownloadModel."""
 
-    model = IssuedDomainCredentialModel
+    model = IssuedCredentialModel
     redirection_view = 'devices:domain_credential_download'
     context_object_name = 'credential'
 

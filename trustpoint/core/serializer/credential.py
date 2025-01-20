@@ -191,14 +191,14 @@ class CredentialSerializer(Serializer):
     def __len__(self) -> int:
         """Returns the number of certificates contained in this credential."""
         if self._additional_certificates is None:
-            return 0
+            return 1
 
         return len(self._additional_certificates) + 1
 
     def get_as_separate_pem_files(
             self,
             private_key_format: PrivateKeyFormat = PrivateKeyFormat.PKCS8,
-            password: None | bytes = None) -> tuple[bytes, bytes, bytes]:
+            password: None | bytes = None) -> tuple[bytes, bytes, bytes | None]:
         """Gets the credential as separate bytes in PEM format with the private key in the specified format.
 
         Note:
@@ -216,7 +216,7 @@ class CredentialSerializer(Serializer):
             private_key_format: Enum CredentialSerializer.PrivateKeyFormat to specify the format of the private key.
 
         Returns:
-            (bytes, bytes, bytes):
+            (bytes, bytes, bytes | None):
                 private key as PKCS#1 PEM bytes,
                 credential certificate as PEM bytes,
                 additional certificates as PEM bytes.
@@ -231,7 +231,7 @@ class CredentialSerializer(Serializer):
         return (
             private_key_pem,
             self.credential_certificate.as_pem(),
-            self.additional_certificates.as_pem())
+            self.additional_certificates.as_pem() if self.additional_certificates else None)
 
     @property
     def credential_private_key(self) -> PrivateKeySerializer:

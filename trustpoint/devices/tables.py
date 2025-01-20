@@ -10,7 +10,7 @@ import django_tables2 as tables
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from devices.models import DeviceModel, IssuedApplicationCertificateModel, IssuedDomainCredentialModel
+from devices.models import DeviceModel, IssuedCredentialModel
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
@@ -143,7 +143,7 @@ class DeviceDomainCredentialsTable(tables.Table):
     class Meta:
         """Meta table configurations."""
 
-        model = IssuedDomainCredentialModel
+        model = IssuedCredentialModel
         template_name = 'django_tables2/bootstrap5.html'
         order_by = '-created_at'
         empty_values = ()
@@ -168,30 +168,30 @@ class DeviceDomainCredentialsTable(tables.Table):
     revoke = tables.Column(empty_values=(), orderable=False, verbose_name=_('Revoke'))
 
     @staticmethod
-    def render_common_name(record: IssuedDomainCredentialModel) -> SafeString:
-        return format_html(record.issued_domain_credential_certificate.common_name)
+    def render_common_name(record: IssuedCredentialModel) -> SafeString:
+        return format_html(record.credential.certificate.common_name)
 
     @staticmethod
-    def render_issued_at(record: IssuedDomainCredentialModel) -> datetime.datetime:
+    def render_issued_at(record: IssuedCredentialModel) -> datetime.datetime:
         return record.created_at
 
     @staticmethod
-    def render_expiration_date(record: IssuedDomainCredentialModel) -> datetime.datetime:
-        return record.issued_domain_credential_certificate.not_valid_after
+    def render_expiration_date(record: IssuedCredentialModel) -> datetime.datetime:
+        return record.credential.certificate.not_valid_after
 
     @staticmethod
-    def render_expires_in(record: IssuedDomainCredentialModel) -> SafeString:
+    def render_expires_in(record: IssuedCredentialModel) -> SafeString:
         now = datetime.datetime.now(datetime.timezone.utc)
-        if now >= record.issued_domain_credential_certificate.not_valid_after:
+        if now >= record.credential.certificate.not_valid_after:
             return format_html('Expired')
-        expire_timedelta = record.issued_domain_credential_certificate.not_valid_after - now
+        expire_timedelta = record.credential.certificate.not_valid_after - now
         days = expire_timedelta.days
         hours, remainder = divmod(expire_timedelta.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
         return format_html(f'{days} days, {hours}:{minutes}:{seconds}')
 
     @staticmethod
-    def render_download(record: IssuedDomainCredentialModel) -> SafeString:
+    def render_download(record: IssuedCredentialModel) -> SafeString:
         """Creates the html hyperlink for the download-view.
 
         Args:
@@ -206,7 +206,7 @@ class DeviceDomainCredentialsTable(tables.Table):
            record.id, _('Download'))
 
     @staticmethod
-    def render_revoke(record: IssuedDomainCredentialModel) -> SafeString:
+    def render_revoke(record: IssuedCredentialModel) -> SafeString:
         """Creates the html hyperlink for the revoke-view.
 
         Args:
@@ -224,7 +224,7 @@ class DeviceApplicationCertificatesTable(tables.Table):
     class Meta:
         """Meta table configurations."""
 
-        model = IssuedApplicationCertificateModel
+        model = IssuedCredentialModel
         template_name = 'django_tables2/bootstrap5.html'
         order_by = '-created_at'
         empty_values = ()
@@ -233,7 +233,8 @@ class DeviceApplicationCertificatesTable(tables.Table):
 
         fields = (
             'common_name',
-            'certificate_type',
+            'credential_type',
+            'credential_purpose',
             'domain',
             'issued_at',
             'expiration_date',
@@ -244,41 +245,46 @@ class DeviceApplicationCertificatesTable(tables.Table):
 
     issued_at = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Issued At'))
     common_name = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Common Name (CN)'))
-    certificate_type = tables.Column(empty_values=(), orderable=True, verbose_name=_('Certificate Type'))
+    credential_type = tables.Column(empty_values=(), orderable=True, verbose_name=_('Credential Type'))
+    credential_purpose = tables.Column(empty_values=(), orderable=True, verbose_name=_('Credential Purpose'))
     expiration_date = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Expiration Date'))
     expires_in = tables.DateTimeColumn(empty_values=(), orderable=True, verbose_name=_('Expires In'))
     download = tables.Column(empty_values=(), orderable=False, verbose_name=_('Download'))
     revoke = tables.Column(empty_values=(), orderable=False, verbose_name=_('Revoke'))
 
     @staticmethod
-    def render_common_name(record: IssuedApplicationCertificateModel) -> SafeString:
-        return format_html(record.issued_application_certificate.common_name)
+    def render_common_name(record: IssuedCredentialModel) -> SafeString:
+        return format_html(record.credential.certificate.common_name)
 
     @staticmethod
-    def render_certificate_type(record: IssuedApplicationCertificateModel) -> SafeString:
-        return format_html(record.get_issued_application_certificate_type_display())
+    def render_credential_type(record: IssuedCredentialModel) -> SafeString:
+        return format_html(record.get_issued_credential_type_display())
 
     @staticmethod
-    def render_issued_at(record: IssuedApplicationCertificateModel) -> datetime.datetime:
+    def render_credential_purpose(record: IssuedCredentialModel) -> SafeString:
+        return format_html(record.get_issued_credential_purpose_display())
+
+    @staticmethod
+    def render_issued_at(record: IssuedCredentialModel) -> datetime.datetime:
         return record.created_at
 
     @staticmethod
-    def render_expiration_date(record: IssuedApplicationCertificateModel) -> datetime.datetime:
-        return record.issued_application_certificate.not_valid_after
+    def render_expiration_date(record: IssuedCredentialModel) -> datetime.datetime:
+        return record.credential.certificate.not_valid_after
 
     @staticmethod
-    def render_expires_in(record: IssuedApplicationCertificateModel) -> SafeString:
+    def render_expires_in(record: IssuedCredentialModel) -> SafeString:
         now = datetime.datetime.now(datetime.timezone.utc)
-        if now >= record.issued_application_certificate.not_valid_after:
+        if now >= record.credential.certificate.not_valid_after:
             return format_html('Expired')
-        expire_timedelta = record.issued_application_certificate.not_valid_after - now
+        expire_timedelta = record.credential.certificate.not_valid_after - now
         days = expire_timedelta.days
         hours, remainder = divmod(expire_timedelta.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
         return format_html(f'{days} days, {hours}:{minutes}:{seconds}')
 
     @staticmethod
-    def render_download(record: IssuedApplicationCertificateModel) -> SafeString:
+    def render_download(record: IssuedCredentialModel) -> SafeString:
         """Creates the html hyperlink for the details-view.
 
         Args:
@@ -293,7 +299,7 @@ class DeviceApplicationCertificatesTable(tables.Table):
             record.id, _('Download'))
 
     @staticmethod
-    def render_revoke(record: IssuedApplicationCertificateModel) -> SafeString:
+    def render_revoke(record: IssuedCredentialModel) -> SafeString:
         """Creates the html hyperlink for the revoke-view.
 
         Args:
