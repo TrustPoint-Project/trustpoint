@@ -16,20 +16,20 @@ urlpatterns = [
         views.DeviceManualOnboardingIssueDomainCredentialView.as_view(),
         name='manual_issue_domain_credential'),
     path('browser/', views.DeviceOnboardingBrowserLoginView.as_view(), name='browser_login'),
-    path('browser/domain-credential-download/<int:pk>/',
-        views.DeviceBrowserDomainCredentialDownloadView.as_view(),
+    path('browser/credential-download/<int:pk>/',
+        views.DeviceBrowserCredentialDownloadView.as_view(),
         name='browser_domain_credential_download'),
     path(
-        'domain-credential-download/browser/<int:pk>/',
+        'credential-download/browser/<int:pk>/',
         views.DeviceBrowserOnboardingOTPView.as_view(),
         name='browser_otp_view'),
     path(
-        'domain-credential-download/browser/<int:pk>/cancel',
+        'credential-download/browser/<int:pk>/cancel',
         views.DeviceBrowserOnboardingCancelView.as_view(),
         name='browser_cancel'),
     path(
-        'domain-credential-download/<int:pk>/',
-        views.DeviceDomainCredentialDownloadView.as_view(),
+        'credential-download/<int:pk>/',
+        views.DeviceManualCredentialDownloadView.as_view(),
         name='domain_credential_download'),
     path(
         'certificate-lifecycle-management/<int:pk>/',
@@ -43,10 +43,6 @@ urlpatterns = [
         'certificate-lifecycle-management/<int:pk>/issue-tls-server-credential/',
         views.DeviceIssueTlsServerCredential.as_view(),
         name='certificate_lifecycle_management-issue_tls_server_credential'),
-    path(
-        'application-credential-download/<int:pk>/',
-        views.DeviceApplicationCredentialDownloadView.as_view(),
-        name='application_credential_download'),
     path('certificate-lifecycle-management/<int:pk>/revoke/<int:credential_pk>/',
          views.DeviceRevocationView.as_view(),
          name='revocation_not_implemented'),

@@ -3,13 +3,13 @@
 from __future__ import annotations
 
 import io
-import ipaddress
 from typing import TYPE_CHECKING, cast
 
 from core.file_builder.enum import ArchiveFormat
 from core.serializer import CredentialSerializer
 from core.validator.field import UniqueNameValidator
 from django.contrib import messages
+from django.db.models import Q
 from django.forms import BaseModelForm
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import redirect, render
@@ -18,13 +18,10 @@ from django.utils.translation import gettext_lazy as _
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormView
-from django.db.models import Q
 
 # TODO(AlexHx8472): Remove django_tables2 dependency, and thus remove the type: ignore[misc]
 from django_tables2 import SingleTableView  # type: ignore[import-untyped]
 from pki.models.credential import CredentialModel
-
-from devices.issuer import LocalTlsClientCredentialIssuer, LocalTlsServerCredentialIssuer, LocalDomainCredentialIssuer
 
 from devices.forms import (
     BrowserLoginForm,
@@ -33,11 +30,13 @@ from devices.forms import (
     IssueTlsClientCredentialForm,
     IssueTlsServerCredentialForm,
 )
+from devices.issuer import LocalDomainCredentialIssuer, LocalTlsClientCredentialIssuer, LocalTlsServerCredentialIssuer
 from devices.models import DeviceModel, IssuedCredentialModel, RemoteDeviceCredentialDownloadModel
 from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCredentialsTable, DeviceTable
 from trustpoint.views.base import TpLoginRequiredMixin
 
 if TYPE_CHECKING:
+    import ipaddress
     from typing import Any, ClassVar
 
     from django.http.request import HttpRequest
@@ -269,8 +268,8 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin,
             raise Http404(err_msg)
 
         context['FileFormat'] = CredentialSerializer.FileFormat.__members__
-        context['show_browser_dl'] = self.show_browser_dl
         context['is_browser_dl'] = self.is_browser_download
+        context['show_browser_dl'] = not self.is_browser_download
         context['issued_credential'] = issued_credential
         return context
 
@@ -345,26 +344,15 @@ class DeviceBaseCredentialDownloadView(DeviceContextMixin,
         return cast('HttpResponse', response)
 
 
-class DeviceDomainCredentialDownloadView(TpLoginRequiredMixin, DeviceBaseCredentialDownloadView):
-    """View to download a password protected domain credential in the desired format."""
+class DeviceManualCredentialDownloadView(TpLoginRequiredMixin, DeviceBaseCredentialDownloadView):
+    """View to download a password protected domain or application credential in the desired format."""
 
-    show_browser_dl = True
-
-
-class DeviceApplicationCredentialDownloadView(TpLoginRequiredMixin, DeviceBaseCredentialDownloadView):
-    """View to download a password protected application credential in the desired format."""
-
-    show_browser_dl = True
 
 # DeviceBrower Credential Download Views intentionally do not require authentication
-class DeviceBrowserDomainCredentialDownloadView(DownloadTokenRequiredMixin, DeviceBaseCredentialDownloadView):
-    """View to download a password protected domain credential in the desired format from a remote client."""
+class DeviceBrowserCredentialDownloadView(DownloadTokenRequiredMixin, DeviceBaseCredentialDownloadView):
+    """View to download a password protected domain or app credential in the desired format from a remote client."""
 
-    show_browser_dl = False
     is_browser_download = True
-
-
-# class DeviceBrowserApplicationCredentialDownloadView(DeviceBaseCredentialDownloadView):
 
 
 class DeviceIssueTlsClientCredential(
