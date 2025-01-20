@@ -31,12 +31,8 @@ def step_check_response_data(context, response_data):
 def step_have_certificate_id(context, certificate_type):
     pass
 
-@when("I send a revocation request to the LCMP server")
+@when("I send a revocation request to the server")
 def step_send_revocation_request(context):
-    pass
-
-@then('the server should return a response indicating "{expected_result}"')
-def step_check_revocation_response(context, expected_result):
     pass
 
 @then('the certificate should be "{revocation_status}"')
@@ -44,7 +40,7 @@ def step_check_certificate_status(context, revocation_status):
     pass
 
 # Error Handling
-@given("I send a malformed request to the LCMP server")
+@given("I send a malformed request to the server")
 def step_send_malformed_request(context):
     pass
 
