@@ -1,96 +1,104 @@
 from enum import Enum
+
 from cryptography import x509
 from django.utils.translation import gettext_lazy as _
-
 
 SERIAL_MAX_VALUE = 1_461_501_637_330_902_918_203_684_832_716_283_019_655_932_542_975
 
 
 class ErrorSource(Enum):
-
     BSI = _('BSI Technical Guideline TR-02103')
     RFC5280 = _('RFC5280')
     TRUSTPOINT = _('Trustpoint specified constraint.')
 
 
 class CertificateError(Enum):
-
     # error msg, code, source
     INVALID_VERSION = (_('Certificate version is not v3.'), 'invalid_version', ErrorSource.TRUSTPOINT)
     SERIAL_NUMBER_0 = (_('Certificate serial number is 0.'), 'serial_number_0', ErrorSource.RFC5280)
     SERIAL_NUMBER_NEGATIVE = (
         _('Certificate serial number is negative.'),
         'serial_number_negative',
-        ErrorSource.RFC5280)
+        ErrorSource.RFC5280,
+    )
     SHORT_SERIAL_NUMBER = (_('Certificate serial number is shorter than 20 bytes.'), 'short_serial_number')
     EXT_ISSUER_ALTERNATIVE_NAME_CRITICAL = (
         _('The Issuer Alternative Name extension of the CA certificate is marked as critical.'),
-        'ext_key_usage_non_critical'
+        'ext_key_usage_non_critical',
     )
     EXT_KEY_USAGE_MISSING = (_('CA certificate does not contain the Key Usage extension.'), 'ext_key_usage_missing')
     EXT_KEY_USAGE_NON_CRITICAL = (
         _('The Key Usage extension of the CA certificate is marked as non-critical.'),
-        'ext_key_usage_non_critical'
+        'ext_key_usage_non_critical',
     )
     EXT_POLICY_MAPPING_NON_CRITICAL = (
         _('The Policy Mappings extension of the CA certificate is marked as non-critical.'),
-        'ext_policy_mappings_non_critical'
+        'ext_policy_mappings_non_critical',
     )
     EXT_SUBJECT_ALTERNATIVE_NAME_CRITICAL = (
-        _('The Subject Alternative Name (SAN) extension of the CA certificate is marked as critical, '
-          'while the subject is not emtpy.'),
-        'ext_key_usage_non_critical'
+        _(
+            'The Subject Alternative Name (SAN) extension of the CA certificate is marked as critical, '
+            'while the subject is not emtpy.'
+        ),
+        'ext_key_usage_non_critical',
     )
     EXT_AUTHORITY_KEY_ID_MISSING = (
         _('Certificate does not contain the Authority Key Identifier extension.'),
-        'ext_authority_key_id_missing')
+        'ext_authority_key_id_missing',
+    )
     EXT_AUTHORITY_KEY_ID_CRITICAL = (
         _('The Authority Key Identifier extension is marked as critical.'),
-        'authority_key_id_critical')
+        'authority_key_id_critical',
+    )
     EXT_SUBJECT_KEY_ID_CRITICAL = (
         _('The Subject Key Identifier extension is marked as critical.'),
-        'subject_key_id_critical')
+        'subject_key_id_critical',
+    )
     EXT_BASIC_CONSTRAINTS_MISSING = (
         _('CA certificate does not have a Basic Constraints extension.'),
-        'ext_basic_constraints_missing')
+        'ext_basic_constraints_missing',
+    )
     EXT_BASIC_CONSTRAINTS_NON_CRITICAL = (
         _('The Basic Constraints extension of the CA certificate is marked as non-critical.'),
-        'ext_basic_constraints_non_critical'
+        'ext_basic_constraints_non_critical',
     )
     EXT_BASIC_CONSTRAINTS_NON_CA = (
         _('CA certificate has a Basic Constraints extension stating that the certificate is not a CA.'),
-        'ext_basic_constraints_non_ca'
+        'ext_basic_constraints_non_ca',
     )
     EXT_KEY_USAGE_FLAG_MISSING = (
-        _('The Key Usage extension of the CA certificate missing '
-          'one or more appropriate key usages (keyCertSign, cRLSign, digitalSignature).'),
-        'ext_key_usage_flag_missing'
+        _(
+            'The Key Usage extension of the CA certificate missing '
+            'one or more appropriate key usages (keyCertSign, cRLSign, digitalSignature).'
+        ),
+        'ext_key_usage_flag_missing',
     )
     EXT_SUBJECT_KEY_ID_MISSING = (
         _('Certificate does not contain the Subject Key Identifier extension.'),
-        'ext_authority_key_id_missing'
+        'ext_authority_key_id_missing',
     )
     EXT_POLICY_CONSTRAINTS_NON_CRITICAL = (
         _('The Policy Constraints extension of the CA certificate is marked as non-critical.'),
-        'ext_policy_constraints_non_critical'
+        'ext_policy_constraints_non_critical',
     )
     EXT_INHIBIT_ANY_POLICY_NON_CRITICAL = (
         _('The Inhibit Any Policy extension of the CA certificate is marked as non-critical.'),
-        'ext_policy_mappings_non_critical'
+        'ext_policy_mappings_non_critical',
     )
     EXT_SUBJECT_ALTERNATIVE_NAME_NON_CRITICAL = (
-        _('The Subject Alternative Name extension of the CA certificate is marked as non-critical, '
-          'while the subject is emtpy'),
-        'ext_policy_constraints_non_critical'
+        _(
+            'The Subject Alternative Name extension of the CA certificate is marked as non-critical, '
+            'while the subject is emtpy'
+        ),
+        'ext_policy_constraints_non_critical',
     )
     EXT_AUTHORITY_KEY_ID_KEY_ID_MISSING = (
         _('The Authority Key Identifier Extension of the CA certificate does not contain the Key Identifier field.'),
-        'ext_authority_key_id_missing'
+        'ext_authority_key_id_missing',
     )
 
 
 class CertificateValidator:
-
     _certificate: x509.Certificate
     _was_processed: bool = False
     _is_valid: bool = False
@@ -99,10 +107,10 @@ class CertificateValidator:
 
     def __init__(self, certificate: x509.Certificate) -> None:
         self._certificate = certificate
-        
+
     def _add_warning(self, warning: CertificateError) -> None:
         self._warnings.append(warning)
-    
+
     def _add_error(self, error: CertificateError) -> None:
         self._errors.append(error)
 
@@ -129,11 +137,10 @@ class CertificateValidator:
     def is_valid(self) -> bool:
         if self._was_processed:
             return self._is_valid
-        else:
-            self._run_checks()
-            self._is_valid = False if self._errors else True
-            self._was_processed = True
-            return self._is_valid
+        self._run_checks()
+        self._is_valid = False if self._errors else True
+        self._was_processed = True
+        return self._is_valid
 
     def validate(self) -> bool:
         return self.is_valid
@@ -182,7 +189,6 @@ class CertificateValidator:
 
 
 class CaCertificateValidator(CertificateValidator):
-
     def _run_checks(self) -> None:
         super()._run_checks()
         self._check_basic_constraints()
@@ -240,7 +246,8 @@ class CaCertificateValidator(CertificateValidator):
     def _check_subject_alternative_name(self) -> None:
         try:
             subject_alternative_name = self.certificate.extensions.get_extension_for_oid(
-                x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+                x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME
+            )
         except x509.ExtensionNotFound:
             return
 
@@ -253,10 +260,11 @@ class CaCertificateValidator(CertificateValidator):
     def _check_issuer_alternative_name(self) -> None:
         try:
             subject_alternative_name = self.certificate.extensions.get_extension_for_oid(
-                x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME)
+                x509.oid.ExtensionOID.SUBJECT_ALTERNATIVE_NAME
+            )
         except x509.ExtensionNotFound:
             return
-        
+
         if subject_alternative_name.critical is True:
             pass
 
@@ -317,7 +325,6 @@ class RootCaCertificate(CaCertificateValidator):
         super()._check_authority_key_identifier()
 
 
-
 # class BsiEndEntityCertificateValidator(BsiX509CertificateValidator):
 #     pass
 
@@ -372,10 +379,7 @@ class RootCaCertificate(CaCertificateValidator):
 #
 #         return True
 
-    # def _serial_number_warning(self) -> None | str:
-    #     # Gives a warning if the first of the 20 octets is 0:
-    #     if self.certificate.serial_number <= 5_708_990_770_823_839_524_233_143_877_797_980_545_530_986_495:
-    #         return 'Serial number is shorter than 20 octets. Compare RFC 5280 4.1.2.2 Serial Number.'
-
-
-
+# def _serial_number_warning(self) -> None | str:
+#     # Gives a warning if the first of the 20 octets is 0:
+#     if self.certificate.serial_number <= 5_708_990_770_823_839_524_233_143_877_797_980_545_530_986_495:
+#         return 'Serial number is shorter than 20 octets. Compare RFC 5280 4.1.2.2 Serial Number.'

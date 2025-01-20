@@ -16,6 +16,7 @@ ARCHIVE_FORMATS = [
     ArchiveFormat.TAR_GZ,
 ]
 
+
 @pytest.mark.parametrize('file_format', CERTIFICATE_FORMATS)
 def test_certificate_file_builder(mock_certificate_serializer, file_format) -> None:
     """Tests whether CertificateFileBuilder returns the expected byte content for various file formats."""
@@ -27,10 +28,6 @@ def test_certificate_file_builder(mock_certificate_serializer, file_format) -> N
 @pytest.mark.parametrize('file_format, archive_format', product(CERTIFICATE_FORMATS, ARCHIVE_FORMATS))
 def test_certificate_archive_file_builder(mock_certificate_collection_serializer, file_format, archive_format):
     """Tests building an archive with all combinations of certificate file formats and archive formats."""
-    archive = CertificateArchiveFileBuilder.build(
-        mock_certificate_collection_serializer,
-        file_format,
-        archive_format
-    )
+    archive = CertificateArchiveFileBuilder.build(mock_certificate_collection_serializer, file_format, archive_format)
     assert isinstance(archive, bytes)
     assert len(archive) > 0

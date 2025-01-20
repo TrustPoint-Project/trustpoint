@@ -1,34 +1,34 @@
 import re
 from datetime import datetime, timezone
 
-from core.oid import SignatureAlgorithmOid
-from core.validator.rfc5280.validator import (
-     AuthorityKeyIdentifierValidation,
-     BasicConstraintsValidation,
-     CertificatePoliciesValidation,
-     CompositeValidation,
-     CRLDistributionPointsValidation,
-     ExtendedKeyUsageValidation,
-     FreshestCRLValidation,
-     InhibitAnyPolicyValidation,
-     IssuerAlternativeNameValidation,
-     IssuerValidation,
-     KeyUsageValidation,
-     NameConstraintsValidation,
-     PolicyConstraintsValidation,
-     SANAttributesValidation,
-     SerialNumberValidation,
-     SignatureValidation,
-     SubjectAlternativeNameValidation,
-     SubjectAttributesValidation,
-     SubjectDirectoryAttributesValidation,
-     SubjectKeyIdentifierValidation,
-     SubjectPublicKeyInfoValidation,
-     SubjectValidation,
-     UniqueIdentifiersValidation,
-     ValidityValidation,
-)
 from cryptography.x509 import load_pem_x509_certificate
+
+from core.validator.rfc5280.validator import (
+    AuthorityKeyIdentifierValidation,
+    BasicConstraintsValidation,
+    CertificatePoliciesValidation,
+    CompositeValidation,
+    CRLDistributionPointsValidation,
+    ExtendedKeyUsageValidation,
+    FreshestCRLValidation,
+    InhibitAnyPolicyValidation,
+    IssuerAlternativeNameValidation,
+    IssuerValidation,
+    KeyUsageValidation,
+    NameConstraintsValidation,
+    PolicyConstraintsValidation,
+    SANAttributesValidation,
+    SerialNumberValidation,
+    SignatureValidation,
+    SubjectAlternativeNameValidation,
+    SubjectAttributesValidation,
+    SubjectDirectoryAttributesValidation,
+    SubjectKeyIdentifierValidation,
+    SubjectPublicKeyInfoValidation,
+    SubjectValidation,
+    UniqueIdentifiersValidation,
+    ValidityValidation,
+)
 
 ca_cert_pem = """
 -----BEGIN CERTIFICATE-----
@@ -78,9 +78,11 @@ validation = CompositeValidation(is_ca=False)
 validation.add_validation(SerialNumberValidation())
 validation.add_validation(SignatureValidation())
 validation.add_validation(IssuerValidation())
-validation.add_validation(ValidityValidation(
-     not_before=datetime(2023, 1, 1, tzinfo=timezone.utc),
-    not_after=datetime(2030, 12, 31, tzinfo=timezone.utc)))
+validation.add_validation(
+    ValidityValidation(
+        not_before=datetime(2023, 1, 1, tzinfo=timezone.utc), not_after=datetime(2030, 12, 31, tzinfo=timezone.utc)
+    )
+)
 validation.add_validation(SubjectValidation())
 validation.add_validation(SubjectPublicKeyInfoValidation())
 validation.add_validation(UniqueIdentifiersValidation())
@@ -100,26 +102,24 @@ validation.add_validation(InhibitAnyPolicyValidation())
 validation.add_validation(FreshestCRLValidation())
 
 
-validation.add_validation(SubjectAttributesValidation(
-     required={'2.5.4.3': [re.compile(r'(?i)^san_tst_.*$')],
-               '2.5.4.11': [re.compile(r'^Open Industrial PKI$')]},
-     optional={'2.5.4.10': [re.compile(r'(?i)^trustpoint_o_.*$')]}
- ))
+validation.add_validation(
+    SubjectAttributesValidation(
+        required={'2.5.4.3': [re.compile(r'(?i)^san_tst_.*$')], '2.5.4.11': [re.compile(r'^Open Industrial PKI$')]},
+        optional={'2.5.4.10': [re.compile(r'(?i)^trustpoint_o_.*$')]},
+    )
+)
 
 san_validation = SANAttributesValidation(
     required={
         'dNSName': [re.compile(r'(?i)^example.*$')],  # Regex for DNS names starting with 'example' (case-insensitive)
-        'IPAddress': [
-            re.compile(r'^192\.168\.0\.1$'),
-            re.compile(r'^2001:db8:85a3::8a2e:370:7334$')
-        ]
+        'IPAddress': [re.compile(r'^192\.168\.0\.1$'), re.compile(r'^2001:db8:85a3::8a2e:370:7334$')],
     },
     optional={
         'uniformResourceIdentifier': [
             re.compile(r'^http://example\.com$'),
-            re.compile(r'^https://example\.com/resource$')
+            re.compile(r'^https://example\.com/resource$'),
         ]
-    }
+    },
 )
 
 
