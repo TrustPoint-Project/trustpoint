@@ -1,8 +1,8 @@
-# Lightweight Certificate Management Protocol (LCMP) Testing
+# Lightweight Certificate Management Protocol (LCMP)
 # This feature file tests core LCMP functionalities as defined in RFC 9483 (https://datatracker.ietf.org/doc/html/rfc9483#name-how-to-read-this-document).
 # Each scenario corresponds to a critical aspect of the protocol, with references to relevant RFC sections.
 
-Feature: Lightweight Certificate Management Protocol (LCMP) Testing
+Feature: Lightweight Certificate Management Protocol (LCMP)
   As an LCMP client
   I want to interact with the LCMP server to manage certificates
   So that I can ensure compliance with RFC 9483 and secure communication
@@ -32,7 +32,7 @@ Feature: Lightweight Certificate Management Protocol (LCMP) Testing
   @certificate_revocation
   Scenario Outline: Certificate Revocation
     Given I have a certificate ID for "<certificate_type>" certificate
-    When I send a revocation request to the LCMP server
+    When I send a revocation request to the server
     Then the server should return a response indicating "<expected_result>"
     And the certificate should be "<revocation_status>"
 
@@ -45,7 +45,7 @@ Feature: Lightweight Certificate Management Protocol (LCMP) Testing
   # This ensures LCMP handles various errors gracefully.
   @error_handling
   Scenario: Handle malformed requests
-    Given I send a malformed request to the LCMP server
+    Given I send a malformed request to the server
     When the server processes the request
     Then the server should return an error response
     And the error code should indicate "Bad Request"
@@ -55,7 +55,7 @@ Feature: Lightweight Certificate Management Protocol (LCMP) Testing
   @security
   Scenario Outline: Authentication and Authorization
     Given I attempt to send a request with "<auth_status>" credentials
-    When the LCMP server processes the request
+    When the server processes the request
     Then the server should return "<expected_response>"
 
     Examples:
