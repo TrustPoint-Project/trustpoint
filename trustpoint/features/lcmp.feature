@@ -23,7 +23,7 @@ Feature: Lightweight Certificate Management Protocol (LCMP)
     And "<response_data>" should be included in the server's response
 
     Examples:
-      | request_type | expected_result  | response_data                 |
+      | request_type | expected_result  | response_data                |
       | valid        | success          | issued certificate           |
       | invalid      | error            | error code for "Invalid CSR" |
 
