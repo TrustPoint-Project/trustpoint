@@ -1,6 +1,6 @@
 Feature: EST Protocol
     # Example feature file for testing a URL of the EST protocol.
-    As a user of TrustPoint I want to interact with the EST protocol endpoints
+    As a user of TrustPoint, I want to interact with the EST protocol endpoints
     so that I can enroll and manage certificates.
 
     Scenario: Enroll with valid CSR
