@@ -1,0 +1,35 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+
+        <div class="card">
+
+            <div class="card-header">
+                <div class="">
+                    <h1>{% trans "Truststore Details" %}</h1>
+                </div>
+            </div>
+
+            <div class="card-body py-3">
+                <div class="tp-card-centered-content">
+                    <h2>General</h2>
+                    <hr class="hr-m">
+                    {% include 'pki/truststores/sub_generic.html' %}
+
+                    <h2>Certificates</h2>
+                    <hr class="hr-m">
+                    {% include 'pki/truststores/sub_details.html' %}
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="tp-card-btn-footer">
+                    <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                    <a href="{% url 'pki:truststores' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
+                    <a href="{% url 'pki:truststore-download' pk=truststore.id %}" class="btn btn-primary">{% trans 'Download' %}</a>
+                </div>
+            </div>
+        </div>
+
+{% endblock content %}
