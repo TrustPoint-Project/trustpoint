@@ -1,6 +1,5 @@
 """The key module provides Serializer classes for cryptographic key serialization."""
 
-
 from __future__ import annotations
 
 from cryptography.hazmat.primitives import serialization
@@ -39,7 +38,8 @@ class PublicKeySerializer(Serializer):
         else:
             err_msg = (
                 'public_key must be of type bytes, str, PublicKey or PublicKeySerializer, '
-                f'but got {type(public_key)}.')
+                f'but got {type(public_key)}.'
+            )
             raise TypeError(err_msg)
 
     def _from_bytes(self, public_key_data: bytes) -> PublicKey:
@@ -99,14 +99,14 @@ class PublicKeySerializer(Serializer):
     def _load_pem_public_key(public_key_data: bytes) -> PublicKey:
         try:
             return serialization.load_pem_public_key(public_key_data)
-        except Exception as exception:   # noqa: BLE001
+        except Exception as exception:
             raise ValueError from exception
 
     @staticmethod
     def _load_der_public_key(public_key_data: bytes) -> PublicKey:
         try:
             return serialization.load_der_public_key(public_key_data)
-        except Exception as exception:   # noqa: BLE001
+        except Exception as exception:
             raise ValueError from exception
 
 
@@ -120,9 +120,8 @@ class PrivateKeySerializer(Serializer):
     _private_key: PrivateKey
 
     def __init__(
-            self,
-            private_key: bytes | str | PrivateKey | PrivateKeySerializer,
-            password: None | bytes = None) -> None:
+        self, private_key: bytes | str | PrivateKey | PrivateKeySerializer, password: None | bytes = None
+    ) -> None:
         """Inits the PrivateKeySerializer class.
 
         Args:
@@ -147,7 +146,8 @@ class PrivateKeySerializer(Serializer):
         else:
             err_msg = (
                 'private_key must be of type bytes, str, PrivateKey or PrivateKeySerializer, '
-                f'but got {type(private_key)}.')
+                f'but got {type(private_key)}.'
+            )
             raise TypeError(err_msg)
 
     def _from_bytes(self, private_key: bytes, password: None | bytes = None) -> PrivateKey:
@@ -300,19 +300,19 @@ class PrivateKeySerializer(Serializer):
     def _load_pem_private_key(private_key: bytes, password: None | bytes = None) -> PrivateKey:
         try:
             return serialization.load_pem_private_key(private_key, password)
-        except Exception as exception:   # noqa: BLE001
+        except Exception as exception:
             raise ValueError from exception
 
     @staticmethod
     def _load_der_private_key(private_key: bytes, password: None | bytes = None) -> PrivateKey:
         try:
             return serialization.load_der_private_key(private_key, password)
-        except Exception as exception:   # noqa: BLE001
+        except Exception as exception:
             raise ValueError from exception
 
     @staticmethod
     def _load_pkcs12_private_key(p12_data: bytes, password: None | bytes = None) -> PrivateKey:
         try:
             return pkcs12.load_pkcs12(p12_data, password).key
-        except Exception as exception:   # noqa: BLE001
+        except Exception as exception:
             raise ValueError from exception

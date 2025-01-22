@@ -11,19 +11,25 @@ from cryptography.x509 import Certificate, oid
 
 # ------------------------- file builder fixtures --------------------
 
+
 class MockCertificateSerializer:
     def as_pem(self):
         return b'-----BEGIN CERTIFICATE-----\nFAKE_PEM_CONTENT\n-----END CERTIFICATE-----'
+
     def as_der(self):
         return b'\x30\x82\x01\x0a\x02\x82'
+
     def as_pkcs7_pem(self):
         return b'-----BEGIN PKCS7-----\nFAKE_PKCS7_CONTENT\n-----END PKCS7-----'
+
     def as_pkcs7_der(self):
         return b'\x30\x82\x02\x09\x06\x09\x2a'
+
 
 @pytest.fixture
 def mock_certificate_serializer():
     return MockCertificateSerializer()
+
 
 @pytest.fixture
 def mock_certificate_collection_serializer(mock_certificate_serializer):
@@ -37,12 +43,11 @@ def rsa_private_key() -> RSAPrivateKey:
     Returns:
         rsa.RSAPrivateKey: A generated private key that can be used for certificate creation.
     """
-    return rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048
-    )
+    return rsa.generate_private_key(public_exponent=65537, key_size=2048)
+
 
 # ----------------------- Serializer fixture --------------------
+
 
 @pytest.fixture
 def self_signed_certificate(rsa_private_key: RSAPrivateKey) -> Certificate:
@@ -54,13 +59,15 @@ def self_signed_certificate(rsa_private_key: RSAPrivateKey) -> Certificate:
     Returns:
         x509.Certificate: A self-signed certificate.
     """
-    subject = x509.Name([
-        x509.NameAttribute(oid.NameOID.COUNTRY_NAME, 'US'),
-        x509.NameAttribute(oid.NameOID.STATE_OR_PROVINCE_NAME, 'TestState'),
-        x509.NameAttribute(oid.NameOID.LOCALITY_NAME, 'TestCity'),
-        x509.NameAttribute(oid.NameOID.ORGANIZATION_NAME, 'TestOrg'),
-        x509.NameAttribute(oid.NameOID.COMMON_NAME, 'localhost'),
-    ])
+    subject = x509.Name(
+        [
+            x509.NameAttribute(oid.NameOID.COUNTRY_NAME, 'US'),
+            x509.NameAttribute(oid.NameOID.STATE_OR_PROVINCE_NAME, 'TestState'),
+            x509.NameAttribute(oid.NameOID.LOCALITY_NAME, 'TestCity'),
+            x509.NameAttribute(oid.NameOID.ORGANIZATION_NAME, 'TestOrg'),
+            x509.NameAttribute(oid.NameOID.COMMON_NAME, 'localhost'),
+        ]
+    )
     issuer = subject  # Self-signed
     valid_from = datetime.datetime.now(datetime.UTC)
     valid_to = valid_from + timedelta(days=30)
@@ -79,7 +86,6 @@ def self_signed_certificate(rsa_private_key: RSAPrivateKey) -> Certificate:
         )
         .sign(private_key=rsa_private_key, algorithm=hashes.SHA256())
     )
-
 
 
 @pytest.fixture
@@ -111,22 +117,21 @@ def der_encoded_cert(self_signed_certificate: Certificate) -> bytes:
 @pytest.fixture
 def rsa_private_key_alt() -> RSAPrivateKey:
     """Generate a second RSA private key for testing (e.g. to test mismatched keys)."""
-    return rsa.generate_private_key(
-        public_exponent=65537,
-        key_size=2048
-    )
+    return rsa.generate_private_key(public_exponent=65537, key_size=2048)
 
 
 @pytest.fixture
 def self_signed_cert(rsa_private_key: RSAPrivateKey) -> Certificate:
     """Generate a self-signed certificate for testing."""
-    subject = x509.Name([
-        x509.NameAttribute(oid.NameOID.COUNTRY_NAME, 'US'),
-        x509.NameAttribute(oid.NameOID.STATE_OR_PROVINCE_NAME, 'TestState'),
-        x509.NameAttribute(oid.NameOID.LOCALITY_NAME, 'TestCity'),
-        x509.NameAttribute(oid.NameOID.ORGANIZATION_NAME, 'TestOrg'),
-        x509.NameAttribute(oid.NameOID.COMMON_NAME, 'localhost'),
-    ])
+    subject = x509.Name(
+        [
+            x509.NameAttribute(oid.NameOID.COUNTRY_NAME, 'US'),
+            x509.NameAttribute(oid.NameOID.STATE_OR_PROVINCE_NAME, 'TestState'),
+            x509.NameAttribute(oid.NameOID.LOCALITY_NAME, 'TestCity'),
+            x509.NameAttribute(oid.NameOID.ORGANIZATION_NAME, 'TestOrg'),
+            x509.NameAttribute(oid.NameOID.COMMON_NAME, 'localhost'),
+        ]
+    )
     issuer = subject  # self-signed
     valid_from = datetime.datetime.now(datetime.UTC)
     valid_to = valid_from + timedelta(days=30)
@@ -150,13 +155,15 @@ def self_signed_cert(rsa_private_key: RSAPrivateKey) -> Certificate:
 @pytest.fixture
 def second_self_signed_cert(rsa_private_key_alt: RSAPrivateKey) -> x509.Certificate:
     """Generate a second self-signed certificate for 'additional certificates' testing."""
-    subject = x509.Name([
-        x509.NameAttribute(oid.NameOID.COUNTRY_NAME, 'DE'),
-        x509.NameAttribute(oid.NameOID.STATE_OR_PROVINCE_NAME, 'AltState'),
-        x509.NameAttribute(oid.NameOID.LOCALITY_NAME, 'AltCity'),
-        x509.NameAttribute(oid.NameOID.ORGANIZATION_NAME, 'AltOrg'),
-        x509.NameAttribute(oid.NameOID.COMMON_NAME, 'example.org'),
-    ])
+    subject = x509.Name(
+        [
+            x509.NameAttribute(oid.NameOID.COUNTRY_NAME, 'DE'),
+            x509.NameAttribute(oid.NameOID.STATE_OR_PROVINCE_NAME, 'AltState'),
+            x509.NameAttribute(oid.NameOID.LOCALITY_NAME, 'AltCity'),
+            x509.NameAttribute(oid.NameOID.ORGANIZATION_NAME, 'AltOrg'),
+            x509.NameAttribute(oid.NameOID.COMMON_NAME, 'example.org'),
+        ]
+    )
     issuer = subject
     valid_from = datetime.datetime.now(datetime.UTC)
     valid_to = valid_from + timedelta(days=365)
@@ -175,9 +182,8 @@ def second_self_signed_cert(rsa_private_key_alt: RSAPrivateKey) -> x509.Certific
 
 @pytest.fixture
 def pkcs12_data(
-    rsa_private_key: RSAPrivateKey,
-    self_signed_cert: Certificate,
-    second_self_signed_cert: Certificate) -> bytes:
+    rsa_private_key: RSAPrivateKey, self_signed_cert: Certificate, second_self_signed_cert: Certificate
+) -> bytes:
     """Create PKCS#12 data with one key/cert pair and an additional certificate."""
     additional_certs = [second_self_signed_cert]
     friendly_name = b'test_cred'
@@ -186,5 +192,5 @@ def pkcs12_data(
         key=rsa_private_key,
         cert=self_signed_cert,
         cas=additional_certs,
-        encryption_algorithm=serialization.NoEncryption()
+        encryption_algorithm=serialization.NoEncryption(),
     )

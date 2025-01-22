@@ -50,6 +50,7 @@ if TYPE_CHECKING:
     from cryptography.hazmat.primitives.hashes import HashAlgorithm
     from cryptography.x509.extensions import AuthorityKeyIdentifier, DistributionPoint, Extension
     from cryptography.x509.name import Name
+
     PublicKey = Union[
         dsa.DSAPublicKey,
         rsa.RSAPublicKey,
@@ -57,7 +58,7 @@ if TYPE_CHECKING:
         ed25519.Ed25519PublicKey,
         ed448.Ed448PublicKey,
         x25519.X25519PublicKey,
-        x448.X448PublicKey
+        x448.X448PublicKey,
     ]
 
 # TODO (FHatCSW): Add generic Validation error which is raised in case of an Exception
@@ -171,6 +172,7 @@ class CompositeValidation(Validation):
             self._warnings.extend(validation.get_warnings())
         return all_valid
 
+
 class ValidationUtils:
     """Utility class for common validation tasks."""
 
@@ -198,6 +200,7 @@ class ValidationUtils:
                 errors.append(f'{context} Invalid iPAddress: {value}')
                 return False, errors
         return True, errors
+
 
 #############
 
@@ -272,9 +275,9 @@ class SignatureValidation(Validation):
         super().__init__()
 
         self.supported_algorithms = supported_algorithms or {
-            algo.dotted_string for algo in SignatureAlgorithmOid # type: ignore[attr-defined]
+            algo.dotted_string
+            for algo in SignatureAlgorithmOid  # type: ignore[attr-defined]
         }
-
 
     def validate(self, cert: Certificate) -> bool:
         """Validate the Signature field of the given certificate.
@@ -328,6 +331,7 @@ class IssuerValidation(Validation):
       are permitted.
     - Logs warnings if standard attribute types (e.g., country, organization, common name) are missing.
     """
+
     default_oids: ClassVar[set[ObjectIdentifier]] = {
         NameOID.COUNTRY_NAME,
         NameOID.ORGANIZATION_NAME,
@@ -411,9 +415,7 @@ class ValidityValidation(Validation):
     - If the notAfter date is set to 99991231235959Z, additional warnings are provided.
     """
 
-    def __init__(self,
-                 not_before: datetime | None = None,
-                 not_after: datetime | None = None) -> None:
+    def __init__(self, not_before: datetime | None = None, not_after: datetime | None = None) -> None:
         """Initialize the ValidityValidation.
 
         Args:
@@ -471,8 +473,7 @@ class ValidityValidation(Validation):
                 result = False
 
             # Special handling for certificates with no expiration date
-            if cert_not_after == datetime(9999, 12, 31, 23, 59, 59,
-                                          tzinfo=timezone.utc):
+            if cert_not_after == datetime(9999, 12, 31, 23, 59, 59, tzinfo=timezone.utc):
                 self.log_warning('Certificate has no well-defined expiration date (notAfter set to 99991231235959Z).')
 
         except Exception as e:  # noqa: BLE001
@@ -480,7 +481,6 @@ class ValidityValidation(Validation):
             result = False
 
         return result
-
 
 
 class SubjectValidation(Validation):
@@ -523,12 +523,14 @@ class SubjectValidation(Validation):
 
             # Check if the subjectAltName extension is used instead of the subject field
             try:
-                subject_alt_name = cast('Extension[SubjectAlternativeName]',
-                                        cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME))
+                subject_alt_name = cast(
+                    'Extension[SubjectAlternativeName]',
+                    cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME),
+                )
                 if not list(subject) and not subject_alt_name.critical:
                     self.log_error('If the subject field is empty, the subjectAltName extension must be critical.')
                     result = False
-            except Exception: # noqa: BLE001
+            except Exception:  # noqa: BLE001
                 if not list(subject):
                     self.log_error('Subject field is empty, and no subjectAltName extension is present.')
                     result = False
@@ -767,9 +769,11 @@ class AuthorityKeyIdentifierValidation(Validation):
 
             # Attempt to get the AKI extension
             try:
-                aki_ext = cast('Extension[AuthorityKeyIdentifier]',
-                               cert.extensions.get_extension_for_oid(ExtensionOID.AUTHORITY_KEY_IDENTIFIER))
-            except Exception: # noqa: BLE001
+                aki_ext = cast(
+                    'Extension[AuthorityKeyIdentifier]',
+                    cert.extensions.get_extension_for_oid(ExtensionOID.AUTHORITY_KEY_IDENTIFIER),
+                )
+            except Exception:  # noqa: BLE001
                 aki_ext = None
 
             if aki_ext is None:
@@ -837,15 +841,15 @@ class SubjectKeyIdentifierValidation(Validation):
             A hash algorithm from the cryptography library.
         """
         oid_to_hash = {
-            SignatureAlgorithmOID.RSA_WITH_SHA1: hashes.SHA1(), # noqa: S303
+            SignatureAlgorithmOID.RSA_WITH_SHA1: hashes.SHA1(),  # noqa: S303
             SignatureAlgorithmOID.RSA_WITH_SHA256: hashes.SHA256(),
             SignatureAlgorithmOID.RSA_WITH_SHA384: hashes.SHA384(),
             SignatureAlgorithmOID.RSA_WITH_SHA512: hashes.SHA512(),
-            SignatureAlgorithmOID.ECDSA_WITH_SHA1: hashes.SHA1(), # noqa: S303
+            SignatureAlgorithmOID.ECDSA_WITH_SHA1: hashes.SHA1(),  # noqa: S303
             SignatureAlgorithmOID.ECDSA_WITH_SHA256: hashes.SHA256(),
             SignatureAlgorithmOID.ECDSA_WITH_SHA384: hashes.SHA384(),
             SignatureAlgorithmOID.ECDSA_WITH_SHA512: hashes.SHA512(),
-            SignatureAlgorithmOID.DSA_WITH_SHA1: hashes.SHA1(), # noqa: S303
+            SignatureAlgorithmOID.DSA_WITH_SHA1: hashes.SHA1(),  # noqa: S303
             SignatureAlgorithmOID.DSA_WITH_SHA256: hashes.SHA256(),
         }
 
@@ -874,8 +878,7 @@ class SubjectKeyIdentifierValidation(Validation):
         self.log_warning(f'Unknown signature OID: {sig_oid}. Defaulting to SHA-256.')
         return hashes.SHA256()
 
-    def _compute_key_identifier(self, public_key: PublicKey ,
-                                hash_algorithm: HashAlgorithm) -> bytes:
+    def _compute_key_identifier(self, public_key: PublicKey, hash_algorithm: HashAlgorithm) -> bytes:
         """Compute the SKI using the given hash algorithm.
 
         Args:
@@ -887,16 +890,14 @@ class SubjectKeyIdentifierValidation(Validation):
         """
         try:
             # Serialize the public key to DER format
-            public_key_der = public_key.public_bytes(
-                encoding=Encoding.DER, format=PublicFormat.SubjectPublicKeyInfo
-            )
+            public_key_der = public_key.public_bytes(encoding=Encoding.DER, format=PublicFormat.SubjectPublicKeyInfo)
 
             # Compute the hash
             digest = hashes.Hash(hash_algorithm)
             digest.update(public_key_der)
             return digest.finalize()
 
-        except Exception as e: # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             self.log_error(f'Error computing SKI value: {e}')
             return b''
 
@@ -919,13 +920,15 @@ class SubjectKeyIdentifierValidation(Validation):
             computed_ski = self._compute_key_identifier(cert.public_key(), hash_algorithm)
 
             # Validate the SKI extension (additional validation logic goes here...)
-            ski_ext = cast('Extension[SubjectKeyIdentifier]',
-                           cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_KEY_IDENTIFIER))
+            ski_ext = cast(
+                'Extension[SubjectKeyIdentifier]',
+                cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_KEY_IDENTIFIER),
+            )
             if ski_ext.value.digest != computed_ski:
                 self.log_warning("Computed SKI does not match the certificate's SKI value.")
                 result = False
 
-        except Exception as e: # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             self.log_error(f'Unexpected error during SKI validation: {e}')
             result = False
 
@@ -993,7 +996,7 @@ class KeyUsageValidation(Validation):
         """
         try:
             return cast('Extension[KeyUsage]', cert.extensions.get_extension_for_oid(ExtensionOID.KEY_USAGE))
-        except Exception: # noqa: BLE001
+        except Exception:  # noqa: BLE001
             return None
 
     def _handle_missing_extension(self) -> bool:
@@ -1030,16 +1033,18 @@ class KeyUsageValidation(Validation):
         Returns:
             bool: True if at least one bit is set, False otherwise.
         """
-        if not any([
-            key_usage.digital_signature,
-            key_usage.key_encipherment,
-            key_usage.data_encipherment,
-            key_usage.key_agreement,
-            key_usage.key_cert_sign,
-            key_usage.crl_sign,
-            key_usage.encipher_only if key_usage.key_agreement else False,
-            key_usage.decipher_only if key_usage.key_agreement else False,
-        ]):
+        if not any(
+            [
+                key_usage.digital_signature,
+                key_usage.key_encipherment,
+                key_usage.data_encipherment,
+                key_usage.key_agreement,
+                key_usage.key_cert_sign,
+                key_usage.crl_sign,
+                key_usage.encipher_only if key_usage.key_agreement else False,
+                key_usage.decipher_only if key_usage.key_agreement else False,
+            ]
+        ):
             self.log_error('Key Usage extension must have at least one bit set.')
             return False
         return True
@@ -1063,9 +1068,7 @@ class KeyUsageValidation(Validation):
                 self.log_warning(f"Key Usage bit '{bit_name}' is not recognized.")
                 continue
             if actual_value != expected_value:
-                self.log_error(
-                    f"Key Usage bit '{bit_name}' mismatch: expected {expected_value}, found {actual_value}."
-                )
+                self.log_error(f"Key Usage bit '{bit_name}' mismatch: expected {expected_value}, found {actual_value}.")
                 result = False
         return result
 
@@ -1139,9 +1142,11 @@ class CertificatePoliciesValidation(Validation):
             Extension or None: The Certificate Policies extension if present.
         """
         try:
-            return cast('Extension[CertificatePolicies]',
-                        cert.extensions.get_extension_for_oid(ExtensionOID.CERTIFICATE_POLICIES))
-        except Exception: # noqa: BLE001
+            return cast(
+                'Extension[CertificatePolicies]',
+                cert.extensions.get_extension_for_oid(ExtensionOID.CERTIFICATE_POLICIES),
+            )
+        except Exception:  # noqa: BLE001
             if self.require_extension:
                 self.log_error('Certificate Policies extension is required but missing.')
             else:
@@ -1251,9 +1256,11 @@ class SubjectAlternativeNameValidation(Validation):
         try:
             # Attempt to get the SAN extension
             try:
-                san_ext = cast('Extension[SubjectAlternativeName]',
-                               cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME))
-            except Exception: # noqa: BLE001
+                san_ext = cast(
+                    'Extension[SubjectAlternativeName]',
+                    cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_ALTERNATIVE_NAME),
+                )
+            except Exception:  # noqa: BLE001
                 san_ext = None
 
             if san_ext is None:
@@ -1273,6 +1280,7 @@ class SubjectAlternativeNameValidation(Validation):
             result = False
 
         return result
+
 
 class IssuerAlternativeNameValidation(Validation):
     """Validates the Issuer Alternative Name (IAN) extension of a certificate (RFC 5280, Section 4.2.1.7).
@@ -1310,9 +1318,11 @@ class IssuerAlternativeNameValidation(Validation):
         try:
             # Attempt to get the IAN extension
             try:
-                ian_ext = cast('Extension[IssuerAlternativeName]',
-                               cert.extensions.get_extension_for_oid(ExtensionOID.ISSUER_ALTERNATIVE_NAME))
-            except Exception: # noqa: BLE001
+                ian_ext = cast(
+                    'Extension[IssuerAlternativeName]',
+                    cert.extensions.get_extension_for_oid(ExtensionOID.ISSUER_ALTERNATIVE_NAME),
+                )
+            except Exception:  # noqa: BLE001
                 ian_ext = None
 
             if ian_ext is None:
@@ -1374,7 +1384,7 @@ class SubjectDirectoryAttributesValidation(Validation):
             # Attempt to get the Subject Directory Attributes extension
             try:
                 sda_ext = cert.extensions.get_extension_for_oid(ExtensionOID.SUBJECT_DIRECTORY_ATTRIBUTES)
-            except Exception: # noqa: BLE001
+            except Exception:  # noqa: BLE001
                 sda_ext = None
 
             if sda_ext is None:
@@ -1435,9 +1445,10 @@ class BasicConstraintsValidation(Validation):
     def _get_basic_constraints_extension(self, cert: Certificate) -> Extension[BasicConstraints] | None:
         """Retrieve the Basic Constraints extension."""
         try:
-            return cast('Extension[BasicConstraints]',
-                        cert.extensions.get_extension_for_oid(ExtensionOID.BASIC_CONSTRAINTS))
-        except Exception: # noqa: BLE001
+            return cast(
+                'Extension[BasicConstraints]', cert.extensions.get_extension_for_oid(ExtensionOID.BASIC_CONSTRAINTS)
+            )
+        except Exception:  # noqa: BLE001
             return None
 
     def _handle_missing_extension(self) -> bool:
@@ -1490,7 +1501,7 @@ class BasicConstraintsValidation(Validation):
                     'CA certificate with cA boolean asserted must also assert the keyCertSign bit in Key Usage.'
                 )
                 return False
-        except Exception: # noqa: BLE001
+        except Exception:  # noqa: BLE001
             self.log_warning('Key Usage extension is missing. Cannot validate keyCertSign bit.')
 
         return True
@@ -1534,7 +1545,7 @@ class NameConstraintsValidation(Validation):
             # Attempt to get the Name Constraints extension
             try:
                 name_constraints_ext = cert.extensions.get_extension_for_oid(ExtensionOID.NAME_CONSTRAINTS)
-            except Exception: # noqa: BLE001
+            except Exception:  # noqa: BLE001
                 name_constraints_ext = None
 
             if name_constraints_ext is None:
@@ -1565,6 +1576,7 @@ class NameConstraintsValidation(Validation):
             result = False
 
         return result
+
 
 class PolicyConstraintsValidation(Validation):
     """Validates the Policy Constraints extension of a certificate (RFC 5280, Section 4.2.1.11).
@@ -1603,9 +1615,11 @@ class PolicyConstraintsValidation(Validation):
         try:
             # Attempt to get the Policy Constraints extension
             try:
-                policy_constraints_ext = cast('Extension[PolicyConstraints]',
-                cert.extensions.get_extension_for_oid(ExtensionOID.POLICY_CONSTRAINTS))
-            except Exception: # noqa: BLE001
+                policy_constraints_ext = cast(
+                    'Extension[PolicyConstraints]',
+                    cert.extensions.get_extension_for_oid(ExtensionOID.POLICY_CONSTRAINTS),
+                )
+            except Exception:  # noqa: BLE001
                 policy_constraints_ext = None
 
             if policy_constraints_ext is None:
@@ -1686,9 +1700,11 @@ class ExtendedKeyUsageValidation(Validation):
         try:
             # Attempt to get the Extended Key Usage extension
             try:
-                eku_ext = cast('Extension[ExtendedKeyUsage]',
-                               cert.extensions.get_extension_for_oid(ExtensionOID.EXTENDED_KEY_USAGE))
-            except Exception: # noqa: BLE001
+                eku_ext = cast(
+                    'Extension[ExtendedKeyUsage]',
+                    cert.extensions.get_extension_for_oid(ExtensionOID.EXTENDED_KEY_USAGE),
+                )
+            except Exception:  # noqa: BLE001
                 eku_ext = None
 
             if eku_ext is None:
@@ -1752,13 +1768,13 @@ class ExtendedKeyUsageValidation(Validation):
         """Check if a specific EKU is consistent with the Key Usage extension."""
         eku_to_check: dict[ObjectIdentifier, Callable[[], bool]] = {
             ExtendedKeyUsageOID.SERVER_AUTH: lambda: key_usage.digital_signature
-                                                     or key_usage.key_encipherment
-                                                     or key_usage.key_agreement,
+            or key_usage.key_encipherment
+            or key_usage.key_agreement,
             ExtendedKeyUsageOID.CLIENT_AUTH: lambda: key_usage.digital_signature or key_usage.key_agreement,
             ExtendedKeyUsageOID.CODE_SIGNING: lambda: key_usage.digital_signature,
             ExtendedKeyUsageOID.EMAIL_PROTECTION: lambda: key_usage.digital_signature
-                                                          or key_usage.key_encipherment
-                                                          or key_usage.key_agreement,
+            or key_usage.key_encipherment
+            or key_usage.key_agreement,
             ExtendedKeyUsageOID.TIME_STAMPING: lambda: key_usage.digital_signature,
             ExtendedKeyUsageOID.OCSP_SIGNING: lambda: key_usage.digital_signature,
         }
@@ -1835,7 +1851,7 @@ class CRLDistributionPointsValidation(Validation):
         except Exception:  # noqa: BLE001
             self.log_warning(
                 "CRL Distribution Points extension is missing. It's recommended for "
-                "CAs and applications to support it."
+                'CAs and applications to support it.'
             )
 
         return None
@@ -1843,9 +1859,7 @@ class CRLDistributionPointsValidation(Validation):
     def _validate_crl_values(self, crl_values: CRLDistributionPoints) -> bool:
         """Validates the CRL Distribution Points values."""
         if not crl_values:
-            self.log_error(
-                'CRL Distribution Points extension is empty. At least one DistributionPoint is required.'
-            )
+            self.log_error('CRL Distribution Points extension is empty. At least one DistributionPoint is required.')
             return False
 
         result = True
@@ -1931,11 +1945,12 @@ class InhibitAnyPolicyValidation(Validation):
         try:
             # Attempt to get the Inhibit Any Policy extension
             try:
-                inhibit_any_policy_ext = cast('Extension[InhibitAnyPolicy]',
-                                              cert.extensions.get_extension_for_oid(ExtensionOID.INHIBIT_ANY_POLICY))
-            except Exception: # noqa: BLE001
+                inhibit_any_policy_ext = cast(
+                    'Extension[InhibitAnyPolicy]',
+                    cert.extensions.get_extension_for_oid(ExtensionOID.INHIBIT_ANY_POLICY),
+                )
+            except Exception:  # noqa: BLE001
                 inhibit_any_policy_ext = None
-
 
             if inhibit_any_policy_ext is None:
                 if self.is_ca:
@@ -1945,7 +1960,6 @@ class InhibitAnyPolicyValidation(Validation):
                     )
                     result = False
                 return result
-
 
             # Extract the value (SkipCerts)
             skip_certs = inhibit_any_policy_ext.value.skip_certs
@@ -2016,12 +2030,12 @@ class FreshestCRLValidation(Validation):
             crl_values = freshest_crl_ext.value
             if not self._validate_distribution_points(crl_values):
                 result = False
-        except Exception as e: # noqa: BLE001
+        except Exception as e:  # noqa: BLE001
             self.log_error(f'Unexpected error during Freshest CRL validation: {e}')
             result = False
         return result
 
-    def _get_freshest_crl_extension(self, cert: Certificate)  -> Extension[FreshestCRL] | None:
+    def _get_freshest_crl_extension(self, cert: Certificate) -> Extension[FreshestCRL] | None:
         """Attempts to retrieve the Freshest CRL extension from the certificate.
 
         Args:
@@ -2032,7 +2046,7 @@ class FreshestCRLValidation(Validation):
         """
         try:
             return cast('Extension[FreshestCRL]', cert.extensions.get_extension_for_oid(ExtensionOID.FRESHEST_CRL))
-        except Exception: # noqa: BLE001
+        except Exception:  # noqa: BLE001
             self.log_warning('Freshest CRL extension is missing. Conforming CAs are encouraged to include it.')
             return None
 
@@ -2121,10 +2135,11 @@ class SubjectAttributesValidation(Validation):
     - If any attribute exists that is not required or optional, validation fails.
     """
 
-    def __init__(self,
-                 required: dict[str, list[re.Pattern[str]]] | None = None,
-                 optional: dict[str, list[re.Pattern[str]]] | None = None,
-                 ) -> None:
+    def __init__(
+        self,
+        required: dict[str, list[re.Pattern[str]]] | None = None,
+        optional: dict[str, list[re.Pattern[str]]] | None = None,
+    ) -> None:
         """Initialize the SubjectAttributesValidation.
 
         Args:
@@ -2164,7 +2179,7 @@ class SubjectAttributesValidation(Validation):
 
             result &= self._match_optional_patterns(subject_dict, self.unmatched_values)
 
-            result &= self._handle_unexpected_attributes(subject_dict, strict = strict)
+            result &= self._handle_unexpected_attributes(subject_dict, strict=strict)
 
             result &= self._report_unmatched(self.unmatched_patterns, self.unmatched_values)
 
@@ -2176,8 +2191,9 @@ class SubjectAttributesValidation(Validation):
 
     # Helper functions
 
-    def _initialize_unmatched(self, subject_dict: dict[str, list[str]]) -> tuple[
-        dict[str, set[re.Pattern[str]]], dict[str, set[str]]]:
+    def _initialize_unmatched(
+        self, subject_dict: dict[str, list[str]]
+    ) -> tuple[dict[str, set[re.Pattern[str]]], dict[str, set[str]]]:
         """Initializes unmatched patterns and values.
 
         Args:
@@ -2190,9 +2206,12 @@ class SubjectAttributesValidation(Validation):
         unmatched_values = {oid: set(subject_dict.get(oid, [])) for oid in self.required}
         return unmatched_patterns, unmatched_values
 
-    def _match_required_patterns(self, subject_dict: dict[str, list[str]],
-                                 unmatched_patterns: dict[str, set[re.Pattern[str]]],
-                                 unmatched_values: dict[str, set[str]]) -> bool:
+    def _match_required_patterns(
+        self,
+        subject_dict: dict[str, list[str]],
+        unmatched_patterns: dict[str, set[re.Pattern[str]]],
+        unmatched_values: dict[str, set[str]],
+    ) -> bool:
         """Matches required patterns against subject attributes.
 
         Args:
@@ -2219,8 +2238,9 @@ class SubjectAttributesValidation(Validation):
 
         return result
 
-    def _match_optional_patterns(self, subject_dict: dict[str, list[str]],
-                                 unmatched_values: dict[str, set[str]]) -> bool:
+    def _match_optional_patterns(
+        self, subject_dict: dict[str, list[str]], unmatched_values: dict[str, set[str]]
+    ) -> bool:
         """Matches optional patterns against subject attributes.
 
         Args:
@@ -2245,7 +2265,7 @@ class SubjectAttributesValidation(Validation):
 
         return True
 
-    def _handle_unexpected_attributes(self, subject_dict: dict[str, list[str]], *,strict: bool) -> bool:
+    def _handle_unexpected_attributes(self, subject_dict: dict[str, list[str]], *, strict: bool) -> bool:
         """Handles unexpected attributes if strict mode is enabled.
 
         Args:
@@ -2264,8 +2284,9 @@ class SubjectAttributesValidation(Validation):
 
         return result
 
-    def _report_unmatched(self, unmatched_patterns: dict[str, set[re.Pattern[str]]],
-                          unmatched_values: dict[str, set[str]]) -> bool:
+    def _report_unmatched(
+        self, unmatched_patterns: dict[str, set[re.Pattern[str]]], unmatched_values: dict[str, set[str]]
+    ) -> bool:
         """Reports unmatched patterns and values.
 
         Args:
@@ -2326,6 +2347,7 @@ class SubjectAttributesValidation(Validation):
             return pattern.match(attr_value) is not None
         return False
 
+
 class SANAttributesValidation(Validation):
     """Validates the Subject Alternative Names (SAN) of an X.509 certificate using OIDs.
 
@@ -2335,10 +2357,11 @@ class SANAttributesValidation(Validation):
     - If any SAN exists that is not required or optional, validation fails.
     """
 
-    def __init__(self,
-                 required: dict[str, list[re.Pattern[str]]] | None = None,
-                 optional: dict[str,list[re.Pattern[str]]] | None = None,
-                 ) -> None:
+    def __init__(
+        self,
+        required: dict[str, list[re.Pattern[str]]] | None = None,
+        optional: dict[str, list[re.Pattern[str]]] | None = None,
+    ) -> None:
         """Initialize the SANAttributesValidation.
 
         Args:
@@ -2434,8 +2457,11 @@ class SANAttributesValidation(Validation):
 
             optional_matches = []
             optional_matches.extend(
-                [value for value in self.unmatched_values[oid] if
-                 any(self._match_value_or_regex(value, pattern) for pattern in optional_patterns)]
+                [
+                    value
+                    for value in self.unmatched_values[oid]
+                    if any(self._match_value_or_regex(value, pattern) for pattern in optional_patterns)
+                ]
             )
 
             # Remove matched optional values
@@ -2451,7 +2477,6 @@ class SANAttributesValidation(Validation):
                 self.log_error(f'Unexpected SAN attribute {oid} and values {san_values}.')
                 is_valid = False
         return is_valid
-
 
     def _convert_san_to_dict(self, san_list: Sequence[GeneralName]) -> dict[str, list[str]]:
         """Converts the SAN list to a dictionary using GeneralName naming conventions.

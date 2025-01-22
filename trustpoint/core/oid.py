@@ -2,12 +2,10 @@ from __future__ import annotations
 
 from enum import Enum
 
-
 from django.utils.translation import gettext_lazy as _
 
 
 class NameOid(Enum):
-
     # OID, abbreviation, full_name, verbose_name, is common in certificates
 
     # ITU
@@ -31,7 +29,12 @@ class NameOid(Enum):
     POSTAL_CODE = ('2.5.4.17', '', 'postalCode', _('Postal Code'), True)
     POST_OFFICE_BOX = ('2.5.4.18', '', 'postOfficeBox', _('Post Office Box'), False)
     PHYSICAL_DELIVERY_OFFICE_NAME = (
-        '2.5.4.19', '', 'physicalDeliveryOfficeName', _('Physical Delivery Office Name'), False)
+        '2.5.4.19',
+        '',
+        'physicalDeliveryOfficeName',
+        _('Physical Delivery Office Name'),
+        False,
+    )
     TELEPHONE_NUMBER = ('2.5.4.20', '', 'telephoneNumber', _('Telephone Number'), True)
     TELEX_NUMBER = ('2.5.4.21', '', 'telexNumber', _('Telex Number'), False)
     TELEX_TERMINAL_IDENTIFIER = ('2.5.4.22', '', 'telexTerminalIdentifier', _('Telex Terminal Identifier'), False)
@@ -43,7 +46,12 @@ class NameOid(Enum):
     PREFERRED_DELIVERY_METHOD = ('2.5.4.28', '', 'preferredDeliveryMethod', _('Preferred Delivery Method'), False)
     PRESENTATION_ADDRESS = ('2.5.4.29', '', 'presentationAddress', _('Presentation Address'), True)
     SUPPORTED_APPLICATION_CONTEXT = (
-        '2.5.4.30', '', 'supportedApplicationContext', _('Supported Application Context'), False)
+        '2.5.4.30',
+        '',
+        'supportedApplicationContext',
+        _('Supported Application Context'),
+        False,
+    )
     MEMBER = ('2.5.4.31', '', 'member', _('Member'), False)
     OWNER = ('2.5.4.32', '', 'owner', _('Owner'), False)
     ROLE_OCCUPANT = ('2.5.4.33', '', 'roleOccupant', _('Role Occupant'), False)
@@ -73,19 +81,39 @@ class NameOid(Enum):
     ATTRIBUTE_INTEGRITY_INFO = ('2.5.4.57', '', 'attributeIntegrityInfo', _('Attribute Integrity Info'), False)
     ATTRIBUTE_CERTIFICATE = ('2.5.4.58', '', 'attributeCertificate', _('Attribute Certificate'), False)
     ATTRIBUTE_CERTIFICATE_REVOCATION_LIST = (
-        '2.5.4.59', '', 'attributeCertificateRevocationList', _('Attribute Certificate Revocation List'), False)
+        '2.5.4.59',
+        '',
+        'attributeCertificateRevocationList',
+        _('Attribute Certificate Revocation List'),
+        False,
+    )
     CONF_KEY_INFO = ('2.5.4.60', '', 'confKeyInfo', _('Conf Key Info'), False)
     AA_Certificate = ('2.5.4.61', '', 'aACertificate', _('AA Certificate'), False)
     ATTRIBUTE_DESCRIPTOR_CERTIFICATE = (
-        '2.5.4.62', '', 'attributeDescriptorCertificate', _('Attribute Descriptor Certificate'), False)
+        '2.5.4.62',
+        '',
+        'attributeDescriptorCertificate',
+        _('Attribute Descriptor Certificate'),
+        False,
+    )
     ATTRIBUTE_AUTHORITY_REVOCATION_LIST = (
-        '2.5.4.63', '', 'attributeAuthorityRevocationList', _('Attribute Authority Revocation List'), False)
+        '2.5.4.63',
+        '',
+        'attributeAuthorityRevocationList',
+        _('Attribute Authority Revocation List'),
+        False,
+    )
     FAMILY_INFORMATION = ('2.5.4.64', '', 'familyInformation', _('Family Information'), False)
     PSEUDONYM = ('2.5.4.65', '', 'pseudonym', _('Pseudonym'), True)
     COMMUNICATIONS_SERVICE = ('2.5.4.66', '', 'communicationsService', _('Communications Service'), False)
     COMMUNICATIONS_NETWORK = ('2.5.4.67', '', 'communicationsNetwork', _('Communications Network'), False)
     CERTIFICATION_PRACTICE_STMT = (
-        '2.5.4.68', '', 'certificationPracticeStmt', _('Certification Practice Statement'), False)
+        '2.5.4.68',
+        '',
+        'certificationPracticeStmt',
+        _('Certification Practice Statement'),
+        False,
+    )
     CERTIFICATE_POLICY = ('2.5.4.69', '', 'certificatePolicy', _('Certificate Policy'), False)
     PKI_PATH = ('2.5.4.70', '', 'pkiPath', _('PKI Path'), False)
     PRIVILEGE_POLICY = ('2.5.4.71', '', 'privilegePolicy', _('Privilege Policy'), False)
@@ -123,15 +151,22 @@ class NameOid(Enum):
         '',
         'eepkCertificateRevocationList',
         _('End-Entity Public-Key Certificate Revocation List'),
-        False)
+        False,
+    )
     EE_ATTR_CERTIFICATE_REVOCATION_LIST = (
         '2.5.4.102',
         '',
         'eeAttrCertificateRevocationList',
         _('End-Entity Attribute Certificate Revocation List'),
-        False)
+        False,
+    )
     SUPPORTED_PUBLIC_KEY_ALGORITHMS = (
-        '2.5.4.103', '', 'supportedPublicKeyAlgorithms', _('Supported Public-Key Algorithms'), False)
+        '2.5.4.103',
+        '',
+        'supportedPublicKeyAlgorithms',
+        _('Supported Public-Key Algorithms'),
+        False,
+    )
     INT_EMAIL = ('2.5.4.104', '', 'intEmail', _('Internationalized Email Address'), False)
     JID = ('2.5.4.105', '', 'jid', _('Jabber Identifier'), False)
     OBJECT_IDENTIFIER = ('2.5.4.106', '', 'objectIdentifier', _('Object Identifier'), False)
@@ -160,35 +195,39 @@ class NameOid(Enum):
         '',
         'jurisdictionOfIncorporationLocalityName',
         _('Jurisdiction Of Incorporation Locality Name'),
-        False)
+        False,
+    )
     JURISDICTION_OF_INCORPORATION_STATE_OR_PROVINCE_NAME = (
         '1.3.6.1.4.1.311.60.2.1.2',
         '',
         'jurisdictionOfIncorporationStateOrProvinceName',
         _('Jurisdiction Of Incorporation State Or Province Name'),
-        False)
+        False,
+    )
     jurisdiction_Of_Incorporation_Country_Name = (
         '1.3.6.1.4.1.311.60.2.1.3',
         '',
         'jurisdictionOfIncorporationCountryName',
         _('Jurisdiction Of Incorporation Country Name'),
-        False)
+        False,
+    )
 
     # Spain related
     DNI = ('1.3.6.1.4.1.19126.3', '', 'dni', _('DNI - National identity document (Spain)'), False)
     NSS = ('1.3.6.1.4.1.19126.4', '', 'nss', _('NSS - Social Security Number (Spain)'), False)
     CIRCULATION_PERMIT_NUMBER = (
-        '1.3.6.1.4.1.19126.5', '', 'circulationPermitNumber', _('Circulation Permit Number (SPAIN)'), False)
+        '1.3.6.1.4.1.19126.5',
+        '',
+        'circulationPermitNumber',
+        _('Circulation Permit Number (SPAIN)'),
+        False,
+    )
     CIF = ('1.3.6.1.4.1.19126.21', '', 'cif', _('CIF - Tax Identification Code (Spain)'), False)
     NIF = ('2.16.724.4.307', '', 'nif', _('NIF - Number of fiscal identification (Spain)'), False)
 
     def __new__(
-            cls: type(NameOid),
-            dotted_string: str,
-            abbreviation: str,
-            full_name: str,
-            verbose_name: str,
-            common: bool) -> object:
+        cls: type(NameOid), dotted_string: str, abbreviation: str, full_name: str, verbose_name: str, common: bool
+    ) -> object:
         obj = object.__new__(cls)
         obj._value_ = dotted_string
         obj.dotted_string = dotted_string
@@ -199,7 +238,6 @@ class NameOid(Enum):
 
 
 class CertificateExtensionOid(Enum):
-
     SUBJECT_DIRECTORY_ATTRIBUTES = ('2.5.29.9', _('Subject Directory Attributes'))
     SUBJECT_KEY_IDENTIFIER = ('2.5.29.14', _('Subject Key Identifier'))
     KEY_USAGE = ('2.5.29.15', _('Key Usage'))
@@ -240,7 +278,6 @@ class CertificateExtensionOid(Enum):
 
 
 class EllipticCurveOid(Enum):
-
     # OID, verbose_name, key_size
 
     NONE = ('None', '', 0)
@@ -300,7 +337,6 @@ class PublicKeyAlgorithmOid(Enum):
 
 
 class SignatureAlgorithmOid(Enum):
-
     # OID, verbose_name, public_key_algorithm_oid, padding_scheme
 
     RSA_MD5 = ('1.2.840.113549.1.1.4', _('RSA with MD5'), PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
@@ -311,16 +347,36 @@ class SignatureAlgorithmOid(Enum):
     RSA_SHA384 = ('1.2.840.113549.1.1.12', _('RSA with SHA384'), PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
     RSA_SHA512 = ('1.2.840.113549.1.1.13', _('RSA with SHA512'), PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
     RSA_SHA3_224 = (
-        '2.16.840.1.101.3.4.3.13', _('RSA with SHA3-224'), PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
+        '2.16.840.1.101.3.4.3.13',
+        _('RSA with SHA3-224'),
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PKCS1v15,
+    )
     RSA_SHA3_256 = (
-        '2.16.840.1.101.3.4.3.14', _('RSA with SHA3-256'), PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
+        '2.16.840.1.101.3.4.3.14',
+        _('RSA with SHA3-256'),
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PKCS1v15,
+    )
     RSA_SHA3_384 = (
-        '2.16.840.1.101.3.4.3.15', _('RSA with SHA3-384'), PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
+        '2.16.840.1.101.3.4.3.15',
+        _('RSA with SHA3-384'),
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PKCS1v15,
+    )
     RSA_SHA3_512 = (
-        '2.16.840.1.101.3.4.3.16', _('RSA with SHA3-512'), PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
+        '2.16.840.1.101.3.4.3.16',
+        _('RSA with SHA3-512'),
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PKCS1v15,
+    )
 
     RSASSA_PSS = (
-        '1.2.840.113549.1.1.10', _('RSA (RSASSA-PSS), Padding: PSS'), PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PSS)
+        '1.2.840.113549.1.1.10',
+        _('RSA (RSASSA-PSS), Padding: PSS'),
+        PublicKeyAlgorithmOid.RSA,
+        RsaPaddingScheme.PSS,
+    )
 
     ECDSA_SHA1 = ('1.2.840.10045.4.1', _('ECDSA with SHA1'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
     ECDSA_SHA224 = ('1.2.840.10045.4.3.1', _('ECDSA with SHA224'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
@@ -328,13 +384,29 @@ class SignatureAlgorithmOid(Enum):
     ECDSA_SHA384 = ('1.2.840.10045.4.3.3', _('ECDSA with SHA384'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
     ECDSA_SHA512 = ('1.2.840.10045.4.3.4', _('ECDSA with SHA512'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
     ECDSA_SHA3_224 = (
-        '2.16.840.1.101.3.4.3.9', _('ECDSA with SHA3-224'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
+        '2.16.840.1.101.3.4.3.9',
+        _('ECDSA with SHA3-224'),
+        PublicKeyAlgorithmOid.ECC,
+        RsaPaddingScheme.NONE,
+    )
     ECDSA_SHA3_256 = (
-        '2.16.840.1.101.3.4.3.10', _('ECDSA with SHA3-256'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
+        '2.16.840.1.101.3.4.3.10',
+        _('ECDSA with SHA3-256'),
+        PublicKeyAlgorithmOid.ECC,
+        RsaPaddingScheme.NONE,
+    )
     ECDSA_SHA3_384 = (
-        '2.16.840.1.101.3.4.3.11', _('ECDSA with SHA3-384'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
+        '2.16.840.1.101.3.4.3.11',
+        _('ECDSA with SHA3-384'),
+        PublicKeyAlgorithmOid.ECC,
+        RsaPaddingScheme.NONE,
+    )
     ECDSA_SHA3_512 = (
-        '2.16.840.1.101.3.4.3.12', _('ECDSA with SHA3-512'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
+        '2.16.840.1.101.3.4.3.12',
+        _('ECDSA with SHA3-512'),
+        PublicKeyAlgorithmOid.ECC,
+        RsaPaddingScheme.NONE,
+    )
 
     def __new__(cls, dotted_string, verbose_name, public_key_algo_oid, padding_scheme):
         obj = object.__new__(cls)

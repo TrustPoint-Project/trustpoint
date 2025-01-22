@@ -33,7 +33,7 @@ class DeviceModel(models.Model):
         NO_ONBOARDING = 0, _('No Onboarding')
         MANUAL = 1, _('Manual download')
         CLI = 2, _('Device CLI')
-        TP_CLIENT_PW = 3, _('Trustpoint Client')
+        TP_CLIENT = 3, _('Trustpoint Client')
         AOKI = 4, _('AOKI')
         BRSKI = 5, _('BRSKI')
 
@@ -209,3 +209,19 @@ class RemoteDeviceCredentialDownloadModel(models.Model):
             return False
 
         return token == self.download_token
+
+
+class TrustpointClientOnboardingProcessModel(models.Model):
+    """Holds all current Trustpoint-Client onboarding processes."""
+
+    id = models.AutoField(primary_key=True)
+
+    class AuthenticationMethod(models.IntegerChoices):
+
+        PASSWORD_BASED_MAC = 0, _('Password Based Mac')
+        IDEVID = 1, _('Initial Device Identity (IDevID)')
+
+    auth_method = models.IntegerField(verbose_name=_('Authentication Method'), choices=AuthenticationMethod)
+    device = models.ForeignKey(DeviceModel, verbose_name=_('Device'), on_delete=models.PROTECT)
+    password = models.CharField(max_length=64, verbose_name=_('Password'), null=True, blank=True)
+

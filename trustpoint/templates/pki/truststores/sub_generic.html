@@ -1,0 +1,23 @@
+{% load i18n %}
+{% block sub_details %}
+    <div class="tp-kvp-list">
+        <div>
+            <div>Unique Name</div>
+            <div>
+                <a href="{% url 'pki:truststore-detail' pk=truststore.id %}"> {{ truststore.unique_name }} </a>
+            </div>
+        </div>
+        <div>
+            <div>Intended Usage</div>
+            <div>
+                {{ truststore.get_intended_usage_display }}
+            </div>
+        </div>
+        <div>
+            <div>Created-At</div>
+            <div>
+                {{ truststore.created_at }}
+            </div>
+        </div>
+    </div>
+{% endblock sub_details %}
