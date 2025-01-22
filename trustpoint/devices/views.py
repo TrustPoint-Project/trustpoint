@@ -3,13 +3,12 @@
 from __future__ import annotations
 
 import io
+import secrets
 from typing import TYPE_CHECKING, cast
 
-import secrets
 from core.file_builder.enum import ArchiveFormat
 from core.serializer import CredentialSerializer
 from core.validator.field import UniqueNameValidator
-from django.shortcuts import redirect
 from django.contrib import messages
 from django.db.models import Q
 from django.forms import BaseModelForm
@@ -17,12 +16,13 @@ from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
-from django.views.generic.base import RedirectView, TemplateView
+from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormView
 
 # TODO(AlexHx8472): Remove django_tables2 dependency, and thus remove the type: ignore[misc]
 from django_tables2 import SingleTableView  # type: ignore[import-untyped]
+from pki.models import CredentialModel
 
 from devices.forms import (
     BrowserLoginForm,
@@ -36,10 +36,9 @@ from devices.models import (
     DeviceModel,
     IssuedCredentialModel,
     RemoteDeviceCredentialDownloadModel,
-    TrustpointClientOnboardingProcessModel
+    TrustpointClientOnboardingProcessModel,
 )
 from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCredentialsTable, DeviceTable
-from pki.models import CredentialModel
 from trustpoint.views.base import TpLoginRequiredMixin
 
 if TYPE_CHECKING:
@@ -662,7 +661,7 @@ class DeviceOnboardingBrowserLoginView(FormView):
         token = credential_download.download_token
         url = f"{reverse('devices:browser_domain_credential_download', kwargs={'pk': cred_id})}?token={token}"
         return redirect(url)
-    
+
 
 class TrustPointClientOnboardingSelectAuthenticationMethodView(DeviceContextMixin, TpLoginRequiredMixin, DetailView[DeviceModel]):
     """View of the selection of the desired authentication method for the Trustpoint-Client onboarding."""
@@ -695,7 +694,7 @@ class TrustpointClientOnboardingPasswordBasedMacView(DeviceContextMixin, TpLogin
         device = self.get_object()
         self.object = device
 
-        if not device.onboarding_protocol == device.OnboardingProtocol.TP_CLIENT.value:
+        if device.onboarding_protocol != device.OnboardingProtocol.TP_CLIENT.value:
             return redirect('devices:devices', permanent=False)
 
         if device.onboarding_status == device.OnboardingStatus.ONBOARDED.value:

@@ -34,7 +34,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 ADMIN_ENABLED = True if DEBUG else False
-DEVELOPMENT_ENV = False
+DEVELOPMENT_ENV = True
 
 # SECURITY WARNING: keep the secret key used in production secret!
 if DEBUG:
