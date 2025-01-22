@@ -673,6 +673,7 @@ class TrustpointClientOnboardingPasswordBasedMacView(DeviceContextMixin, TpLogin
 
         context = super().get_context_data(**kwargs)
         context['password'] = trustpoint_onboarding_process.password
+        context['onboarding_process_id'] = trustpoint_onboarding_process.id
         return self.render_to_response(context=context)
 
 
