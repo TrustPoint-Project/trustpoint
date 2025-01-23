@@ -183,6 +183,7 @@ class RemoteDeviceCredentialDownloadModel(models.Model):
             logger.warning(log_msg)
 
             if self.attempts >= self.BROWSER_MAX_OTP_ATTEMPTS:
+                self.otp = '-'
                 self.delete()
                 logger.warning('Too many incorrect OTP attempts. Download invalidated.')
             else:
