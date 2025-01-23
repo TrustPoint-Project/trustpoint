@@ -1,4 +1,3 @@
-
 import pytest
 from core.serializer import (
     CertificateCollectionSerializer,
@@ -66,6 +65,7 @@ def test_certificate_serializer_init_raises_value_error():
     with pytest.raises(ValueError):
         CertificateSerializer(b'Not a valid cert')
 
+
 def test_certificate_serializer_as_pem(pem_encoded_cert):
     """Test that CertificateSerializer.as_pem() returns PEM-encoded data.
 
@@ -86,6 +86,7 @@ def test_certificate_serializer_as_der(der_encoded_cert):
     serializer = CertificateSerializer(der_encoded_cert)
     output = serializer.as_der()
     assert output == der_encoded_cert
+
 
 def test_certificate_serializer_as_pkcs7_pem(pem_encoded_cert):
     """Test that CertificateSerializer.as_pkcs7_pem() returns PKCS#7 PEM-encoded data.
@@ -116,7 +117,6 @@ def test_certificate_serializer_as_pkcs7_der(pem_encoded_cert):
     parsed_certs = pkcs7.load_der_pkcs7_certificates(pkcs7_der)
     assert len(parsed_certs) == 1
     assert isinstance(parsed_certs[0], x509.Certificate)
-
 
 
 def test_certificate_serializer_public_key_serializer(pem_encoded_cert):

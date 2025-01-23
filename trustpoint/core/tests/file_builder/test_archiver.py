@@ -13,6 +13,7 @@ SAMPLE_DATA = {
 }
 EXPECTED_FILES = ['certificate-1.pem', 'certificate-2.pem']
 
+
 @pytest.mark.parametrize('archive_format', [ArchiveFormat.ZIP, ArchiveFormat.TAR_GZ])
 def test_archiver_creates_non_empty_archive(archive_format):
     """Tests if the Archiver creates a non-empty archive."""
@@ -20,6 +21,7 @@ def test_archiver_creates_non_empty_archive(archive_format):
 
     assert archive_bytes is not None, 'The archive should not be None.'
     assert len(archive_bytes) > 0, 'The archive should not be empty.'
+
 
 @pytest.mark.parametrize('archive_format', [ArchiveFormat.ZIP, ArchiveFormat.TAR_GZ])
 def test_archiver_contains_expected_files(archive_format):
@@ -35,6 +37,7 @@ def test_archiver_contains_expected_files(archive_format):
 
     for expected_file in EXPECTED_FILES:
         assert expected_file in actual_files, f'Missing file: {expected_file}'
+
 
 @pytest.mark.parametrize('archive_format', [ArchiveFormat.ZIP, ArchiveFormat.TAR_GZ])
 def test_archiver_archive_integrity(archive_format, tmp_path):
