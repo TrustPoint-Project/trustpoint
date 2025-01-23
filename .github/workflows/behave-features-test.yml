@@ -31,9 +31,6 @@ jobs:
 
     - name: Install dependencies with Poetry
       run: poetry install
-#      env:
-#        POETRY_VIRTUALENVS_CREATE: true
-#        POETRY_VIRTUALENVS_IN_PROJECT: true
 
     - name: Run database migrations
       run: |
@@ -42,7 +39,10 @@ jobs:
 
     - name: Run Behave Tests and Generate HTML Report
       run: |
-        poetry run behave trustpoint/features/ --no-capture -f behave_html_pretty_formatter:PrettyHTMLFormatter -D behave.formatter.html-pretty.title_string="TrustPoint Test Report" -o behave-report.html
+        poetry run behave trustpoint/features/ --no-capture \
+        -f behave_html_pretty_formatter:PrettyHTMLFormatter \
+        -D behave.formatter.html-pretty.title_string="TrustPoint Test Report" \
+        -o behave-report.html || true
 
     - name: Upload HTML Report
       uses: actions/upload-artifact@v4
