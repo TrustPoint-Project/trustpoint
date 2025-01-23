@@ -10,10 +10,10 @@ def step_existing_entities(context):
 def step_renew_certificate(context, method):
     raise StepNotImplementedError(f"The step to renew a certificate using {method} is not yet implemented.")
 
-@then("the certificate of the identity should be renewed")
+@then('the certificate of the identity should be renewed')
 def step_certificate_renewed(context, identity):
-    raise StepNotImplementedError("The step to verify the certificate renewal is not yet implemented.")
+    raise StepNotImplementedError('The step to verify the certificate renewal is not yet implemented.')
 
-@then("the identity should have a usable and valid certificate")
+@then('the identity should have a usable and valid certificate')
 def step_certificate_valid(context):
-    raise StepNotImplementedError("The step to verify the certificate is valid and usable is not yet implemented.")
+    raise StepNotImplementedError('The step to verify the certificate is valid and usable is not yet implemented.')
