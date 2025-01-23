@@ -70,7 +70,7 @@ class Command(BaseCommand):
             DeviceModel.OnboardingProtocol.NO_ONBOARDING.value,
             # DeviceModel.OnboardingProtocol.TP_CLIENT_PW.value,
             DeviceModel.OnboardingProtocol.MANUAL.value,
-            DeviceModel.OnboardingProtocol.TP_CLIENT_PW.value,
+            DeviceModel.OnboardingProtocol.TP_CLIENT.value,
             # DeviceModel.OnboardingProtocol.BROWSER.value,
             # DeviceModel.OnboardingProtocol.CLI.value
 

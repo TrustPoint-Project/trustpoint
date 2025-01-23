@@ -29,7 +29,7 @@ class DeviceModel(models.Model):
         MANUAL = 1, _('Manual download')
         BROWSER = 2, _('Browser download')
         CLI = 3, _('Device CLI')
-        TP_CLIENT_PW = 4, _('Trustpoint Client')
+        TP_CLIENT = 4, _('Trustpoint Client')
         AOKI = 5, _('AOKI')
         BRSKI = 6, _('BRSKI')
 
@@ -135,3 +135,19 @@ class IssuedCredentialModel(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> None:
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class TrustpointClientOnboardingProcessModel(models.Model):
+    """Holds all current Trustpoint-Client onboarding processes."""
+
+    id = models.AutoField(primary_key=True)
+
+    class AuthenticationMethod(models.IntegerChoices):
+
+        PASSWORD_BASED_MAC = 0, _('Password Based Mac')
+        IDEVID = 1, _('Initial Device Identity (IDevID)')
+
+    auth_method = models.IntegerField(verbose_name=_('Authentication Method'), choices=AuthenticationMethod)
+    device = models.ForeignKey(DeviceModel, verbose_name=_('Device'), on_delete=models.PROTECT)
+    password = models.CharField(max_length=64, verbose_name=_('Password'), null=True, blank=True)
+
