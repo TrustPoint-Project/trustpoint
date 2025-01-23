@@ -10,7 +10,7 @@ Feature: Lightweight Certificate Management Protocol (LCMP)
   # Background: Common setup for all scenarios
   # This ensures that the server is reachable and initializes common data.
   Background:
-    Given the LCMP server is running and reachable
+    Given the server is running and reachable
     And I have the necessary client credentials for authentication
 
   # Section 4 of RFC 9483 defines certificate request processing.
