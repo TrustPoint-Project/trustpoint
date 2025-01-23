@@ -9,7 +9,7 @@ import datetime
 
 from pyasn1.type import univ
 from pyasn1_modules import rfc2459, rfc4210, rfc2511
-from cmp.message.protection_alg import ProtectionAlgorithmParser, ProtectionAlgorithm, PasswordBasedMacProtection
+from cmp.message.protection_alg import ProtectionAlgorithmParser, ProtectionAlgorithm
 from core.serializer import PublicKeySerializer
 from cryptography.hazmat.primitives import serialization
 from .oid import CmpMessageType
@@ -222,8 +222,6 @@ class NameParser:
             return x509.Name(crypto_rdns_sequence)
 
 
-
-
 class PkiMessageHeader:
 
     _pki_header: rfc4210.PKIHeader
@@ -255,8 +253,8 @@ class PkiMessageHeader:
 
         # CMP lightweight requires this for mac and signature based protection, however the OSSL CMP client leaves
         # it blank for mac based protection.
-        if not self.pki_header['senderKID'].isValue:
-            self._sender_kid = None
+        if self.pki_header['senderKID'].isValue:
+            self._sender_kid = int(self.pki_header['senderKID'].asOctets().decode())
 
         # recipKID will be ignored. Not mentioned by cmp lightweight
         # Generally only supplied if DH keys are used
@@ -385,8 +383,6 @@ class PkiMessageProtection:
             self._protection_value = self.pki_protection.asOctets()
         else:
             self._protection_value = None
-
-
 
     @property
     def pki_protection(self) -> rfc4210.PKIProtection:
@@ -541,8 +537,6 @@ class PkiRequestTemplate:
         if not cert_template.isValue:
             raise ValueError('Certificate template missing.')
         self._cert_template = cert_template
-
-        print(self.public_key)
 
     @property
     def subject(self) -> None | x509.Name:

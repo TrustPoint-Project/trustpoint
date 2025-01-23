@@ -1,16 +1,19 @@
 from __future__ import annotations
 
 
-from pyasn1.codec.der import decoder
-from pyasn1_modules.rfc4210 import PKIMessage
+from pyasn1.codec.der import decoder, encoder
+from pyasn1_modules import rfc4210
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import View
 from django.http import HttpResponse
 
+from typing import TYPE_CHECKING, Protocol, cast
+from devices.models import DeviceModel, DomainModel, TrustpointClientOnboardingProcessModel
+from devices.issuer import LocalDomainCredentialIssuer
 from cmp.message.cmp import PkiIrMessage
-
-from typing import TYPE_CHECKING, Protocol
+from cmp.message.protection_alg import ProtectionAlgorithmOid
+from cryptography import x509
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -21,90 +24,257 @@ class Dispatchable(Protocol):
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         ...
 
-class CmpHttpMixin(Dispatchable):
+
+class CmpHttpMixin:
 
     expected_content_type = 'application/pkixcmp'
-    content_length_required = True
-    max_content_length = 128
+    max_payload_size = 131072   # max 128 KiByte
+    raw_message: bytes
 
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        # length_required -> 411
-        # too large -> 413
-        # wrong content_type -> 415
-        return super().dispatch(request, *args, **kwargs)
+
+        self.raw_message = request.read()
+        if len(self.raw_message) > self.max_payload_size:
+             return HttpResponse('Message is too large.', status=413)
+
+        content_type = request.headers.get('Content-Type')
+        if content_type is None:
+            return HttpResponse(
+                'Message is missing the content type.', status=415)
+
+        if content_type != self.expected_content_type:
+            return HttpResponse(
+                f'Message does not have the expected content type: {self.expected_content_type}.', status=415)
+
+        parent = cast(Dispatchable, super())
+        return parent.dispatch(request, *args, **kwargs)
 
 
-class CmpValidDomainCheckMixin(Dispatchable):
+class CmpRequestedDomainExtractorMixin:
 
-    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        # check if Domain exists
-        # check if Domain allows CMP and this operation
-        return super().dispatch(request, *args, **kwargs)
-
-
-class CmpMessageSerializerMixin(Dispatchable):
-
-    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        pki_message, _ = decoder.decode(request.read(), asn1Spec=PKIMessage())
-        request.serialized_message = pki_message
-        return super().dispatch(request, *args, **kwargs)
-
-
-class CmpMessageTypeCheckMixin(Dispatchable):
-
-    expected_message_type: str
+    requested_domain: DomainModel
+    requested_onboarding_process: None | TrustpointClientOnboardingProcessModel
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        # check expected message type
-        return super().dispatch(request, *args, **kwargs)
+        domain_name = cast(str, kwargs.get('domain'))
+
+        try:
+            self.requested_domain = DomainModel.objects.get(unique_name=domain_name)
+        except DomainModel.DoesNotExist:
+            return HttpResponse('Domain does not exist.', status=404)
+
+        parent = cast(Dispatchable, super())
+        return parent.dispatch(request, *args, **kwargs)
 
 
-class CmpMessageAuthenticationMixin(Dispatchable):
+class CmpPkiMessageSerializerMixin:
 
-    signature_based_ok: bool = True
-    password_based_hmac: bool = False
+    raw_message: bytes
+    serialized_pyasn1_message: None | rfc4210.PKIMessage
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        # authenticate
-        return super().dispatch(request, *args, **kwargs)
+        try:
+            self.serialized_pyasn1_message, _ = decoder.decode(self.raw_message, asn1Spec=rfc4210.PKIMessage())
+        except (ValueError, TypeError):
+            return HttpResponse('Failed to parse the CMP message. Seems to be corrupted.', status=400)
+
+        parent = cast(Dispatchable, super())
+        return parent.dispatch(request, *args, **kwargs)
 
 
-class CmpAuthorizationMixin(Dispatchable):
+class CmpIrMessageSerializerMixin:
+
+    serialized_pyasn1_message: None | rfc4210.PKIMessage
+    serialized_ir_message: None | PkiIrMessage
+
+    # requested_domain: DomainModel
+    onboarding_process: None | TrustpointClientOnboardingProcessModel
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
-        # check if the authenticated entity is generally allowed to use this operation.
-        return super().dispatch(request, *args, **kwargs)
+        try:
+            self.serialized_ir_message = PkiIrMessage(self.serialized_pyasn1_message)
+        except (ValueError, TypeError):
+            return HttpResponse(f'Expected CMP IR message, but got {self.serialized_pyasn1_message["body"].getName()}.')
+
+        if self.serialized_ir_message.header.protection_algorithm == ProtectionAlgorithmOid.PASSWORD_BASED_MAC:
+            onboarding_process_id = self.serialized_ir_message.request_template.subject.get_attributes_for_oid(
+                x509.NameOID.USER_ID
+            )
+
+            if not onboarding_process_id:
+                return HttpResponse('Failed to obtain onboarding process ID.', status=404)
+
+            if len(onboarding_process_id) > 1:
+                return HttpResponse('Found multiple UIDs in the request subject.')
+
+        parent = cast(Dispatchable, super())
+        return parent.dispatch(request, *args, **kwargs)
+
+
+class CmpOnboardingAuthenticationMixin:
+
+    serialized_pyasn1_message: rfc4210.PKIMessage
+    serialized_ir_message: PkiIrMessage
+    onboarding_process: None | TrustpointClientOnboardingProcessModel
+    device: DeviceModel
+    domain: DomainModel
+
+
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        if self.serialized_ir_message.header.protection_algorithm.oid == ProtectionAlgorithmOid.PASSWORD_BASED_MAC:
+            sender_kid = self.serialized_ir_message.header.sender_kid
+            if sender_kid is None:
+                return HttpResponse(
+                    'SenderKID is missing in the CMP message, but required for PBM protected messages.',
+                    status=404)
+
+            try:
+                self.device = DeviceModel.objects.get(id=sender_kid)
+            except DeviceModel.DoesNotExist:
+                return HttpResponse('Device not found.', status=404)
+
+            try:
+                self.onboarding_process = TrustpointClientOnboardingProcessModel.objects.get(device=self.device)
+                print(self.onboarding_process)
+            except TrustpointClientOnboardingProcessModel.DoesNotExist:
+                return HttpResponse(
+                    f'No active onboarding process found for device {self.device.unique_name}.',
+                    status=404)
+
+            pbm_choice_value = TrustpointClientOnboardingProcessModel.AuthenticationMethod.PASSWORD_BASED_MAC.value
+            if self.onboarding_process.auth_method != pbm_choice_value:
+                return HttpResponse(
+                    f'PBM protection for device {self.device.unique_name} not allowed.',
+                    status=404)
+
+            if not self._pbm_protection_is_valid():
+                return HttpResponse(
+                    f'PBM protection verification failed.',
+                    status=404
+                )
+
+        else:
+            # TODO(AlexHx8472): still WIP
+            serial_number_attributes = self.serialized_ir_message.request_template.subject.get_attributes_for_oid(
+                x509.NameOID.SERIAL_NUMBER)
+
+            if not serial_number_attributes:
+                return HttpResponse('Serial-number missing in cmp request template.', status=404)
+
+            if len(serial_number_attributes) > 1:
+                return HttpResponse(
+                    'Found multiple serial number attributes in the cmp request template',
+                    status=404)
+
+            serial_number = serial_number_attributes[0].value
+
+            try:
+                self.device = DeviceModel.objects.get(serial_number__iexact=serial_number)
+            except DeviceModel.DoesNotExist:
+                return HttpResponse('Device not found.', status=404)
+
+            try:
+                self.onboarding_process = TrustpointClientOnboardingProcessModel.objects.get(device=self.device)
+            except TrustpointClientOnboardingProcessModel.DoesNotExist:
+                return HttpResponse(
+                    f'No active onboarding process found for device {self.device.unique_name}.',
+                    status=404)
+
+            if not self._signature_protection_is_valid():
+                return HttpResponse('Signature verification failed.', status=404)
+
+
+        parent = cast(Dispatchable, super())
+        return parent.dispatch(request, *args, **kwargs)
+
+    def _pbm_protection_is_valid(self) -> bool:
+        shared_secret = self.onboarding_process.password.encode()
+
+        protected_part = rfc4210.ProtectedPart()
+        protected_part.setComponentByName('header', self.serialized_pyasn1_message['header'])
+        protected_part.setComponentByName('infoValue', self.serialized_pyasn1_message['body'])
+
+        encoded_protected_part = encoder.encode(protected_part)
+
+        # TODO(BytesWelder): PBM verification
+
+        return True
+
+    def _signature_protection_is_valid(self) -> bool:
+
+        # TODO(BytesWelder): Signature verification
+
+        return True
+
+class CmpOnboardingAuthorizationMixin:
+
+    requested_domain: DomainModel
+    requested_device: DeviceModel
+    onboarding_process: TrustpointClientOnboardingProcessModel
+
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+
+        if self.requested_domain != self.onboarding_process.device.domain:
+            return HttpResponse(
+                f'The requested domain {self.requested_domain.unique_name} is '
+                f'not available for device {self.onboarding_process.device.unique_name}',
+                status=404
+            )
+
+        # TODO(AlexHx8472): For signature based auth -> check if signer is allowed to issue certificate for
+        # TODO(AlexHx8472): the specific domain and device / check if type of cert is allowed.
+
+        parent = cast(Dispatchable, super())
+        return parent.dispatch(request, *args, **kwargs)
 
 
 @method_decorator(csrf_exempt, name='dispatch')
 class CmpInitializationRequestView(
-    CmpHttpMixin,
-    CmpValidDomainCheckMixin,
-    CmpMessageSerializerMixin,
-    CmpMessageTypeCheckMixin,
-    CmpMessageAuthenticationMixin,
-    View):
+        CmpHttpMixin,
+        CmpRequestedDomainExtractorMixin,
+        CmpPkiMessageSerializerMixin,
+        CmpIrMessageSerializerMixin,
+        CmpOnboardingAuthenticationMixin,
+        CmpOnboardingAuthorizationMixin,
+        View):
 
-    http_method_names = ('post',)
-    expected_message_type = 'ir'
+    http_method_names = ('post', )
+
+    raw_message: bytes
+    serialized_pyasn1_message: rfc4210.PKIMessage
+    serialized_ir_message: PkiIrMessage
+    requested_domain: DomainModel
+    onboarding_process: TrustpointClientOnboardingProcessModel
 
     def post(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:
+
+        requested_subject = self.serialized_ir_message.request_template.subject
+
+        common_name_attributes = requested_subject.get_attributes_for_oid(x509.NameOID.COMMON_NAME)
+
+        if len(common_name_attributes) != 1:
+            return HttpResponse('Wrong requested subject', status=400)
+
+        common_name = common_name_attributes[0].value.strip()
+        if common_name.lower() != LocalDomainCredentialIssuer.get_fixed_values(
+                device=self.onboarding_process.device,
+                domain=self.requested_domain)['common_name'].lower():
+            return HttpResponse('The common name in the request must match the default value.', status=400)
+        local_domain_credential_issuer = LocalDomainCredentialIssuer(
+            device=self.onboarding_process.device,
+            domain=self.requested_domain)
+        new_domain_credential = local_domain_credential_issuer.issue_domain_credential()
+        self.onboarding_process.delete()
+        self.device.onboarding_status = DeviceModel.OnboardingStatus.ONBOARDED
+        self.device.save()
+
+        response_message = rfc4210.PKIMessage()
+
+        # domain_credential_issuer = LocalDomainCredentialIssuer(domain=self.domain, device=self.device)
 
         # Get certificate request parameters.
         # Check certificate request parameters -> further authorization.
         # Execute operation.
 
-
-
-        # content-length: 128kiB
-        # content-type: application/pkixcmp
-        # pki_message, _ = decoder.decode(self.request.read(), asn1Spec=PKIMessage())
-        # pki_message = PkiIrMessage(pki_message)
-        #
-        # print(pki_message.request_template.subject)
-        # print(pki_message.request_template.public_key)
-        # print(pki_message.request_template.not_valid_before)
-        # print(pki_message.request_template.not_valid_after)
-
-        return HttpResponse(200)
+        return HttpResponse('hello', status=200)

@@ -45,7 +45,6 @@ class PkiBodyCreator:
         self.pki_body_type = pki_body_type
         self.pki_body_choice = pki_body_type.response_class
 
-
     def set_cert_req_id(self, cert_req_id: univ.Integer):
         """
         Sets the certificate request ID.
