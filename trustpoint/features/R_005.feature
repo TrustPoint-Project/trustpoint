@@ -1,5 +1,5 @@
 Feature: REST API
-  Provide a REST API for interacting with TrustPoint programmatically as specified by R_005.
+  Provide a REST API for interacting with TrustPoint as specified by R_005.
 
   Background:
     Given the server is running and reachable
