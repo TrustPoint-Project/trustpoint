@@ -1,5 +1,5 @@
 Feature: Certificate Lifecycle Management
-  Enable complete lifecycle management for certificates, including renewal and revocation, as specified by R_004.
+  Enable complete lifecycle management for certificates - including renewal and revocation - as specified by R_004.
 
   Background:
     Given the server is running and reachable
