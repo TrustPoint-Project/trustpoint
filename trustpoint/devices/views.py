@@ -27,15 +27,18 @@ from devices.issuer import LocalTlsClientCredentialIssuer, LocalTlsServerCredent
 
 from devices.forms import (
     CredentialDownloadForm,
+    CredentialRevocationForm,
     IssueDomainCredentialForm,
     IssueTlsClientCredentialForm,
     IssueTlsServerCredentialForm,
 )
 from devices.models import DeviceModel, IssuedCredentialModel, TrustpointClientOnboardingProcessModel
+from devices.revocation import DeviceCredentialRevocation
 from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCredentialsTable, DeviceTable
 from trustpoint.views.base import TpLoginRequiredMixin
 
 if TYPE_CHECKING:
+    import ipaddress
     from typing import Any, ClassVar
 
     from django.http.request import HttpRequest
@@ -597,24 +600,44 @@ class DeviceCertificateLifecycleManagementSummaryView(
         return super().get(request, *args, **kwargs)
 
 
-class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, RedirectView):
-    """Used to add the revocation not implemented error to the message system."""
+class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+    """Revokes all active credentials for a given device."""
 
-    http_method_names = ('get',)
-    permanent = False
+    http_method_names = ('get', 'post')
 
-    def get_redirect_url(self, *args: Any, **kwargs: Any) -> str:  # noqa: ARG002
-        """Adds the revocation error message.
+    model = DeviceModel
+    template_name = 'devices/revoke.html'
+    form_class = CredentialRevocationForm
 
-        Args:
-            *args: Any positional arguments are disregarded.
-            **kwargs: Any keyword arguments are disregarded.
 
-        Returns:
-            The url to redirect to, which is the HTTP_REFERER.
-        """
-        messages.error(self.request, 'Revocation is not yet implemented.')
-        return cast('str', self.request.META.get('HTTP_REFERER', '/'))
+class DeviceCredentialRevocationView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+    """Revokes a specific issued credential."""
+
+    http_method_names = ('get', 'post')
+
+    model = IssuedCredentialModel
+    template_name = 'devices/revoke.html'
+    pk_url_kwarg = 'credential_pk'
+    form_class = CredentialRevocationForm
+
+    def get_success_url(self) -> str:
+        """Returns the URL to redirect to if the form is valid and was successfully processed."""
+        kwargs = {'pk': self.get_object().id}
+        return cast('str', reverse_lazy('devices:certificate_lifecycle_management', kwargs=kwargs))
+    
+    def form_valid(self, form) -> HttpResponse:
+        revoked_successfully = DeviceCredentialRevocation.revoke_certificate(
+            self.get_object().id,
+            form.cleaned_data['revocation_reason']
+        )
+
+        if revoked_successfully:
+            messages.success(self.request, _('Successfully revoked credential.'))
+        else:
+            messages.error(self.request, _('Failed to revoke credential.'))
+        
+        return super().form_valid(form)
+
 
 
 class TrustPointClientOnboardingSelectAuthenticationMethodView(DeviceContextMixin, TpLoginRequiredMixin, DetailView[DeviceModel]):
@@ -648,7 +671,7 @@ class TrustpointClientOnboardingPasswordBasedMacView(DeviceContextMixin, TpLogin
         device = self.get_object()
         self.object = device
 
-        if not device.onboarding_protocol == device.OnboardingProtocol.TP_CLIENT.value:
+        if device.onboarding_protocol != device.OnboardingProtocol.TP_CLIENT.value:
             return redirect('devices:devices', permanent=False)
 
         if device.onboarding_status == device.OnboardingStatus.ONBOARDED.value:

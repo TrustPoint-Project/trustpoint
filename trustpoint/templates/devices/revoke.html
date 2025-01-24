@@ -1,26 +1,36 @@
 {% extends 'trustpoint/base.html' %}
-{% load crispy_forms_filters %}
 {% load i18n %}
+
 {% block content %}
-    <div class="card">
-        <div class="card-header d-flex">
-            <h1>{% trans 'Add Device' %}</h1>
-        </div>
-        <div class="card-body py-3">
-            <form method="POST" id="add-device-form">
-                {% csrf_token %}
-                {{ form|crispy }}
+    <form method="POST">
+        {% csrf_token %}
+        <div class="card">
+            <div class="card-header d-flex">
+                <h1>{% trans 'Confirm certificate revocation' %}</h1>
+            </div>
+            <div class="card-body pt-3 pb-3">
+
+                {% include 'devices/details/sub_details.html' with short=True %}
+
                 <hr>
-                <div class="tp-form-btn-group">
+
+                <div class="form-group">
+                    <label for="id_revocation_reason">{% trans 'Revocation Reason' %}</label>
+                    <select id="id_revocation_reason" name="revocation_reason" class="form-control form-select">
+                        {% for value, name in form.revocation_reason.field.choices %}
+                            <option value="{{ value }}" {% if form.revocation_reason.value == value %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="tp-form-btn-group tp-form-btn-group pt-4">
                     <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
-                    <button type="submit" class="btn btn-primary">
-                        {% trans 'Add Device' %}
+                    <button type="submit" class="btn btn-danger">
+                        {% trans 'Revoke certificate' %}
                     </button>
                 </div>
-            </form>
 
+            </div>
         </div>
-
-
-    </div>
+    </form>
 {% endblock content %}

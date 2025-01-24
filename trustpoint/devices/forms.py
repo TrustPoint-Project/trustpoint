@@ -9,6 +9,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from devices.models import DeviceModel, IssuedCredentialModel
+from pki.models.certificate import RevokedCertificateModel
 
 PASSWORD_MIN_LENGTH = 12
 
@@ -170,3 +171,11 @@ class IssueTlsServerCredentialForm(forms.Form):
             err_msg = _('At least one SAN entry is required.')
             raise forms.ValidationError(err_msg)
         return cleaned_data
+
+
+class CredentialRevocationForm(forms.ModelForm):
+    """Form to revoke a device credential."""
+    class Meta:
+        #model = IssuedCredentialModel
+        model = RevokedCertificateModel
+        fields = ['revocation_reason']
