@@ -67,19 +67,19 @@ Functional Requirements
    :header: "Name (Identifier)", "Title", "Description", "Component(s)", "Importance"
    :widths: 10, 25, 60, 30, 10
 
-   "R_001", "Create, view, edit and delete an identity", "TPC_CLI and TPC_Web must provide a way to create, view, edit and delete a digital identity.", "TPC_CLI, TPC_Web, Admin", "High"
-   "R_002", "Manage an identity", "TPC_CLI and TPC_Web must be able to renew certificates.", "TPC_CLI, TPC_Web, Admin", "Medium"
-   "R_003", "Usage of any zero touch onboarding protocol", "Any zero touch onboarding protocol should be used, preferably the Bootstrapping Remote Secure Key Infrastructure (BRSKI) process, while connecting a new device to the network.", "TPC_CLI, TP_Client", "High"
-   "R_004", "Certificate Lifecycle Management", "Enable complete lifecycle management for certificates, including renewal and revocation.", "All components", "High"
-   "R_005", "REST API", "Provide a REST API for interacting with TrustPoint programmatically.", "TPC_Web, TPC_CLI", "High"
-   "R_006", "Docker Container Support", "Distribute TrustPoint within a fully-configured Docker container for deployment.", "TPC_CLI, TPC_Web", "Medium"
-   "R_007", "Backup, Restore, and Update Mechanisms", "Implement backup, restoration, and update features to ensure data and system resilience.", "TPC_CLI, TPC_Web, Admin", "High"
-   "R_008", "Logging Capabilities", "Provide detailed and configurable logging for system events and actions.", "TPC_CLI, TPC_Web, TP_Client", "High"
-   "R_009", "Auto-Generated Issuing CAs", "Automatically generate Issuing Certificate Authorities based on configuration.", "TPC_CLI", "High"
-   "R_010", "High Availability", "Ensure system availability using redundancy or failover mechanisms.", "TPC_CLI, TPC_Web, TP_Client", "High"
-   "R_011", "CMP Endpoint for Onboarded Devices", "Provide a CMP endpoint for device onboarding.", "All components", "High"
-   "R_012", "EST Endpoint for Onboarded Devices", "Provide an EST endpoint for device onboarding.", "All components", "High"
-   "R_013", "Language Selection and Translation", "Support multi-language UI options for global usability.", "TPC_Web, TP_Client", "Medium"
+   _`R_001`, "Create, view, edit and delete an identity", "TPC_CLI and TPC_Web must provide a way to create, view, edit and delete a digital identity.", "TPC_CLI, TPC_Web, Admin", "High"
+   _`R_002`, "Manage an identity", "TPC_CLI and TPC_Web must be able to renew certificates.", "TPC_CLI, TPC_Web, Admin", "Medium"
+   _`R_003`, "Usage of any zero touch onboarding protocol", "Any zero touch onboarding protocol should be used, preferably the Bootstrapping Remote Secure Key Infrastructure (BRSKI) process, while connecting a new device to the network.", "TPC_CLI, TP_Client", "High"
+   _`R_004`, "Certificate Lifecycle Management", "Enable complete lifecycle management for certificates, including renewal and revocation.", "All components", "High"
+   _`R_005`, "REST API", "Provide a REST API for interacting with TrustPoint programmatically.", "TPC_Web, TPC_CLI", "High"
+   _`R_006`, "Docker Container Support", "Distribute TrustPoint within a fully-configured Docker container for deployment.", "TPC_CLI, TPC_Web", "Medium"
+   _`R_007`, "Backup, Restore, and Update Mechanisms", "Implement backup, restoration, and update features to ensure data and system resilience.", "TPC_CLI, TPC_Web, Admin", "High"
+   _`R_008`, "Logging Capabilities", "Provide detailed and configurable logging for system events and actions.", "TPC_CLI, TPC_Web, TP_Client", "High"
+   _`R_009`, "Auto-Generated Issuing CAs", "Automatically generate Issuing Certificate Authorities based on configuration.", "TPC_CLI", "High"
+   _`R_010`, "High Availability", "Ensure system availability using redundancy or failover mechanisms.", "TPC_CLI, TPC_Web, TP_Client", "High"
+   _`R_011`, "CMP Endpoint for Onboarded Devices", "Provide a CMP endpoint for device onboarding.", "All components", "High"
+   _`R_012`, "EST Endpoint for Onboarded Devices", "Provide an EST endpoint for device onboarding.", "All components", "High"
+   _`R_013`, "Language Selection and Translation", "Support multi-language UI options for global usability.", "TPC_Web, TP_Client", "Medium"
 
 """""""""""""""""""""
 Security Requirements
@@ -473,6 +473,98 @@ Approvals
 ----------
 Test Cases
 ----------
+
+Since we are using the `BDD <https://cucumber.io/docs/bdd/>`_ principle for system and integration testing,
+we decided on specifying the tests directly inside the `Cucumber <https://cucumber.io/>`_ feature files.
+This has the advantage of removing the need to keep two or more documents updated at the same time.
+Also, `Gherkin <https://cucumber.io/docs/gherkin/>`_ is a well organized language such that the test ideas and steps
+are possible to read - even for people without a background in software engineering.
+That being said, we state the feature files in the following and provide a brief description on the test ideas.
+
+^^^^^
+R_001
+^^^^^
+
+This testcase is related to requirement `R_001`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../trustpoint/features/R_001.feature
+   :language: gherkin
+
+^^^^^
+R_002
+^^^^^
+
+This testcase is related to requirement `R_002`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../trustpoint/features/R_002.feature
+   :language: gherkin
+
+^^^^^
+R_003
+^^^^^
+
+This testcase is related to requirement `R_003`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../trustpoint/features/R_003.feature
+   :language: gherkin
+
+^^^^^
+R_004
+^^^^^
+
+This testcase is related to requirement `R_004`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../trustpoint/features/R_004.feature
+   :language: gherkin
+
+^^^^^
+R_005
+^^^^^
+
+This testcase is related to requirement `R_005`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../trustpoint/features/R_005.feature
+   :language: gherkin
 
 --------
 Glossary
