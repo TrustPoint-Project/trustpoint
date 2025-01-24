@@ -18,7 +18,7 @@ from django.views.generic.base import View
 from pki.models.credential import CredentialModel
 from pki.models.issuing_ca import IssuingCaModel
 from pyasn1.codec.der import decoder, encoder
-from pyasn1.type.univ import Any, ObjectIdentifier
+from pyasn1.type.univ import Any
 from pyasn1_modules import rfc4210
 
 from cmp.message.cmp import PkiIrMessage
@@ -207,6 +207,7 @@ class CmpOnboardingAuthenticationMixin:
         return parent.dispatch(request, *args, **kwargs)
 
     def _pbm_protection_is_valid(self) -> bool:
+        # TODO(BytesWelder): hash to oid mapping replacement, core -> oid
         shared_secret = self.onboarding_process.password.encode()
 
         protected_part = rfc4210.ProtectedPart()
@@ -215,14 +216,13 @@ class CmpOnboardingAuthenticationMixin:
 
         encoded_protected_part = encoder.encode(protected_part)
 
-
         # Get PBM Parameters
         protection_alg = protected_part.getComponentByName('header').getComponentByName('protectionAlg')
         parameters = protection_alg.getComponentByName('parameters')
         decoded_data, _ = decoder.decode(parameters, asn1Spec=rfc4210.PBMParameter())
 
         salt = decoded_data.getComponentByName('salt').asOctets()
-        owf: ObjectIdentifier = decoded_data.getComponentByName('owf').getComponentByName('algorithm').prettyPrint()
+        owf = decoded_data.getComponentByName('owf').getComponentByName('algorithm').prettyPrint()
         iteration_count = int(decoded_data.getComponentByName('iterationCount'))
         mac = decoded_data.getComponentByName('mac').getComponentByName('algorithm').prettyPrint()
 
@@ -235,7 +235,7 @@ class CmpOnboardingAuthenticationMixin:
         calculated_mac = hmac.new(key, encoded_protected_part, self.oid_to_hash[mac].name).digest()
         received_mac = self.serialized_pyasn1_message['protection'].asOctets()
 
-        return bool(hmac.compare_digest(calculated_mac, received_mac))
+        return hmac.compare_digest(calculated_mac, received_mac)
 
 
     def _signature_protection_is_valid(self) -> bool:
