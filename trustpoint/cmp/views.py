@@ -1,23 +1,30 @@
 from __future__ import annotations
 
+import hashlib
+import hmac
+import sys
+from typing import TYPE_CHECKING, Protocol, cast
 
-from pyasn1.codec.der import decoder, encoder
-from pyasn1_modules import rfc4210
+import pyasn1
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes
+from devices.issuer import LocalDomainCredentialIssuer
+from devices.models import DeviceModel, DomainModel, TrustpointClientOnboardingProcessModel
+from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import View
-from django.http import HttpResponse
+from pyasn1.codec.der import decoder, encoder
+from pyasn1.type.univ import Any, ObjectIdentifier
+from pyasn1_modules import rfc4210
 
-from typing import TYPE_CHECKING, Protocol, cast
-from devices.models import DeviceModel, DomainModel, TrustpointClientOnboardingProcessModel
-from devices.issuer import LocalDomainCredentialIssuer
 from cmp.message.cmp import PkiIrMessage
 from cmp.message.protection_alg import ProtectionAlgorithmOid
-from cryptography import x509
 
 if TYPE_CHECKING:
-    from django.http import HttpRequest
     from typing import Any
+
+    from django.http import HttpRequest
 
 
 class Dispatchable(Protocol):
@@ -120,6 +127,16 @@ class CmpOnboardingAuthenticationMixin:
     device: DeviceModel
     domain: DomainModel
 
+    oid_to_hash = {
+            '1.2.840.113549.1.1.11': hashes.SHA256,
+            '1.2.840.113549.1.1.12': hashes.SHA384,
+            '1.2.840.113549.1.1.13': hashes.SHA512,
+            '1.3.6.1.5.5.8.1.2': hashes.SHA1,
+            '2.16.840.1.101.3.4.2.1': hashes.SHA256,
+            '2.16.840.1.101.3.4.2.2': hashes.SHA384,
+            '2.16.840.1.101.3.4.2.3': hashes.SHA512
+        }
+
 
     def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         if self.serialized_ir_message.header.protection_algorithm.oid == ProtectionAlgorithmOid.PASSWORD_BASED_MAC:
@@ -135,8 +152,8 @@ class CmpOnboardingAuthenticationMixin:
                 return HttpResponse('Device not found.', status=404)
 
             try:
+                print('trying to get onboarding process')
                 self.onboarding_process = TrustpointClientOnboardingProcessModel.objects.get(device=self.device)
-                print(self.onboarding_process)
             except TrustpointClientOnboardingProcessModel.DoesNotExist:
                 return HttpResponse(
                     f'No active onboarding process found for device {self.device.unique_name}.',
@@ -150,7 +167,7 @@ class CmpOnboardingAuthenticationMixin:
 
             if not self._pbm_protection_is_valid():
                 return HttpResponse(
-                    f'PBM protection verification failed.',
+                    'PBM protection verification failed.',
                     status=404
                 )
 
@@ -197,13 +214,33 @@ class CmpOnboardingAuthenticationMixin:
 
         encoded_protected_part = encoder.encode(protected_part)
 
-        # TODO(BytesWelder): PBM verification
 
-        return True
+        # Get PBM Parameters
+        protection_alg = protected_part.getComponentByName('header').getComponentByName('protectionAlg')
+        parameters = protection_alg.getComponentByName('parameters')
+        decoded_data, _ = decoder.decode(parameters, asn1Spec=rfc4210.PBMParameter())
+
+        salt = decoded_data.getComponentByName('salt').asOctets()
+        owf: ObjectIdentifier = decoded_data.getComponentByName('owf').getComponentByName('algorithm').prettyPrint()
+        iteration_count = int(decoded_data.getComponentByName('iterationCount'))
+        mac = decoded_data.getComponentByName('mac').getComponentByName('algorithm').prettyPrint()
+
+        # Calculate key
+        key = shared_secret + salt
+        for _ in range(iteration_count):
+            key = hashlib.new(self.oid_to_hash[owf].name, key).digest()
+
+        # calculate hmac
+        calculated_mac = hmac.new(key, encoded_protected_part, self.oid_to_hash[mac].name).digest()
+        received_mac = self.serialized_pyasn1_message['protection'].asOctets()
+
+        return bool(hmac.compare_digest(calculated_mac, received_mac))
+
 
     def _signature_protection_is_valid(self) -> bool:
 
         # TODO(BytesWelder): Signature verification
+
 
         return True
 
