@@ -8,18 +8,22 @@ from typing import TYPE_CHECKING, Protocol, cast
 import pyasn1
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import padding
 from devices.issuer import LocalDomainCredentialIssuer
 from devices.models import DeviceModel, DomainModel, TrustpointClientOnboardingProcessModel
 from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import View
+from pki.models.credential import CredentialModel
+from pki.models.issuing_ca import IssuingCaModel
 from pyasn1.codec.der import decoder, encoder
 from pyasn1.type.univ import Any, ObjectIdentifier
 from pyasn1_modules import rfc4210
 
 from cmp.message.cmp import PkiIrMessage
 from cmp.message.protection_alg import ProtectionAlgorithmOid
+from tmp.util.keys import DigitalSignature
 
 if TYPE_CHECKING:
     from typing import Any
@@ -175,17 +179,14 @@ class CmpOnboardingAuthenticationMixin:
             # TODO(AlexHx8472): still WIP
             serial_number_attributes = self.serialized_ir_message.request_template.subject.get_attributes_for_oid(
                 x509.NameOID.SERIAL_NUMBER)
-
             if not serial_number_attributes:
                 return HttpResponse('Serial-number missing in cmp request template.', status=404)
-
             if len(serial_number_attributes) > 1:
                 return HttpResponse(
                     'Found multiple serial number attributes in the cmp request template',
                     status=404)
 
             serial_number = serial_number_attributes[0].value
-
             try:
                 self.device = DeviceModel.objects.get(serial_number__iexact=serial_number)
             except DeviceModel.DoesNotExist:
@@ -238,11 +239,43 @@ class CmpOnboardingAuthenticationMixin:
 
 
     def _signature_protection_is_valid(self) -> bool:
+        protected_part = rfc4210.ProtectedPart()
+        protected_part.setComponentByName('header', self.serialized_pyasn1_message['header'])
+        protected_part.setComponentByName('body', self.serialized_pyasn1_message['body'])
 
-        # TODO(BytesWelder): Signature verification
+        encoded_protected_part = encoder.encode(protected_part)
+
+        # Get signature parameters
+        protection_alg = self.serialized_pyasn1_message['header']['protectionAlg']
+        signature_oid = str(protection_alg['algorithm'])
+        signature = self.serialized_pyasn1_message['protection'].asOctets()
+
+        # Get certificate from message
+        sender_cert = self.serialized_pyasn1_message['header']['sender']
+        sender_certificate = x509.load_der_x509_certificate(sender_cert.asOctets())
 
 
-        return True
+        # Get issuing ca credential
+        ca_cred: CredentialModel = self.domain.issuing_ca.credential
+
+        if sender_certificate.public_bytes() != ca_cred.certificate.subject_public_bytes:
+            msg = 'Wrong issuer certificate'
+            raise AttributeError(msg)
+
+        # Verifiying the Signature
+        try:
+            ca_cred.certificate.get_public_key_serializer().as_crypto().verify(
+                signature,
+                encoded_protected_part,
+                padding.PKCS1v15(),
+                self.oid_to_hash[signature_oid].name
+            )
+            print('SIGNATURE VERIFICATION SUCCESSFUL')
+            return True
+        except Exception as e:
+            print(f'SIGNATURE VERIFICATION FAILED: {e}')
+            return False
+
 
 class CmpOnboardingAuthorizationMixin:
 
