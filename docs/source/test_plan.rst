@@ -137,7 +137,7 @@ Features To Be Tested
 This chapter lists all needed requirements of TrustPoint, e.g. creating certificates.
 These requirements are now front-end requirements as well as user experience.
 This is also the main difference between chapter `Test Items (Functions)`_ and this chapter.
-The `table <TrustPoint-Actors-Table>`_ of all actors is still used though.
+The `table of all actors <TrustPoint-Actors-Table>`_ is still used though.
 
 .. csv-table:: Features To Be Tested
    :header: "Name (Identifier)", "Title", "Description", "Component(s)", "Importance"
@@ -491,6 +491,26 @@ This testcase is related to requirement `R_001`_.
 Test Idea
 """""""""
 
+To test the requirement of creating, viewing, editing, and deleting digital identities,
+we can focus on validating the complete lifecycle of identity management through both
+the command-line interface (TPC_CLI) and the web interface (TPC_Web).
+
+The test would begin with an admin user creating a new digital identity.
+This action should be tested in both TPC_CLI and TPC_Web to ensure consistent functionality across interfaces.
+Once the identity is created,
+the test should verify that the identity can be retrieved and viewed accurately,
+with all its details matching the input data.
+
+Next, the test would focus on editing the identity's attributes.
+For example, the admin could modify fields like the name or identifier and save the changes.
+It is critical to confirm that the changes are reflected correctly and consistently in both interfaces.
+
+Finally, the test would check the deletion functionality,
+ensuring that once the admin deletes the identity,
+it is removed from the system entirely.
+Additional negative tests could validate that attempting to access a non-existent or deleted identity
+results in appropriate error messages and that non-admin users are restricted from performing these operations.
+
 """"""""""""
 Feature File
 """"""""""""
@@ -507,6 +527,23 @@ This testcase is related to requirement `R_002`_.
 """""""""
 Test Idea
 """""""""
+
+To test the requirement for managing identities by renewing certificates,
+the focus will be on verifying that the admin user can successfully renew certificates
+associated with digital identities using both TPC_CLI and TPC_Web.
+
+The test would begin with identifying an existing digital identity that has an associated certificate close to expiration.
+In the TCP_CLI, the admin would execute the renewal command,
+ensuring the system correctly extends the certificate’s validity and updates its expiration date.
+Similarly, the web interface would allow the admin to navigate to the identity's details page
+and initiate the renewal process through a designated option,
+confirming that the user interface provides adequate feedback,
+such as a success message or updated certificate details.
+
+The test should also validate that the renewed certificate is applied correctly across both
+TPC_CLI and TPC_Web by querying or viewing the identity after the operation.
+Additionally, the test could include scenarios where renewal is attempted for invalid identities,
+certificates that have already expired, or identities without certificates, ensuring appropriate error handling.
 
 """"""""""""
 Feature File
