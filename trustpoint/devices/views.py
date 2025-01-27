@@ -55,6 +55,22 @@ class DevicesRedirectView(TpLoginRequiredMixin, RedirectView):
     pattern_name = 'devices:devices'
 
 
+class Detail404RedirectView(DetailView):
+    """A detail view that redirects to self.redirection_view on 404 and adds a message."""
+
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        """Overrides the get method to add a message and redirect to self.redirection_view on 404."""
+        try:
+            return super().get(request, *args, **kwargs)
+        except Http404:
+            if not hasattr(self, 'redirection_view'):
+                self.redirection_view = 'devices:devices'
+            messages.error(
+                self.request, f'{self.model.__name__} with ID {kwargs[self.pk_url_kwarg]} not found.'
+            )
+            return redirect(self.redirection_view)
+
+
 class DeviceContextMixin:
     """Mixin which adds context_data for the Devices -> Devices pages."""
 
@@ -136,7 +152,7 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView[Devi
         return super().form_valid(form)
 
 
-class DeviceDetailsView(DeviceContextMixin, TpLoginRequiredMixin, DetailView[DeviceModel]):
+class DeviceDetailsView(DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView[DeviceModel]):
     """Device Details View."""
 
     http_method_names = ('get',)
@@ -147,7 +163,7 @@ class DeviceDetailsView(DeviceContextMixin, TpLoginRequiredMixin, DetailView[Dev
     context_object_name = 'device'
 
 
-class DeviceConfigureView(DeviceContextMixin, TpLoginRequiredMixin, DetailView[DeviceModel]):
+class DeviceConfigureView(DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView[DeviceModel]):
     """Device Configuration View."""
 
     http_method_names = ('get',)
@@ -159,7 +175,7 @@ class DeviceConfigureView(DeviceContextMixin, TpLoginRequiredMixin, DetailView[D
 
 
 class DeviceManualOnboardingIssueDomainCredentialView(
-    DeviceContextMixin, TpLoginRequiredMixin, DetailView[DeviceModel], FormView[IssueDomainCredentialForm]
+    DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView[DeviceModel], FormView[IssueDomainCredentialForm]
 ):
     """View to issue a new domain credential."""
 
@@ -223,7 +239,7 @@ class DeviceManualOnboardingIssueDomainCredentialView(
 
 
 class DeviceBaseCredentialDownloadView(DeviceContextMixin,
-                                       DetailView[IssuedCredentialModel],
+                                       Detail404RedirectView[IssuedCredentialModel],
                                        FormView[CredentialDownloadForm]
 ):
     """View to download a password protected application credential in the desired format.
@@ -578,7 +594,7 @@ class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, RedirectVie
         return cast('str', self.request.META.get('HTTP_REFERER', '/'))
 
 
-class DeviceBrowserOnboardingOTPView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, RedirectView):
+class DeviceBrowserOnboardingOTPView(DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView, RedirectView):
     """View to display the OTP for remote credential download (aka. browser onboarding)."""
 
     model = IssuedCredentialModel
@@ -588,16 +604,20 @@ class DeviceBrowserOnboardingOTPView(DeviceContextMixin, TpLoginRequiredMixin, D
 
     def get(self, request: HttpRequest, *args: dict, **kwargs: dict) -> HttpResponse:  # noqa: ARG002
         """Renders a template view for displaying the OTP."""
-        # TODO(Air): checks: Is it allowed to generate a new OTP for it? (maybe should be allowed only once)
-
         credential = self.get_object()
         device = credential.device
-        cdm, _ = RemoteDeviceCredentialDownloadModel.objects.get_or_create(
-                    issued_credential_model=credential, device=device)
+        try: # remove a potential previous download model for this credential
+            cdm = RemoteDeviceCredentialDownloadModel.objects.get(issued_credential_model=credential, device=device)
+            cdm.delete()
+        except RemoteDeviceCredentialDownloadModel.DoesNotExist:
+            pass
+        cdm = RemoteDeviceCredentialDownloadModel(issued_credential_model=credential, device=device)
+        cdm.save()
 
         context = {
             'device_name': device.unique_name,
             'device_id': device.id,
+            'credential_id': credential.id,
             'otp': cdm.get_otp_display(),
             'download_url': request.build_absolute_uri(reverse('devices:browser_login')),
         }
@@ -605,7 +625,7 @@ class DeviceBrowserOnboardingOTPView(DeviceContextMixin, TpLoginRequiredMixin, D
         return render(request, self.template_name, context)
 
 
-class DeviceBrowserOnboardingCancelView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, RedirectView):
+class DeviceBrowserOnboardingCancelView(DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView, RedirectView):
     """View to cancel the browser onboarding process and delete the associated RemoteDeviceCredentialDownloadModel."""
 
     model = IssuedCredentialModel
