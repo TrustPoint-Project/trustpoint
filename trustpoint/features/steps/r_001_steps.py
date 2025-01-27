@@ -1,41 +1,112 @@
 from behave import when, then
 from behave.api.pending_step import StepNotImplementedError
 
-# Create an identity
-@when('the admin creates an identity using {method}')
-def step_create_identity(context, method):
-    raise StepNotImplementedError(f"The step to create an identity using {method} is not yet implemented.")
+from behave import given, when, then
+from behave.api.pending_step import StepNotImplementedError
 
-@then('the identity should be created and visible in the list of identities')
-def step_identity_visible(context):
-    raise StepNotImplementedError('The step to verify the identity is visible in the list is not yet implemented.')
+@given('the identity {name} with {identifier} exists')
+def step_identity_exists(context, name, identifier):
+    """
+    Ensures that an identity with the specified name and identifier exists in the system.
 
-@then('the system should display the identity\'s details')
-def step_identity_details_displayed(context):
-    raise StepNotImplementedError('The step to display the identity\'s details is not yet implemented.')
+    Args:
+        name (str): The name of the identity.
+        identifier (str): The unique identifier of the identity.
 
-# Edit an identity
-@when('the admin edits an identity using {method}')
-def step_edit_identity(context, method):
-    raise StepNotImplementedError(f"The step to edit an identity using {method} is not yet implemented.")
+    Raises:
+        StepNotImplementedError: This step is not yet implemented.
+    """
+    raise StepNotImplementedError("Step not implemented: Identity creation or precondition setup.")
 
-@then('the identity should be updated and visible with the new values')
-def step_identity_updated(context):
-    raise StepNotImplementedError('The step to verify the identity is updated is not yet implemented.')
+@when('the admin navigates to the identity details page for {name}')
+def step_impl(context, name):
+    raise StepNotImplementedError(f'STEP: When the admin navigates to the identity details page for {name}')
 
-@then('the system should display the updated identity details')
-def step_updated_identity_details(context):
-    raise StepNotImplementedError('The step to display updated identity details is not yet implemented.')
 
-# Delete an identity
-@when('the admin deletes an identity using {method}')
-def step_delete_identity(context, method):
-    raise StepNotImplementedError(f"The step to delete an identity using {method} is not yet implemented.")
+@then('the system should display the correct details for {name} and {identifier}')
+def step_impl(context, name, identifier):
+    raise StepNotImplementedError(f'STEP: Then the system should display the correct details for {name} and {identifier}')
 
-@then('the identity should no longer appear in the list of identities')
-def step_identity_deleted(context):
-    raise StepNotImplementedError('The step to verify the identity is deleted is not yet implemented.')
 
-@then('the system should confirm the identity has been deleted')
-def step_deletion_confirmed(context):
-    raise StepNotImplementedError('The step to confirm identity deletion is not yet implemented.')
+@when('the admin navigates to the "Create Identity" page')
+def step_navigate_create_identity(context):
+    """
+    Navigates to the "Create Identity" page within the TPC_Web interface.
+
+    This step simulates the admin user accessing the page to add a new identity.
+
+    Raises:
+        StepNotImplementedError: This step is not yet implemented.
+    """
+    raise StepNotImplementedError("Step not implemented: Navigate to Create Identity page.")
+
+@when('the admin fills in the identity details with {name} and {identifier}')
+def step_fill_identity_details(context, name, identifier):
+    """
+    Fills in the form fields for creating a new identity.
+
+    Args:
+        name (str): The name of the new identity.
+        identifier (str): The unique identifier for the identity.
+
+    Raises:
+        StepNotImplementedError: This step is not yet implemented.
+    """
+    raise StepNotImplementedError("Step not implemented: Fill identity details.")
+
+@when('the admin submits the form')
+def step_submit_form(context):
+    """
+    Submits the "Create Identity" form.
+
+    This step triggers the creation process for the new identity.
+
+    Raises:
+        StepNotImplementedError: This step is not yet implemented.
+    """
+    raise StepNotImplementedError("Step not implemented: Submit the Create Identity form.")
+
+@then('the new identity {name} with {identifier} should appear in the identity list')
+def step_identity_in_list(context, name, identifier):
+    """
+    Verifies that the newly created identity appears in the identity list.
+
+    Args:
+        name (str): The name of the identity.
+        identifier (str): The unique identifier of the identity.
+
+    Raises:
+        StepNotImplementedError: This step is not yet implemented.
+    """
+    raise StepNotImplementedError("Step not implemented: Check for identity in the list.")
+
+@when('the admin updates the name to {name} and identifier to {identifier}')
+def step_impl(context, name, identifier):
+    raise StepNotImplementedError(f'STEP: When the admin updates the name to {name} and identifier to {identifier}')
+
+
+@when('the admin saves the changes')
+def step_impl(context):
+    raise StepNotImplementedError('STEP: When the admin saves the changes')
+
+
+@then('the updated identity {name} with {identifier} should appear in the identity list')
+def step_impl(context, name, identifier):
+    raise StepNotImplementedError(f'STEP: Then the updated identity {name} with {identifier} should appear in the identity list')
+
+
+@when('the admin deletes the identity with the name {name}')
+def step_impl(context, name):
+    raise StepNotImplementedError(f'STEP: When the admin deletes the identity with the name {name}')
+
+
+@then('the identity {name} should no longer appear in the identity list')
+def step_impl(context, name):
+    raise StepNotImplementedError(f'STEP: Then the identity {name} should no longer appear in the identity list')
+
+@when('the admin attempts to view the details of a non-existent identity {non_existent_ID}')
+def step_impl(context, non_existent_ID):
+    raise StepNotImplementedError(f'STEP: When the admin attempts to view the details of a non-existent identity {non_existent_ID}')
+
+
+
