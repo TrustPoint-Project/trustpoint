@@ -45,7 +45,6 @@ First, we define all needed actors to be as specific as needed.
    :header: "ID", "Name", "Description"
    :widths: 10 30 60
 
-   "TPC_CLI", "TrustPoint Core Command Line Interface", "The command line program of TrustPoint."
    "TPC_Web", "TrustPoint Core Web Interface", "The website of TrustPoint."
    "TP_Client", "TrustPoint Client", "The TrustPoint client program to be installed on clients."
    "Admin", "Admin", "The admin user of this specific TrustPoint environment."
@@ -67,19 +66,18 @@ Functional Requirements
    :header: "Name (Identifier)", "Title", "Description", "Component(s)", "Importance"
    :widths: 10, 25, 60, 30, 10
 
-   _`R_001`, "Create, view, edit and delete an identity", "TPC_CLI and TPC_Web must provide a way to create, view, edit and delete a digital identity.", "TPC_CLI, TPC_Web, Admin", "High"
-   _`R_002`, "Manage an identity", "TPC_CLI and TPC_Web must be able to renew certificates.", "TPC_CLI, TPC_Web, Admin", "Medium"
-   _`R_003`, "Usage of any zero touch onboarding protocol", "Any zero touch onboarding protocol should be used, preferably the Bootstrapping Remote Secure Key Infrastructure (BRSKI) process, while connecting a new device to the network.", "TPC_CLI, TP_Client", "High"
-   _`R_004`, "Certificate Lifecycle Management", "Enable complete lifecycle management for certificates, including renewal and revocation.", "All components", "High"
-   _`R_005`, "REST API", "Provide a REST API for interacting with TrustPoint programmatically.", "TPC_Web, TPC_CLI", "High"
-   _`R_006`, "Docker Container Support", "Distribute TrustPoint within a fully-configured Docker container for deployment.", "TPC_CLI, TPC_Web", "Medium"
-   _`R_007`, "Backup, Restore, and Update Mechanisms", "Implement backup, restoration, and update features to ensure data and system resilience.", "TPC_CLI, TPC_Web, Admin", "High"
-   _`R_008`, "Logging Capabilities", "Provide detailed and configurable logging for system events and actions.", "TPC_CLI, TPC_Web, TP_Client", "High"
-   _`R_009`, "Auto-Generated Issuing CAs", "Automatically generate Issuing Certificate Authorities based on configuration.", "TPC_CLI", "High"
-   _`R_010`, "High Availability", "Ensure system availability using redundancy or failover mechanisms.", "TPC_CLI, TPC_Web, TP_Client", "High"
-   _`R_011`, "CMP Endpoint for Onboarded Devices", "Provide a CMP endpoint for device onboarding.", "All components", "High"
-   _`R_012`, "EST Endpoint for Onboarded Devices", "Provide an EST endpoint for device onboarding.", "All components", "High"
-   _`R_013`, "Language Selection and Translation", "Support multi-language UI options for global usability.", "TPC_Web, TP_Client", "Medium"
+   _`R_001`, "Create, view, edit and delete an identity", "TPC_Web must provide a way to create, view, edit and delete a digital identity.", "TPC_Web, Admin", "High"
+   _`R_002`, "Usage of any zero touch onboarding protocol", "Any zero touch onboarding protocol should be used, preferably the Bootstrapping Remote Secure Key Infrastructure (BRSKI) process, while connecting a new device to the network.", "TP_Client", "High"
+   _`R_003`, "Certificate Lifecycle Management", "Enable complete lifecycle management for certificates, including renewal and revocation.", "All components", "High"
+   _`R_004`, "REST API", "Provide a REST API for interacting with TrustPoint programmatically.", "TPC_Web", "High"
+   _`R_005`, "Docker Container Support", "Distribute TrustPoint within a fully-configured Docker container for deployment.", "TPC_Web", "Medium"
+   _`R_006`, "Backup, Restore, and Update Mechanisms", "Implement backup, restoration, and update features to ensure data and system resilience.", "TPC_Web, Admin", "High"
+   _`R_007`, "Logging Capabilities", "Provide detailed and configurable logging for system events and actions.", "TPC_Web, TP_Client", "High"
+   _`R_008`, "Auto-Generated Issuing CAs", "Automatically generate Issuing Certificate Authorities based on configuration.", "TPC_Web", "High"
+   _`R_009`, "High Availability", "Ensure system availability using redundancy or failover mechanisms.", "TPC_Web, TP_Client", "High"
+   _`R_010`, "CMP Endpoint for Onboarded Devices", "Provide a CMP endpoint for device onboarding.", "All components", "High"
+   _`R_011`, "EST Endpoint for Onboarded Devices", "Provide an EST endpoint for device onboarding.", "All components", "High"
+   _`R_012`, "Language Selection and Translation", "Support multi-language UI options for global usability.", "TPC_Web, TP_Client", "Medium"
 
 """""""""""""""""""""
 Security Requirements
@@ -91,8 +89,8 @@ Security Requirements
 
    "R_101", "Devices are only allowed to communicate with valid certificates", "Machines or devices in the network are only allowed to communicate with a valid certificate.", "TP_Client (multiple)", "High"
    "R_102", "Encrypted Communication", "The communication between machines has to be encrypted with the given algorithm.", "TP_Client (multiple)", "High"
-   "R_103", "Security Level Configuration", "Allow administrators to configure security levels for different TrustPoint components.", "Admin, TPC_CLI, TPC_Web", "Medium"
-   "R_104", "Certificate Template Security", "Enforce access control and secure handling for certificate templates.", "TPC_CLI", "High"
+   "R_103", "Security Level Configuration", "Allow administrators to configure security levels for different TrustPoint components.", "Admin, TPC_Web", "Medium"
+   "R_104", "Certificate Template Security", "Enforce access control and secure handling for certificate templates.", "TPC_Web", "High"
 
 
 --------------------
@@ -143,7 +141,7 @@ The `table of all actors <TrustPoint-Actors-Table>`_ is still used though.
    :header: "Name (Identifier)", "Title", "Description", "Component(s)", "Importance"
    :widths: 10, 25, 60, 30, 10
 
-    "F_001", "NTEU must be able to execute R_001 and R_002.", "NTEU must be able to log in to the TCP_Web app and carry out the processes described in R_001 and R_002.  ", "TPC_CLI, TPC_Web, NTEU", "High"
+    "F_001", "NTEU must be able to execute R_001 and R_002.", "NTEU must be able to log in to the TCP_Web app and carry out the processes described in R_001 and R_002.  ", "TPC_Web, NTEU", "High"
 
 
 -------------------------
@@ -491,31 +489,28 @@ This testcase is related to requirement `R_001`_.
 Test Idea
 """""""""
 
-To test the requirement of creating, viewing, editing, and deleting digital identities,
-we can focus on validating the complete lifecycle of identity management through both
-the command-line interface (TPC_CLI) and the web interface (TPC_Web).
+To test the requirement of creating, viewing, editing, and deleting digital identities using the TPC_Web interface,
+the focus will be on validating the complete lifecycle of identity management through the web platform.
 
-The test would begin with an admin user creating a new digital identity.
-This action should be tested in both TPC_CLI and TPC_Web to ensure consistent functionality across interfaces.
-Once the identity is created,
-the test should verify that the identity can be retrieved and viewed accurately,
-with all its details matching the input data.
+The test would start with an admin user creating a new digital identity through the web interface.
+This process involves navigating to the appropriate page, filling out the required fields (e.g., name and identifier),
+and submitting the form. Once the identity is created,
+the test would verify that it appears in the list of identities and that all details are accurately displayed on its details page.
 
-Next, the test would focus on editing the identity's attributes.
-For example, the admin could modify fields like the name or identifier and save the changes.
-It is critical to confirm that the changes are reflected correctly and consistently in both interfaces.
+Following the creation, the admin user would edit the identity's details,
+such as updating the name or identifier, and save the changes.
+The test should confirm that the modifications are reflected immediately and correctly in both the details view and any listings.
 
-Finally, the test would check the deletion functionality,
-ensuring that once the admin deletes the identity,
-it is removed from the system entirely.
-Additional negative tests could validate that attempting to access a non-existent or deleted identity
-results in appropriate error messages and that non-admin users are restricted from performing these operations.
+Finally, the test would validate the deletion process,
+where the admin removes the identity through the web interface.
+Once deleted, the system should ensure that the identity is no longer accessible or visible in any lists or details pages.
+Additional negative tests could confirm appropriate handling when attempting to access or manipulate a non-existent or already-deleted identity.
 
 """"""""""""
 Feature File
 """"""""""""
 
-.. literalinclude:: ../../trustpoint/features/R_001.feature
+.. literalinclude:: ../../trustpoint/features/R_001_CRUD.feature
    :language: gherkin
 
 ^^^^^
@@ -528,29 +523,9 @@ This testcase is related to requirement `R_002`_.
 Test Idea
 """""""""
 
-To test the requirement for managing identities by renewing certificates,
-the focus will be on verifying that the admin user can successfully renew certificates
-associated with digital identities using both TPC_CLI and TPC_Web.
-
-The test would begin with identifying an existing digital identity that has an associated certificate close to expiration.
-In the TCP_CLI, the admin would execute the renewal command,
-ensuring the system correctly extends the certificate’s validity and updates its expiration date.
-Similarly, the web interface would allow the admin to navigate to the identity's details page
-and initiate the renewal process through a designated option,
-confirming that the user interface provides adequate feedback,
-such as a success message or updated certificate details.
-
-The test should also validate that the renewed certificate is applied correctly across both
-TPC_CLI and TPC_Web by querying or viewing the identity after the operation.
-Additionally, the test could include scenarios where renewal is attempted for invalid identities,
-certificates that have already expired, or identities without certificates, ensuring appropriate error handling.
-
 """"""""""""
 Feature File
 """"""""""""
-
-.. literalinclude:: ../../trustpoint/features/R_002.feature
-   :language: gherkin
 
 ^^^^^
 R_003
@@ -562,11 +537,24 @@ This testcase is related to requirement `R_003`_.
 Test Idea
 """""""""
 
+To test the complete lifecycle management of certificates,
+the focus will be on ensuring that admin users can successfully perform actions such as renewing and revoking certificates via the TPC_Web interface.
+
+The test begins by identifying an existing certificate.
+Using TPC_Web, the admin initiates the renewal process,
+and the system updates the expiration date.
+Similarly, the admin navigates to the certificate management page and initiates a revocation process.
+The system should confirm the action and reflect the certificate's updated status as revoked.
+
+Edge cases include attempting to renew or revoke non-existent certificates or
+performing actions on certificates in invalid states (e.g., already revoked certificates).
+The system should handle these scenarios gracefully, with appropriate error messages or restrictions.
+
 """"""""""""
 Feature File
 """"""""""""
 
-.. literalinclude:: ../../trustpoint/features/R_003.feature
+.. literalinclude:: ../../trustpoint/features/R_003_certificate_lifecycle.feature
    :language: gherkin
 
 ^^^^^
@@ -579,28 +567,22 @@ This testcase is related to requirement `R_004`_.
 Test Idea
 """""""""
 
-""""""""""""
-Feature File
-""""""""""""
+To test the REST API for interacting with TrustPoint programmatically,
+we focus on verifying CRUD operations (Create, Read, Update, Delete) and additional actions like querying and filtering.
+We begin by validating that authorized API clients can authenticate successfully and perform each operation on digital identities.
+This includes creating a new identity,
+retrieving its details, updating its attributes, and deleting it.
+Each API response should include appropriate status codes and payloads.
 
-.. literalinclude:: ../../trustpoint/features/R_004.feature
-   :language: gherkin
-
-^^^^^
-R_005
-^^^^^
-
-This testcase is related to requirement `R_005`_.
-
-"""""""""
-Test Idea
-"""""""""
+Error handling should also be tested, such as attempting operations with invalid data,
+unauthorized access, or on non-existent resources.
+Edge cases, such as rate limits or concurrent requests, should be addressed to confirm robustness.
 
 """"""""""""
 Feature File
 """"""""""""
 
-.. literalinclude:: ../../trustpoint/features/R_005.feature
+.. literalinclude:: ../../trustpoint/features/R_004_REST_API.feature
    :language: gherkin
 
 --------
