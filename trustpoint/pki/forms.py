@@ -15,10 +15,28 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from pki.initializer.truststore.truststore import TrustStoreInitializer
-from pki.models import CertificateModel, IssuingCaModel
+from pki.models import CertificateModel, IssuingCaModel, DevIdRegistration
 from pki.models.truststore import TruststoreModel
 from trustpoint.views.base import LoggerMixin
 
+
+class DevIdRegistrationForm(forms.ModelForm):
+    """Form to create a new DevIdRegistration."""
+
+    class Meta:
+        model = DevIdRegistration
+        fields = ['unique_name', 'truststore', 'domain', 'serial_number_pattern']
+        widgets = {
+            'serial_number_pattern': forms.TextInput(attrs={
+                'placeholder': 'Enter a regex pattern for serial numbers',
+            }),
+        }
+        labels = {
+            'unique_name': 'Unique Name',
+            'truststore': 'Associated Truststore',
+            'domain': 'Associated Domain',
+            'serial_number_pattern': 'Serial Number Pattern (Regex)',
+        }
 
 class TruststoreAddForm(forms.Form):
     """Form for adding a new truststore.

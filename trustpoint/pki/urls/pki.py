@@ -3,6 +3,7 @@
 from django.urls import path, re_path  # type: ignore[import-untyped]
 
 from pki.views import certificates, domains, issuing_cas, truststores
+from pki.views.domains import DevIdRegistrationCreateView, DevIdRegistrationDeleteView
 
 app_name = 'pki'
 
@@ -102,4 +103,13 @@ urlpatterns = [
         domains.DomainCaBulkDeleteConfirmView.as_view(),
         name='domains-delete_confirm',
     ),
+    path(
+        'devid-registration/create/<int:pk>/',
+        DevIdRegistrationCreateView.as_view(),
+        name='devid_registration_create',
+    ),
+    path('devid-registration/delete/<int:pk>/',
+         DevIdRegistrationDeleteView.as_view(),
+         name='devid_registration_delete'),
+
 ]
