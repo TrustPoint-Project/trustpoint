@@ -22,7 +22,7 @@ Feature: REST API interaction with TrustPoint
 
   Scenario Outline: Retrieve an existing identity
     Given the identity <identifier> exists
-    When the API client sends a GET request to "/api/identities/<identifier>
+    When the API client sends a GET request to "/api/identities/<identifier>"
     Then the API response should have a status code of 200
     And the response payload should include the identity with:
       | identifier   | name   |
@@ -35,7 +35,7 @@ Feature: REST API interaction with TrustPoint
 
   Scenario Outline: Update an existing identity
     Given the identity <identifier> exists
-    When the API client sends a PUT request to "/api/identities/<identifier> with the following payload:
+    When the API client sends a PUT request to "/api/identities/<identifier>" with the following payload:
       | name       |
       | <new_name> |
     Then the API response should have a status code of 200
@@ -50,7 +50,7 @@ Feature: REST API interaction with TrustPoint
 
   Scenario Outline: Delete an identity
     Given the identity <identifier> exists
-    When the API client sends a DELETE request to "/api/identities/<identifier>
+    When the API client sends a DELETE request to "/api/identities/<identifier>"
     Then the API response should have a status code of 204
     And the identity <identifier> should no longer exist
 
@@ -65,7 +65,7 @@ Feature: REST API interaction with TrustPoint
     And the response payload should include an error message stating "Unauthorized"
 
   Scenario Outline: Attempt to retrieve a non-existent identity
-    When the API client sends a GET request to "/api/identities/<identifier>
+    When the API client sends a GET request to "/api/identities/<identifier>"
     Then the API response should have a status code of 404
     And the response payload should include an error message stating "Identity not found"
 
