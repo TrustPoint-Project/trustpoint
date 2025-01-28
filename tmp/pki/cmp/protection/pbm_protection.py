@@ -153,7 +153,6 @@ class PBMProtection:
 
         key = self.pbm_parameter_derived_key(shared_secret, pbm_params, 256)
 
-
         mac_algorithm = pbm_params.getComponentByName('mac').getComponentByName('algorithm')
         if str(mac_algorithm) not in ParseHelper.oid_to_hash:
             raise ValueError("Unsupported MAC algorithm")

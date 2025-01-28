@@ -1,0 +1,67 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+
+    <form method="GET">
+        {% csrf_token %}
+
+        <div class="card">
+
+            <div class="card-header">
+                <div>
+                    <h1>{% trans "Download Truststores" %}</h1>
+                </div>
+            </div>
+
+            <div class="card-body">
+                <div class="tp-card-centered-content">
+                    <h2>{{ truststores.count }} {% trans 'Truststores selected' %}</h2>
+                    <hr>
+
+                    <hr>
+                    <h2>{% trans "Download Selected Truststores" %}</h2>
+                    <hr>
+                    <div>
+                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:truststores-file-download' pks=pks_path file_format='pem' archive_format='zip' %}">Download as PEM (ZIP)</a>
+                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:truststores-file-download' pks=pks_path file_format='pem' archive_format='tar_gz' %}">Download as PEM (TAR.GZ)</a><br>
+
+                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:truststores-file-download' pks=pks_path file_format='pkcs7_pem' archive_format='zip' %}">Download as PKCS#7-PEM (ZIP)</a>
+                        <a class="btn btn-primary min-width-20 me-2 mb-3" href="{% url 'pki:truststores-file-download' pks=pks_path file_format='pkcs7_pem' archive_format='tar_gz' %}">Download as PKCS#7-PEM (TAR.GZ)</a><br>
+
+                        <a class="btn btn-primary min-width-20 me-2" href="{% url 'pki:truststores-file-download' pks=pks_path file_format='pkcs7_der' archive_format='zip' %}">Download as PKCS#7-DER (ZIP)</a>
+                        <a class="btn btn-primary min-width-20 me-2" href="{% url 'pki:truststores-file-download' pks=pks_path file_format='pkcs7_der' archive_format='tar_gz' %}">Download as PKCS#7-DER (TAR.GZ)</a><br>
+                    </div>
+
+                    <br>
+
+                    <h2>{% trans "Truststore Details" %}</h2>
+                    <hr>
+
+                    {% for truststore in truststores %}
+
+                        <h2 class="mb-2 ms-2">Truststore {{ forloop.counter }}</h2>
+
+                        {% include 'pki/truststores/sub_generic.html' %}
+
+                        {% if not forloop.last %}
+                            <hr>
+                        {% endif %}
+
+                    {% endfor %}
+
+                </div>
+            </div>
+
+            <div class="card-footer">
+                <div class="tp-card-btn-footer">
+                    <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                        <a href="{% url 'pki:truststores' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                </div>
+            </div>
+
+        </div>
+
+    </form>
+{% endblock content %}

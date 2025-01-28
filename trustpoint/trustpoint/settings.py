@@ -16,6 +16,12 @@ from django.core.management.utils import get_random_secret_key
 import logging
 import time
 
+import django_stubs_ext
+
+# Monkeypatching Django, so stubs will work for all generics,
+# see: https://github.com/typeddjango/django-stubs
+django_stubs_ext.monkeypatch()
+
 DOCKER_CONTAINER = False
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -28,7 +34,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 ADMIN_ENABLED = True if DEBUG else False
-DEVELOPMENT_ENV = False
+DEVELOPMENT_ENV = True
 
 # SECURITY WARNING: keep the secret key used in production secret!
 if DEBUG:
@@ -51,6 +57,8 @@ INSTALLED_APPS = [
     'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
     'pki.apps.PkiConfig',
+    'cmp.apps.CmpConfig',
+    'est.apps.EstConfig',
     'settings.apps.SettingsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -60,7 +68,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'crispy_bootstrap5',
-    'django_tables2'
+    'django_tables2',
+    'behave_django'
 ]
 
 if DEVELOPMENT_ENV:
@@ -227,3 +236,5 @@ LOGGING = {
         },
     },
 }
+
+TEST_RUNNER = "django_behave.runner.DjangoBehaveTestSuiteRunner"

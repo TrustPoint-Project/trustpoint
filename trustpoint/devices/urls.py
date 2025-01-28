@@ -1,6 +1,6 @@
 """URL configuration for the devices' application."""
 
-from django.urls import path, re_path  # type: ignore[import-untyped]
+from django.urls import path  # type: ignore[import-untyped]
 
 from . import views
 
@@ -12,38 +12,55 @@ urlpatterns = [
     path('details/<int:pk>/', views.DeviceDetailsView.as_view(), name='details'),
     path('configure/<int:pk>/', views.DeviceConfigureView.as_view(), name='config'),
     path(
+        'onboarding/<int:pk>/manual/issue-domain-credential/',
+        views.DeviceManualOnboardingIssueDomainCredentialView.as_view(),
+        name='manual_issue_domain_credential'),
+    path('browser/', views.DeviceOnboardingBrowserLoginView.as_view(), name='browser_login'),
+    path('browser/credential-download/<int:pk>/',
+        views.DeviceBrowserCredentialDownloadView.as_view(),
+        name='browser_domain_credential_download'),
+    path(
+        'credential-download/browser/<int:pk>/',
+        views.DeviceBrowserOnboardingOTPView.as_view(),
+        name='browser_otp_view'),
+    path(
+        'credential-download/browser/<int:pk>/cancel',
+        views.DeviceBrowserOnboardingCancelView.as_view(),
+        name='browser_cancel'),
+    path(
+        'credential-download/<int:pk>/',
+        views.DeviceManualCredentialDownloadView.as_view(),
+        name='domain_credential_download'),
+    path(
         'certificate-lifecycle-management/<int:pk>/',
         views.DeviceCertificateLifecycleManagementSummaryView.as_view(),
-        name='clm'),
-    path('certificate-lifecycle-management/issue-tls-client-credential/<int:pk>/',
-        views.DeviceIssueTlsClientCredentialView.as_view(),
-        name='issue_tls_client_credential'
-    ),
-    path('certificate-lifecycle-management/download-issued-application-credential/<int:pk>/<str:common_name>/<int:validity>/<str:format>',
-        views.DeviceDownloadIssuedApplicationTlsClientCredential.as_view(),
-        name='download_issued_application_credential'
+        name='certificate_lifecycle_management'),
+    path(
+        'certificate-lifecycle-management/<int:pk>/issue-tls-client-credential/',
+        views.DeviceIssueTlsClientCredential.as_view(),
+        name='certificate_lifecycle_management-issue_tls_client_credential'),
+    path(
+        'certificate-lifecycle-management/<int:pk>/issue-tls-server-credential/',
+        views.DeviceIssueTlsServerCredential.as_view(),
+        name='certificate_lifecycle_management-issue_tls_server_credential'),
+    path('certificate-lifecycle-management/<int:pk>/revoke/<int:credential_pk>/',
+         views.DeviceRevocationView.as_view(),
+         name='revocation_not_implemented'),
+    path('revoke/<int:pk>/',
+         views.DeviceRevocationView.as_view(),
+         name='revocation_not_implemented'),
+    path(
+        'onboarding/<int:pk>/trustpoint-client/',
+        views.TrustPointClientOnboardingSelectAuthenticationMethodView.as_view(),
+        name='trustpoint_client_auth_method_select'),
+    path(
+        'onboarding/<int:pk>/trustpoint-client/password-based-mac/',
+        views.TrustpointClientOnboardingPasswordBasedMacView.as_view(),
+        name='trustpoint_client_password_based_mac'
     ),
     path(
-        'certificate-lifecycle-management/download-issued-application-tls-client-credential/<int:pk>/',
-        views.DeviceDownloadIssuedApplicationTlsClientCredential.as_view(),
-        name='select_issued_application_tls_client_credential_format'
-    ),
-    path('certificate-lifecycle-management/issue-tls-server-credential/<int:pk>/',
-         views.DeviceIssueTlsServerCredentialView.as_view(),
-         name='issue_tls_server_credential'
-         ),
-    path(
-        'certificate-lifecycle-management/successful_application_issuance/<int:pk>/',
-        views.DeviceSuccessfulApplicationIssuanceRedirectView.as_view(),
-        name='successful_application_issuance'
-    ),
-    path('onboarding/manual/<int:pk>/', views.ManualOnboardingView.as_view(), name='manual'),
-    path(
-        'onboarding/manual/<int:pk>/<str:format>/',
-        views.ManualOnboardingDownloadView.as_view(),
-        name='manual_download'),
-    path(
-        'onboarding/manual/summary/<int:pk>/',
-        views.ManualOnboardingSummaryView.as_view(),
-        name='manual_summary'),
+        'onboarding/<int:pk>/trustpoint-client/cancel/',
+        views.TrustpointClientCancelOnboardingProcessView.as_view(),
+        name='trustpoint_client_cancel_onboarding_process'
+    )
 ]

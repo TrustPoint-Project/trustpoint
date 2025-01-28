@@ -1,13 +1,17 @@
+"""This module defines Django Tables for the Trustpoint PKI application."""
+
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
 import django_tables2 as tables
+from django.urls import reverse_lazy
 from django.utils.functional import lazy
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 
-from .models import CertificateModel, IssuingCaModel, DomainModel
+from .models import CertificateModel, DomainModel, IssuingCaModel, DevIdRegistration
+from .models.truststore import TruststoreModel
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
@@ -16,6 +20,50 @@ if TYPE_CHECKING:
 CHECKBOX_ATTRS: dict[str, dict[str, str]] = {'th': {'id': 'checkbox-column'}, 'td': {'class': 'row_checkbox'}}
 
 format_html_lazy = lazy(format_html, str)
+
+class TruststoreTable(tables.Table):
+    """Table representation of the Truststore model."""
+
+    class Meta:
+        """Table metaclass configurations."""
+
+        model = TruststoreModel
+        template_name = 'django_tables2/bootstrap5.html'
+        empty_values = ()
+        _msg = _('There are no Truststores available.')
+        empty_text = format_html_lazy('<div class="text-center">{}</div>', _msg)
+
+        fields = ('row_checkbox', 'unique_name', 'intended_usage', 'created_at', 'details', 'download')
+
+    row_checkbox = tables.CheckBoxColumn(empty_values=(), accessor='pk', attrs=CHECKBOX_ATTRS)
+    details = tables.Column(empty_values=(), orderable=False, verbose_name=_('Details'))
+    download = tables.Column(empty_values=(), orderable=False, verbose_name=_('Download'))
+
+    @staticmethod
+    def render_details(record: TruststoreModel) -> SafeString:
+        """Creates the html hyperlink for the details-view.
+
+        Args:
+            record (TruststoreModel): The current record of the Truststore model.
+
+        Returns:
+            SafeString: The html hyperlink for the details-view.
+        """
+        return format_html('<a href="details/{}/" class="btn btn-primary tp-table-btn">{}</a>',
+                           record.pk, _('Details'))
+
+    @staticmethod
+    def render_download(record: TruststoreModel) -> SafeString:
+        """Creates the html hyperlink for the delete-view.
+
+        Args:
+            record (Truststore): The current record of the Truststore model.
+
+        Returns:
+            SafeString: The html hyperlink for the delete-view.
+        """
+        return format_html('<a href="download/{}/" class="btn btn-primary tp-table-btn">{}</a>',
+                           record.pk, _('Download'))
 
 
 class CertificateTable(tables.Table):
@@ -95,11 +143,6 @@ class IssuingCaTable(tables.Table):
 
     updated_at = tables.Column(
         verbose_name=_('Updated'),
-        accessor='credential__certificate__created_at'
-    )
-
-    created_at = tables.Column(
-        verbose_name=_('Created'),
         accessor='credential__certificate__created_at'
     )
 
@@ -217,6 +260,14 @@ class DomainTable(tables.Table):
 
     @staticmethod
     def render_config(record: CertificateModel) -> SafeString:
+        """Create the HTML hyperlink for the config-view.
+
+        Args:
+            record (CertificateModel): The current record of the Certificate model.
+
+        Returns:
+            SafeString: The HTML hyperlink for the config-view.
+        """
         return format_html('<a href="config/{}/" class="btn btn-primary tp-table-btn">{}</a>',
                            record.pk, _('Config'))
 
@@ -232,3 +283,33 @@ class DomainTable(tables.Table):
         """
         return format_html('<a href="delete/{}/" class="btn btn-secondary tp-table-btn">{}</a>',
                            record.pk, _('Delete'))
+
+
+class DevIdRegistrationTable(tables.Table):
+    """Lists all DevID Registration Patterns with a delete option."""
+
+    class Meta:
+        """Meta table configurations."""
+        model = DevIdRegistration
+        template_name = 'django_tables2/bootstrap5.html'
+        order_by = 'unique_name'
+        empty_values = ()
+        _msg = _('There are no DevID Registration Patterns available.')
+        empty_text = format_html('<div class="text-center">{}</div>', _msg)
+
+        fields = ('unique_name', 'truststore', 'serial_number_pattern', 'delete')
+
+    unique_name = tables.Column(orderable=True, verbose_name=_('Unique Name'))
+    truststore = tables.Column(orderable=True, verbose_name=_('Truststore'))
+    serial_number_pattern = tables.Column(orderable=True, verbose_name=_('Serial Number Pattern'))
+    delete = tables.Column(empty_values=(), orderable=False, verbose_name=_('Delete'))
+
+
+    @staticmethod
+    def render_delete(record: DevIdRegistration) -> str:
+        """Renders a delete button for each row."""
+        return format_html(
+            '<a href="{}" class="btn btn-danger tp-table-btn w-100">{}</a>',
+            reverse_lazy('pki:devid_registration_delete', kwargs={'pk': record.id}),
+            _('Delete'),
+        )

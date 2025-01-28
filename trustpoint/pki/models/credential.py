@@ -12,9 +12,9 @@ from core.serializer import (
     CredentialSerializer,
     PrivateKeySerializer,
 )
-from django.core.exceptions import ValidationError  # type: ignore[import-untyped]
-from django.db import models, transaction  # type: ignore[import-untyped]
-from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
+from django.core.exceptions import ValidationError
+from django.db import models, transaction
+from django.utils.translation import gettext_lazy as _
 from core.x509 import CredentialNormalizer
 from pki.models import CertificateModel
 
@@ -43,12 +43,6 @@ class CredentialModel(models.Model):
     PKCS#11 credentials are not yet supported.
     """
 
-    class Meta:
-        """Metaclass configurations."""
-        constraints = [
-            models.UniqueConstraint(fields=['certificate'], name='unique_certificate'),
-        ]
-
     class CredentialTypeChoice(models.IntegerChoices):
         """The CredentialTypeChoice defines the type of the credential and thus implicitly restricts its usage.
 
@@ -60,21 +54,18 @@ class CredentialModel(models.Model):
         TRUSTPOINT_TLS_SERVER = 0, _('Trustpoint TLS Server')
         ROOT_CA = 1, _('Root CA')
         ISSUING_CA = 2, _('Issuing CA')
-        ISSUED_DOMAIN_CREDENTIAL_WITH_KEY = 3, _('Issued Domain Credential')
-        ISSUED_DOMAIN_CREDENTIAL_WITHOUT_KEY = 4, _('Issued Domain Credential')
+        ISSUED_CREDENTIAL = 3, _('Issued Credential')
 
     credential_type = models.IntegerField(
         verbose_name=_('Credential Type'), choices=CredentialTypeChoice
     )
     private_key = models.CharField(verbose_name='Private key (PEM)', max_length=65536, editable=False)
 
-    certificate = models.ForeignKey(
+    certificates = models.ManyToManyField(
         CertificateModel,
-        on_delete=models.PROTECT,
-        editable=False,
+        through='PrimaryCredentialCertificate',
         blank=False,
-        null=False,
-        related_name='credentials'
+        related_name='credential'
     )
     certificate_chain = models.ManyToManyField(
         CertificateModel,
@@ -88,7 +79,7 @@ class CredentialModel(models.Model):
     def __repr__(self) -> str:
         return (
             f'CredentialModel(credential_type={self.credential_type}, '
-            f'certificate={self.certificate})'
+            f'certificate=)'
         )
 
     def __str__(self) -> str:
@@ -99,13 +90,9 @@ class CredentialModel(models.Model):
         """
         return self.__repr__()
 
-    def save(self, *args: tuple, **kwargs: dict) -> None:
-        if self.pk:
-            err_msg = _('Editing existing credentials is not supported.')
-            raise ValidationError(err_msg)
-        if CredentialModel.objects.filter(certificate=self.certificate).exists():
-            raise CredentialAlreadyExistsError()
-        super().save(*args, **kwargs)
+    def clean(self) -> None:
+        if self.primarycredentialcertificate_set.filter(is_primary=True).count() > 1:
+            raise ValidationError('A credential can only have one primary certificate.')
 
     @classmethod
     def save_credential_serializer(
@@ -121,9 +108,13 @@ class CredentialModel(models.Model):
         Returns:
             CredentialModel: The stored credential model.
         """
-        normalized_credential_serializer = CredentialNormalizer(credential_serializer).normalized_credential
+        # normalized_credential_serializer = CredentialNormalizer(credential_serializer).normalized_credential
+        # import logging
+        # logger = logging.getLogger('tp')
+        # logger.error(normalized_credential_serializer.additional_certificates.as_pem())
+        # logger.error(credential_serializer.additional_certificates.as_pem())
         return cls._save_normalized_credential_serializer(
-            normalized_credential_serializer=normalized_credential_serializer,
+            normalized_credential_serializer=credential_serializer,
             credential_type=credential_type
         )
 
@@ -155,8 +146,12 @@ class CredentialModel(models.Model):
         credential_model = cls.objects.create(
             credential_type=credential_type,
             private_key=normalized_credential_serializer.credential_private_key.as_pkcs8_pem().decode(),
-            certificate=certificate
         )
+
+        PrimaryCredentialCertificate.objects.create(
+            certificate=certificate,
+            credential=credential_model,
+            is_primary=True)
 
         for order, certificate in enumerate(normalized_credential_serializer.additional_certificates.as_crypto()):
             certificate_model = CertificateModel.save_certificate(certificate)
@@ -195,6 +190,15 @@ class CredentialModel(models.Model):
 
         err_msg = 'Failed to get private key information.'
         raise RuntimeError(err_msg)
+
+    @property
+    def certificate(self) -> CertificateModel:
+        """Gets the primary certificate model using the through model
+
+        Returns:
+            The primary certificate model.
+        """
+        return self.primarycredentialcertificate_set.filter(is_primary=True).first().certificate
 
     def get_certificate(self) -> x509.Certificate:
         """Gets the credential certificate as x509.Certificate instance.
@@ -243,6 +247,20 @@ class CredentialModel(models.Model):
             )
         )
 
+
+class PrimaryCredentialCertificate(models.Model):
+
+    credential = models.ForeignKey(CredentialModel, on_delete=models.CASCADE)
+    certificate = models.OneToOneField(CertificateModel, on_delete=models.CASCADE)
+    is_primary = models.BooleanField(default=False)
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        """If a new certificate is added to a credential, it is set to primary and all others to non-primary."""
+        if not self.pk or self.is_primary:
+            PrimaryCredentialCertificate.objects.filter(credential=self.credential).update(is_primary=False)
+
+        self.is_primary = True
+        super().save(*args, **kwargs)
 
 class CertificateChainOrderModel(models.Model):
     """This Model is used to preserve the order of certificates in credential certificate chains."""

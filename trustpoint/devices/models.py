@@ -1,247 +1,27 @@
 from __future__ import annotations
 
-import ipaddress
-
-from django.db import models    # type: ignore[import-untyped]
-from django.utils.translation import gettext_lazy as _  # type: ignore[import-untyped]
-from django.contrib.contenttypes.fields import GenericForeignKey   # type: ignore[import-untyped]
-from django.contrib.contenttypes.models import ContentType # type: ignore[import-untyped]
-from core.validator.field import UniqueNameValidator
-from core.serializer import CredentialSerializer, PrivateKeySerializer
-from cryptography import x509
-from cryptography.x509 import oid
-from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import rsa, ec
 import datetime
+import logging
+import secrets
+from typing import Any
 
-from pki.models import CertificateModel, DomainModel, CredentialModel
+from django.db import models
+from django.db.models import UniqueConstraint
+from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
+from django.contrib.contenttypes.models import ContentType
+from core.validator.field import UniqueNameValidator
+from django.core.exceptions import ValidationError
 
+from pki.models import CertificateModel, DomainModel, CredentialModel, IssuingCaModel
+
+from pki.models.credential import CredentialModel
+
+logger = logging.getLogger(__name__)
 
 class DeviceModel(models.Model):
 
-    def _generate_private_key(self) -> PrivateKeySerializer:
-        issuing_ca_private_key = self.domain.issuing_ca.credential.get_private_key()
-        if isinstance(issuing_ca_private_key, rsa.RSAPrivateKey):
-            key_size = issuing_ca_private_key.key_size
-            return PrivateKeySerializer(
-                rsa.generate_private_key(key_size=key_size, public_exponent=65537)
-            )
-        if isinstance(issuing_ca_private_key, ec.EllipticCurvePrivateKey):
-            curve = issuing_ca_private_key.curve
-            return PrivateKeySerializer(
-                ec.generate_private_key(curve=curve)
-            )
-        raise ValueError('Cannot build the domain credential, unknown key type found.')
-
-    def _get_hash_algorithm_from_issuing_ca_credential(self) -> hashes.SHA256 | hashes.SHA384:
-        hash_algorithm = self.domain.issuing_ca.credential.get_certificate().signature_hash_algorithm
-        if isinstance(hash_algorithm, hashes.SHA256):
-            return hashes.SHA256()
-        if isinstance(hash_algorithm, hashes.SHA384):
-            return hashes.SHA384()
-        raise ValueError('Cannot build the domain credential, unknown hash algorithm found.')
-
-    def issue_domain_credential(self) -> CredentialSerializer:
-        domain_credential_private_key = self._generate_private_key()
-        hash_algorithm = self._get_hash_algorithm_from_issuing_ca_credential()
-        one_day = datetime.timedelta(1, 0, 0)
-
-        certificate_builder = x509.CertificateBuilder()
-        certificate_builder = certificate_builder.subject_name(x509.Name([
-            x509.NameAttribute(x509.NameOID.COMMON_NAME, 'Trustpoint Device Credential'),
-            x509.NameAttribute(
-                x509.NameOID.DN_QUALIFIER,
-                f'trustpoint.{self.unique_name}.{self.domain.unique_name}.local'),
-            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number)
-        ]))
-        certificate_builder = certificate_builder.issuer_name(
-            self.domain.issuing_ca.credential.get_certificate().subject)
-        certificate_builder = certificate_builder.not_valid_before(datetime.datetime.now(datetime.UTC))
-        certificate_builder = certificate_builder.not_valid_after(
-            datetime.datetime.now(datetime.UTC) + (one_day * 365))
-        certificate_builder = certificate_builder.serial_number(x509.random_serial_number())
-        certificate_builder = certificate_builder.public_key(
-            domain_credential_private_key.public_key_serializer.as_crypto())
-        domain_certificate = certificate_builder.sign(
-            private_key=domain_credential_private_key.as_crypto(),
-            algorithm=hash_algorithm
-        )
-
-        certificate = CertificateModel.save_certificate(domain_certificate)
-        issued_domain_credential = IssuedDomainCredentialModel(
-            issued_domain_credential_certificate=certificate,
-            device=self,
-            domain=self.domain
-        )
-        issued_domain_credential.save()
-
-        self.onboarding_status = self.OnboardingStatus.ONBOARDED
-        self.save()
-
-        return CredentialSerializer(
-            (
-                domain_credential_private_key,
-                domain_certificate,
-                [self.domain.issuing_ca.credential.get_certificate()] +
-                self.domain.issuing_ca.credential.get_certificate_chain()
-            )
-        )
-
-    @staticmethod
-    def _add_tls_client_cert_extensions(
-            certificate_builder: x509.CertificateBuilder,
-            application_credential_private_key: PrivateKeySerializer,
-            issuing_ca_private_key: PrivateKeySerializer) -> x509.CertificateBuilder:
-        certificate_builder = certificate_builder.add_extension(
-            x509.KeyUsage(
-                digital_signature=True,
-                content_commitment=False,
-                key_encipherment=False,
-                data_encipherment=False,
-                key_agreement=True,
-                key_cert_sign=False,
-                crl_sign=False,
-                encipher_only=False,
-                decipher_only=False
-            ),
-            critical=True
-        )
-        certificate_builder = certificate_builder.add_extension(
-            x509.AuthorityKeyIdentifier.from_issuer_public_key(
-                issuing_ca_private_key.public_key_serializer.as_crypto()),
-            critical=False
-        )
-        certificate_builder = certificate_builder.add_extension(
-            x509.SubjectKeyIdentifier.from_public_key(application_credential_private_key.public_key_serializer.as_crypto()),
-            critical=False
-        )
-        certificate_builder = certificate_builder.add_extension(
-            x509.ExtendedKeyUsage([oid.ExtendedKeyUsageOID.CLIENT_AUTH]),
-            critical=False
-        )
-        return certificate_builder
-
-    @staticmethod
-    def _add_tls_server_cert_extensions(
-            certificate_builder: x509.CertificateBuilder,
-            application_credential_private_key: PrivateKeySerializer,
-            issuing_ca_private_key: PrivateKeySerializer,
-            ipv4_addresses: list[ipaddress.IPv4Address],
-            ipv6_addresses: list[ipaddress.IPv6Address],
-            domain_names: list[str]) -> x509.CertificateBuilder:
-
-        # TODO(AlexHx8472): Set key usage according to cipher suite used -> BSI technical guideline
-        certificate_builder = certificate_builder.add_extension(
-            x509.KeyUsage(
-                digital_signature=True,
-                content_commitment=False,
-                key_encipherment=True,
-                data_encipherment=False,
-                key_agreement=True,
-                key_cert_sign=False,
-                crl_sign=False,
-                encipher_only=False,
-                decipher_only=False
-            ),
-            critical=True
-        )
-        certificate_builder = certificate_builder.add_extension(
-            x509.AuthorityKeyIdentifier.from_issuer_public_key(
-                issuing_ca_private_key.public_key_serializer.as_crypto()),
-            critical=False
-        )
-        certificate_builder = certificate_builder.add_extension(
-            x509.SubjectKeyIdentifier.from_public_key(
-                application_credential_private_key.public_key_serializer.as_crypto()),
-            critical=False
-        )
-        certificate_builder = certificate_builder.add_extension(
-            x509.ExtendedKeyUsage([oid.ExtendedKeyUsageOID.SERVER_AUTH]),
-            critical=False
-        )
-
-        san = []
-        for ipv4_address in ipv4_addresses:
-            san.append(x509.IPAddress(ipv4_address))
-        for ipv6_address in ipv6_addresses:
-            san.append(x509.IPAddress(ipv6_address))
-        for domain_name in domain_names:
-            san.append(x509.DNSName(domain_name))
-        certificate_builder = certificate_builder.add_extension(
-            x509.SubjectAlternativeName(san),
-            critical=True
-        )
-        return certificate_builder
-
-    def issue_application_credential(
-            self,
-            subject: dict[x509.ObjectIdentifier, str],
-            validity_days: int,
-            certificate_type: IssuedApplicationCertificateModel.ApplicationCertificateType,
-            ipv4_addresses: None | list[ipaddress.IPv4Address] = None,
-            ipv6_addresses: None | list[ipaddress.IPv6Address] = None,
-            domain_names: None | list[str] = None) -> CredentialSerializer:
-
-        issuing_ca_private_key = self.domain.issuing_ca.credential.get_private_key_serializer()
-        application_credential_private_key = self._generate_private_key()
-        hash_algorithm = self._get_hash_algorithm_from_issuing_ca_credential()
-        one_day = datetime.timedelta(1, 0, 0)
-
-        certificate_builder = x509.CertificateBuilder()
-        certificate_builder = certificate_builder.subject_name(x509.Name([
-            x509.NameAttribute(key, value) for key, value in subject.items()
-        ]))
-        certificate_builder = certificate_builder.issuer_name(
-            self.domain.issuing_ca.credential.get_certificate().subject)
-        certificate_builder = certificate_builder.not_valid_before(datetime.datetime.now(datetime.UTC))
-        certificate_builder = certificate_builder.not_valid_after(
-            datetime.datetime.now(datetime.UTC) + (one_day * validity_days))
-        certificate_builder = certificate_builder.serial_number(x509.random_serial_number())
-        certificate_builder = certificate_builder.public_key(
-            application_credential_private_key.public_key_serializer.as_crypto())
-
-        certificate_builder = certificate_builder.add_extension(
-            x509.BasicConstraints(ca=False, path_length=None),
-            critical=False
-        )
-
-        if certificate_type == IssuedApplicationCertificateModel.ApplicationCertificateType.TLS_CLIENT:
-            certificate_builder = self._add_tls_client_cert_extensions(
-                certificate_builder=certificate_builder,
-                application_credential_private_key=application_credential_private_key,
-                issuing_ca_private_key=issuing_ca_private_key)
-        if certificate_type == IssuedApplicationCertificateModel.ApplicationCertificateType.TLS_SERVER:
-            certificate_builder = self._add_tls_server_cert_extensions(
-                certificate_builder=certificate_builder,
-                application_credential_private_key=application_credential_private_key,
-                issuing_ca_private_key=issuing_ca_private_key,
-                ipv4_addresses=ipv4_addresses,
-                ipv6_addresses=ipv6_addresses,
-                domain_names=domain_names
-            )
-
-        domain_certificate = certificate_builder.sign(
-            private_key=issuing_ca_private_key.as_crypto(),
-            algorithm=hash_algorithm
-        )
-        certificate = CertificateModel.save_certificate(domain_certificate)
-
-        issued_application_certificate = IssuedApplicationCertificateModel(
-            device=self,
-            domain=self.domain,
-            issued_application_certificate=certificate,
-            issued_application_certificate_type=certificate_type
-        )
-        issued_application_certificate.save()
-
-        return CredentialSerializer(
-            (
-                application_credential_private_key,
-                domain_certificate,
-                [self.domain.issuing_ca.credential.get_certificate()] +
-                self.domain.issuing_ca.credential.get_certificate_chain()
-            )
-        )
+    objects: models.Manager[DeviceModel]
 
     def __str__(self) -> str:
         return f'DeviceModel(unique_name={self.unique_name})'
@@ -252,11 +32,10 @@ class DeviceModel(models.Model):
 
         NO_ONBOARDING = 0, _('No Onboarding')
         MANUAL = 1, _('Manual download')
-        BROWSER = 2, _('Browser download')
-        CLI = 3, _('Device CLI')
-        TP_CLIENT_PW = 4, _('Trustpoint Client')
-        AOKI = 5, _('AOKI')
-        BRSKI = 6, _('BRSKI')
+        CLI = 2, _('Device CLI')
+        TP_CLIENT = 3, _('Trustpoint Client')
+        AOKI = 4, _('AOKI')
+        BRSKI = 5, _('BRSKI')
 
 
     class OnboardingStatus(models.IntegerChoices):
@@ -266,9 +45,9 @@ class DeviceModel(models.Model):
         PENDING = 1, _('Pending')
         ONBOARDED = 2, _('Onboarded')
 
-
+    id = models.AutoField(primary_key=True)
     unique_name = models.CharField(
-        _('Device'), max_length=100, unique=True, default=f'New-Device', validators=[UniqueNameValidator()]
+        _('Device'), max_length=100, unique=True, default='New-Device', validators=[UniqueNameValidator()]
     )
     serial_number = models.CharField(_('Serial-Number'), max_length=100)
     domain = models.ForeignKey(
@@ -295,69 +74,155 @@ class DeviceModel(models.Model):
     updated_at = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
 
 
-class IssuedDomainCredentialModel(models.Model):
+class IssuedCredentialModel(models.Model):
+    """Model for all credentials and certificates that have been issued or requested by the Trustpoint."""
 
-    issued_domain_credential_certificate = models.OneToOneField(
-        CertificateModel,
-        verbose_name=_('Issued Domain Credential'),
-        on_delete=models.CASCADE,
-        related_name='issued_domain_credential')
+    objects: models.Manager['IssuedCredentialModel']
+
+    class Meta:
+        constraints = [
+            UniqueConstraint(fields=['device', 'common_name'], name='unique_common_names_for_each_device')
+        ]
+
+    class IssuedCredentialType(models.IntegerChoices):
+        DOMAIN_CREDENTIAL = 0, _('Domain Credential')
+        APPLICATION_CREDENTIAL = 1, _('Application Credential')
+
+    class IssuedCredentialPurpose(models.IntegerChoices):
+        DOMAIN_CREDENTIAL = 0, _('Domain Credential')
+        GENERIC = 1, _('Generic')
+        TLS_CLIENT = 2, _('TLS-Client')
+        TLS_SERVER = 3, _('TLS-Server')
+
+    id = models.AutoField(primary_key=True)
+
+    common_name = models.CharField(verbose_name=_('Common Name'), max_length=255)
+    issued_credential_type = models.IntegerField(
+        choices=IssuedCredentialType,
+        verbose_name=_('Credential Type'))
+    issued_credential_purpose = models.IntegerField(
+        choices=IssuedCredentialPurpose,
+        verbose_name=_('Credential Purpose'))
+    credential = models.OneToOneField(
+        CredentialModel,
+        verbose_name=_('Credential'),
+        on_delete=models.PROTECT,
+        related_name='issued_credential',
+        null=False,
+        blank=False
+    )
     device = models.ForeignKey(
         DeviceModel,
         verbose_name=_('Device'),
-        on_delete=models.CASCADE,
-        related_name='issued_domain_credentials'
+        on_delete=models.PROTECT,
+        related_name='issued_credentials'
     )
     domain = models.ForeignKey(
         DomainModel,
         verbose_name=_('Domain'),
-        on_delete=models.CASCADE,
-        related_name='issued_domain_credentials')
+        on_delete=models.PROTECT,
+        related_name='issued_credentials'
+    )
 
     created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
 
     def __str__(self) -> str:
-        return f'IssuedDomainCredential(device={self.device.unique_name}, domain={self.domain.unique_name})'
+        return f'IssuedCredentialModel()'
+
+    def clean(self) -> None:
+        if IssuedCredentialModel.objects.filter(common_name=self.common_name, device=self.device).exclude(pk=self.pk).exists():
+            err_msg = (
+                f'Credential with common name {self.common_name} '
+                f'already exists for device {self.device.unique_name}.')
+            raise ValidationError(err_msg)
+
+    def save(self, *args: Any, **kwargs: Any) -> None:
+        self.full_clean()
+        super().save(*args, **kwargs)
 
 
-class IssuedApplicationCertificateModel(models.Model):
+class RemoteDeviceCredentialDownloadModel(models.Model):
+    """Model to associate a credential model with an OTP and token for unauthenticated remoted download."""
+    BROWSER_MAX_OTP_ATTEMPTS = 3
+    TOKEN_VALIDITY = datetime.timedelta(minutes=3)
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(
-                fields=['device', 'common_name'],
-                name='unique_active_application_certificate_category',
-                condition=models.Q(is_active=True)  # Only enforce uniqueness when is_active is True
+    issued_credential_model = models.OneToOneField(IssuedCredentialModel, on_delete=models.CASCADE)
+    otp = models.CharField(_('OTP'), max_length=32, default='')
+    device = models.ForeignKey(DeviceModel, on_delete=models.CASCADE)
+    attempts = models.IntegerField(_('Attempts'), default=0)
+    download_token = models.CharField(_('Download Token'), max_length=64, default='')
+    token_created_at = models.DateTimeField(_('Token Created'), null=True)
+
+    def __str__(self) -> str:
+        """Return a string representation of the model."""
+        return f'RemoteDeviceCredentialDownloadModel(credential={self.issued_credential_model.id})'
+
+    def save(self, *args: dict, **kwargs: dict) -> None:
+        """Generates a new random OTP on initial save of the model."""
+        if not self.otp:
+            self.otp = secrets.token_urlsafe(8)
+        super().save(*args, **kwargs)
+
+    def get_otp_display(self) -> str:
+        """Return the OTP in the format 'credential_id.otp' for display within the admin view."""
+        if not self.otp or self.otp == '-':
+            return 'OTP no longer valid'
+        return f'{self.issued_credential_model.id}.{self.otp}'
+
+    def check_otp(self, otp: str) -> bool:
+        """Check if the provided OTP matches the stored OTP."""
+        if not self.otp or self.otp == '-':
+            return False
+        matches = otp == self.otp
+        if not matches:
+            self.attempts += 1
+            log_msg = (
+                f'Incorrect OTP attempt {self.attempts} for browser credential download '
+                f'for device {self.device.unique_name} (credential id={self.issued_credential_model.id})'
             )
-        ]
+            logger.warning(log_msg)
 
-    class ApplicationCertificateType(models.IntegerChoices):
+            if self.attempts >= self.BROWSER_MAX_OTP_ATTEMPTS:
+                self.otp = '-'
+                self.delete()
+                logger.warning('Too many incorrect OTP attempts. Download invalidated.')
+            else:
+                self.save()
+            return False
 
-        GENERIC = 0, _('Generic')
-        TLS_CLIENT = 1, _('TLS-Client')
-        TLS_SERVER = 2, _('TLS-Server')
+        log_msg = (
+            f'Correct OTP entered for browser credential download for device {self.device.unique_name}'
+            f'(credential id={self.issued_credential_model.id})'
+        )
+        logger.info(log_msg)
+        self.otp = '-'
+        self.download_token = secrets.token_urlsafe(32)
+        self.token_created_at = timezone.now()
+        self.save()
+        return True
 
-    device = models.ForeignKey(
-        DeviceModel,
-        on_delete=models.CASCADE,
-        related_name='issued_application_certificates')
-    domain = models.ForeignKey(
-        DomainModel,
-        verbose_name=_('Domain'),
-        on_delete=models.CASCADE,
-        related_name='issued_application_certificates')
-    issued_application_certificate = models.ForeignKey(
-        CertificateModel,
-        verbose_name=_('Application Certificate'),
-        on_delete=models.CASCADE)
+    def check_token(self, token: str) -> bool:
+        """Check if the provided token matches the stored token and whether it is still valid."""
+        if not self.download_token or not self.token_created_at:
+            return False
+        if timezone.now() - self.token_created_at > self.TOKEN_VALIDITY:
+            self.delete()
+            return False
 
-    issued_application_certificate_type = models.IntegerField(
-        verbose_name=_('Application Certificate Type'),
-        choices=ApplicationCertificateType,
-        null=False,
-        blank=False,
-    )
-    common_name = models.CharField(verbose_name=_('Common Name'), max_length=255)
-    is_active = models.BooleanField(verbose_name=_('Active'), default=True)
+        return token == self.download_token
 
-    created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
+
+class TrustpointClientOnboardingProcessModel(models.Model):
+    """Holds all current Trustpoint-Client onboarding processes."""
+
+    id = models.AutoField(primary_key=True)
+
+    class AuthenticationMethod(models.IntegerChoices):
+
+        PASSWORD_BASED_MAC = 0, _('Password Based Mac')
+        IDEVID = 1, _('Initial Device Identity (IDevID)')
+
+    auth_method = models.IntegerField(verbose_name=_('Authentication Method'), choices=AuthenticationMethod)
+    device = models.ForeignKey(DeviceModel, verbose_name=_('Device'), on_delete=models.PROTECT)
+    password = models.CharField(max_length=64, verbose_name=_('Password'), null=True, blank=True)
+

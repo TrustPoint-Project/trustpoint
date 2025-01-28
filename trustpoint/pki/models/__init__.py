@@ -20,3 +20,4 @@ from .certificate import CertificateModel
 from .credential import CredentialAlreadyExistsError, CredentialModel, CertificateChainOrderModel
 from .issuing_ca import IssuingCaModel
 from .domain import DomainModel
+from .devid_registration import DevIdRegistration
