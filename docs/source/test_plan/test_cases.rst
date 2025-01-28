@@ -110,3 +110,64 @@ Feature File
 
 .. literalinclude:: ../../../trustpoint/features/R_004_REST_API.feature
    :language: gherkin
+
+^^^^^
+R_005
+^^^^^
+
+This testcase is related to requirement `R_005`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+This requirement states that we want to distribute TrustPoint in a fully-configured Docker container.
+The idea for testing would be to build the container,
+run it on a production system and then check all other requirements manually or build a test suite and check the requirements automatically.
+Since the code is the same, just executed in a Docker environment, we see no need to let those tests run automatically.
+Therefore, we will pass the test for this requirement if the container can be built and ran on another system.
+
+""""""""""""
+Feature File
+""""""""""""
+
+Nonexistent.
+
+^^^^^
+R_006
+^^^^^
+
+This testcase is related to requirement `R_006`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+To verify the implementation of backup, restoration, and update mechanisms for ensuring system resilience:
+
+#. Backup Verification:
+    - An admin initiates a system backup via the TPC_Web interface.
+    - The system confirms that the backup process completes successfully.
+    - The backup file is retrievable and valid.
+
+#. Restore Verification:
+    - An admin uploads a valid backup file through the TPC_Web interface.
+    - The system restores the data and confirms the restoration is successful.
+    - Restored data is consistent with the backup file contents.
+
+#. System Update Verification:
+    - An admin triggers a system update via the TPC_Web interface.
+    - The system downloads and applies the update.
+    - Post-update, the system verifies the integrity and functionality of the application.
+
+Edge cases include:
+
+- Handling a corrupt backup file during restoration.
+- Attempting to perform operations with insufficient admin privileges.
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../../trustpoint/features/R_006_backup_restore_update.feature
+   :language: gherkin
