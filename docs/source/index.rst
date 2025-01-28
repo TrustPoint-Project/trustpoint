@@ -46,4 +46,4 @@ Welcome to Trustpoint's documentation!
    :caption: 🧑‍💻 Development :
 
    poetry_environment
-   test_plan
+   test_plan/test_plan
