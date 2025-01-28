@@ -6,7 +6,7 @@ import logging
 from datetime import date, datetime, timedelta
 from typing import Any
 
-from devices.models import DeviceModel, IssuedApplicationCertificateModel, IssuedDomainCredentialModel
+from devices.models import DeviceModel, IssuedCredentialModel
 from django.contrib import messages  # type: ignore[import-untyped]
 from django.contrib.auth.decorators import login_required  # type: ignore[import-untyped]
 from django.core.management import call_command  # type: ignore[import-untyped]
@@ -324,13 +324,13 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
                 total=Count('id'),
                 active=Count(
                     Case(
-                        When(credential__certificate__not_valid_after__gt=today, then=Value(1)),
+                        When(credential__certificates__not_valid_after__gt=today, then=Value(1)),
                         output_field=IntegerField(),
                     )
                 ),
                 expired=Count(
                     Case(
-                        When(credential__certificate__not_valid_after__lte=today, then=Value(1)),
+                        When(credential__certificates__not_valid_after__lte=today, then=Value(1)),
                         output_field=IntegerField(),
                     )
                 ),
@@ -383,6 +383,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
                 .values(domain_name=F('domain__unique_name'))
                 .annotate(onboarded_device_count=Count('id'))
             )
+            print("device_domain_qr", device_domain_qr, start_date)
 
             # Convert the queryset to a list
             return list(device_domain_qr)
@@ -429,23 +430,23 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
         """Get certificate count by domain from database"""
         cert_counts_by_domain = []
         try:
-            cert_app_counts = (
-                IssuedApplicationCertificateModel.objects.filter(created_at__gt=start_date)
+            cert_counts_domain_qr = (
+                IssuedCredentialModel.objects.filter(created_at__gt=start_date)
                 .values(domain_name=F('domain__unique_name'))
                 .annotate(cert_count=Count('id'))
             )
 
-            cert_domain_counts = (
-                IssuedDomainCredentialModel.objects.filter(created_at__gt=start_date)
-                .values(domain_name=F('domain__unique_name'))
-                .annotate(cert_count=Count('id'))
-            )
+            # cert_domain_counts = (
+            #     IssuedDomainCredentialModel.objects.filter(created_at__gt=start_date)
+            #     .values(domain_name=F('domain__unique_name'))
+            #     .annotate(cert_count=Count('id'))
+            # )
 
             # Use a union query to combine results
-            cert_domain_qr = cert_app_counts.union(cert_domain_counts)
+            #cert_domain_qr = cert_app_counts.union(cert_domain_counts)
 
             #   # Convert the queryset to a list
-            cert_counts_by_domain = list(cert_domain_qr)
+            cert_counts_by_domain = list(cert_counts_domain_qr)
         except Exception:
             self._logger.exception('Error occurred in certificate count by issuing ca query')
         return cert_counts_by_domain
@@ -453,19 +454,19 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
     def get_cert_counts_by_template(self, start_date: date) -> dict[str, Any]:
         """Get certificate count by template from database"""
         cert_counts_by_template = {
-            str(status): 0 for _, status in IssuedApplicationCertificateModel.ApplicationCertificateType.choices
+            str(status): 0 for _, status in IssuedCredentialModel.IssuedCredentialPurpose.choices
         }
         try:
             cert_template_qr = (
-                IssuedApplicationCertificateModel.objects.filter(
-                    issued_application_certificate__created_at__gt=start_date
+                IssuedCredentialModel.objects.filter(
+                    credential__certificates__created_at__gt=start_date
                 )
-                .values(cert_type=F('issued_application_certificate_type'))
-                .annotate(count=Count('id'))
+                .values(cert_type=F('issued_credential_purpose'))
+                .annotate(count=Count('credential__certificates'))
             )
             # Mapping from short code to human-readable name
             template_mapping = {
-                key: str(value) for key, value in IssuedApplicationCertificateModel.ApplicationCertificateType.choices
+                key: str(value) for key, value in IssuedCredentialModel.IssuedCredentialPurpose.choices
             }
             cert_counts_by_template = {template_mapping[item['cert_type']]: item['count'] for item in cert_template_qr}
         except Exception:
