@@ -1,11 +1,26 @@
 from __future__ import annotations
 
-from enum import Enum
 
+import enum
+
+from cryptography import x509
+# from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from django.utils.translation import gettext_lazy as _
+# from pyasn1.codec.der import decoder
+# from pyasn1_modules import rfc5280
 
 
-class NameOid(Enum):
+from typing import TYPE_CHECKING, cast
+
+
+if TYPE_CHECKING:
+    from typing import Union
+    PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey]
+    PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey]
+
+
+class NameOid(enum.Enum):
     # OID, abbreviation, full_name, verbose_name, is common in certificates
 
     # ITU
@@ -237,7 +252,7 @@ class NameOid(Enum):
         return obj
 
 
-class CertificateExtensionOid(Enum):
+class CertificateExtensionOid(enum.Enum):
     SUBJECT_DIRECTORY_ATTRIBUTES = ('2.5.29.9', _('Subject Directory Attributes'))
     SUBJECT_KEY_IDENTIFIER = ('2.5.29.14', _('Subject Key Identifier'))
     KEY_USAGE = ('2.5.29.15', _('Key Usage'))
@@ -277,7 +292,7 @@ class CertificateExtensionOid(Enum):
         return obj
 
 
-class EllipticCurveOid(Enum):
+class NamedCurve(enum.Enum):
     # OID, verbose_name, key_size
 
     NONE = ('None', '', 0)
@@ -310,7 +325,7 @@ class EllipticCurveOid(Enum):
         return obj
 
 
-class RsaPaddingScheme(Enum):
+class RsaPaddingScheme(enum.Enum):
     NONE = 'None'
     PKCS1v15 = 'PKCS#1 v1.5'
     PSS = 'PSS'
@@ -322,11 +337,14 @@ class RsaPaddingScheme(Enum):
         return obj
 
 
-class PublicKeyAlgorithmOid(Enum):
+class PublicKeyAlgorithmOid(enum.Enum):
+    NONE = ('NONE', _('None'))
     ECC = ('1.2.840.10045.2.1', _('ECC'))
     RSA = ('1.2.840.113549.1.1.1', _('RSA'))
-    ED25519 = ('1.3.101.112', _('ED25519'))
-    ED448 = ('1.3.101.113', _('ED448'))
+
+    # TODO(AlexHx8472): Support ED25519, ED448
+    # ED25519 = ('1.3.101.112', _('ED25519'))
+    # ED448 = ('1.3.101.113', _('ED448'))
 
     def __new__(cls, dotted_string, verbose_name):
         obj = object.__new__(cls)
@@ -335,8 +353,25 @@ class PublicKeyAlgorithmOid(Enum):
         obj.verbose_name = verbose_name
         return obj
 
+    @classmethod
+    def from_certificate(cls, certificate: x509.Certificate) -> PublicKeyAlgorithmOid:
+        return cls.from_public_key(certificate.public_key())
 
-class SignatureAlgorithmOid(Enum):
+    @classmethod
+    def from_private_key(cls, private_key: PrivateKey) -> PublicKeyAlgorithmOid:
+        return cls.from_public_key(private_key.public_key())
+
+    @classmethod
+    def from_public_key(cls, public_key: PublicKey) -> PublicKeyAlgorithmOid:
+        if isinstance(public_key, rsa.RSAPublicKey):
+            return cls.RSA
+        elif isinstance(public_key, ec.EllipticCurvePublicKey):
+            return cls.ECC
+        err_msg = 'Unsupported key type, expected RSA or ECC key.'
+        raise TypeError(err_msg)
+
+
+class AlgorithmIdentifier(enum.Enum):
     # OID, verbose_name, public_key_algorithm_oid, padding_scheme
 
     RSA_MD5 = ('1.2.840.113549.1.1.4', _('RSA with MD5'), PublicKeyAlgorithmOid.RSA, RsaPaddingScheme.PKCS1v15)
@@ -371,12 +406,13 @@ class SignatureAlgorithmOid(Enum):
         RsaPaddingScheme.PKCS1v15,
     )
 
-    RSASSA_PSS = (
-        '1.2.840.113549.1.1.10',
-        _('RSA (RSASSA-PSS), Padding: PSS'),
-        PublicKeyAlgorithmOid.RSA,
-        RsaPaddingScheme.PSS,
-    )
+    # TODO(AlexHx8472): Add support for RSA PSS padding.
+    # RSASSA_PSS = (
+    #     '1.2.840.113549.1.1.10',
+    #     _('RSA (RSASSA-PSS), Padding: PSS'),
+    #     PublicKeyAlgorithmOid.RSA,
+    #     RsaPaddingScheme.PSS,
+    # )
 
     ECDSA_SHA1 = ('1.2.840.10045.4.1', _('ECDSA with SHA1'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
     ECDSA_SHA224 = ('1.2.840.10045.4.3.1', _('ECDSA with SHA224'), PublicKeyAlgorithmOid.ECC, RsaPaddingScheme.NONE)
@@ -407,6 +443,12 @@ class SignatureAlgorithmOid(Enum):
         PublicKeyAlgorithmOid.ECC,
         RsaPaddingScheme.NONE,
     )
+    PASSWORD_BASED_MAC = (
+        '1.2.840.113533.7.66.13',
+        _('Password Based MAC'),
+        PublicKeyAlgorithmOid.NONE,
+        RsaPaddingScheme.NONE
+    )
 
     def __new__(cls, dotted_string, verbose_name, public_key_algo_oid, padding_scheme):
         obj = object.__new__(cls)
@@ -416,3 +458,138 @@ class SignatureAlgorithmOid(Enum):
         obj.public_key_algo_oid = public_key_algo_oid
         obj.padding_scheme = padding_scheme
         return obj
+
+    @classmethod
+    def from_certificate(cls, certificate: x509.Certificate) -> AlgorithmIdentifier:
+        return cls(certificate.signature_algorithm_oid.dotted_string)
+
+class PublicKeyInfo:
+
+    _public_key_algorithm_oid: PublicKeyAlgorithmOid
+    _key_size: int
+    _named_curve: None | NamedCurve = None
+
+    def __init__(
+            self,
+            public_key_algorithm_oid: PublicKeyAlgorithmOid,
+            key_size: int,
+            named_curve: None | NamedCurve = None
+    ) -> None:
+        self._public_key_algorithm_oid = public_key_algorithm_oid
+        self._key_size = key_size
+        if self._public_key_algorithm_oid == PublicKeyAlgorithmOid.RSA:
+            if self._key_size <= 2048:
+                err_msg = 'RSA key size must at least be 2048 bits.'
+                raise ValueError(err_msg)
+            if named_curve is not None:
+                err_msg = 'RSA keys cannot have a named curve associated with it.'
+                raise ValueError(err_msg)
+        elif self._public_key_algorithm_oid == PublicKeyAlgorithmOid.ECC:
+            if self._key_size <= 128:
+                err_msg = 'ECC key size must at least be 128 bits.'
+                raise ValueError(err_msg)
+            if named_curve is None:
+                err_msg = 'ECC key must have a named curve associated with it.'
+                raise ValueError(err_msg)
+            self._named_curve = named_curve
+
+    def __eq__(self, other: PublicKeyInfo) -> bool:
+        if self.public_key_algorithm_oid != other.public_key_algorithm_oid:
+            return False
+        if self.key_size != other.key_size:
+            return False
+        if self.named_curve != other.named_curve:
+            return False
+        return True
+
+    @property
+    def public_key_algorithm_oid(self) -> PublicKeyAlgorithmOid:
+        return self._public_key_algorithm_oid
+
+    @property
+    def key_size(self) -> int:
+        return self._key_size
+
+    @property
+    def named_curve(self) -> NamedCurve:
+        return self._named_curve
+
+    @classmethod
+    def from_public_key(cls, public_key: PublicKey) -> PublicKeyInfo:
+        if isinstance(public_key, rsa.RSAPublicKey):
+            return cls(public_key_algorithm_oid=PublicKeyAlgorithmOid.RSA, key_size=public_key.key_size)
+        elif isinstance(public_key, ec.EllipticCurvePublicKey):
+            return cls(
+                public_key_algorithm_oid=PublicKeyAlgorithmOid.ECC,
+                key_size=public_key.key_size,
+                named_curve=cast(NamedCurve, NamedCurve[public_key.curve.name.upper()]),
+            )
+        err_msg = 'Unsupported public key type found. Must be RSA or ECC key.'
+        raise TypeError(err_msg)
+
+    @classmethod
+    def from_private_key(cls, private_key: PrivateKey) -> PublicKeyInfo:
+        return cls.from_public_key(private_key.public_key())
+
+    @classmethod
+    def from_certificate(cls, certificate: x509.Certificate) -> PublicKeyInfo:
+        return cls.from_public_key(certificate.public_key())
+
+
+class SignatureSuite:
+
+    _public_key_info: PublicKeyInfo
+    _algorithm_identifier: AlgorithmIdentifier
+
+    def __init__(
+            self,
+            algorithm_identifier: AlgorithmIdentifier,
+            public_key_info: PublicKeyInfo):
+        self._algorithm_identifier = algorithm_identifier
+        self._public_key_info = public_key_info
+
+        self._validate_consistency()
+
+    def __eq__(self, other: SignatureSuite) -> bool:
+        if self.public_key_info != other.public_key_info:
+            return False
+        if self.algorithm_identifier != other.algorithm_identifier:
+            return False
+        return True
+
+    def _validate_consistency(self) -> None:
+        if self.algorithm_identifier.public_key_algo_oid != self.public_key_info.public_key_algorithm_oid:
+            err_msg = (
+                f'Signature algorithm uses {self.algorithm_identifier.public_key_algo_oid.name}, '
+                f'but the public key is a {self.public_key_info.public_key_algorithm_oid.name} key.')
+            raise ValueError(err_msg)
+
+    @property
+    def algorithm_identifier(self) -> AlgorithmIdentifier:
+        return self._algorithm_identifier
+
+    @property
+    def public_key_info(self) -> PublicKeyInfo:
+        return self._public_key_info
+
+    @classmethod
+    def from_certificate(cls, certificate: x509.Certificate) -> SignatureSuite:
+        return cls(
+            algorithm_identifier=AlgorithmIdentifier.from_certificate(certificate),
+            public_key_info=PublicKeyInfo.from_certificate(certificate)
+        )
+
+    def public_key_matches_signature_suite(self, public_key: PublicKey) -> bool:
+        public_key_info = PublicKeyInfo.from_public_key(public_key)
+        if self.public_key_info != public_key_info:
+            return False
+        return True
+
+    def private_key_matches_signature_suite(self, private_key: PrivateKey) -> bool:
+        return self.public_key_matches_signature_suite(private_key.public_key())
+
+    def certificate_matches_signature_suite(self, certificate: x509.Certificate) -> bool:
+        signature_suite = SignatureSuite.from_certificate(certificate)
+        if self != signature_suite:
+            return False
+        return True
