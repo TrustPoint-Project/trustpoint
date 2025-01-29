@@ -171,3 +171,44 @@ Feature File
 
 .. literalinclude:: ../../../trustpoint/features/R_006_backup_restore_update.feature
    :language: gherkin
+
+^^^^^
+R_007
+^^^^^
+
+This testcase is related to requirement `R_007`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+To verify that the system provides detailed and configurable logging for system events and actions,
+we will test the following scenarios:
+
+#. Logging of User Actions
+    - The admin performs actions such as creating, updating, and deleting identities.
+    - The system logs these actions with relevant details (timestamp, user ID, action type, and outcome).
+
+#. Log Retrieval & Filtering
+    - The admin retrieves system logs via the TPC_Web interface.
+    - Logs can be filtered by time range, user, or event type.
+
+#. Log Configuration Management
+    - The admin modifies the logging configuration to change verbosity levels.
+    - The system applies the new logging settings and updates log output accordingly.
+
+#. Log Storage & Integrity
+    - Logs are stored persistently and are not lost between system restarts.
+    - Unauthorized users cannot modify or delete logs.
+
+Edge cases:
+
+- Verifying how the system handles an excessive number of log entries.
+- Testing logging behavior when storage space is low.
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../../trustpoint/features/R_007_logging.feature
+   :language: gherkin
