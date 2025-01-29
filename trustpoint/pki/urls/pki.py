@@ -45,6 +45,11 @@ urlpatterns = [
         certificates.CertificateTableView.as_view(),
         name='certificates',
     ),
+    path(
+        'certificates-new/',
+        certificates.CertificateTableViewNew.as_view(),
+        name='certificates-new',
+    ),
     re_path(
         r'^certificates/download/(?P<pk>[0-9]+)/?$',
         certificates.CertificateDownloadView.as_view(),

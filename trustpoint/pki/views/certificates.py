@@ -42,6 +42,34 @@ class CertificateTableView(CertificatesContextMixin, TpLoginRequiredMixin, Singl
     template_name = 'pki/certificates/certificates.html'
     context_object_name = 'certificates'
 
+class CertificateTableViewNew(ListView):
+      model = CertificateModel
+      template_name = 'pki/certificates/certificates-new.html'  # Template file
+      context_object_name = 'certificates-new'
+      paginate_by = 5  # Number of items per page
+
+      def get_queryset(self):
+          queryset = CertificateModel.objects.all()
+
+          # Get sort parameter (e.g., "name" or "-name")
+          sort_param = self.request.GET.get("sort", "common_name")  # Default to "common_name"
+          return queryset.order_by(sort_param)
+
+      def get_context_data(self, **kwargs):
+          context = super().get_context_data(**kwargs)
+
+          # Get current sorting column
+          sort_param = self.request.GET.get("sort", "common_name")  # Default to "common_name"
+          is_desc = sort_param.startswith("-")  # Check if sorting is descending
+          current_sort = sort_param.lstrip("-")  # Remove "-" to get column name
+          next_sort = f"-{current_sort}" if not is_desc else current_sort  # Toggle sorting
+
+          # Pass sorting details to the template
+          context.update({
+              "current_sort": current_sort,
+              "is_desc": is_desc,
+          })
+          return context
 
 class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
     """The certificate detail view."""
@@ -51,7 +79,6 @@ class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, Deta
     ignore_url = reverse_lazy('pki:certificates')
     template_name = 'pki/certificates/details.html'
     context_object_name = 'cert'
-
 
 class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
     """View for downloading a single certificate."""
