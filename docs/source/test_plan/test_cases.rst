@@ -254,3 +254,70 @@ Feature File
 
 .. literalinclude:: ../../../trustpoint/features/R_008_auto_issuing_ca.feature
    :language: gherkin
+
+^^^^^
+R_009
+^^^^^
+
+This testcase is related to requirement `R_009`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+There is no High Availability Concept for TrustPoint yet,
+so that the test needs to be redesigned after we decided on which concept top use.
+For now, the test assumes a multi-server setup.
+
+To verify that the system ensures high availability through redundancy and failover mechanisms,
+we will test the following scenarios:
+
+#. Failover Mechanism Activation
+    - Simulate a primary server failure.
+    - Verify that the system seamlessly switches to a secondary server.
+    - Ensure no data loss or service interruption.
+
+#. Load Balancing Under High Traffic
+    - Simulate multiple concurrent users accessing the system.
+    - Verify that traffic is distributed across multiple nodes.
+    - Ensure response times remain within acceptable limits.
+
+#. Recovery After a Server Crash
+    - Simulate a server crash and restart.
+    - Ensure the system restores its previous state without manual intervention.
+    - Verify that logs and transactions remain intact.
+
+#. Database Replication Consistency
+    - Ensure that database replication maintains consistency across multiple nodes.
+    - Test whether changes made on one node propagate to others correctly.
+
+Edge cases:
+
+- Sudden simultaneous failure of multiple components.
+- Failover switching back to the primary server after recovery.
+- Performance degradation during failover.
+
+""""""""""""
+Feature File
+""""""""""""
+
+Nonexistent.
+
+^^^^^
+R_010
+^^^^^
+
+This testcase is related to requirement `R_010`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../../trustpoint/features/R_010_auto_issuing_ca.feature
+   :language: gherkin
