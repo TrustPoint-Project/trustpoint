@@ -34,18 +34,10 @@ class CertificatesContextMixin:
     extra_context: ClassVar = {'page_category': 'pki', 'page_name': 'certificates'}
 
 
-class CertificateTableView(CertificatesContextMixin, TpLoginRequiredMixin, SingleTableView):
-    """Certificates Table View."""
-
-    model = CertificateModel
-    table_class = CertificateTable
-    template_name = 'pki/certificates/certificates.html'
-    context_object_name = 'certificates'
-
-class CertificateTableViewNew(ListView):
+class CertificateTableView(ListView):
       model = CertificateModel
-      template_name = 'pki/certificates/certificates-new.html'  # Template file
-      context_object_name = 'certificates-new'
+      template_name = 'pki/certificates/certificates.html'  # Template file
+      context_object_name = 'certificates'
       paginate_by = 5  # Number of items per page
 
       def get_queryset(self):

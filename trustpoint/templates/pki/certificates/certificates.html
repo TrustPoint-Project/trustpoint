@@ -1,25 +1,139 @@
 {% extends 'trustpoint/base.html' %}
 {% load i18n %}
-{% load render_table from django_tables2 %}
 
 {% block content %}
 
-<div class="card" style="max-height: 100%; display: flex; flex-direction: column;">
-    <div class="card-header">
-        {% if issuing_ca_cert %}
-            <h1>{% trans "Certificates issued by the CA: " %} {{ issuing_ca_cert.common_name }}</h1>
-        {% else %}
-            <h1>{% trans "Certificates" %}</h1>
-        {% endif %}
-    </div>
-    <div class="card-body text-start" style="overflow: auto; flex-grow: 1; max-height: 90%;">
-        {% render_table table %}
-    </div>
-    <div class="card-footer tp-table-footer-btn-group d-flex justify-content-between align-items-center tp-sticky-footer">
-        <button type="button" class="btn btn-primary tp-table-select-btn" data-tp-url="download">
-            {% trans "Download selected" %}
-        </button>
-    </div>
-</div>
+<div class="card" style="max-height: 100%; display: flex; flex-direction: column">
+  <div class="card-header">
+    {% if issuing_ca_cert %}
+    <h1>{% trans "Certificates issued by the CA: " %} {{ issuing_ca_cert.common_name }}</h1>
+    {% else %}
+    <h1>{% trans "Certificates" %}</h1>
+    {% endif %}
+  </div>
+  <div class="card-body text-start" style="overflow: auto; flex-grow: 1; max-height: 90%">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th id="checkbox-column"><input type="checkbox"/></th>
+          <th>
+            <a href="?sort={% if is_desc%}common_name{% else%}-common_name{% endif %}">
+              Common Name
+            </a>
+          </th>
+          <th>
+            <a href="?sort={% if is_desc%}not_valid_after{% else%}-not_valid_after{% endif %}">
+              Not Valid After (UTC)
+            </a>
+          </th>
+          <th>
+            <a href="?sort={% if is_desc%}spki_algorithm{% else%}-spki_algorithm{% endif %}">
+              Public Key Algorithm
+            </a>
+          </th>
+          <th>
+            <a href="?sort={% if is_desc %}spki_key_size{% else%}-spki_key_size{% endif %}">
+              Public Key Size
+            </a>
+          </th>
+          <th>
+            <a href="?sort={% if is_desc %}spki_ec_curve{% else%}-spki_ec_curve{% endif %}">
+              Public Key Curve (ECC)
+            </a>
+          </th>
+          <th>
+            <a
+              href="?sort={% if is_desc %}certificate_status{% else%}-certificate_status{% endif %}"
+            >
+              Status
+            </a>
+          </th>
+          <th>
+            <a href="?sort={% if is_desc %}created_at{% else%}-created_at{% endif %}">
+              Created-At
+            </a>
+          </th>
+          <th>
+            <a href="?sort={% if is_desc %}is_self_signed{% else%}-is_self_signed{% endif %}">
+              Self-Signed
+            </a>
+          </th>
+          <th>Details</th>
+          <th>Download</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for certificate in page_obj %}
+        <tr>
+          <td class="row_checkbox">
+            <input type="checkbox" name="row_checkbox" value="{{ certificate.id }}" />
+          </td>
+          <td>{{ certificate.common_name }}</td>
+          <td>{{ certificate.not_valid_after }}</td>
+          <td>{{ certificate.spki_algorithm }}</td>
+          <td>{{ certificate.spki_key_size }}</td>
+          <td>{% if certificate.spki_ec_curve%} {{ certificate.spki_ec_curve }} {% else %}—{% endif %}</td>
+          <td>{{ certificate.certificate_status }}</td>
+          <td>{{ certificate.created_at }}</td>
+          <td>{% if certificate.is_self_signed == 1 %} ✔ {% else %} ✘ {% endif %}</td>
+          <td><a href="details/{{certificate.id}}/" class="btn btn-primary tp-table-btn">Details</a></td>
+          <td><a href="download/{{certificate.id}}/" class="btn btn-primary tp-table-btn">Download</a></td>
+        </tr>
+        {% empty %}
+        <tr>
+          <td colspan="3">No data available.</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
+    <!-- Pagination Controls -->
+    {% if is_paginated %}
+    <nav>
+      <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+          <a class="page-link" href="?page=1&sort={{ current_sort }}">« First</a>
+        </li>
+        <li class="page-item">
+          <a
+            class="page-link"
+            href="?page={{ page_obj.previous_page_number }}&sort={{ current_sort }}"
+            >Previous</a
+          >
+        </li>
+        {% endif %}
+
+        <li class="page-item disabled">
+          <span class="page-link"
+            >Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span
+          >
+        </li>
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+          <a class="page-link" href="?page={{ page_obj.next_page_number }}&sort={{ current_sort }}"
+            >Next</a
+          >
+        </li>
+        <li class="page-item">
+          <a
+            class="page-link"
+            href="?page={{ page_obj.paginator.num_pages }}&sort={{ current_sort }}"
+            >Last »</a
+          >
+        </li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endif %}
+  </div>
+  <div
+    class="card-footer tp-table-footer-btn-group d-flex justify-content-between align-items-center tp-sticky-footer"
+  >
+    <button type="button" class="btn btn-primary tp-table-select-btn" data-tp-url="download">
+      {% trans "Download selected" %}
+    </button>
+  </div>
+</div>
 {% endblock content %}

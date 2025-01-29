@@ -10,7 +10,85 @@
     </div>
 
     <div class="card-body text-start" style="overflow-y: auto; flex-grow: 1; max-height: 90%;">
-        {% render_table table %}
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th id="checkbox-column"><input type="checkbox"/></th>
+            <th>
+              <a href="?sort={% if is_desc%}unique_name{% else%}-unique_name{% endif %}">
+                Domain Name
+              </a>
+            </th>
+            <th>
+              <a href="?sort={% if is_desc%}issuing_ca__unique_name{% else%}-issuing_ca__unique_name{% endif %}">
+                Issuing CA Name
+              </a>
+            </th>
+            <th>Details</th>
+            <th>Config</th>
+            <th>Delete</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for domain in page_obj %}
+          <tr>
+            <td class="row_checkbox">
+              <input type="checkbox" name="row_checkbox" value="{{ domain.id }}" />
+            </td>
+            <td>{{ domain.unique_name }}</td>
+            <td>{{ domain.issuing_ca.unique_name }}</td>
+            <td><a href="detail/{{domain.id}}/" class="btn btn-primary tp-table-btn">Details</a></td>
+            <td><a href="config/{{domain.id}}/" class="btn btn-primary tp-table-btn">Config</a></td>
+            <td><a href="delete/{{domain.id}}/" class="btn btn-secondary tp-table-btn">Delete</a></td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3">No data available.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  
+      <!-- Pagination Controls -->
+      {% if is_paginated %}
+      <nav>
+        <ul class="pagination">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1&sort={{ current_sort }}">« First</a>
+          </li>
+          <li class="page-item">
+            <a
+              class="page-link"
+              href="?page={{ page_obj.previous_page_number }}&sort={{ current_sort }}"
+              >Previous</a
+            >
+          </li>
+          {% endif %}
+  
+          <li class="page-item disabled">
+            <span class="page-link"
+              >Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span
+            >
+          </li>
+  
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&sort={{ current_sort }}"
+              >Next</a
+            >
+          </li>
+          <li class="page-item">
+            <a
+              class="page-link"
+              href="?page={{ page_obj.paginator.num_pages }}&sort={{ current_sort }}"
+              >Last »</a
+            >
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
     </div>
 
     <div class="card-footer d-flex justify-content-between tp-sticky-footer">
