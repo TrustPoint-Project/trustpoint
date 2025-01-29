@@ -99,7 +99,8 @@ class LocalDomainCredentialIssuer(SaveCredentialToDbMixin):
         certificate_builder = certificate_builder.subject_name(x509.Name([
             x509.NameAttribute(x509.NameOID.COMMON_NAME, self.common_name),
             x509.NameAttribute(x509.NameOID.DOMAIN_COMPONENT, self.domain_component),
-            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number)
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number),
+            x509.NameAttribute(x509.NameOID.USER_ID, str(self.device.pk))
         ]))
         certificate_builder = certificate_builder.issuer_name(
             self.domain.issuing_ca.credential.get_certificate().subject)
