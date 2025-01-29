@@ -212,3 +212,45 @@ Feature File
 
 .. literalinclude:: ../../../trustpoint/features/R_007_logging.feature
    :language: gherkin
+
+^^^^^
+R_008
+^^^^^
+
+This testcase is related to requirement `R_008`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+To verify that the system automatically generates Issuing CAs based on configuration, we will test the following scenarios:
+
+#. Successful Auto-Generation of an Issuing CA
+    - The admin configures the system with predefined settings for an Issuing CA.
+    - The system automatically generates the CA without manual intervention.
+    - The CA appears in the list of available CAs.
+
+#. Auto-Generation with Different Configurations
+    - The admin sets different parameters for CA generation (e.g., key size, validity period).
+    - The system creates the CA using the specified configuration.
+    - The generated CA matches the given settings.
+
+#. Failure Handling in CA Generation
+    - The system prevents generation if required parameters are missing.
+    - The system logs errors when CA generation fails.
+
+#. Verification of Generated CA Details
+    - The generated CA contains the expected attributes (issuer name, serial number, key usage, etc.).
+    - The CA is functional and can issue end-entity certificates.
+
+Edge cases:
+
+- Attempting to generate a CA with invalid parameters.
+- Generating multiple CAs in quick succession.
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../../trustpoint/features/R_008_auto_issuing_ca.feature
+   :language: gherkin
