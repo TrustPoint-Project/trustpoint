@@ -1,6 +1,7 @@
 from behave import then, when
 from behave.api.pending_step import StepNotImplementedError
 
+
 @when('the admin performs an action {action}')
 def step_when_admin_performs_action(context, action):
     """
