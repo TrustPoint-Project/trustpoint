@@ -35,33 +35,35 @@ class CertificatesContextMixin:
 
 
 class CertificateTableView(ListView):
-      model = CertificateModel
-      template_name = 'pki/certificates/certificates.html'  # Template file
-      context_object_name = 'certificates'
-      paginate_by = 5  # Number of items per page
+    """Certificate Table View."""
 
-      def get_queryset(self):
-          queryset = CertificateModel.objects.all()
+    model = CertificateModel
+    template_name = 'pki/certificates/certificates.html'  # Template file
+    context_object_name = 'certificates'
+    paginate_by = 5  # Number of items per page
 
-          # Get sort parameter (e.g., "name" or "-name")
-          sort_param = self.request.GET.get("sort", "common_name")  # Default to "common_name"
-          return queryset.order_by(sort_param)
+    def get_queryset(self):
+        queryset = CertificateModel.objects.all()
 
-      def get_context_data(self, **kwargs):
-          context = super().get_context_data(**kwargs)
+        # Get sort parameter (e.g., "name" or "-name")
+        sort_param = self.request.GET.get("sort", "common_name")  # Default to "common_name"
+        return queryset.order_by(sort_param)
 
-          # Get current sorting column
-          sort_param = self.request.GET.get("sort", "common_name")  # Default to "common_name"
-          is_desc = sort_param.startswith("-")  # Check if sorting is descending
-          current_sort = sort_param.lstrip("-")  # Remove "-" to get column name
-          next_sort = f"-{current_sort}" if not is_desc else current_sort  # Toggle sorting
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
 
-          # Pass sorting details to the template
-          context.update({
-              "current_sort": current_sort,
-              "is_desc": is_desc,
-          })
-          return context
+        # Get current sorting column
+        sort_param = self.request.GET.get("sort", "common_name")  # Default to "common_name"
+        is_desc = sort_param.startswith("-")  # Check if sorting is descending
+        current_sort = sort_param.lstrip("-")  # Remove "-" to get column name
+        next_sort = f"-{current_sort}" if not is_desc else current_sort  # Toggle sorting
+
+        # Pass sorting details to the template
+        context.update({
+            "current_sort": current_sort,
+            "is_desc": is_desc,
+        })
+        return context
 
 class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
     """The certificate detail view."""
