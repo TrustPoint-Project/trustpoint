@@ -204,7 +204,8 @@ class LocalTlsClientCredentialIssuer(SaveCredentialToDbMixin):
             x509.NameAttribute(x509.NameOID.COMMON_NAME, common_name),
             x509.NameAttribute(x509.NameOID.PSEUDONYM, self.pseudonym),
             x509.NameAttribute(x509.NameOID.DOMAIN_COMPONENT, self.domain_component),
-            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number)
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number),
+            x509.NameAttribute(x509.NameOID.USER_ID, str(self.device.pk))
         ]))
         certificate_builder = certificate_builder.issuer_name(
             self.domain.issuing_ca.credential.get_certificate().subject)
@@ -325,7 +326,8 @@ class LocalTlsServerCredentialIssuer(SaveCredentialToDbMixin):
             x509.NameAttribute(x509.NameOID.COMMON_NAME, common_name),
             x509.NameAttribute(x509.NameOID.PSEUDONYM, self.pseudonym),
             x509.NameAttribute(x509.NameOID.DOMAIN_COMPONENT, self.domain_component),
-            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number)
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number),
+            x509.NameAttribute(x509.NameOID.USER_ID, str(self.device.pk))
         ]))
         certificate_builder = certificate_builder.issuer_name(
             self.domain.issuing_ca.credential.get_certificate().subject)
