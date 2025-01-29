@@ -3,6 +3,7 @@ from __future__ import annotations
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
+from django.views.generic.list import ListView  # type: ignore[import-untyped]
 from django.views.generic.edit import FormView
 from django_tables2 import SingleTableView
 from pki.forms import (
@@ -26,13 +27,36 @@ class IssuingCaContextMixin(TpLoginRequiredMixin, ContextDataMixin):
     context_page_category = 'pki'
     context_page_name = 'issuing_cas'
 
-
-class IssuingCaTableView(IssuingCaContextMixin, TpLoginRequiredMixin, SingleTableView):
+class IssuingCaTableView(ListView):
     """Issuing CA Table View."""
 
     model = IssuingCaModel
-    table_class = IssuingCaTable
-    template_name = 'pki/issuing_cas/issuing_cas.html'
+    template_name = 'pki/issuing_cas/issuing_cas.html'  # Template file
+    context_object_name = 'issuing-ca'
+    paginate_by = 5  # Number of items per page
+
+    def get_queryset(self):
+        queryset = IssuingCaModel.objects.all()
+
+        # Get sort parameter (e.g., "name" or "-name")
+        sort_param = self.request.GET.get("sort", "unique_name")  # Default to "unique_name"
+        return queryset.order_by(sort_param)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get current sorting column
+        sort_param = self.request.GET.get("sort", "unique_name")  # Default to "unique_name"
+        is_desc = sort_param.startswith("-")  # Check if sorting is descending
+        current_sort = sort_param.lstrip("-")  # Remove "-" to get column name
+        next_sort = f"-{current_sort}" if not is_desc else current_sort  # Toggle sorting
+
+        # Pass sorting details to the template
+        context.update({
+            "current_sort": current_sort,
+            "is_desc": is_desc,
+        })
+        return context
 
 
 class IssuingCaAddMethodSelectView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
