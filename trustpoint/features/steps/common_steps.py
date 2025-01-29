@@ -61,6 +61,7 @@ def step_api_client_authenticated(context):
     """
     raise NotImplementedError("Step not implemented: API client authentication.")
 
+
 @then('the API response should have a status code of {status_code}')
 def step_verify_status_code(context, status_code):
     """
@@ -74,6 +75,7 @@ def step_verify_status_code(context, status_code):
     """
     raise NotImplementedError("Step not implemented: Verify API response status code.")
 
+
 @then('the response payload should include an error message stating {error_message}')
 def step_verify_error_message(context, error_message):
     """
@@ -86,5 +88,3 @@ def step_verify_error_message(context, error_message):
         NotImplementedError: This step is not yet implemented.
     """
     raise NotImplementedError("Step not implemented: Verify error message in response payload.")
-
-

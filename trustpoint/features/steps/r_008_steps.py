@@ -1,6 +1,7 @@
 from behave import then, when
 from behave.api.pending_step import StepNotImplementedError
 
+
 @when('the admin configures the system for auto-generation of an Issuing CA')
 def step_when_admin_configures_auto_ca(context):
     """
@@ -72,7 +73,8 @@ def step_when_admin_attempts_incomplete_ca(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError("STEP: When the admin attempts to generate an Issuing CA with incomplete configuration")
+    raise StepNotImplementedError(
+        "STEP: When the admin attempts to generate an Issuing CA with incomplete configuration")
 
 
 @then('the system prevents the CA from being generated')

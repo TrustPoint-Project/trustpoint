@@ -1,6 +1,7 @@
 from behave import given, when, then
 from behave.api.pending_step import StepNotImplementedError
 
+
 @given('the certificate {certificate_id} exists and is close to expiration')
 def step_certificate_near_expiration(context, certificate_id):
     """
@@ -13,6 +14,7 @@ def step_certificate_near_expiration(context, certificate_id):
         StepNotImplementedError: This step is not yet implemented.
     """
     raise StepNotImplementedError("Step not implemented: Set certificate near expiration.")
+
 
 @given('the certificate {certificate_id} exists and is active')
 def step_certificate_active(context, certificate_id):
@@ -27,6 +29,7 @@ def step_certificate_active(context, certificate_id):
     """
     raise StepNotImplementedError("Step not implemented: Set certificate to active state.")
 
+
 @given('the certificate {certificate_id} exists and is revoked')
 def step_certificate_revoked(context, certificate_id):
     """
@@ -39,6 +42,7 @@ def step_certificate_revoked(context, certificate_id):
         StepNotImplementedError: This step is not yet implemented.
     """
     raise StepNotImplementedError("Step not implemented: Set certificate to revoked state.")
+
 
 @when('the admin navigates to the certificate management page for {certificate_id}')
 def step_navigate_certificate_management(context, certificate_id):
@@ -53,6 +57,7 @@ def step_navigate_certificate_management(context, certificate_id):
     """
     raise StepNotImplementedError("Step not implemented: Navigate to certificate management page.")
 
+
 @when('the admin initiates the certificate renewal process')
 def step_initiate_certificate_renewal(context):
     """
@@ -63,6 +68,7 @@ def step_initiate_certificate_renewal(context):
     """
     raise StepNotImplementedError("Step not implemented: Initiate certificate renewal process.")
 
+
 @when('the admin initiates the certificate revocation process')
 def step_initiate_certificate_revocation(context):
     """
@@ -72,6 +78,7 @@ def step_initiate_certificate_revocation(context):
         StepNotImplementedError: This step is not yet implemented.
     """
     raise StepNotImplementedError("Step not implemented: Initiate certificate revocation process.")
+
 
 @then('the certificate {certificate_id} should have an updated expiration date')
 def step_certificate_updated_expiration(context, certificate_id):
@@ -86,6 +93,7 @@ def step_certificate_updated_expiration(context, certificate_id):
     """
     raise StepNotImplementedError("Step not implemented: Verify updated expiration date.")
 
+
 @then('the certificate {certificate_id} should have a status of "revoked"')
 def step_certificate_status_revoked(context, certificate_id):
     """
@@ -99,11 +107,13 @@ def step_certificate_status_revoked(context, certificate_id):
     """
     raise StepNotImplementedError("Step not implemented: Verify certificate revoked status.")
 
+
 @when('the admin attempts to {renew_revoke} a non-existent certificate {non_existent}')
 def step_impl(context, renew_revoke, non_existent):
-    raise StepNotImplementedError(f'STEP: When the admin attempts to renew_revoke a non-existent certificate {non_existent}')
+    raise StepNotImplementedError(
+        f'STEP: When the admin attempts to renew_revoke a non-existent certificate {non_existent}')
+
 
 @when('the admin attempts to {renew_revoke} the certificate {cert}')
 def step_impl(context, renew_revoke, cert):
     raise StepNotImplementedError(f'STEP: When the admin attempts to renew_revoke the certificate {cert}')
-
