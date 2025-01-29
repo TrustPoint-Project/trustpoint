@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import datetime
 from cryptography import x509
-
+from pyasn1_modules.rfc5958 import PublicKey
 
 from core.serializer import CredentialSerializer
 from core.x509 import CryptographyUtils
@@ -47,6 +47,35 @@ class SaveCredentialToDbMixin:
 
         return issued_credential_model
 
+    def _save_keyless_credential(
+            self,
+            certificate: x509.Certificate,
+            certificate_chain: list[x509.Certificate],
+            common_name: str,
+            issued_credential_type: IssuedCredentialModel.IssuedCredentialType,
+            issued_credential_purpose: IssuedCredentialModel.IssuedCredentialPurpose
+    ) -> IssuedCredentialModel:
+
+        credential_model = CredentialModel.save_keyless_credential(
+            certificate=certificate,
+            certificate_chain=certificate_chain,
+            credential_type=CredentialModel.CredentialTypeChoice.ISSUED_CREDENTIAL
+        )
+
+        issued_credential_model = IssuedCredentialModel(
+            issued_credential_type=issued_credential_type,
+            issued_credential_purpose=issued_credential_purpose,
+            common_name=common_name,
+            credential=credential_model,
+            device=self.device,
+            domain=self.domain
+        )
+
+        issued_credential_model.save()
+
+        return issued_credential_model
+
+
 
 class LocalDomainCredentialIssuer(SaveCredentialToDbMixin):
 
@@ -90,12 +119,20 @@ class LocalDomainCredentialIssuer(SaveCredentialToDbMixin):
             'serial_number': device.serial_number
         }
 
-    def issue_domain_credential(self) -> IssuedCredentialModel:
-        domain_credential_private_key = CryptographyUtils.generate_private_key(domain=self.domain)
+    def issue_domain_credential(self, public_key: None | PublicKey = None) -> IssuedCredentialModel:
+        certificate_builder = x509.CertificateBuilder()
+        if public_key is None:
+            domain_credential_private_key = CryptographyUtils.generate_private_key(domain=self.domain)
+            public_key = domain_credential_private_key.public_key_serializer.as_crypto()
+        else:
+            domain_credential_private_key = None
+
+        # TODO(AlexHx8472): Check matching public_key and signature suite.
+
         hash_algorithm = CryptographyUtils.get_hash_algorithm_from_domain(domain=self.domain)
         one_day = datetime.timedelta(1, 0, 0)
 
-        certificate_builder = x509.CertificateBuilder()
+
         certificate_builder = certificate_builder.subject_name(x509.Name([
             x509.NameAttribute(x509.NameOID.COMMON_NAME, self.common_name),
             x509.NameAttribute(x509.NameOID.DOMAIN_COMPONENT, self.domain_component),
@@ -108,9 +145,7 @@ class LocalDomainCredentialIssuer(SaveCredentialToDbMixin):
         certificate_builder = certificate_builder.not_valid_after(
             datetime.datetime.now(datetime.UTC) + (one_day * 365))
         certificate_builder = certificate_builder.serial_number(x509.random_serial_number())
-        certificate_builder = certificate_builder.public_key(
-            domain_credential_private_key.public_key_serializer.as_crypto())
-
+        certificate_builder = certificate_builder.public_key(public_key)
         certificate_builder = certificate_builder.add_extension(
             x509.BasicConstraints(ca=False, path_length=None), critical=True
         )
@@ -121,7 +156,7 @@ class LocalDomainCredentialIssuer(SaveCredentialToDbMixin):
             critical=False
         )
         certificate_builder = certificate_builder.add_extension(
-            x509.SubjectKeyIdentifier.from_public_key(domain_credential_private_key.public_key_serializer.as_crypto()),
+            x509.SubjectKeyIdentifier.from_public_key(public_key),
             critical=False
         )
 
@@ -130,21 +165,33 @@ class LocalDomainCredentialIssuer(SaveCredentialToDbMixin):
             algorithm=hash_algorithm
         )
 
-        credential = CredentialSerializer(
-            (
-                domain_credential_private_key,
-                domain_certificate,
+        cert_chain =  (
                 [self.domain.issuing_ca.credential.get_certificate()] +
-                self.domain.issuing_ca.credential.get_certificate_chain()
-            )
-        )
+                self.domain.issuing_ca.credential.get_certificate_chain())
 
-        issued_domain_credential = self._save(
-            credential=credential,
-            common_name=self.common_name,
-            issued_credential_type=IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL,
-            issued_credential_purpose=IssuedCredentialModel.IssuedCredentialPurpose.DOMAIN_CREDENTIAL
-        )
+        if domain_credential_private_key:
+            credential = CredentialSerializer(
+                (
+                    domain_credential_private_key,
+                    domain_certificate,
+                    cert_chain
+                )
+            )
+
+            issued_domain_credential = self._save(
+                credential=credential,
+                common_name=self.common_name,
+                issued_credential_type=IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL,
+                issued_credential_purpose=IssuedCredentialModel.IssuedCredentialPurpose.DOMAIN_CREDENTIAL
+            )
+        else:
+            issued_domain_credential = self._save_keyless_credential(
+                certificate=domain_certificate,
+                certificate_chain=cert_chain,
+                common_name=self.common_name,
+                issued_credential_type=IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL,
+                issued_credential_purpose=IssuedCredentialModel.IssuedCredentialPurpose.DOMAIN_CREDENTIAL
+            )
 
         self.device.onboarding_status = self.device.OnboardingStatus.ONBOARDED
         self.device.save()

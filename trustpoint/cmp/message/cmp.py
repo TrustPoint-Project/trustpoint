@@ -29,6 +29,18 @@ from pyasn1.type.useful import UTCTime, GeneralizedTime
 import enum
 
 
+class CmpInvalidMessageHeaderError(Exception):
+    """Exception raised when the header of the message contains invalid data."""
+
+    def __init__(self, message: str = 'Invalid cmp message header found.') -> None:
+        """Initialize the CmpHeaderInvalidError exception with a message.
+
+        Args:
+            message: The error message.
+        """
+        self.message = message
+
+
 class PkiMessageType(enum.Enum):
 
     IR = 'ir'
@@ -222,13 +234,18 @@ class NameParser:
             return x509.Name(crypto_rdns_sequence)
 
 
+class CmpInitializationRequestMessage:
+
+    _pyasn1_message: rfc4210.PKIMessage
+
+
 class PkiMessageHeader:
 
     _pki_header: rfc4210.PKIHeader
 
     _pvno: int
-    _sender_kid: None | int = None
     _sender: x509.GeneralName
+    _sender_kid: None | int = None
     _recipient_kid: None | int = None
     _recipient: x509.GeneralName
     _message_time: None | datetime.datetime = None
@@ -247,7 +264,6 @@ class PkiMessageHeader:
             raise ValueError('This CMP implementation only supports CMPv2 and CMPv3.')
         self._pvno = pvno
 
-        # TODO(AlexHx8472): Currently not supporting any KID fields
         # unclear of the structure -> RFC 2459 : Octetstring,
         # however RFC4210 and RFC9483 also allow common name / directory name
 
@@ -293,7 +309,7 @@ class PkiMessageHeader:
             raise ValueError(
                 'CMP message header contains the generalInfo field. '
                 'This is not yet supported by this CMP implementation.')
-        
+
     def __str__(self) -> str:
         transaction_id = self.transaction_id.hex() if isinstance(self.transaction_id, bytes) else self.transaction_id
         sender_nonce = self.sender_nonce.hex() if isinstance(self.sender_nonce, bytes) else self.sender_nonce

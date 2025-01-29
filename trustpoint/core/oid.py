@@ -5,6 +5,7 @@ import enum
 
 from cryptography import x509
 # from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import rsa, ec
 from django.utils.translation import gettext_lazy as _
 # from pyasn1.codec.der import decoder
@@ -477,15 +478,16 @@ class PublicKeyInfo:
     ) -> None:
         self._public_key_algorithm_oid = public_key_algorithm_oid
         self._key_size = key_size
+        print(key_size)
         if self._public_key_algorithm_oid == PublicKeyAlgorithmOid.RSA:
-            if self._key_size <= 2048:
+            if self._key_size < 2048:
                 err_msg = 'RSA key size must at least be 2048 bits.'
                 raise ValueError(err_msg)
             if named_curve is not None:
                 err_msg = 'RSA keys cannot have a named curve associated with it.'
                 raise ValueError(err_msg)
         elif self._public_key_algorithm_oid == PublicKeyAlgorithmOid.ECC:
-            if self._key_size <= 128:
+            if self._key_size < 128:
                 err_msg = 'ECC key size must at least be 128 bits.'
                 raise ValueError(err_msg)
             if named_curve is None:
@@ -593,3 +595,63 @@ class SignatureSuite:
         if self != signature_suite:
             return False
         return True
+
+
+class HashAlgorithm(enum.Enum):
+    """Enum of hash algorithms mapped to their OID and cryptography hash implementation."""
+
+    MD5 = ('1.2.840.113549.2.5', _('MD5'), hashes.MD5)
+
+    SHA1 = ('1.3.14.3.2.26', _('SHA1'), hashes.SHA1)
+
+    SHA224 = ('2.16.840.1.101.3.4.2.4', _('SHA224'), hashes.SHA224)
+    SHA256 = ('2.16.840.1.101.3.4.2.1', _('SHA256'), hashes.SHA256)
+    SHA384 = ('2.16.840.1.101.3.4.2.2', _('SHA384'), hashes.SHA384)
+    SHA512 = ('2.16.840.1.101.3.4.2.3', _('SHA512'), hashes.SHA512)
+
+    # SHA-3 family
+    SHA3_224 = ('2.16.840.1.101.3.4.2.7', _('SHA3-224'), hashes.SHA3_224)
+    SHA3_256 = ('2.16.840.1.101.3.4.2.8', _('SHA3-256'), hashes.SHA3_256)
+    SHA3_384 = ('2.16.840.1.101.3.4.2.9', _('SHA3-384'), hashes.SHA3_384)
+    SHA3_512 = ('2.16.840.1.101.3.4.2.10', _('SHA3-512'), hashes.SHA3_512)
+
+    # SHAKE algorithms
+    SHAKE128 = ('2.16.840.1.101.3.4.2.11', _('Shake-128'), hashes.SHAKE128)
+    SHAKE256 = ('2.16.840.1.101.3.4.2.12', _('Shake-256'), hashes.SHAKE256)
+    
+    def __new__(cls, dotted_string, verbose_name: str, hash_algorithm: type[hashes.HashAlgorithm]):
+        obj = object.__new__(cls)
+        obj._value_ = dotted_string
+        obj.dotted_string = dotted_string
+        obj.verbose_name = verbose_name
+        obj.hash_algorithm = hash_algorithm
+        return obj
+
+    def get_hash_function(self) -> hashes.Hash:
+        return hashes.Hash(self.hash_algorithm())
+
+
+class HmacAlgorithm(enum.Enum):
+
+    HMAC_MD5 = ("1.3.6.1.5.5.8.1.1", HashAlgorithm.MD5)
+
+    HMAC_SHA1 = ("1.3.6.1.5.5.8.1.2", HashAlgorithm.SHA1)
+
+    HMAC_SHA224 = ("1.3.6.1.5.5.8.1.4", HashAlgorithm.SHA224)
+    HMAC_SHA256 = ("1.3.6.1.5.5.8.1.5", HashAlgorithm.SHA256)
+    HMAC_SHA384 = ("1.3.6.1.5.5.8.1.6", HashAlgorithm.SHA384)
+    HMAC_SHA512 = ("1.3.6.1.5.5.8.1.7", HashAlgorithm.SHA512)
+
+    HMAC_SHA3_224 = ('2.16.840.1.101.3.4.2.13', HashAlgorithm.SHA3_224)
+    HMAC_SHA3_256 = ('2.16.840.1.101.3.4.2.14', HashAlgorithm.SHA3_256)
+    HMAC_SHA3_384 = ('2.16.840.1.101.3.4.2.15', HashAlgorithm.SHA3_384)
+    HMAC_SHA3_512 = ('2.16.840.1.101.3.4.2.16', HashAlgorithm.SHA3_512)
+
+    # No HMAC with SHAKE
+
+    def __new__(cls, dotted_string, hash_algorithm: HashAlgorithm):
+
+        obj = object.__new__(cls)
+        obj._value_ = dotted_string
+        obj.hash_algorithm = hash_algorithm
+        return obj
