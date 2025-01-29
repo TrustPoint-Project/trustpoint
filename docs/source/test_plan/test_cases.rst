@@ -339,6 +339,7 @@ To verify that the system provides a CMP endpoint for onboarding devices, we wil
     - Verify that the system handles high traffic without performance degradation.
 
 Edge cases:
+
 - Expired certificates being used for renewal.
 - Partial network outages during certificate issuance.
 - Unexpected payloads being sent to the CMP endpoint.
