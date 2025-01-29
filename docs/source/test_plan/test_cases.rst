@@ -313,11 +313,39 @@ This testcase is related to requirement `R_010`_.
 Test Idea
 """""""""
 
+To verify that the system provides a CMP endpoint for onboarding devices, we will test the following scenarios:
 
+#. Device Registration and Certificate Enrollment
+    - A new device initiates a CMP request to the endpoint.
+    - The system processes the request and issues a certificate.
+    - The device successfully receives and stores the issued certificate.
+
+#. Certificate Renewal for an Onboarded Device
+    - An onboarded device requests certificate renewal.
+    - The system validates the request and issues a new certificate.
+    - The device replaces its old certificate with the new one.
+
+#. Handling Unauthorized Requests
+    - A device with invalid credentials tries to access the CMP endpoint.
+    - The system rejects the request with an appropriate error response.
+
+#. Certificate Revocation for a Compromised Device
+    - An admin requests certificate revocation for a specific device.
+    - The system revokes the certificate and updates the revocation list.
+    - The revoked device is unable to authenticate using its certificate.
+
+#. High Load Handling
+    - Simulate multiple devices requesting certificate issuance simultaneously.
+    - Verify that the system handles high traffic without performance degradation.
+
+Edge cases:
+- Expired certificates being used for renewal.
+- Partial network outages during certificate issuance.
+- Unexpected payloads being sent to the CMP endpoint.
 
 """"""""""""
 Feature File
 """"""""""""
 
-.. literalinclude:: ../../../trustpoint/features/R_010_auto_issuing_ca.feature
+.. literalinclude:: ../../../trustpoint/features/R_010_cmp_endpoint.feature
    :language: gherkin
