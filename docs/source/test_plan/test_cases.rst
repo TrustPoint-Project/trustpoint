@@ -431,13 +431,9 @@ To verify that the system provides multi-language UI options, we will test the f
     - Verify that key UI elements (menus, buttons, notifications) are translated correctly for each supported language.
     - Ensure that dynamic text (e.g., form labels, user-generated content) remains unaffected.
 
-#. Language Change Mid-Session
-    - A user changes the language while actively using the system.
-    - The system updates translations dynamically without requiring a page reload.
-
 """"""""""""
 Feature File
 """"""""""""
 
-.. literalinclude:: ../../../trustpoint/features/R_012_est_endpoint.feature
+.. literalinclude:: ../../../trustpoint/features/R_012_multi_language_support.feature
    :language: gherkin
