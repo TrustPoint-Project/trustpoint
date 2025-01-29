@@ -400,3 +400,44 @@ Feature File
 
 .. literalinclude:: ../../../trustpoint/features/R_011_est_endpoint.feature
    :language: gherkin
+
+^^^^^
+R_011
+^^^^^
+
+This testcase is related to requirement `R_012`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+To verify that the system provides multi-language UI options, we will test the following scenarios:
+
+#. Default Language Selection
+    - A new user accesses the system.
+    - The system detects the browser's language settings and applies the appropriate default language.
+    - If no supported language is detected, the system defaults to English.
+
+#. Manual Language Selection
+    - A user manually selects a different language from the UI settings.
+    - The system updates all UI elements to reflect the chosen language.
+    - The language setting persists across sessions.
+
+#. Language Persistence
+    - A user selects a language and logs out.
+    - Upon re-login, the system retains the user's language preference.
+
+#. UI Translation Accuracy
+    - Verify that key UI elements (menus, buttons, notifications) are translated correctly for each supported language.
+    - Ensure that dynamic text (e.g., form labels, user-generated content) remains unaffected.
+
+#. Language Change Mid-Session
+    - A user changes the language while actively using the system.
+    - The system updates translations dynamically without requiring a page reload.
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../../trustpoint/features/R_012_est_endpoint.feature
+   :language: gherkin
