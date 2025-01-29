@@ -2,15 +2,15 @@ from behave import then, when, given
 from behave.api.pending_step import StepNotImplementedError
 
 
-@given('the CMP endpoint is available')
-def step_given_cmp_available(context):
+@given('the {endpoint} endpoint is available')
+def step_given_endpoint_available(context, endpoint):
     """
-    Ensures that the CMP endpoint is accessible before testing.
+    Ensures that the endpoint is accessible before testing.
 
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError("STEP: Given the CMP endpoint is available")
+    raise StepNotImplementedError("STEP: Given the endpoint is available")
 
 
 @given('a new device with identifier {device_id}')
@@ -27,15 +27,15 @@ def step_given_new_device(context, device_id):
     raise StepNotImplementedError(f"STEP: Given a new device with identifier {device_id}")
 
 
-@when('the device sends a CMP request for a new certificate')
-def step_when_device_requests_certificate(context):
+@when('the device sends a {onboarding_protocol} request for a new certificate')
+def step_when_device_requests_certificate(context, onboarding_protocol):
     """
     Simulates a new device requesting a certificate via the CMP endpoint.
 
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError("STEP: When the device sends a CMP request for a new certificate")
+    raise StepNotImplementedError(f"STEP: When the device sends a {onboarding_protocol} request for a new certificate")
 
 
 @then('the system should issue a new certificate for {device_id}')
@@ -78,15 +78,15 @@ def step_given_onboarded_device(context, device_id):
         f"STEP: Given an onboarded device with identifier {device_id} and an active certificate")
 
 
-@when('the device sends a CMP request for certificate renewal')
-def step_when_device_renews_certificate(context):
+@when('the device sends a {onboarding_protocol} request for certificate renewal')
+def step_when_device_renews_certificate(context, onboarding_protocol):
     """
     Simulates a device requesting a certificate renewal.
 
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError("STEP: When the device sends a CMP request for certificate renewal")
+    raise StepNotImplementedError(f"STEP: When the device sends a {onboarding_protocol} request for certificate renewal")
 
 
 @then('the device should replace its old certificate with the new one')
@@ -111,15 +111,15 @@ def step_given_invalid_device(context):
     raise StepNotImplementedError("STEP: Given a device with invalid credentials")
 
 
-@when('the device sends a CMP request')
-def step_when_invalid_device_requests(context):
+@when('the device sends a {onboarding_protocol} request')
+def step_when_invalid_device_requests(context, onboarding_protocol):
     """
     Simulates an unauthorized device attempting to access the CMP endpoint.
 
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError("STEP: When the device sends a CMP request")
+    raise StepNotImplementedError(f"STEP: When the device sends a {onboarding_protocol} request")
 
 
 @then('the system should reject the request with an "Unauthorized" error')
@@ -178,14 +178,14 @@ def step_impl(context):
     raise StepNotImplementedError('STEP: Then {device_id} should no longer authenticate using its certificate')
 
 
-@given('{num_devices} devices are requesting certificates simultaneously')
-def step_impl(context, num_devices):
-    raise StepNotImplementedError(f'STEP: Given {num_devices} devices are requesting certificates simultaneously')
+@given('{num_devices} devices are requesting certificates simultaneously via {onboarding_protocol}')
+def step_impl(context, num_devices, onboarding_protocol):
+    raise StepNotImplementedError(f'STEP: Given {num_devices} devices are requesting certificates simultaneously via {onboarding_protocol}')
 
 
-@when('the CMP endpoint processes the requests')
-def step_impl(context):
-    raise StepNotImplementedError('STEP: When the CMP endpoint processes the requests')
+@when('the {onboarding_protocol} endpoint processes the requests')
+def step_impl(context, onboarding_protocol):
+    raise StepNotImplementedError(f'STEP: When the {onboarding_protocol} endpoint processes the requests')
 
 
 @then('all certificates should be issued within {max_response_time} milliseconds')
