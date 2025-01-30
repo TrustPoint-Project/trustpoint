@@ -199,6 +199,5 @@ class BrowserLoginForm(forms.Form):
 class CredentialRevocationForm(forms.ModelForm):
     """Form to revoke a device credential."""
     class Meta:
-        #model = IssuedCredentialModel
         model = RevokedCertificateModel
         fields = ['revocation_reason']

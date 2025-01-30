@@ -481,6 +481,11 @@ class CertificateModel(LoggerMixin, models.Model):
         """
         return cls._save_certificate(certificate=certificate)
 
+    def set_status(self, status: CertificateStatus) -> None:
+        """Set the certificate status."""
+        self.certificate_status = status
+        self._save()
+
 
 class RevokedCertificateModel(models.Model):
     """Model to store revoked certificates."""
@@ -507,7 +512,11 @@ class RevokedCertificateModel(models.Model):
 
     revoked_at = models.DateTimeField(verbose_name=_('Revocation Date'), auto_now_add=True)
 
-    revocation_reason = models.TextField(verbose_name=_('Revocation Reason'), choices=ReasonCode.choices)
+    revocation_reason = models.TextField(
+        verbose_name=_('Revocation Reason'),
+        choices=ReasonCode.choices,
+        default=ReasonCode.UNSPECIFIED
+    )
 
     ca = models.ForeignKey(
         'IssuingCaModel',
@@ -519,3 +528,9 @@ class RevokedCertificateModel(models.Model):
 
     def __str__(self) -> str:
         return f'RevokedCertificate({self.certificate.common_name})'
+
+    @transaction.atomic
+    def save(self, *args, **kwargs) -> None:
+        """Save the revoked certificate and set the certificate status to REVOKED."""
+        self.certificate.set_status(CertificateModel.CertificateStatus.REVOKED)
+        super().save(*args, **kwargs)

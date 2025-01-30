@@ -16,6 +16,7 @@ from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ngettext
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormView
@@ -576,7 +577,7 @@ class DeviceCertificateLifecycleManagementSummaryView(
         return super().get(request, *args, **kwargs)
 
 
-class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView, FormView):
     """Revokes all active credentials for a given device."""
 
     http_method_names = ('get', 'post')
@@ -584,9 +585,38 @@ class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, DetailView,
     model = DeviceModel
     template_name = 'devices/revoke.html'
     form_class = CredentialRevocationForm
+    success_url = reverse_lazy('devices:devices')
+
+    def form_valid(self, form) -> HttpResponse:
+        """Handles revocation upon a POST request containing a valid form."""
+        # Revoke all active credentials for the device
+        device = self.get_object()
+        n_revoked = 0
+        # can be further optimized by filtering for active credentials only
+        for credential in device.issued_credentials.all():
+        # alternative: filter(credential__certificate__certificate_status__exact = 'OK'):
+            revoked_successfully, _msg = DeviceCredentialRevocation.revoke_certificate(
+                credential.id,
+                form.cleaned_data['revocation_reason']
+            )
+            if revoked_successfully:
+                n_revoked += 1
+
+        if n_revoked > 0:
+            msg = ngettext(
+                'Successfully revoked one active credential.',
+                'Successfully revoked %(count)d active credentials.',
+                n_revoked,
+            ) % {'count': n_revoked}
+
+            messages.success(self.request, msg)
+        else:
+            messages.error(self.request, _('No credentials were revoked.'))
+
+        return super().form_valid(form)
 
 
-class DeviceCredentialRevocationView(DeviceContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+class DeviceCredentialRevocationView(DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView, FormView):
     """Revokes a specific issued credential."""
 
     http_method_names = ('get', 'post')
@@ -598,22 +628,22 @@ class DeviceCredentialRevocationView(DeviceContextMixin, TpLoginRequiredMixin, D
 
     def get_success_url(self) -> str:
         """Returns the URL to redirect to if the form is valid and was successfully processed."""
-        kwargs = {'pk': self.get_object().id}
+        kwargs = {'pk': self.get_object().device.id}
         return cast('str', reverse_lazy('devices:certificate_lifecycle_management', kwargs=kwargs))
-    
+
     def form_valid(self, form) -> HttpResponse:
-        revoked_successfully = DeviceCredentialRevocation.revoke_certificate(
+        """Handles revocation upon a POST request containing a valid form."""
+        revoked_successfully, revocation_msg = DeviceCredentialRevocation.revoke_certificate(
             self.get_object().id,
             form.cleaned_data['revocation_reason']
         )
 
         if revoked_successfully:
-            messages.success(self.request, _('Successfully revoked credential.'))
+            messages.success(self.request, revocation_msg)
         else:
-            messages.error(self.request, _('Failed to revoke credential.'))
-        
-        return super().form_valid(form)
+            messages.error(self.request, revocation_msg)
 
+        return super().form_valid(form)
 
 
 class DeviceBrowserOnboardingOTPView(DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView, RedirectView):

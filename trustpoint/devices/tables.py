@@ -11,6 +11,7 @@ from django.utils.html import format_html, mark_safe
 from django.utils.translation import gettext_lazy as _
 
 from devices.models import DeviceModel, IssuedCredentialModel, TrustpointClientOnboardingProcessModel
+from pki.models import CertificateModel
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString
@@ -164,7 +165,7 @@ class DeviceCredentialsTableMixin():
     @staticmethod
     def render_expiration_date(record: IssuedCredentialModel) -> datetime.datetime:
         return record.credential.certificate.not_valid_after
-    
+
     @staticmethod
     def render_expires_in(record: IssuedCredentialModel) -> SafeString:
         now = datetime.datetime.now(datetime.timezone.utc)
@@ -175,7 +176,7 @@ class DeviceCredentialsTableMixin():
         hours, remainder = divmod(expire_timedelta.seconds, 3600)
         minutes, seconds = divmod(remainder, 60)
         return format_html(f'{days} days, {hours}:{minutes}:{seconds}')
-    
+
     @staticmethod
     def render_download(record: IssuedCredentialModel) -> SafeString:
         """Creates the html hyperlink for the download-view.
@@ -201,6 +202,10 @@ class DeviceCredentialsTableMixin():
         Returns:
             SafeString: The html hyperlink for the revoke-view.
         """
+        if record.credential.certificate.certificate_status == CertificateModel.CertificateStatus.REVOKED:
+            return format_html('<a class="btn btn-danger tp-table-btn w-100 disabled">{}</a>', _('Revoked'))
+
+
         return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
                            record.pk, _('Revoke'))
 
