@@ -9,6 +9,7 @@ from core.x509 import CryptographyUtils
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from django.db import models
+from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from pki.models.credential import CredentialModel
@@ -50,10 +51,7 @@ class IssuingCaModel(LoggerMixin, models.Model):
     updated_at = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
     last_crl_issued_at = models.DateTimeField(verbose_name=_('Last CRL Issued'), null=True, blank=True)
 
-    crl_pem = models.TextField(editable=False)
-
-    def __repr__(self) -> str:
-        return f'IssuingCaModel(unique_name={self.unique_name})'
+    crl_pem = models.TextField(editable=False, default='', verbose_name=_('CRL in PEM format'))
 
     def __str__(self) -> str:
         """Returns a human-readable string that represents this IssuingCaModel entry.
@@ -62,6 +60,9 @@ class IssuingCaModel(LoggerMixin, models.Model):
             str: Human-readable string that represents this IssuingCaModel entry.
         """
         return self.unique_name
+
+    def __repr__(self) -> str:
+        return f'IssuingCaModel(unique_name={self.unique_name})'
 
     @classmethod
     @LoggerMixin.log_exceptions
@@ -106,39 +107,49 @@ class IssuingCaModel(LoggerMixin, models.Model):
         issuing_ca.save()
         return issuing_ca
 
-    def issue_crl(self) -> None:
+    def issue_crl(self) -> bool:
         """Issues a CRL with revoked certificates issued by this CA."""
         self.logger.debug('Generating CRL for CA %s', self.unique_name)
 
-        crl_issued_at = datetime.now()
-        self.last_crl_issued_at = crl_issued_at
+        try:
+            crl_issued_at = timezone.now()
+            self.last_crl_issued_at = crl_issued_at
 
-        crl_builder = x509.CertificateRevocationListBuilder(
-            issuer_name=self.certificate.issuer,
-            last_update=crl_issued_at,
-            next_update=crl_issued_at + datetime.timedelta(hours=24) #(minutes=self.next_crl_generation_time)
-        )
+            ca_subject = self.credential.certificate.get_certificate_serializer().as_crypto().subject
 
-        crl_certificates = self.revoked_certificates.all()
-
-        for cert in crl_certificates:
-            revoked_cert = (x509.RevokedCertificateBuilder()
-                .serial_number(int(cert.certificate.serial_number, 16))
-                .revocation_date(cert.revoked_at)
-                .add_extension(x509.CRLReason(
-                    x509.ReasonFlags(cert.revocation_reason)), critical=False)
-                .build()
+            crl_builder = x509.CertificateRevocationListBuilder(
+                issuer_name=ca_subject,
+                last_update=crl_issued_at,
+                next_update=crl_issued_at + datetime.timedelta(hours=24) #(minutes=self.next_crl_generation_time)
             )
-            crl_builder = crl_builder.add_revoked_certificate(revoked_cert)
 
-        hash_algorithm = CryptographyUtils.get_hash_algorithm_from_credential(credential=self.credential)
+            crl_certificates = self.revoked_certificates.all()
 
-        crl = crl_builder.sign(
-            private_key=self.credential.get_private_key_serializer().as_crypto(),
-            algorithm=hash_algorithm
-        )
+            for cert in crl_certificates:
+                revoked_cert = (x509.RevokedCertificateBuilder()
+                    .serial_number(int(cert.certificate.serial_number, 16))
+                    .revocation_date(cert.revoked_at)
+                    .add_extension(x509.CRLReason(
+                        x509.ReasonFlags(cert.revocation_reason)), critical=False)
+                    .build()
+                )
+                crl_builder = crl_builder.add_revoked_certificate(revoked_cert)
 
-        self.crl_pem = crl.public_bytes(encoding=serialization.Encoding.PEM).decode()
-        self.save()
+            hash_algorithm = CryptographyUtils.get_hash_algorithm_from_credential(credential=self.credential)
 
-        self.logger.info('CRL generation for CA %s finished.', self.unique_name)
+            priv_k = self.credential.get_private_key_serializer().as_crypto()
+
+            crl = crl_builder.sign(
+                private_key=priv_k,
+                algorithm=hash_algorithm
+            )
+
+            self.crl_pem = crl.public_bytes(encoding=serialization.Encoding.PEM).decode()
+            self.save()
+
+            self.logger.info('CRL generation for CA %s finished.', self.unique_name)
+        except Exception:
+            self.logger.exception('CRL generation for CA %s failed', self.unique_name)
+            return False
+
+        return True

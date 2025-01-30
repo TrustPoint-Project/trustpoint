@@ -24,6 +24,7 @@ from django.utils import timezone
 from django.views.decorators.http import last_modified
 from django.views.decorators.vary import vary_on_cookie
 from django.views.i18n import JavaScriptCatalog
+from pki.views.issuing_cas import CrlDownloadView
 
 from .views import base
 
@@ -41,6 +42,7 @@ urlpatterns += [
     path('users/', include('users.urls')),
     path('setup-wizard/', include('setup_wizard.urls')),
     path('pki/', include('pki.urls.pki')),
+    path('crl/<int:pk>/', CrlDownloadView.as_view(), name='crl-download'),
     path('.well-known/est/', include('pki.urls.est')),
     path('.well-known/cmp/', include('cmp.urls')),
     # path('onboarding/', include('onboarding.urls')),

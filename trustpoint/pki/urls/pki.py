@@ -89,6 +89,7 @@ urlpatterns = [
     ),
     path('issuing-cas/detail/<int:pk>/', issuing_cas.IssuingCaDetailView.as_view(), name='issuing_cas-detail'),
     path('issuing-cas/config/<int:pk>/', issuing_cas.IssuingCaConfigView.as_view(), name='issuing_cas-config'),
+    path('issuing-cas/crl-gen/<int:pk>/', issuing_cas.IssuingCaCrlGenerationView.as_view(), name='issuing_cas-crl-gen'),
     re_path(
         r'^issuing-cas/delete/(?P<pks>([0-9]+/)+[0-9]*)/?$',
         issuing_cas.IssuingCaBulkDeleteConfirmView.as_view(),
