@@ -55,7 +55,7 @@ Security Requirements
    :header: "Name (Identifier)", "Title", "Description", "Component(s)", "Importance"
    :widths: 10, 25, 60, 30, 10
 
-   "R_101", "Devices are only allowed to communicate with valid certificates", "Machines or devices in the network are only allowed to communicate with a valid certificate.", "TP_Client (multiple)", "High"
-   "R_102", "Encrypted Communication", "The communication between machines has to be encrypted with the given algorithm.", "TP_Client (multiple)", "High"
-   "R_103", "Security Level Configuration", "Allow administrators to configure security levels for different TrustPoint components.", "Admin, TPC_Web", "Medium"
-   "R_104", "Certificate Template Security", "Enforce access control and secure handling for certificate templates.", "TPC_Web", "High"
+   _`R_101`, "Devices are only allowed to communicate with valid certificates", "Machines or devices in the network are only allowed to communicate with a valid certificate.", "TP_Client (multiple)", "High"
+   _`R_102`, "Encrypted Communication", "The communication between machines has to be encrypted with the given algorithm.", "TP_Client (multiple)", "High"
+   _`R_103`, "Security Level Configuration", "Allow administrators to configure security levels for different TrustPoint components.", "Admin, TPC_Web", "Medium"
+   _`R_104`, "Certificate Template Security", "Enforce access control and secure handling for certificate templates.", "TPC_Web", "High"
