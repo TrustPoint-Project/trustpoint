@@ -1,9 +1,9 @@
 This chapter lists all needed requirements of TrustPoint, e.g. creating certificates.
 These requirements are only back-end requirements.
 
-^^^^^^
+------
 Actors
-^^^^^^
+------
 
 First, we define all needed actors to be as specific as needed.
 
@@ -19,16 +19,16 @@ First, we define all needed actors to be as specific as needed.
    "NTEU", "Non-technically experienced user", "A user who is not necessarily technically experienced. This could also be an admin."
    "TEU", "Technically experienced user", "A user who does know at least a little bit about programming and PKI."
 
-^^^^^^^^^^^^
+------------
 Requirements
-^^^^^^^^^^^^
+------------
 
 Next, we list all requirements.
 Note that this list could (and will be) incomplete.
 
-"""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^
 Functional Requirements
-"""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^
 
 .. csv-table:: Functional Requirements
    :header: "Name (Identifier)", "Title", "Description", "Component(s)", "Importance"
@@ -47,9 +47,9 @@ Functional Requirements
    _`R_011`, "EST Endpoint for Onboarded Devices", "Provide an EST endpoint for device onboarding.", "All components", "High"
    _`R_012`, "Language Selection and Translation", "Support multi-language UI options for global usability.", "TPC_Web, TP_Client", "Medium"
 
-"""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^
 Security Requirements
-"""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^
 
 .. csv-table:: Security Requirements
    :header: "Name (Identifier)", "Title", "Description", "Component(s)", "Importance"

@@ -1,5 +1,3 @@
-.. _onboarding_link:
-
 Onboarding Mechanisms
 =====================
 

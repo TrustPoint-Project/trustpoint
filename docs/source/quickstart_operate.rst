@@ -1,5 +1,3 @@
-.. _quickstart_operate_link:
-
 Quickstart Operation Guide
 ==========================
 
@@ -104,7 +102,7 @@ Devices are the end nodes that will receive digital certificates. Follow these s
 
 .. note::
 
-      trustpoint offers different onboarding mechanisms. For more information see :ref:`onboarding_link`. `Trustpoint-Client <https://trustpoint-client.readthedocs.io>`_ is the easiest and preferred way of consuming Trustpoint.
+      trustpoint offers different onboarding mechanisms. For more information see :ref:`Onboarding Mechanisms`. `Trustpoint-Client <https://trustpoint-client.readthedocs.io>`_ is the easiest and preferred way of consuming Trustpoint.
 
 .. admonition:: 🥳 CONGRATULATIONS!
    :class: tip
