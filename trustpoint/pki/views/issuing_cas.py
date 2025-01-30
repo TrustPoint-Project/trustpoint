@@ -98,16 +98,18 @@ class IssuingCaBulkDeleteConfirmView(IssuingCaContextMixin, TpLoginRequiredMixin
 
 
 class IssuingCaCrlGenerationView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):
+    """View to manually generate a CRL for an Issuing CA."""
 
     model = IssuingCaModel
     success_url = reverse_lazy('pki:issuing_cas')
     ignore_url = reverse_lazy('pki:issuing_cas')
-    template_name = 'pki/issuing_cas/crl_generation.html'
     context_object_name = 'issuing_ca'
 
-    http_method_names = ('get', 'post')
+    http_method_names = ('get', )
 
-    def get(self, request, *args, **kwargs) -> HttpResponse: # TODO: POST
+    # TODO(Air): This view should use a POST request as it is an action.
+    # However, this is not trivial in the config view as that already contains a form.
+    def get(self, request, *args, **kwargs) -> HttpResponse:
         issuing_ca = self.get_object()
         if issuing_ca.issue_crl():
             messages.success(request, _('CRL for Issuing CA %s has been generated.') % issuing_ca.unique_name)
@@ -117,6 +119,7 @@ class IssuingCaCrlGenerationView(IssuingCaContextMixin, TpLoginRequiredMixin, De
 
 
 class CrlDownloadView(IssuingCaContextMixin, DetailView):
+    """Unauthenticated view to download the certificate revocation list of an Issuing CA."""
 
     http_method_names = ('get', )
 

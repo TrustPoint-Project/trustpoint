@@ -6,12 +6,35 @@
         {% csrf_token %}
         <div class="card">
             <div class="card-header d-flex">
-                <h1>{% trans 'Confirm certificate revocation' %}</h1>
+                <h1>
+                    {% blocktranslate count counter=credentials|length %}
+                    Confirm credential revocation
+                    {% plural %}
+                    Confirm revocation of {{ counter }} credentials
+                    {% endblocktranslate %}
+                </h1>
             </div>
             <div class="card-body pt-3 pb-3">
-
-                {% include 'devices/details/sub_details.html' with short=True %}
-
+                {% for credential in credentials %}
+                    <div class="tp-kvp-list">
+                        <div>
+                            <div>{% trans 'Common name' %}</div>
+                            <div>{{ credential.common_name }}</div>
+                        </div>
+                        <div>
+                            <div>{% trans 'Credential purpose' %}</div>
+                            <div>{{ credential.get_issued_credential_purpose_display }}</div>
+                        </div>
+                        <div>
+                            <div>{% trans 'Issued at' %}</div>
+                            <div>{{ credential.created_at }}</div>
+                        </div>
+                        <div>
+                            <div>{% trans 'Associated device' %}</div>
+                            <div>{{ credential.device.unique_name }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
                 <hr>
 
                 <div class="form-group">
@@ -26,7 +49,11 @@
                 <div class="tp-form-btn-group tp-form-btn-group pt-4">
                     <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
                     <button type="submit" class="btn btn-danger">
-                        {% trans 'Revoke certificate' %}
+                        {% blocktranslate count counter=credentials|length %}
+                        Revoke credential
+                        {% plural %}
+                        Revoke {{ counter }} credentials
+                        {% endblocktranslate %}
                     </button>
                 </div>
 

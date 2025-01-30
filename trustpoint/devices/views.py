@@ -13,13 +13,14 @@ from django.contrib import messages
 from django.db.models import Q
 from django.forms import BaseModelForm
 from django.http import FileResponse, Http404, HttpResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, FormView
+from django.views.generic.edit import CreateView, FormMixin, FormView
+from django.views.generic.list import ListView
 
 # TODO(AlexHx8472): Remove django_tables2 dependency, and thus remove the type: ignore[misc]
 from django_tables2 import SingleTableView  # type: ignore[import-untyped]
@@ -577,24 +578,37 @@ class DeviceCertificateLifecycleManagementSummaryView(
         return super().get(request, *args, **kwargs)
 
 
-class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView, FormView):
+class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, FormMixin, ListView):
     """Revokes all active credentials for a given device."""
 
     http_method_names = ('get', 'post')
 
     model = DeviceModel
     template_name = 'devices/revoke.html'
+    context_object_name = 'credentials'
     form_class = CredentialRevocationForm
     success_url = reverse_lazy('devices:devices')
+
+    def get_queryset(self):
+        self.device = get_object_or_404(DeviceModel, id=self.kwargs['pk'])
+        # TODO(Air): This query is cursed but works
+        return IssuedCredentialModel.objects.filter(device=self.device,
+                                                    credential__primarycredentialcertificate__is_primary=True,
+                                                    credential__primarycredentialcertificate__certificate__certificate_status='OK')
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+
+        return self.form_invalid(form)
 
     def form_valid(self, form) -> HttpResponse:
         """Handles revocation upon a POST request containing a valid form."""
         # Revoke all active credentials for the device
-        device = self.get_object()
         n_revoked = 0
-        # can be further optimized by filtering for active credentials only
-        for credential in device.issued_credentials.all():
-        # alternative: filter(credential__certificate__certificate_status__exact = 'OK'):
+        credentials = self.get_queryset()
+        for credential in credentials:
             revoked_successfully, _msg = DeviceCredentialRevocation.revoke_certificate(
                 credential.id,
                 form.cleaned_data['revocation_reason']
@@ -623,8 +637,14 @@ class DeviceCredentialRevocationView(DeviceContextMixin, TpLoginRequiredMixin, D
 
     model = IssuedCredentialModel
     template_name = 'devices/revoke.html'
+    context_object_name = 'credential'
     pk_url_kwarg = 'credential_pk'
     form_class = CredentialRevocationForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['credentials'] = [context['credential']]
+        return context
 
     def get_success_url(self) -> str:
         """Returns the URL to redirect to if the form is valid and was successfully processed."""

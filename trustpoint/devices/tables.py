@@ -147,8 +147,15 @@ class DeviceTable(tables.Table):
         Returns:
             SafeString: The html hyperlink for the revoke-view.
         """
-        return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
-                           record.pk, _('Revoke'))
+    
+        # TODO(Air): This cursed query may be slow for a large number of devices.
+        if IssuedCredentialModel.objects.filter(device=record,
+                                                credential__primarycredentialcertificate__is_primary=True,
+                                                credential__primarycredentialcertificate__certificate__certificate_status='OK').exists():
+            return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
+                               record.pk, _('Revoke'))
+        
+        return format_html('<a class="btn btn-danger tp-table-btn w-100 disabled">{}</a>', _('Revoke'))
 
 
 class DeviceCredentialsTableMixin:
