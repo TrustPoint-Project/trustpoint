@@ -1,6 +1,6 @@
 This chapter lists all needed requirements of TrustPoint, e.g. creating certificates.
 These requirements are now front-end requirements as well as user experience.
-This is also the main difference between chapter :ref:`test-items-functions` and this chapter.
+This is also the main difference between chapter :ref:`Test Items (Functions)` and this chapter.
 The `table of all actors <TrustPoint-Actors-Table>`_ is still used though.
 
 .. csv-table:: Features To Be Tested
