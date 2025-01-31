@@ -3,7 +3,7 @@
 from django.urls import path, re_path  # type: ignore[import-untyped]
 
 from pki.views import certificates, domains, issuing_cas, truststores
-from pki.views.domains import DevIdRegistrationCreateView, DevIdRegistrationDeleteView
+from pki.views.domains import DevIdRegistrationCreateView, DevIdRegistrationDeleteView, DevIdMethodSelectView
 
 app_name = 'pki'
 
@@ -13,7 +13,12 @@ urlpatterns = [
         truststores.TruststoreTableView.as_view(),
         name='truststores',
     ),
-    path('truststores/add/', truststores.TruststoreCreateView.as_view(), name='truststores-add'),
+    path('truststores/add/',
+         truststores.TruststoreCreateView.as_view(),
+         name='truststores-add'),
+    path('truststores/add/<int:pk>/',
+         truststores.TruststoreCreateView.as_view(),
+         name='truststores-add-with-pk'),
     re_path(
         r'^truststores/download/(?P<pk>[0-9]+)/?$',
         truststores.TruststoreDownloadView.as_view(),
@@ -104,9 +109,19 @@ urlpatterns = [
         name='domains-delete_confirm',
     ),
     path(
+        'devid-registration/method_select/<int:pk>/',
+        DevIdMethodSelectView.as_view(),
+        name='devid_registration-method_select',
+    ),
+    path(
         'devid-registration/create/<int:pk>/',
         DevIdRegistrationCreateView.as_view(),
         name='devid_registration_create',
+    ),
+    path(
+        'devid-registration/create/<int:pk>/<int:truststore_id>/',
+        DevIdRegistrationCreateView.as_view(),
+        name='devid_registration_create-with_truststore_id',
     ),
     path('devid-registration/delete/<int:pk>/',
          DevIdRegistrationDeleteView.as_view(),

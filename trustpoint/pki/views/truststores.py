@@ -4,10 +4,12 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.shortcuts import get_object_or_404
+
 from core.file_builder.certificate import CertificateArchiveFileBuilder, CertificateFileBuilder
 from core.file_builder.enum import ArchiveFormat, CertificateFileFormat
-from django.http import Http404, HttpRequest, HttpResponse  # type: ignore[import-untyped]
-from django.urls import reverse_lazy  # type: ignore[import-untyped]
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponseRedirect  # type: ignore[import-untyped]
+from django.urls import reverse_lazy, reverse  # type: ignore[import-untyped]
 from django.views.generic.base import RedirectView  # type: ignore[import-untyped]
 from django.views.generic.detail import DetailView  # type: ignore[import-untyped]
 from django.views.generic.edit import FormView
@@ -15,6 +17,7 @@ from django.views.generic.list import ListView  # type: ignore[import-untyped]
 from django_tables2 import SingleTableView  # type: ignore[import-untyped]
 
 from pki.forms import TruststoreAddForm
+from pki.models import DomainModel
 from pki.models.truststore import TruststoreModel
 from pki.tables import TruststoreTable
 from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, TpLoginRequiredMixin
@@ -49,8 +52,32 @@ class TruststoreCreateView(TruststoresContextMixin, TpLoginRequiredMixin, FormVi
     model = TruststoreModel
     form_class = TruststoreAddForm
     template_name = 'pki/truststores/add/file_import.html'
-    success_url = reverse_lazy('pki:truststores')
     ignore_url = reverse_lazy('pki:truststores')
+
+    def form_valid(self, form):
+        method_select = form.cleaned_data.get('method_select')
+        truststore = form.cleaned_data['truststore']
+        print(truststore.id)
+        domain_id = self.kwargs.get("pk")
+
+        if domain_id:
+            print(f"Redirecting to DevID registration page with Truststore ID: {truststore.id}")
+            return HttpResponseRedirect(reverse('pki:devid_registration_create-with_truststore_id', kwargs={'pk': domain_id, 'truststore_id': truststore.id}))
+
+        print("No domain ID provided, redirecting to Truststore add page.")
+        return HttpResponseRedirect(reverse('pki:truststores'))
+
+    def get_success_url(self):
+        """You could still use a success URL here if needed"""
+        return reverse_lazy('pki:truststores')
+
+    def get_context_data(self, **kwargs):
+        """Include domain in context only if pk is present."""
+        context = super().get_context_data(**kwargs)
+        pk = self.kwargs.get("pk")
+        if pk:
+            context["domain"] = get_object_or_404(DomainModel, id=pk)
+        return context
 
 class TruststoreDetailView(TruststoresContextMixin, TpLoginRequiredMixin, DetailView):
     """The truststore detail view."""
