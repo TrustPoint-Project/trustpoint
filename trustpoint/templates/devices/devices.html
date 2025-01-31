@@ -1,6 +1,5 @@
 {% extends 'trustpoint/base.html' %}
 {% load i18n %}
-{% load render_table from django_tables2 %}
 {% load static %}
 
 {% block content %}
@@ -11,7 +10,121 @@
     </div>
 
     <div class="card-body text-start" style="overflow: auto; flex-grow: 1; max-height: 90%;">
-        {% render_table table %}
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th id="checkbox-column"><input type="checkbox"/></th>
+            <th>
+              <a href="?sort={% if is_desc%}unique_name{% else%}-unique_name{% endif %}">
+                Device
+              </a>
+            </th>
+            <th>
+              <a href="?sort={% if is_desc%}domain{% else%}-domain{% endif %}">
+                Domain
+              </a>
+            </th>
+            <th>
+              <a href="?sort={% if is_desc%}serial_number{% else%}-serial_number{% endif %}">
+                Serial-Number
+              </a>
+            </th>
+            <th>
+              <a href="?sort={% if is_desc %}created_at{% else%}-created_at{% endif %}">
+                Created
+              </a>
+            </th>
+            <th>
+              <a href="?sort={% if is_desc %}updated_at{% else%}-updated_at{% endif %}">
+                Updated
+              </a>
+            </th>
+            <th>
+              <a
+                href="?sort={% if is_desc %}onboarding_protocol{% else%}-onboarding_protocol{% endif %}"
+              >
+                Onboarding Protocol
+              </a>
+            </th>
+            <th>
+              <a href="?sort={% if is_desc %}onboarding_status{% else%}-onboarding_status{% endif %}">
+                Onboarding Status
+              </a>
+            </th>
+            <th>Onboarding</th>
+            <th>Certificate Lifecycle Management</th>
+            <th>Details</th>
+            <th>Configure</th>
+            <th>Revoke</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for device in page_obj %}
+          <tr>
+            <td class="row_checkbox">
+              <input type="checkbox" name="row_checkbox" value="{{ device.id }}" />
+            </td>
+            <td>{{ device.unique_name }}</td>
+            <td>{{ device.domain }}</td>
+            <td>{{ device.serial_number }}</td>
+            <td>{{ device.created_at }}</td>
+            <td>{% if device.updated_at%} {{ device.updated_at }} {% else %}—{% endif %}</td>
+            <td>{{ device.get_onboarding_protocol_display }}</td>
+            <td>{{ device.get_onboarding_status_display }}</td>
+            <td>{{device.onboarding_button| safe}} </td>
+            <td>{{ device.clm_button| safe}}</td>
+            <td><a href="details/{{device.id}}/" class="btn btn-primary tp-table-btn">Details</a></td>
+            <td><a href="configure/{{device.id}}/" class="btn btn-primary tp-table-btn">Configure</a></td>
+            <td><a href="revoke/{{device.id}}/" class="btn btn-danger tp-table-btn">Revoke</a></td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3">No data available.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <!-- Pagination Controls -->
+      {% if is_paginated %}
+      <nav>
+        <ul class="pagination">
+          {% if page_obj.has_previous %}
+          <li class="page-item">
+            <a class="page-link" href="?page=1&sort={{ current_sort }}">« First</a>
+          </li>
+          <li class="page-item">
+            <a
+              class="page-link"
+              href="?page={{ page_obj.previous_page_number }}&sort={{ current_sort }}"
+              >Previous</a
+            >
+          </li>
+          {% endif %}
+
+          <li class="page-item disabled">
+            <span class="page-link"
+              >Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span
+            >
+          </li>
+
+          {% if page_obj.has_next %}
+          <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&sort={{ current_sort }}"
+              >Next</a
+            >
+          </li>
+          <li class="page-item">
+            <a
+              class="page-link"
+              href="?page={{ page_obj.paginator.num_pages }}&sort={{ current_sort }}"
+              >Last »</a
+            >
+          </li>
+          {% endif %}
+        </ul>
+      </nav>
+      {% endif %}
     </div>
     <div>
         <div class="card-footer d-flex justify-content-between tp-sticky-footer">

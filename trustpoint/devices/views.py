@@ -15,10 +15,12 @@ from django.forms import BaseModelForm
 from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils.safestring import mark_safe, SafeString
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormView
+from django.views.generic.list import ListView  # type: ignore[import-untyped]
 
 # TODO(AlexHx8472): Remove django_tables2 dependency, and thus remove the type: ignore[misc]
 from django_tables2 import SingleTableView  # type: ignore[import-untyped]
@@ -97,15 +99,85 @@ class DownloadTokenRequiredMixin:
 
 
 # TODO(AlexHx8472): Remove django_tables2 dependency, and thus remove the type: ignore[misc]
-class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SingleTableView):  # type: ignore[misc]
-    """Endpoint Profiles List View."""
-
-    http_method_names = ('get',)
+# done
+class DeviceTableView(ListView):
+    """Device Table View."""
 
     model = DeviceModel
-    table_class = DeviceTable
-    template_name = 'devices/devices.html'
+    template_name = 'devices/devices.html'  # Template file
     context_object_name = 'devices'
+    paginate_by = 5  # Number of items per page
+
+    def get_queryset(self):
+        queryset = DeviceModel.objects.all()
+
+        # Get sort parameter (e.g., "name" or "-name")
+        sort_param = self.request.GET.get("sort", "unique_name")  # Default to "unique_name"
+        return queryset.order_by(sort_param)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get current sorting column
+        sort_param = self.request.GET.get("sort", "unique_name")  # Default to "unique_name"
+        is_desc = sort_param.startswith("-")  # Check if sorting is descending
+        current_sort = sort_param.lstrip("-")  # Remove "-" to get column name
+        for device in context['page_obj']:
+            device.onboarding_button = self.render_onboarding(device)
+            device.clm_button = self.render_clm(device)
+        # Pass sorting details to the template
+        context.update({
+            "current_sort": current_sort,
+            "is_desc": is_desc,
+        })
+        return context
+
+    def render_onboarding(self, record: any) -> SafeString:
+        """Creates the html hyperlink for the onboarding-view.
+
+        Args:
+            record (Device): The current record of the Device model.
+
+        Returns:
+            SafeString: The html hyperlink for the details-view.
+        """
+        if not record.domain:
+            return mark_safe(
+                '<span>{}</span>', _('No Domain configured.'))
+        if not record.domain.issuing_ca:
+            return mark_safe(
+                '<span>{}</span>', _('No Issuing CA configured.')
+            )
+        if record.onboarding_status == DeviceModel.OnboardingStatus.PENDING:
+            if record.onboarding_protocol == DeviceModel.OnboardingProtocol.MANUAL:
+                return mark_safe(
+                    f'<a href="onboarding/{record.pk}/manual/issue-domain-credential/" class="btn btn-primary tp-table-btn w-100">Start Onboarding</a>'
+                )
+            elif record.onboarding_protocol == DeviceModel.OnboardingProtocol.TP_CLIENT:
+                onboarding_process_model = TrustpointClientOnboardingProcessModel.objects.filter(device=record.pk)
+                if onboarding_process_model.exists():
+                    return mark_safe(
+                        f'<a href="onboarding/{record.pk}/trustpoint-client/" class="btn btn-primary tp-table-btn w-100 mb-2">Continue Onboarding</a>'
+                        f'<br>'
+                        f'<a href="onboarding/{record.pk}/trustpoint-client/cancel/" class="btn btn-danger tp-table-btn w-100">Cancel Onboarding</a>',
+                    )
+                else:
+                    return mark_safe(
+                        f'<a href="onboarding/{record.pk}/trustpoint-client/" class="btn btn-primary tp-table-btn w-100">Start Onboarding</a>',
+                    )
+        return mark_safe('')
+
+    def render_clm(self, record: DeviceModel) -> SafeString:
+        valid_onboarding_statuses = (
+            DeviceModel.OnboardingStatus.NO_ONBOARDING,
+            DeviceModel.OnboardingStatus.ONBOARDED
+        )
+        if record.onboarding_status in valid_onboarding_statuses:
+            return mark_safe(
+                f'<a href="certificate-lifecycle-management/{record.pk}/" class="btn btn-primary tp-table-btn w-100">Manage Issued Certificates</a>',
+            )
+        return mark_safe('')
+
 
 
 class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView[DeviceModel, BaseModelForm[DeviceModel]]):
