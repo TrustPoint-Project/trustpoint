@@ -31,7 +31,6 @@ extensions = [
     'sphinx.ext.napoleon',
     'sphinxcontrib.plantuml',
     'sphinx.ext.autosummary',
-    'sphinx.ext.autosectionlabel',
 ]
 
 templates_path = ['_templates']
