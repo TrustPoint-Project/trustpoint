@@ -20,3 +20,5 @@ Security Requirements
 --------------------
 Feature Requirements
 --------------------
+
+.. include:: test_cases_feature_req.rst
