@@ -5,7 +5,8 @@ from typing import Any, cast
 
 from django.contrib import messages
 from django.http import HttpResponseRedirect, HttpResponse, HttpRequest, Http404
-from django.urls import reverse_lazy
+from django.shortcuts import get_object_or_404
+from django.urls import reverse_lazy, reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DeleteView
 from django.views.generic.detail import DetailView
@@ -13,8 +14,9 @@ from django.views.generic.list import ListView  # type: ignore[import-untyped]
 from django.views.generic.edit import CreateView, UpdateView
 from django_tables2 import SingleTableView, RequestConfig
 from django.views.generic.edit import FormView
-from pki.forms import DevIdRegistrationForm
+from pki.forms import DevIdRegistrationForm, DevIdAddMethodSelectForm
 from pki.models import DomainModel, DevIdRegistration
+from pki.models.truststore import TruststoreModel
 from pki.tables import DomainTable, DevIdRegistrationTable
 from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, BulkDeleteView
 
@@ -153,7 +155,7 @@ class DomainCaBulkDeleteConfirmView(DomainContextMixin, TpLoginRequiredMixin, Bu
     context_object_name = 'domains'
 
 
-class DevIdRegistrationCreateView(FormView):
+class DevIdRegistrationCreateView(DomainContextMixin, TpLoginRequiredMixin, FormView):
     """View to create a new DevID Registration."""
 
     http_method_names = ('get', 'post')
@@ -165,13 +167,24 @@ class DevIdRegistrationCreateView(FormView):
         """Add additional context data."""
         context = super().get_context_data(**kwargs)
         context['domain'] = self.get_domain()
+        truststore_id = self.kwargs.get('truststore_id')
+        if truststore_id:
+            context['truststore'] = self.get_truststore(truststore_id)
+        else:
+            context['truststore'] = None
+
         return context
 
     def get_initial(self) -> dict[str, Any]:
         """Initialize the form with default values."""
         initial = super().get_initial()
         domain = self.get_domain()
-        initial['domain'] = domain  # Pre-fill the domain field in the form
+        initial['domain'] = domain
+        truststore_id = self.kwargs.get('truststore_id')
+        if truststore_id:
+            initial['truststore'] = self.get_truststore(truststore_id)
+        else:
+            initial['truststore'] = None
         return initial
 
     def get_form_kwargs(self) -> dict[str, Any]:
@@ -188,6 +201,13 @@ class DevIdRegistrationCreateView(FormView):
         except DomainModel.DoesNotExist:
             raise Http404('Domain does not exist.')
 
+    def get_truststore(self, truststore_id) -> TruststoreModel:
+        """Fetch the domain based on the primary key passed in the URL."""
+        try:
+            return TruststoreModel.objects.get(pk=truststore_id)
+        except TruststoreModel.DoesNotExist:
+            raise Http404('Truststore does not exist.')
+
     def form_valid(self, form: DevIdRegistrationForm) -> HttpResponse:
         """Handle the case where the form is valid."""
         dev_id_registration = form.save()
@@ -202,7 +222,7 @@ class DevIdRegistrationCreateView(FormView):
         domain = self.get_domain()
         return cast('str', reverse_lazy('pki:domains-config', kwargs={'pk': domain.id}))
 
-class DevIdRegistrationDeleteView(DeleteView):
+class DevIdRegistrationDeleteView(DomainContextMixin, TpLoginRequiredMixin, DeleteView):
     """View to delete a DevID Registration."""
     model = DevIdRegistration
     template_name = 'pki/devid_registration/confirm_delete.html'
@@ -213,3 +233,30 @@ class DevIdRegistrationDeleteView(DeleteView):
         response = super().delete(request, *args, **kwargs)
         messages.success(request, _('DevID Registration Pattern deleted successfully.'))
         return response
+
+class DevIdMethodSelectView(DomainContextMixin, TpLoginRequiredMixin, FormView):
+    template_name = 'pki/devid_registration/method_select.html'
+    form_class = DevIdAddMethodSelectForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["domain"] = get_object_or_404(DomainModel, id=self.kwargs.get("pk"))
+        return context
+
+    def form_valid(self, form) -> HttpResponseRedirect:
+        method_select = form.cleaned_data.get('method_select')
+        domain_pk = self.kwargs.get("pk")  # Get domain ID
+
+        if not method_select:
+            return HttpResponseRedirect(reverse('pki:devid_registration-method_select', kwargs={'pk': domain_pk}))
+
+        if method_select == 'import_truststore':
+            if domain_pk:
+                return HttpResponseRedirect(
+                    reverse('pki:truststores-add-with-pk', kwargs={'pk': domain_pk}))
+            return HttpResponseRedirect(reverse('pki:truststores-add'))
+
+        if method_select == 'configure_pattern':
+            return HttpResponseRedirect(reverse('pki:devid_registration_create', kwargs={'pk': domain_pk}))
+
+        return HttpResponseRedirect(reverse('pki:devid_registration-method_select', kwargs={'pk': domain_pk}))

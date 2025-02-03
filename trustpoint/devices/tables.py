@@ -150,7 +150,7 @@ class DeviceTable(tables.Table):
                            record.pk, _('Revoke'))
 
 
-class DeviceCredentialsTableMixin():
+class DeviceCredentialsTableMixin:
     """Mixin providing common render methods for device domain and application credential tables."""
 
     @staticmethod
@@ -186,6 +186,8 @@ class DeviceCredentialsTableMixin():
         Returns:
             SafeString: The html hyperlink for the download-view.
         """
+        if record.credential.private_key is None:
+            return format_html('')
         return format_html(
             '<a href="/devices/credential-download/{}/"'
             ' class="btn btn-primary tp-table-btn w-100">{}</a>',
