@@ -17,7 +17,7 @@
         <tr>
           <th id="checkbox-column"><input type="checkbox"/></th>
           <th>
-            <a href="?sort={% if is_desc%}common_name{% else%}-common_name{% endif %}">
+            <a href="?sort={% if not is_desc%}-{% endif %}common_name">
               Common Name
             </a>
           </th>

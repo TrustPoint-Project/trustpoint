@@ -13,7 +13,7 @@ from django.views.generic.detail import DetailView  # type: ignore[import-untype
 from django.views.generic.list import ListView  # type: ignore[import-untyped]
 
 from pki.models import CertificateModel
-from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, TpLoginRequiredMixin
+from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, SortableTableMixin, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -32,7 +32,7 @@ class CertificatesContextMixin:
     extra_context: ClassVar = {'page_category': 'pki', 'page_name': 'certificates'}
 
 
-class CertificateTableView(CertificatesContextMixin, ListView):
+class CertificateTableView(CertificatesContextMixin, TpLoginRequiredMixin, SortableTableMixin, ListView):
     """Certificate Table View."""
 
     model = CertificateModel
@@ -40,27 +40,6 @@ class CertificateTableView(CertificatesContextMixin, ListView):
     context_object_name = 'certificates'
     paginate_by = 5  # Number of items per page
     default_sort_param = 'common_name'
-
-    def get_queryset(self):
-        queryset = self.model.objects.all()
-
-        # Get sort parameter (e.g., "name" or "-name")
-        sort_param = self.request.GET.get('sort', self.default_sort_param)
-        return queryset.order_by(sort_param)
-
-    def get_context_data(self, **kwargs) -> dict:
-        context = super().get_context_data(**kwargs)
-
-        # Get current sorting column
-        sort_param = self.request.GET.get('sort', self.default_sort_param)
-        is_desc = sort_param.startswith('-')  # Check if sorting is descending
-
-        # Pass sorting details to the template
-        context.update({
-            'current_sort': sort_param,
-            'is_desc': is_desc,
-        })
-        return context
 
 class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
     """The certificate detail view."""

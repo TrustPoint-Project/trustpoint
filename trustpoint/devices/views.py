@@ -39,7 +39,7 @@ from devices.models import (
     TrustpointClientOnboardingProcessModel,
 )
 from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCredentialsTable
-from trustpoint.views.base import TpLoginRequiredMixin
+from trustpoint.views.base import SortableTableMixin, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
     import ipaddress
@@ -96,36 +96,22 @@ class DownloadTokenRequiredMixin:
         return super().dispatch(request, *args, **kwargs)
 
 
-class DeviceTableView(DeviceContextMixin, ListView):
+class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SortableTableMixin, ListView):
     """Device Table View."""
 
     model = DeviceModel
     template_name = 'devices/devices.html'  # Template file
     context_object_name = 'devices'
     paginate_by = 5  # Number of items per page
-
-    def get_queryset(self):
-        queryset = DeviceModel.objects.all()
-
-        # Get sort parameter (e.g., "name" or "-name")
-        sort_param = self.request.GET.get("sort", "unique_name")  # Default to "unique_name"
-        return queryset.order_by(sort_param)
+    default_sort_param = 'unique_name'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
 
-        # Get current sorting column
-        sort_param = self.request.GET.get("sort", "unique_name")  # Default to "unique_name"
-        is_desc = sort_param.startswith("-")  # Check if sorting is descending
-        current_sort = sort_param.lstrip("-")  # Remove "-" to get column name
         for device in context['page_obj']:
             device.onboarding_button = self.render_onboarding(device)
             device.clm_button = self.render_clm(device)
-        # Pass sorting details to the template
-        context.update({
-            "current_sort": current_sort,
-            "is_desc": is_desc,
-        })
+
         return context
 
     def render_onboarding(self, record: any) -> SafeString:

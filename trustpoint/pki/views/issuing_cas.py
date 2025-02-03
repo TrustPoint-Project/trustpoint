@@ -15,6 +15,7 @@ from trustpoint.views.base import (
     LoggerMixin,
     BulkDeleteView,
     ContextDataMixin,
+    SortableTableMixin,
     TpLoginRequiredMixin,
 )
 
@@ -25,7 +26,7 @@ class IssuingCaContextMixin(TpLoginRequiredMixin, ContextDataMixin):
     context_page_category = 'pki'
     context_page_name = 'issuing_cas'
 
-class IssuingCaTableView(IssuingCaContextMixin, ListView):
+class IssuingCaTableView(IssuingCaContextMixin, TpLoginRequiredMixin, SortableTableMixin, ListView):
     """Issuing CA Table View."""
 
     model = IssuingCaModel
@@ -33,27 +34,6 @@ class IssuingCaTableView(IssuingCaContextMixin, ListView):
     context_object_name = 'issuing_ca'
     paginate_by = 5  # Number of items per page
     default_sort_param = 'unique_name'
-
-    def get_queryset(self):
-        queryset = self.model.objects.all()
-
-        # Get sort parameter (e.g., "name" or "-name")
-        sort_param = self.request.GET.get('sort', self.default_sort_param)
-        return queryset.order_by(sort_param)
-
-    def get_context_data(self, **kwargs) -> dict:
-        context = super().get_context_data(**kwargs)
-
-        # Get current sorting column
-        sort_param = self.request.GET.get('sort', self.default_sort_param)
-        is_desc = sort_param.startswith('-')  # Check if sorting is descending
-
-        # Pass sorting details to the template
-        context.update({
-            'current_sort': sort_param,
-            'is_desc': is_desc,
-        })
-        return context
 
 
 class IssuingCaAddMethodSelectView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
