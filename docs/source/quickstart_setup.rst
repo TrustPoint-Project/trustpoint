@@ -1,5 +1,7 @@
+.. _quickstart-setup-guide:
+
 Quickstart Setup Guide
-===========================
+======================
 
 This guide provides an introduction to Trustpoint and instructions for setting up the Trustpoint using Docker.
 
@@ -137,6 +139,6 @@ After setting up and Trustpoint, here are some recommended next steps to explore
    The easiest way to fully utilize Trustpoint is by pairing it with the associated Trustpoint Client, which is installed on end devices. The client enables streamlined identity management and certificate issuance. For more details, visit the `Trustpoint-Client Documentation <https://trustpoint-client.readthedocs.io>`_.
 
 3. **Issue your first certificate for an end device** 🛡️:
-   To do this, you need an Issuing CA certificate, a domain and a device that you must define in Trustpoint. Therefore follow the steps described in :ref:`Quickstart Operation Guide`
+   To do this, you need an Issuing CA certificate, a domain and a device that you must define in Trustpoint. Therefore follow the steps described in :ref:`quickstart-operation-guide`
 
 

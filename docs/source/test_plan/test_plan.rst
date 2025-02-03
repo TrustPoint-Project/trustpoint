@@ -10,6 +10,8 @@ Introduction
 
 .. include:: introduction.rst
 
+.. _test-items-functions:
+
 ======================
 Test Items (Functions)
 ======================
