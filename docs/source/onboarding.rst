@@ -1,3 +1,5 @@
+.. _onboarding-mechanisms:
+
 Onboarding Mechanisms
 =====================
 

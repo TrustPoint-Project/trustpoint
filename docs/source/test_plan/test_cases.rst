@@ -15,6 +15,7 @@ Functional Requirements
 Security Requirements
 ---------------------
 
+.. include:: test_cases_sec_req.rst
 
 --------------------
 Feature Requirements
