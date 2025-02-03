@@ -17,7 +17,7 @@ from django.views.generic.edit import FormView
 from pki.forms import DevIdRegistrationForm, DevIdAddMethodSelectForm
 from pki.models import DomainModel, DevIdRegistration
 from pki.models.truststore import TruststoreModel
-from pki.tables import DomainTable, DevIdRegistrationTable
+from pki.tables import DevIdRegistrationTable
 from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, BulkDeleteView
 
 
@@ -37,7 +37,7 @@ class DomainContextMixin(ContextDataMixin):
     context_page_name = 'domains'
 
 
-class DomainTableView(ListView):
+class DomainTableView(DomainContextMixin, ListView):
     """Domain Table View."""
 
     model = DomainModel

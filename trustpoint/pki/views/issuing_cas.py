@@ -5,14 +5,12 @@ from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView  # type: ignore[import-untyped]
 from django.views.generic.edit import FormView
-from django_tables2 import SingleTableView
 from pki.forms import (
     IssuingCaAddFileImportPkcs12Form,
     IssuingCaAddFileImportSeparateFilesForm,
     IssuingCaAddMethodSelectForm,
 )
 from pki.models import IssuingCaModel
-from pki.tables import IssuingCaTable
 from trustpoint.views.base import (
     LoggerMixin,
     BulkDeleteView,
@@ -27,12 +25,12 @@ class IssuingCaContextMixin(TpLoginRequiredMixin, ContextDataMixin):
     context_page_category = 'pki'
     context_page_name = 'issuing_cas'
 
-class IssuingCaTableView(ListView):
+class IssuingCaTableView(IssuingCaContextMixin, ListView):
     """Issuing CA Table View."""
 
     model = IssuingCaModel
     template_name = 'pki/issuing_cas/issuing_cas.html'  # Template file
-    context_object_name = 'issuing-ca'
+    context_object_name = 'issuing_ca'
     paginate_by = 5  # Number of items per page
 
     def get_queryset(self):

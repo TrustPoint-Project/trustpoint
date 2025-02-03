@@ -22,8 +22,6 @@ from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormView
 from django.views.generic.list import ListView  # type: ignore[import-untyped]
 
-# TODO(AlexHx8472): Remove django_tables2 dependency, and thus remove the type: ignore[misc]
-from django_tables2 import SingleTableView  # type: ignore[import-untyped]
 from pki.models import CredentialModel
 
 from devices.forms import (
@@ -98,9 +96,7 @@ class DownloadTokenRequiredMixin:
         return super().dispatch(request, *args, **kwargs)
 
 
-# TODO(AlexHx8472): Remove django_tables2 dependency, and thus remove the type: ignore[misc]
-# done
-class DeviceTableView(ListView):
+class DeviceTableView(DeviceContextMixin, ListView):
     """Device Table View."""
 
     model = DeviceModel

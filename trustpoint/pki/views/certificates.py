@@ -11,10 +11,8 @@ from django.urls import reverse_lazy  # type: ignore[import-untyped]
 from django.views.generic.base import RedirectView  # type: ignore[import-untyped]
 from django.views.generic.detail import DetailView  # type: ignore[import-untyped]
 from django.views.generic.list import ListView  # type: ignore[import-untyped]
-from django_tables2 import SingleTableView  # type: ignore[import-untyped]
 
 from pki.models import CertificateModel
-from pki.tables import CertificateTable
 from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
@@ -34,7 +32,7 @@ class CertificatesContextMixin:
     extra_context: ClassVar = {'page_category': 'pki', 'page_name': 'certificates'}
 
 
-class CertificateTableView(ListView):
+class CertificateTableView(CertificatesContextMixin, ListView):
     """Certificate Table View."""
 
     model = CertificateModel

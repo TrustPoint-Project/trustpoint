@@ -486,6 +486,10 @@ table .tp-onboarding-btn {
     vertical-align: middle;
 }
 
+td {
+    vertical-align: middle;
+}
+
 .tp-table-footer-btn-group {
     display: grid;
     grid-template-columns: repeat(5, 15rem) auto;

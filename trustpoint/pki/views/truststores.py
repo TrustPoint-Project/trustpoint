@@ -14,12 +14,10 @@ from django.views.generic.base import RedirectView  # type: ignore[import-untype
 from django.views.generic.detail import DetailView  # type: ignore[import-untyped]
 from django.views.generic.edit import FormView
 from django.views.generic.list import ListView  # type: ignore[import-untyped]
-from django_tables2 import SingleTableView  # type: ignore[import-untyped]
 
 from pki.forms import TruststoreAddForm
 from pki.models import DomainModel
 from pki.models.truststore import TruststoreModel
-from pki.tables import TruststoreTable
 from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
@@ -38,7 +36,7 @@ class TruststoresContextMixin:
 
     extra_context: ClassVar = {'page_category': 'pki', 'page_name': 'truststores'}
 
-class TruststoreTableView(ListView):
+class TruststoreTableView(TruststoresContextMixin, ListView):
     """Truststore Table View."""
 
     model = TruststoreModel
