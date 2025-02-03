@@ -41,5 +41,98 @@ To verify that only devices with valid certificates can communicate, we will tes
 Feature File
 """"""""""""
 
-.. literalinclude:: ../../../trustpoint/features/R_001_CRUD.feature
+.. literalinclude:: ../../../trustpoint/features/R_101_device_cert_validation.feature
+   :language: gherkin
+
+^^^^^
+R_102
+^^^^^
+
+This testcase is related to requirement `R_102`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+To verify that communication between machines is encrypted using the given algorithm, we will test the following scenarios:
+
+#. Valid Encrypted Communication
+    - Two machines establish a communication session.
+    - The communication is encrypted using the specified encryption algorithm.
+    - The system successfully verifies encryption.
+
+#. Communication with No Encryption is Rejected
+    - A machine attempts to communicate without encryption.
+    - The system detects the unencrypted communication and blocks it.
+    - The system logs the rejected attempt.
+
+#. Communication Using an Unsupported Encryption Algorithm is Rejected
+    - A machine attempts to use an encryption algorithm that is not approved.
+    - The system rejects the communication.
+    - The system logs the failed attempt.
+
+#. Communication Using a Weak Encryption Algorithm is Rejected
+    - A machine attempts to use a weak or deprecated encryption algorithm.
+    - The system denies the communication.
+    - The system logs the failure with a warning.
+
+#. Communication is Encrypted with the Correct Key Exchange Mechanism
+    - Two machines establish a secure session using the correct key exchange protocol.
+    - The system verifies that the encryption is correctly applied.
+
+#. Communication is Tamper-Resistant
+    - A third party attempts to modify an encrypted message.
+    - The system detects the tampering and terminates the connection.
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../../trustpoint/features/R_102_encrypted_communication.feature
+   :language: gherkin
+
+^^^^^
+R_103
+^^^^^
+
+This testcase is related to requirement `R_103`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+To verify that administrators can configure security levels for different TrustPoint components, we will test the following scenarios:
+
+#. Set Security Level for a Component
+    - The admin selects a TrustPoint component.
+    - The admin sets the security level to "High".
+    - The system successfully applies and saves the security level.
+
+#. Modify an Existing Security Level
+    - The admin updates the security level of a component from "Medium" to "High".
+    - The system correctly applies and reflects the change.
+
+#. Invalid Security Level Input is Rejected
+    - The admin attempts to set an invalid security level.
+    - The system rejects the input and displays an error.
+
+#. Security Level Persists After System Restart
+    - The admin configures a security level for a component.
+    - The system is restarted.
+    - The security level remains correctly applied.
+
+#. Security Level Affects System Behavior
+    - A component with a high-security level enforces stricter access control.
+    - A component with a low-security level has more lenient settings.
+    - The system behaves accordingly.
+
+#. Security Configuration is Logged
+    - Every change to security levels is logged.
+    - The log contains details such as timestamp, admin ID, and old/new security levels.
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../../trustpoint/features/R_103_security_configuration.feature
    :language: gherkin
