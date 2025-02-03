@@ -75,6 +75,10 @@ class DomainDevIdRegistrationTableMixin(SortableTableMixin, ListInDetailView):
     paginate_by = 5  # Number of items per page
     context_object_name = 'devid_registrations'
     default_sort_param = 'unique_name'
+    
+    def get_queryset(self):
+        self.queryset = DevIdRegistration.objects.filter(domain=self.get_object())
+        return super().get_queryset()
 
 
 class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DomainDevIdRegistrationTableMixin, ListInDetailView):
