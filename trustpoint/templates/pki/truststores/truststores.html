@@ -13,17 +13,17 @@
           <tr>
             <th id="checkbox-column"><input type="checkbox"/></th>
             <th>
-              <a href="?sort={% if is_desc%}unique_name{% else%}-unique_name{% endif %}">
+              <a href="?sort={% if current_sort == 'unique_name' %}-{% endif %}unique_name">
                 Unique Name
               </a>
             </th>
             <th>
-              <a href="?sort={% if is_desc%}intended_usage{% else%}-intended_usage{% endif %}">
+              <a href="?sort={% if current_sort == 'intended_usage' %}-{% endif %}intended_usage">
                 Intended Usage
               </a>
             </th>
             <th>
-              <a href="?sort={% if is_desc%}created_at{% else%}-created_at{% endif %}">
+              <a href="?sort={% if current_sort == 'created_at' %}-{% endif %}created_at">
                 Created-At
               </a>
             </th>

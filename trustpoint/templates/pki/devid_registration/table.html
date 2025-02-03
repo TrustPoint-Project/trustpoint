@@ -6,17 +6,17 @@
       <thead>
         <tr>
           <th>
-              <a href="?sort={% if is_desc%}unique_name{% else%}-unique_name{% endif %}">
+              <a href="?sort={% if current_sort == 'unique_name' %}-{% endif %}unique_name">
                   {% trans 'Unique Name' %}
               </a>
           </th>
           <th>
-              <a href="?sort={% if is_desc%}truststore{% else%}-truststore{% endif %}">
+              <a href="?sort={% if current_sort == 'truststore' %}-{% endif %}truststore">
                   {% trans 'Truststore' %}
               </a>
           </th>
           <th>
-              <a href="?sort={% if is_desc%}serial_number_pattern{% else%}-serial_number_pattern{% endif %}">
+              <a href="?sort={% if current_sort == 'serial_number_pattern' %}-{% endif %}serial_number_pattern">
                   {% trans 'Serial Number Pattern' %}
               </a>
           </th>

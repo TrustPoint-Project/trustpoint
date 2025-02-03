@@ -14,12 +14,12 @@
           <tr>
             <th id="checkbox-column"><input type="checkbox"/></th>
             <th>
-              <a href="?sort={% if is_desc%}unique_name{% else%}-unique_name{% endif %}">
+              <a href="?sort={% if current_sort == 'unique_name' %}-{% endif %}unique_name">
                 Domain Name
               </a>
             </th>
             <th>
-              <a href="?sort={% if is_desc%}issuing_ca__unique_name{% else%}-issuing_ca__unique_name{% endif %}">
+              <a href="?sort={% if current_sort == 'issuing_ca__unique_name' %}-{% endif %}issuing_ca__unique_name">
                 Issuing CA Name
               </a>
             </th>

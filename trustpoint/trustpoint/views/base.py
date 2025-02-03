@@ -82,13 +82,9 @@ class SortableTableMixin:
 
         # Get current sorting column
         sort_param = self.request.GET.get('sort', self.default_sort_param)
-        is_desc = sort_param.startswith('-')  # Check if sorting is descending
 
         # Pass sorting details to the template
-        context.update({
-            'current_sort': sort_param,
-            'is_desc': is_desc,
-        })
+        context['current_sort'] = sort_param
         return context
 
 

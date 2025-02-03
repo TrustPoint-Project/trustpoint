@@ -17,44 +17,44 @@
         <tr>
           <th id="checkbox-column"><input type="checkbox"/></th>
           <th>
-            <a href="?sort={% if not is_desc%}-{% endif %}common_name">
+            <a href="?sort={% if current_sort == 'common_name' %}-{% endif %}common_name">
               Common Name
             </a>
           </th>
           <th>
-            <a href="?sort={% if is_desc%}not_valid_after{% else%}-not_valid_after{% endif %}">
+            <a href="?sort={% if current_sort == 'not_valid_after' %}-{% endif %}not_valid_after">
               Not Valid After (UTC)
             </a>
           </th>
           <th>
-            <a href="?sort={% if is_desc%}spki_algorithm{% else%}-spki_algorithm{% endif %}">
+            <a href="?sort={% if current_sort == 'spki_algorithm' %}-{% endif %}spki_algorithm">
               Public Key Algorithm
             </a>
           </th>
           <th>
-            <a href="?sort={% if is_desc %}spki_key_size{% else%}-spki_key_size{% endif %}">
+            <a href="?sort={% if current_sort == 'spki_key_size' %}-{% endif %}spki_key_size">
               Public Key Size
             </a>
           </th>
           <th>
-            <a href="?sort={% if is_desc %}spki_ec_curve{% else%}-spki_ec_curve{% endif %}">
+            <a href="?sort={% if current_sort == 'spki_ec_curve' %}-{% endif %}spki_ec_curve">
               Public Key Curve (ECC)
             </a>
           </th>
           <th>
             <a
-              href="?sort={% if is_desc %}certificate_status{% else%}-certificate_status{% endif %}"
+              href="?sort={% if current_sort == 'certificate_status' %}-{% endif %}certificate_status"
             >
               Status
             </a>
           </th>
           <th>
-            <a href="?sort={% if is_desc %}created_at{% else%}-created_at{% endif %}">
+            <a href="?sort={% if current_sort == 'created_at' %}-{% endif %}created_at">
               Created-At
             </a>
           </th>
           <th>
-            <a href="?sort={% if is_desc %}is_self_signed{% else%}-is_self_signed{% endif %}">
+            <a href="?sort={% if current_sort == 'is_self_signed' %}-{% endif %}is_self_signed">
               Self-Signed
             </a>
           </th>
