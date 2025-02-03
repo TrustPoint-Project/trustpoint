@@ -39,27 +39,26 @@ class CertificateTableView(CertificatesContextMixin, ListView):
     template_name = 'pki/certificates/certificates.html'  # Template file
     context_object_name = 'certificates'
     paginate_by = 5  # Number of items per page
+    default_sort_param = 'common_name'
 
     def get_queryset(self):
-        queryset = CertificateModel.objects.all()
+        queryset = self.model.objects.all()
 
         # Get sort parameter (e.g., "name" or "-name")
-        sort_param = self.request.GET.get("sort", "common_name")  # Default to "common_name"
+        sort_param = self.request.GET.get('sort', self.default_sort_param)
         return queryset.order_by(sort_param)
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
 
         # Get current sorting column
-        sort_param = self.request.GET.get("sort", "common_name")  # Default to "common_name"
-        is_desc = sort_param.startswith("-")  # Check if sorting is descending
-        current_sort = sort_param.lstrip("-")  # Remove "-" to get column name
-        next_sort = f"-{current_sort}" if not is_desc else current_sort  # Toggle sorting
+        sort_param = self.request.GET.get('sort', self.default_sort_param)
+        is_desc = sort_param.startswith('-')  # Check if sorting is descending
 
         # Pass sorting details to the template
         context.update({
-            "current_sort": current_sort,
-            "is_desc": is_desc,
+            'current_sort': sort_param,
+            'is_desc': is_desc,
         })
         return context
 

@@ -42,26 +42,26 @@ class DomainTableView(DomainContextMixin, ListView):
     template_name = 'pki/domains/domain.html'  # Template file
     context_object_name = 'domain-new'
     paginate_by = 5  # Number of items per page
+    default_sort_param = 'unique_name'
 
     def get_queryset(self):
-        queryset = DomainModel.objects.all()
+        queryset = self.model.objects.all()
+
         # Get sort parameter (e.g., "name" or "-name")
-        sort_param = self.request.GET.get("sort", "unique_name")  # Default to "common_name"
+        sort_param = self.request.GET.get('sort', self.default_sort_param)
         return queryset.order_by(sort_param)
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs) -> dict:
         context = super().get_context_data(**kwargs)
 
         # Get current sorting column
-        sort_param = self.request.GET.get("sort", "unique_name")  # Default to "common_name"
-        is_desc = sort_param.startswith("-")  # Check if sorting is descending
-        current_sort = sort_param.lstrip("-")  # Remove "-" to get column name
-        next_sort = f"-{current_sort}" if not is_desc else current_sort  # Toggle sorting
+        sort_param = self.request.GET.get('sort', self.default_sort_param)
+        is_desc = sort_param.startswith('-')  # Check if sorting is descending
 
         # Pass sorting details to the template
         context.update({
-            "current_sort": current_sort,
-            "is_desc": is_desc,
+            'current_sort': sort_param,
+            'is_desc': is_desc,
         })
         return context
 
@@ -84,41 +84,68 @@ class DomainUpdateView(DomainContextMixin, TpLoginRequiredMixin, UpdateView):
     ignore_url = reverse_lazy('pki:domains')
 
 
-class DomainDevIdRegistrationTableMixin():
+class ListInDetailView(ListView):
+    """Helper view that combines a DetailView and a ListView.
 
-    model = DevIdRegistration
-    paginate_by = 2  # Number of items per page
+    This is useful for displaying a list within a DetailView.
+    Note that 'model' and 'context_object_name' refer to the ListView.
+    Use 'detail_model' and 'detail_context_object_name' for the DetailView.
+    """
+    detail_context_object_name = 'object'
 
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().get(request, *args, **kwargs)
 
-    def get_table_queryset(self):
-        queryset = DevIdRegistration.objects.filter(domain=self.get_object())
-        # Get sort parameter (e.g., "name" or "-name")
-        sort_param = self.request.GET.get("sort", "unique_name")  # Default to "common_name"
-        return queryset.order_by(sort_param)
+    def get_queryset_for_object(self):
+        return self.detail_model.objects.all()
+
+    def get_object(self):
+        queryset = self.get_queryset_for_object()
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            raise AttributeError('pk expected in url')
+        return get_object_or_404(queryset, pk=pk)
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context[self.detail_context_object_name] = self.object
+        return context
+
+
+class DomainDevIdRegistrationTableMixin(ListInDetailView):
+
+    model = DevIdRegistration
+    paginate_by = 5  # Number of items per page
+    context_object_name = 'devid_registrations'
+    default_sort_param = 'unique_name'
+    
+    def get_queryset(self):
+        queryset = self.model.objects.filter(domain=self.get_object())
+
+        # Get sort parameter (e.g., "name" or "-name")
+        sort_param = self.request.GET.get('sort', self.default_sort_param)
+        return queryset.order_by(sort_param)
+
+    def get_context_data(self, **kwargs) -> dict:
+        context = super().get_context_data(**kwargs)
 
         # Get current sorting column
-        sort_param = self.request.GET.get("sort", "unique_name")  # Default to "common_name"
-        is_desc = sort_param.startswith("-")  # Check if sorting is descending
-        current_sort = sort_param.lstrip("-")  # Remove "-" to get column name
-        next_sort = f"-{current_sort}" if not is_desc else current_sort  # Toggle sorting
-
-        context['devid_registrations'] = self.get_table_queryset()
+        sort_param = self.request.GET.get('sort', self.default_sort_param)
+        is_desc = sort_param.startswith('-')  # Check if sorting is descending
 
         # Pass sorting details to the template
         context.update({
-            "current_sort": current_sort,
-            "is_desc": is_desc,
+            'current_sort': sort_param,
+            'is_desc': is_desc,
         })
         return context
 
 
-class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DomainDevIdRegistrationTableMixin, DetailView):
-    model = DomainModel
+class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DomainDevIdRegistrationTableMixin, ListInDetailView):
+    detail_model = DomainModel
     template_name = 'pki/domains/config.html'
-    context_object_name = 'domain'
+    detail_context_object_name = 'domain'
     success_url = reverse_lazy('pki:domains')
 
     def get_context_data(self, **kwargs):
