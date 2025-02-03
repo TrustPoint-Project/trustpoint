@@ -12,12 +12,10 @@ from django.views.generic import DeleteView
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView  # type: ignore[import-untyped]
 from django.views.generic.edit import CreateView, UpdateView
-from django_tables2 import SingleTableView, RequestConfig
 from django.views.generic.edit import FormView
 from pki.forms import DevIdRegistrationForm, DevIdAddMethodSelectForm
 from pki.models import DomainModel, DevIdRegistration
 from pki.models.truststore import TruststoreModel
-from pki.tables import DevIdRegistrationTable
 from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, BulkDeleteView
 
 
@@ -86,7 +84,38 @@ class DomainUpdateView(DomainContextMixin, TpLoginRequiredMixin, UpdateView):
     ignore_url = reverse_lazy('pki:domains')
 
 
-class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
+class DomainDevIdRegistrationTableMixin():
+
+    model = DevIdRegistration
+    paginate_by = 2  # Number of items per page
+
+
+    def get_table_queryset(self):
+        queryset = DevIdRegistration.objects.filter(domain=self.get_object())
+        # Get sort parameter (e.g., "name" or "-name")
+        sort_param = self.request.GET.get("sort", "unique_name")  # Default to "common_name"
+        return queryset.order_by(sort_param)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        # Get current sorting column
+        sort_param = self.request.GET.get("sort", "unique_name")  # Default to "common_name"
+        is_desc = sort_param.startswith("-")  # Check if sorting is descending
+        current_sort = sort_param.lstrip("-")  # Remove "-" to get column name
+        next_sort = f"-{current_sort}" if not is_desc else current_sort  # Toggle sorting
+
+        context['devid_registrations'] = self.get_table_queryset()
+
+        # Pass sorting details to the template
+        context.update({
+            "current_sort": current_sort,
+            "is_desc": is_desc,
+        })
+        return context
+
+
+class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DomainDevIdRegistrationTableMixin, DetailView):
     model = DomainModel
     template_name = 'pki/domains/config.html'
     context_object_name = 'domain'
@@ -103,12 +132,6 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
             'scep': domain.scep_protocol if hasattr(domain, 'scep_protocol') else None,
             'rest': domain.rest_protocol if hasattr(domain, 'rest_protocol') else None
         }
-
-        patterns = DevIdRegistration.objects.filter(domain=domain)
-        table = DevIdRegistrationTable(patterns)
-        RequestConfig(self.request, paginate={"per_page": 10}).configure(table)
-        context['devid_table'] = table
-
 
         return context
 
@@ -128,22 +151,11 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
         return HttpResponseRedirect(self.success_url)
 
 
-class DomainDetailView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
+class DomainDetailView(DomainContextMixin, TpLoginRequiredMixin, DomainDevIdRegistrationTableMixin, DetailView):
 
     model = DomainModel
     template_name = 'pki/domains/details.html'
     context_object_name = 'domain'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        domain = self.get_object()
-
-        patterns = DevIdRegistration.objects.filter(domain=domain)
-        table = DevIdRegistrationTable(patterns)
-        RequestConfig(self.request, paginate={"per_page": 10}).configure(table)
-        context['devid_table'] = table
-
-        return context
 
 
 class DomainCaBulkDeleteConfirmView(DomainContextMixin, TpLoginRequiredMixin, BulkDeleteView):

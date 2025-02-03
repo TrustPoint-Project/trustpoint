@@ -1,7 +1,7 @@
 {% extends 'trustpoint/base.html' %}
 {% load i18n %}
 {% load crispy_forms_filters %}
-{% load render_table from django_tables2 %}
+
 {% block content %}
     {% load static %}
     <script src="{% static 'js/domains.js' %}"></script>
@@ -70,14 +70,12 @@
 
                     <a href="{% url 'pki:devid_registration-method_select' pk=domain.id %}"
                        class="btn btn-primary tp-table-btn min-width-20 mt-3">
-                        {% trans "Create new DevID Registration Pattern" %}
+                        {% trans 'Create new DevID Registration Pattern' %}
                     </a>
 
                     <br>
 
-                    <div class="table-responsive">
-                        {% render_table devid_table %}
-                    </div>
+                    {% include 'pki/devid_registration/table.html' %}
 
                     <br>
 
