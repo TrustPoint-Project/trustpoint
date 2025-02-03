@@ -169,6 +169,6 @@ def step_then_export_denied(context):
     """
     raise StepNotImplementedError("STEP: Then export should be denied")
 
-@then(u'the attempt should be logged')
+@then('the attempt should be logged')
 def step_impl(context):
-    raise StepNotImplementedError(u'STEP: Then the attempt should be logged')
+    raise StepNotImplementedError('STEP: Then the attempt should be logged')
