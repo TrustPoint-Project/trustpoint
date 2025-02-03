@@ -40,7 +40,7 @@ from devices.models import (
     RemoteDeviceCredentialDownloadModel,
     TrustpointClientOnboardingProcessModel,
 )
-from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCredentialsTable, DeviceTable
+from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCredentialsTable
 from trustpoint.views.base import TpLoginRequiredMixin
 
 if TYPE_CHECKING:
