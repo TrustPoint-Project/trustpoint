@@ -136,3 +136,46 @@ Feature File
 
 .. literalinclude:: ../../../trustpoint/features/R_103_security_configuration.feature
    :language: gherkin
+
+^^^^^
+R_104
+^^^^^
+
+This testcase is related to requirement `R_104`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+To verify that certificate template security is enforced properly, we will test the following scenarios:
+
+#. Only Authorized Users Can Access Certificate Templates
+    - A user with admin privileges accesses the certificate templates.
+    - A regular user attempts to access certificate templates but is denied.
+
+#. Secure Handling of Certificate Templates
+    - A certificate template is created with restricted access.
+    - The system prevents unauthorized modifications.
+    - The system encrypts stored templates.
+
+#. Modification of Certificate Templates
+    - An admin updates a certificate template.
+    - Unauthorized users attempt modifications but are denied.
+
+#. Deletion Restrictions
+    - Only authorized users can delete certificate templates.
+    - Unauthorized users receive an error when attempting deletion.
+
+#. Logging of Access and Modifications
+    - The system logs every access and modification of certificate templates.
+
+#. Secure Export of Certificate Templates
+    - The system ensures that exported templates are encrypted.
+    - Unauthorized export attempts are blocked.
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../../trustpoint/features/R_104_certificate_template_security.feature
+   :language: gherkin
