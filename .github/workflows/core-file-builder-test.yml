@@ -22,13 +22,12 @@ jobs:
       uses: snok/install-poetry@v1
 
     - name: Install dependencies with Poetry
-      run: |
-        poetry install
-      env:
-        POETRY_VIRTUALENVS_CREATE: true
-        POETRY_VIRTUALENVS_IN_PROJECT: true
+      run: poetry install --no-interaction --no-root
+#      env:
+#        POETRY_VIRTUALENVS_CREATE: true
+#        POETRY_VIRTUALENVS_IN_PROJECT: true
 
-    - name: Run unit tests for the serializer module
+    - name: Run unit tests for the file builder module
       run: |
         poetry run pytest --junitxml=pytest.xml --cov=trustpoint trustpoint/core/tests/file_builder/ | tee pytest-coverage.txt
 
