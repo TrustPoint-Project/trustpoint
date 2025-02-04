@@ -16,13 +16,14 @@ dependencies = [
     "django-tables2>=2.7.0,<3",
     "pytest-django>=4.9.0,<5",
     "zeroconf>=0.139.0,<0.140",
-    "behave-django>=1.5.0,<2",
     "cryptography>=44.0.0,<45",
     "django-stubs>=5.1.2,<6",
     "django-stubs-ext>=5.1.2,<6",
     "django>=5.1.5,<6",
     "behave-html-pretty-formatter>=1.12.3,<2",
     "pytest-cov>=6.0.0,<7",
+    "behave-django==1.5.0",
+    "behave>=1.2.7.dev6",
 ]
 
 [dependency-groups]
