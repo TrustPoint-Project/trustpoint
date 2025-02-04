@@ -24,6 +24,7 @@ django-stubs = "^5.1.2"
 django-stubs-ext = "^5.1.2"
 django = "^5.1.5"
 behave-html-pretty-formatter = "^1.12.3"
+pytest-cov = "^6.0.0"
 
 [tool.poetry.group.dev.dependencies]
 sphinx = "^8.1.3"
