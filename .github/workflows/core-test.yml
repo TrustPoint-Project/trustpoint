@@ -1,0 +1,40 @@
+name: Core Tests
+
+on:
+  push:
+    paths:
+      - trustpoint/core/**
+
+jobs:
+  test:
+    runs-on: ubuntu-24.04
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: 3.12
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Install dependencies with Poetry
+        run: poetry install --no-interaction --no-root
+
+      - name: Run unit tests for the file builder module
+        run: |
+          poetry run pytest --junitxml=file_builder_pytest.xml --cov=trustpoint trustpoint/core/tests/file_builder/ | tee file_builder_pytest-coverage.txt
+
+      - name: Run unit tests for the serializer module
+        run: |
+          poetry run pytest --junitxml=serializer_pytest.xml --cov=trustpoint trustpoint/core/tests/serializer/ | tee serializer_pytest-coverage.txt 
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          multiple-files: |
+            Core Serializer Test, serializer_pytest-coverage.txt, serializer_pytest.xml
+            Core File Builder Test, file_builder_pytest-coverage.txt, file_builder_pytest.xml
