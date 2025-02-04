@@ -59,7 +59,7 @@ class CredentialModel(models.Model):
     credential_type = models.IntegerField(
         verbose_name=_('Credential Type'), choices=CredentialTypeChoice
     )
-    private_key = models.CharField(verbose_name='Private key (PEM)', max_length=65536, editable=False)
+    private_key = models.CharField(verbose_name='Private key (PEM)', max_length=65536, null=True, blank=True)
 
     certificates = models.ManyToManyField(
         CertificateModel,
@@ -160,6 +160,37 @@ class CredentialModel(models.Model):
             )
 
         return credential_model
+
+    @classmethod
+    @transaction.atomic
+    def save_keyless_credential(
+            cls,
+            certificate: x509.Certificate,
+            certificate_chain: list[x509.Certificate],
+            credential_type: CredentialModel.CredentialTypeChoice) -> CredentialModel:
+        certificate = CertificateModel.save_certificate(
+            certificate
+        )
+
+        credential_model = cls.objects.create(
+            credential_type=credential_type,
+            private_key=None
+        )
+
+        PrimaryCredentialCertificate.objects.create(
+            certificate=certificate,
+            credential=credential_model,
+            is_primary=True
+        )
+
+        for order, certificate in enumerate(certificate_chain):
+            certificate_model = CertificateModel.save_certificate(certificate)
+            CertificateChainOrderModel.objects.create(
+                certificate=certificate_model, credential=credential_model, order=order
+            )
+
+        return credential_model
+
 
     # TODO(AlexHx8472): Implement the delete method,
     # TODO(AlexHx8472): so that the corresponding CertificateChainOrderModels are removed as well

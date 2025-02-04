@@ -1,10 +1,14 @@
 from __future__ import annotations
 
+import datetime
+import logging
+import secrets
 from typing import Any
 
 from django.db import models
 from django.db.models import UniqueConstraint
 from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
 from django.contrib.contenttypes.models import ContentType
 from core.validator.field import UniqueNameValidator
 from django.core.exceptions import ValidationError
@@ -13,10 +17,11 @@ from pki.models import CertificateModel, DomainModel, CredentialModel, IssuingCa
 
 from pki.models.credential import CredentialModel
 
+logger = logging.getLogger(__name__)
 
 class DeviceModel(models.Model):
 
-    objects: models.Manager['DeviceModel']
+    objects: models.Manager[DeviceModel]
 
     def __str__(self) -> str:
         return f'DeviceModel(unique_name={self.unique_name})'
@@ -27,11 +32,10 @@ class DeviceModel(models.Model):
 
         NO_ONBOARDING = 0, _('No Onboarding')
         MANUAL = 1, _('Manual download')
-        BROWSER = 2, _('Browser download')
-        CLI = 3, _('Device CLI')
-        TP_CLIENT = 4, _('Trustpoint Client')
-        AOKI = 5, _('AOKI')
-        BRSKI = 6, _('BRSKI')
+        CLI = 2, _('Device CLI')
+        TP_CLIENT = 3, _('Trustpoint Client')
+        AOKI = 4, _('AOKI')
+        BRSKI = 5, _('BRSKI')
 
 
     class OnboardingStatus(models.IntegerChoices):
@@ -43,7 +47,7 @@ class DeviceModel(models.Model):
 
     id = models.AutoField(primary_key=True)
     unique_name = models.CharField(
-        _('Device'), max_length=100, unique=True, default=f'New-Device', validators=[UniqueNameValidator()]
+        _('Device'), max_length=100, unique=True, default='New-Device', validators=[UniqueNameValidator()]
     )
     serial_number = models.CharField(_('Serial-Number'), max_length=100)
     domain = models.ForeignKey(
@@ -135,6 +139,77 @@ class IssuedCredentialModel(models.Model):
     def save(self, *args: Any, **kwargs: Any) -> None:
         self.full_clean()
         super().save(*args, **kwargs)
+
+
+class RemoteDeviceCredentialDownloadModel(models.Model):
+    """Model to associate a credential model with an OTP and token for unauthenticated remoted download."""
+    BROWSER_MAX_OTP_ATTEMPTS = 3
+    TOKEN_VALIDITY = datetime.timedelta(minutes=3)
+
+    issued_credential_model = models.OneToOneField(IssuedCredentialModel, on_delete=models.CASCADE)
+    otp = models.CharField(_('OTP'), max_length=32, default='')
+    device = models.ForeignKey(DeviceModel, on_delete=models.CASCADE)
+    attempts = models.IntegerField(_('Attempts'), default=0)
+    download_token = models.CharField(_('Download Token'), max_length=64, default='')
+    token_created_at = models.DateTimeField(_('Token Created'), null=True)
+
+    def __str__(self) -> str:
+        """Return a string representation of the model."""
+        return f'RemoteDeviceCredentialDownloadModel(credential={self.issued_credential_model.id})'
+
+    def save(self, *args: dict, **kwargs: dict) -> None:
+        """Generates a new random OTP on initial save of the model."""
+        if not self.otp:
+            self.otp = secrets.token_urlsafe(8)
+        super().save(*args, **kwargs)
+
+    def get_otp_display(self) -> str:
+        """Return the OTP in the format 'credential_id.otp' for display within the admin view."""
+        if not self.otp or self.otp == '-':
+            return 'OTP no longer valid'
+        return f'{self.issued_credential_model.id}.{self.otp}'
+
+    def check_otp(self, otp: str) -> bool:
+        """Check if the provided OTP matches the stored OTP."""
+        if not self.otp or self.otp == '-':
+            return False
+        matches = otp == self.otp
+        if not matches:
+            self.attempts += 1
+            log_msg = (
+                f'Incorrect OTP attempt {self.attempts} for browser credential download '
+                f'for device {self.device.unique_name} (credential id={self.issued_credential_model.id})'
+            )
+            logger.warning(log_msg)
+
+            if self.attempts >= self.BROWSER_MAX_OTP_ATTEMPTS:
+                self.otp = '-'
+                self.delete()
+                logger.warning('Too many incorrect OTP attempts. Download invalidated.')
+            else:
+                self.save()
+            return False
+
+        log_msg = (
+            f'Correct OTP entered for browser credential download for device {self.device.unique_name}'
+            f'(credential id={self.issued_credential_model.id})'
+        )
+        logger.info(log_msg)
+        self.otp = '-'
+        self.download_token = secrets.token_urlsafe(32)
+        self.token_created_at = timezone.now()
+        self.save()
+        return True
+
+    def check_token(self, token: str) -> bool:
+        """Check if the provided token matches the stored token and whether it is still valid."""
+        if not self.download_token or not self.token_created_at:
+            return False
+        if timezone.now() - self.token_created_at > self.TOKEN_VALIDITY:
+            self.delete()
+            return False
+
+        return token == self.download_token
 
 
 class TrustpointClientOnboardingProcessModel(models.Model):

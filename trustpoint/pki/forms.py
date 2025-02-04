@@ -15,10 +15,46 @@ from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
 from pki.initializer.truststore.truststore import TrustStoreInitializer
-from pki.models import CertificateModel, IssuingCaModel
+from pki.models import CertificateModel, IssuingCaModel, DevIdRegistration
 from pki.models.truststore import TruststoreModel
 from trustpoint.views.base import LoggerMixin
 
+
+class DevIdAddMethodSelectForm(forms.Form):
+    """Form for selecting the method to add an DevID Onboarding Pattern.
+
+    Attributes:
+        method_select (ChoiceField): A dropdown to select the method for adding an Issuing CA.
+            - `import_truststore`: Import a new truststore prior to configuring a new pattern.
+            - `configure_pattern`: Use an existing truststore to define a new pattern.
+    """
+
+    method_select = forms.ChoiceField(
+        label=_('Select Method'),
+        choices=[
+            ('import_truststore', _('Import a new truststore prior to configuring a new pattern')),
+            ('configure_pattern', _('Use an existing truststore to define a new pattern')),
+        ],
+        initial='configure_pattern',
+        required=True)
+
+class DevIdRegistrationForm(forms.ModelForm):
+    """Form to create a new DevIdRegistration."""
+
+    class Meta:
+        model = DevIdRegistration
+        fields = ['unique_name', 'truststore', 'domain', 'serial_number_pattern']
+        widgets = {
+            'serial_number_pattern': forms.TextInput(attrs={
+                'placeholder': 'Enter a regex pattern for serial numbers',
+            }),
+        }
+        labels = {
+            'unique_name': 'Unique Name',
+            'truststore': 'Associated Truststore',
+            'domain': 'Associated Domain',
+            'serial_number_pattern': 'Serial Number Pattern (Regex)',
+        }
 
 class TruststoreAddForm(forms.Form):
     """Form for adding a new truststore.
@@ -96,10 +132,13 @@ class TruststoreAddForm(forms.Form):
             raise ValidationError(err_msg) from exception
 
         try:
-            initializer.save()
+            truststore = initializer.save()
         except Exception as original_exception:
             error_message = 'Unexpected Error. Failed to save validated Trust Store in DB.'
             raise ValidationError(error_message) from original_exception
+
+        self.cleaned_data['truststore'] = truststore
+        return cleaned_data
 
 class TruststoreDownloadForm(forms.Form):
     """Form for downloading truststores in various formats.

@@ -3,12 +3,12 @@
 
 from __future__ import annotations
 
+import datetime
 from typing import TYPE_CHECKING
 
 import django_tables2 as tables
 from django.utils.html import format_html, mark_safe
 from django.utils.translation import gettext_lazy as _
-import datetime
 
 from devices.models import DeviceModel, IssuedCredentialModel, TrustpointClientOnboardingProcessModel
 
@@ -150,7 +150,64 @@ class DeviceTable(tables.Table):
                            record.pk, _('Revoke'))
 
 
-class DeviceDomainCredentialsTable(tables.Table):
+class DeviceCredentialsTableMixin:
+    """Mixin providing common render methods for device domain and application credential tables."""
+
+    @staticmethod
+    def render_common_name(record: IssuedCredentialModel) -> SafeString:
+        return format_html(record.credential.certificate.common_name)
+
+    @staticmethod
+    def render_issued_at(record: IssuedCredentialModel) -> datetime.datetime:
+        return record.created_at
+
+    @staticmethod
+    def render_expiration_date(record: IssuedCredentialModel) -> datetime.datetime:
+        return record.credential.certificate.not_valid_after
+    
+    @staticmethod
+    def render_expires_in(record: IssuedCredentialModel) -> SafeString:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if now >= record.credential.certificate.not_valid_after:
+            return format_html('Expired')
+        expire_timedelta = record.credential.certificate.not_valid_after - now
+        days = expire_timedelta.days
+        hours, remainder = divmod(expire_timedelta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return format_html(f'{days} days, {hours}:{minutes}:{seconds}')
+    
+    @staticmethod
+    def render_download(record: IssuedCredentialModel) -> SafeString:
+        """Creates the html hyperlink for the download-view.
+
+        Args:
+            record: The current record of the Device model.
+
+        Returns:
+            SafeString: The html hyperlink for the download-view.
+        """
+        if record.credential.private_key is None:
+            return format_html('')
+        return format_html(
+            '<a href="/devices/credential-download/{}/"'
+            ' class="btn btn-primary tp-table-btn w-100">{}</a>',
+           record.id, _('Download'))
+
+    @staticmethod
+    def render_revoke(record: IssuedCredentialModel) -> SafeString:
+        """Creates the html hyperlink for the revoke-view.
+
+        Args:
+            record: The current record of the Device model.
+
+        Returns:
+            SafeString: The html hyperlink for the revoke-view.
+        """
+        return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
+                           record.pk, _('Revoke'))
+
+
+class DeviceDomainCredentialsTable(DeviceCredentialsTableMixin, tables.Table):
     """Lists all domain credentials for a specific device."""
 
     class Meta:
@@ -180,58 +237,8 @@ class DeviceDomainCredentialsTable(tables.Table):
     download = tables.Column(empty_values=(), orderable=False, verbose_name=_('Download'))
     revoke = tables.Column(empty_values=(), orderable=False, verbose_name=_('Revoke'))
 
-    @staticmethod
-    def render_common_name(record: IssuedCredentialModel) -> SafeString:
-        return format_html(record.credential.certificate.common_name)
 
-    @staticmethod
-    def render_issued_at(record: IssuedCredentialModel) -> datetime.datetime:
-        return record.created_at
-
-    @staticmethod
-    def render_expiration_date(record: IssuedCredentialModel) -> datetime.datetime:
-        return record.credential.certificate.not_valid_after
-
-    @staticmethod
-    def render_expires_in(record: IssuedCredentialModel) -> SafeString:
-        now = datetime.datetime.now(datetime.timezone.utc)
-        if now >= record.credential.certificate.not_valid_after:
-            return format_html('Expired')
-        expire_timedelta = record.credential.certificate.not_valid_after - now
-        days = expire_timedelta.days
-        hours, remainder = divmod(expire_timedelta.seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        return format_html(f'{days} days, {hours}:{minutes}:{seconds}')
-
-    @staticmethod
-    def render_download(record: IssuedCredentialModel) -> SafeString:
-        """Creates the html hyperlink for the download-view.
-
-        Args:
-            record: The current record of the Device model.
-
-        Returns:
-            SafeString: The html hyperlink for the download-view.
-        """
-        return format_html(
-            '<a href="/devices/domain-credential-download/{}/"'
-            ' class="btn btn-primary tp-table-btn w-100">{}</a>',
-           record.id, _('Download'))
-
-    @staticmethod
-    def render_revoke(record: IssuedCredentialModel) -> SafeString:
-        """Creates the html hyperlink for the revoke-view.
-
-        Args:
-            record: The current record of the Device model.
-
-        Returns:
-            SafeString: The html hyperlink for the revoke-view.
-        """
-        return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
-                           record.pk, _('Revoke'))
-
-class DeviceApplicationCertificatesTable(tables.Table):
+class DeviceApplicationCertificatesTable(DeviceCredentialsTableMixin, tables.Table):
     """Lists all issued application certificates for a specific device."""
 
     class Meta:
@@ -266,60 +273,9 @@ class DeviceApplicationCertificatesTable(tables.Table):
     revoke = tables.Column(empty_values=(), orderable=False, verbose_name=_('Revoke'))
 
     @staticmethod
-    def render_common_name(record: IssuedCredentialModel) -> SafeString:
-        return format_html(record.credential.certificate.common_name)
-
-    @staticmethod
     def render_credential_type(record: IssuedCredentialModel) -> SafeString:
         return format_html(record.get_issued_credential_type_display())
 
     @staticmethod
     def render_credential_purpose(record: IssuedCredentialModel) -> SafeString:
         return format_html(record.get_issued_credential_purpose_display())
-
-    @staticmethod
-    def render_issued_at(record: IssuedCredentialModel) -> datetime.datetime:
-        return record.created_at
-
-    @staticmethod
-    def render_expiration_date(record: IssuedCredentialModel) -> datetime.datetime:
-        return record.credential.certificate.not_valid_after
-
-    @staticmethod
-    def render_expires_in(record: IssuedCredentialModel) -> SafeString:
-        now = datetime.datetime.now(datetime.timezone.utc)
-        if now >= record.credential.certificate.not_valid_after:
-            return format_html('Expired')
-        expire_timedelta = record.credential.certificate.not_valid_after - now
-        days = expire_timedelta.days
-        hours, remainder = divmod(expire_timedelta.seconds, 3600)
-        minutes, seconds = divmod(remainder, 60)
-        return format_html(f'{days} days, {hours}:{minutes}:{seconds}')
-
-    @staticmethod
-    def render_download(record: IssuedCredentialModel) -> SafeString:
-        """Creates the html hyperlink for the details-view.
-
-        Args:
-            record: The current record of the Device model.
-
-        Returns:
-            SafeString: The html hyperlink for the details-view.
-        """
-        return format_html(
-            '<a href="/devices/application-credential-download/{}/" '
-            'class="btn btn-primary tp-table-btn w-100">{}</a>',
-            record.id, _('Download'))
-
-    @staticmethod
-    def render_revoke(record: IssuedCredentialModel) -> SafeString:
-        """Creates the html hyperlink for the revoke-view.
-
-        Args:
-            record: The current record of the Device model.
-
-        Returns:
-            SafeString: The html hyperlink for the revoke-view.
-        """
-        return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
-                           record.pk, _('Revoke'))
