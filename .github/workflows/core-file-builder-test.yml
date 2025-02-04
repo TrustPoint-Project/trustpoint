@@ -30,4 +30,10 @@ jobs:
 
     - name: Run unit tests for the serializer module
       run: |
-        poetry run pytest trustpoint/core/tests/file_builder/
+        poetry run pytest --junitxml=pytest.xml --cov=trustpoint trustpoint/core/tests/file_builder/ | tee pytest-coverage.txt
+
+    - name: Pytest coverage comment
+      uses: MishaKav/pytest-coverage-comment@main
+      with:
+        pytest-coverage-path: ./pytest-coverage.txt
+        junitxml-path: ./pytest.xml
