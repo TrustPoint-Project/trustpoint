@@ -12,7 +12,7 @@ def test_certificate_serializer_init_with_bytes(pem_encoded_cert):
     """Test that CertificateSerializer correctly initializes from PEM bytes.
 
     Args:
-        pem_encoded_cert (bytes): A valid PEM-encoded certificate for testing.
+        pem_encoded_cert (bytes): A valid PEM encoded certificate for testing.
     """
     serializer = CertificateSerializer(pem_encoded_cert)
     assert isinstance(serializer.as_crypto(), x509.Certificate)
