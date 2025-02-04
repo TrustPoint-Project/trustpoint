@@ -4,4 +4,3 @@ from django.core.management import call_command
 
 # def before_all(context):
     # Set up test environment
-    # call_command('migrate', verbosity=0)
