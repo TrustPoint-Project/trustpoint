@@ -15,16 +15,22 @@ from django.db.models.functions import TruncDate  # type: ignore[import-untyped]
 from django.http import HttpRequest, HttpResponse, JsonResponse  # type: ignore[import-untyped]
 from django.shortcuts import get_object_or_404, redirect, render  # type: ignore[import-untyped]
 from django.utils import dateparse, timezone  # type: ignore[import-untyped]
+from django.utils.html import format_html
+from django.utils.translation import gettext_lazy as _
 from django.views.generic.base import RedirectView, TemplateView  # type: ignore[import-untyped]
-from django_tables2 import RequestConfig  # type: ignore[import-untyped]
+from django.views.generic.list import ListView
 from ninja.responses import Response
 from pki.models import CertificateModel, IssuingCaModel
 
-from trustpoint.views.base import TpLoginRequiredMixin
+from trustpoint.views.base import TpLoginRequiredMixin, SortableTableMixin
 
 from .filters import NotificationFilter
 from .models import NotificationModel, NotificationStatus
-from .tables import NotificationTable
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from django.utils.safestring import SafeString  # type: ignore[import-untyped]
 
 SUCCESS = 25
 ERROR = 40
@@ -37,10 +43,14 @@ class IndexView(TpLoginRequiredMixin, RedirectView):
     pattern_name = 'home:dashboard'
 
 
-class DashboardView(TpLoginRequiredMixin, TemplateView):
+class DashboardView(TpLoginRequiredMixin, SortableTableMixin, ListView):
     """Renders the dashboard page for authenticated users. Uses the 'home/dashboard.html' template."""
 
     template_name = 'home/dashboard.html'
+    model = NotificationModel
+    context_object_name = 'notifications'
+    default_sort_param = '-created_at'
+    paginate_by = 5
 
     def __init__(self, *args: tuple, **kwargs: dict) -> None:
         """Initializes the parent class with the given arguments and keyword arguments."""
@@ -57,30 +67,50 @@ class DashboardView(TpLoginRequiredMixin, TemplateView):
         start_date = end_date - timedelta(days=6)
         return [(start_date + timedelta(days=i)).strftime('%Y-%m-%d') for i in range(7)]
 
+    def get_queryset(self) -> QuerySet[NotificationModel]:
+        all_notifications = NotificationModel.objects.all()
+
+        notification_filter = NotificationFilter(self.request.GET, queryset=all_notifications)
+        self.queryset = notification_filter.qs
+        return super().get_queryset()
+
     def get_context_data(self, **kwargs: dict) -> dict[str, Any]:
         """Fetch context data"""
         context = super().get_context_data(**kwargs)
 
-        context = self.handle_notifications(context)
+        for notification in context['notifications']:
+            notification.type_badge = self._render_notification_type(notification)
+            notification.created = self._render_created_at(notification)
 
         context['page_category'] = 'home'
         context['page_name'] = 'dashboard'
         return context
 
-    def handle_notifications(self, context: dict[str, Any]) -> dict[str, Any]:
-        """Handles notifications"""
-        all_notifications = NotificationModel.objects.all()
+    @staticmethod
+    def _render_created_at(record: NotificationModel) -> SafeString:
+        """Render the created_at field with a badge if the status is 'New'."""
+        created_at_display = record.created_at.strftime('%Y-%m-%d %H:%M:%S')
 
-        notification_filter = NotificationFilter(self.request.GET, queryset=all_notifications)
-        filtered_notifications = notification_filter.qs
+        if record.statuses.filter(status=NotificationStatus.StatusChoices.NEW).exists():
+            return format_html('{} <span class="badge bg-secondary">{}</span>', created_at_display, _('New'))
 
-        all_notifications_table = NotificationTable(filtered_notifications)
-        RequestConfig(self.request, paginate={'per_page': 5}).configure(all_notifications_table)
+        return format_html('{}', created_at_display)
 
-        context['all_notifications_table'] = all_notifications_table
-        context['notification_filter'] = notification_filter
+    @staticmethod
+    def _render_notification_type(record: NotificationModel) -> SafeString:
+        """Render the notification type with a badge according to the type."""
+        type_display = record.get_notification_type_display()
 
-        return context
+        if record.notification_type == NotificationModel.NotificationTypes.CRITICAL:
+            badge_class = 'bg-danger'
+        elif record.notification_type == NotificationModel.NotificationTypes.WARNING:
+            badge_class = 'bg-warning'
+        elif record.notification_type == NotificationModel.NotificationTypes.INFO:
+            badge_class = 'bg-info'
+        else:  # Setup or other types default to secondary
+            badge_class = 'bg-secondary'
+
+        return format_html('<span class="badge {}">{}</span>', badge_class, type_display)
 
 
 @login_required
@@ -170,7 +200,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
 
         device_counts = self.get_device_count_by_onboarding_status(dateparse.parse_date('2023-01-01'))
         dashboard_data['device_counts'] = device_counts
-        self._logger.info('device counts %s', device_counts)
+        self._logger.debug('device counts %s', device_counts)
 
         cert_counts = self.get_cert_counts()
         if cert_counts:
@@ -383,7 +413,6 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
                 .values(domain_name=F('domain__unique_name'))
                 .annotate(onboarded_device_count=Count('id'))
             )
-            print("device_domain_qr", device_domain_qr, start_date)
 
             # Convert the queryset to a list
             return list(device_domain_qr)

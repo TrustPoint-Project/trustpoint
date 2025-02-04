@@ -4,12 +4,11 @@
   <ul class="pagination">
     {% if page_obj.has_previous %}
     <li class="page-item">
-      <a class="page-link" href="?page=1&sort={{ current_sort }}">« First</a>
+      <a class="page-link" href="#" onclick="updateQueryParam(event, 'page', '1')">« First</a>
     </li>
     <li class="page-item">
-      <a class="page-link" href="?page={{ page_obj.previous_page_number }}&sort={{ current_sort }}"
-        >Previous</a
-      >
+      <a class="page-link" href="#" onclick="updateQueryParam(event, 'page', '{{ page_obj.previous_page_number }}')">
+        Previous</a>
     </li>
     {% endif %}
 
@@ -21,14 +20,12 @@
 
     {% if page_obj.has_next %}
     <li class="page-item">
-      <a class="page-link" href="?page={{ page_obj.next_page_number }}&sort={{ current_sort }}"
-        >Next</a
-      >
+      <a class="page-link" href="#" onclick="updateQueryParam(event, 'page', '{{ page_obj.next_page_number }}')">
+        Next</a>
     </li>
     <li class="page-item">
-      <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}&sort={{ current_sort }}"
-        >Last »</a
-      >
+      <a class="page-link" href="#" onclick="updateQueryParam(event, 'page', '{{ page_obj.paginator.num_pages }}')">
+        Last »</a>
     </li>
     {% endif %}
   </ul>

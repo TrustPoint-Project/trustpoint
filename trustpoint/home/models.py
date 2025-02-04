@@ -4,13 +4,13 @@ from __future__ import annotations
 
 import logging
 
-# from devices.models import DeviceModel
+from devices.models import DeviceModel
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from pki.models.certificate import CertificateModel
 
-# from pki.models.ca import IssuingCaModel
-# from pki.models.domain import DomainModel
+from pki.models.issuing_ca import IssuingCaModel
+from pki.models.domain import DomainModel
 
 log = logging.getLogger('tp.home')
 
@@ -254,29 +254,29 @@ class NotificationModel(models.Model):
 
     message_data = models.JSONField(blank=True, default=dict)
 
-    # domain = models.ForeignKey(
-    #     DomainModel,
-    #     on_delete=models.SET_NULL,
-    #     blank=True, null=True,
-    #     related_name='notifications')
+    domain = models.ForeignKey(
+        DomainModel,
+        on_delete=models.SET_NULL,
+        blank=True, null=True,
+        related_name='notifications')
 
     certificate = models.ForeignKey(
         CertificateModel, on_delete=models.SET_NULL, blank=True, null=True, related_name='notifications'
     )
 
-    # device = models.ForeignKey(
-    #     DeviceModel,
-    #     on_delete=models.SET_NULL,
-    #     blank=True,
-    #     null=True,
-    #     related_name='notifications')
+    device = models.ForeignKey(
+        DeviceModel,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='notifications')
 
-    # issuing_ca = models.ForeignKey(
-    #     IssuingCaModel,
-    #     on_delete=models.SET_NULL,
-    #     blank=True,
-    #     null=True,
-    #     related_name='notifications')
+    issuing_ca = models.ForeignKey(
+        IssuingCaModel,
+        on_delete=models.SET_NULL,
+        blank=True,
+        null=True,
+        related_name='notifications')
 
     event = models.CharField(max_length=255, blank=True, null=True)
 
