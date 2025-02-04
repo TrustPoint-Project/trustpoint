@@ -10,36 +10,25 @@ on:
 
 jobs:
   test:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-latest
 
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
+    - name: Install the latest version of uv
+      uses: astral-sh/setup-uv@v5
       with:
         python-version: 3.12
 
-    - name: Install and configure Poetry
-      uses: snok/install-poetry@v1
-      with:
-        virtualenvs-create: true
-        virtualenvs-in-project: true
-        virtualenvs-path: .venv
-        installer-parallel: true
-
-    - name: Install dependencies with Poetry
-      run: poetry install
-
     - name: Run database migrations
       run: |
-        echo "y" | poetry run python trustpoint/manage.py reset_db
-        poetry run python trustpoint/manage.py collectstatic --noinput
+        echo "y" | uv run python trustpoint/manage.py reset_db
+        uv run python trustpoint/manage.py collectstatic --noinput
 
     - name: Run Behave Tests and Generate HTML Report
       run: |
-        poetry run behave trustpoint/features/ --no-capture \
+        uv run behave trustpoint/features/ --no-capture \
         -f behave_html_pretty_formatter:PrettyHTMLFormatter \
         -D behave.formatter.html-pretty.title_string="TrustPoint Test Report" \
         -o behave-report.html || true
