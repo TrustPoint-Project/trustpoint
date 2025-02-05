@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, cast
 from core.file_builder.enum import ArchiveFormat
 from core.serializer import CredentialSerializer
 from core.validator.field import UniqueNameValidator
+from core.oid import PublicKeyInfo
 from django.contrib import messages
 from django.db.models import Q
 from django.forms import BaseModelForm
@@ -710,7 +711,9 @@ class TrustpointClientOnboardingPasswordBasedMacView(DeviceContextMixin, TpLogin
 
         Returns:
             The HttpResponse to display the view.
+
         """
+
         device = self.get_object()
         self.object = device
 
@@ -736,10 +739,42 @@ class TrustpointClientOnboardingPasswordBasedMacView(DeviceContextMixin, TpLogin
         else:
             trustpoint_onboarding_process = trustpoint_onboarding_process.first()
 
+        public_key_info = PublicKeyInfo.from_certificate(device.domain.issuing_ca.credential.get_certificate())
+
+        if public_key_info.named_curve:
+            key_type = (
+                    public_key_info.public_key_algorithm_oid.verbose_name
+                    + '-'
+                    + public_key_info.named_curve.verbose_name
+            )
+        else:
+            key_type = public_key_info.public_key_algorithm_oid.verbose_name + '-' + str(public_key_info.key_size)
+
+        # TODO(AlexHx8472): Get current address
+        cmd_verbose = (
+            'trustpoint-client '
+            'onboard shared-secret '
+            '--host 127.0.0.1 '
+            '--port 8000 '
+            f'--key-type {key_type} ' 
+            f'--domain {device.domain.unique_name} '
+            f'--device-id {device.id} '
+            f'--shared-secret {trustpoint_onboarding_process.password}')
+
+        cmd_shorthand = (
+            'trustpoint-client '
+            'onboard shared-secret '
+            '-h 127.0.0.1 '
+            '-p 8000 '
+            f'-k {key_type} '
+            f'-d {device.domain.unique_name } '
+            f'-i {device.id} '
+            f'-s {trustpoint_onboarding_process.password}'
+        )
 
         context = super().get_context_data(**kwargs)
-        context['password'] = trustpoint_onboarding_process.password
-        context['onboarding_process_id'] = trustpoint_onboarding_process.id
+        context['cmd_verbose'] = cmd_verbose
+        context['cmd_shorthand'] = cmd_shorthand
         return self.render_to_response(context=context)
 
 

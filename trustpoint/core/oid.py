@@ -478,7 +478,6 @@ class PublicKeyInfo:
     ) -> None:
         self._public_key_algorithm_oid = public_key_algorithm_oid
         self._key_size = key_size
-        print(key_size)
         if self._public_key_algorithm_oid == PublicKeyAlgorithmOid.RSA:
             if self._key_size < 2048:
                 err_msg = 'RSA key size must at least be 2048 bits.'

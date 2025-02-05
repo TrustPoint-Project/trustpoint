@@ -269,6 +269,18 @@ class CredentialModel(models.Model):
             ],
         )
 
+    def get_root_ca_certificate(self) -> None | x509.Certificate:
+        root_ca_certificate_serializer = self.get_root_ca_certificate_serializer()
+        if root_ca_certificate_serializer:
+            return root_ca_certificate_serializer.as_crypto()
+        return None
+
+    def get_root_ca_certificate_serializer(self) -> None | CertificateSerializer:
+        last_certificate_in_chain = self.certificatechainordermodel_set.order_by('order').last()
+        if last_certificate_in_chain.certificate.is_root_ca:
+            return last_certificate_in_chain.certificate.get_certificate_serializer()
+        return None
+
     def get_credential_serializer(self) -> CredentialSerializer:
         return CredentialSerializer(
             (
