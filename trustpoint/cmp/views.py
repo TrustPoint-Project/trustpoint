@@ -1,34 +1,39 @@
 from __future__ import annotations
 
-from pyasn1_modules.rfc4210 import CertOrEncCert
+import contextlib
+import datetime
+import hmac as hmac_lib
+import secrets
+from typing import TYPE_CHECKING, Protocol, cast
 
-from core.oid import AlgorithmIdentifier, HashAlgorithm, HmacAlgorithm, SignatureSuite
-from pyasn1.codec.der import decoder, encoder
-from pyasn1_modules import rfc4210, rfc2511, rfc2459, rfc5280
+from core.oid import AlgorithmIdentifier, CertificateExtensionOid, HashAlgorithm, HmacAlgorithm, RsaPaddingScheme, SignatureSuite
+from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives import hashes, hmac
+from cryptography.hazmat.primitives.asymmetric import padding
+from cryptography.hazmat.primitives.serialization import Encoding, load_der_public_key
+from cryptography.x509 import load_der_x509_certificate
+from cryptography.x509.oid import NameOID
+from devices.issuer import LocalDomainCredentialIssuer, LocalTlsClientCredentialIssuer
+from devices.models import DeviceModel, DomainModel, TrustpointClientOnboardingProcessModel
+from django.http import HttpResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.base import View
-from django.http import HttpResponse
+from pyasn1.codec.der import decoder, encoder
+from pyasn1.type import tag, univ, useful
+from pyasn1.type.univ import OctetString
+from pyasn1_modules import rfc2459, rfc2511, rfc4210, rfc5280
+from pyasn1_modules.rfc2459 import KeyIdentifier
+from pyasn1_modules.rfc4210 import CertOrEncCert, CMPCertificate
 
-from typing import TYPE_CHECKING, Protocol, cast
-from devices.models import DeviceModel, DomainModel, TrustpointClientOnboardingProcessModel
-from devices.issuer import LocalDomainCredentialIssuer
-from cmp.message.cmp import PkiIrMessage, NameParser
-from cmp.message.protection_alg import ProtectionAlgorithmOid
+from cmp.message.cmp import NameParser, PkiIrMessage
 from cmp.message.error import CmpErrorMessageHeaderBuilder
-from cryptography.hazmat.primitives.serialization import Encoding
-from cryptography.hazmat.primitives.serialization import load_der_public_key
-from cryptography.hazmat.primitives import hmac
-from cryptography.exceptions import InvalidSignature
-import hmac as hmac_lib
-from pyasn1.type import univ, tag, useful
-import secrets
-import datetime
-
+from cmp.message.protection_alg import ProtectionAlgorithmOid
 
 if TYPE_CHECKING:
-    from django.http import HttpRequest
     from typing import Any
+
+    from django.http import HttpRequest
 
 
 class Dispatchable(Protocol):
@@ -710,3 +715,334 @@ class CmpInitializationRequestView(
     #     else:
     #         print("Verification failed: The shared secret  of the protection is incorrect.")
     #         return False
+
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class CmpCertificationRequestView(
+        CmpHttpMixin,
+        CmpRequestedDomainExtractorMixin,
+        CmpPkiMessageSerializerMixin,
+        View):
+
+    http_method_names = ('post', )
+
+    raw_message: bytes
+    serialized_pyasn1_message: rfc4210.PKIMessage
+    requested_domain: DomainModel
+
+
+    def post(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:
+
+        header = self.serialized_pyasn1_message['header']
+        body = self.serialized_pyasn1_message['body']['cr']
+
+
+        # --------------- General -------------------
+
+
+
+        # --------------- Check CMP Header ---------------
+
+        """pvno - req"""
+        #  CMP version must be 3
+        if header['pvno'] != 2:
+            msg = 'pvno fail'
+            raise ValueError(msg)
+
+        """sender - req"""
+        # sender must be subject of cmp protection Certificate
+        # TODO Talk with ALex about what to do in multihop scenario (look at rfc)
+        sender_dn = header['sender']['directoryName']
+        cmp_cert = self.serialized_pyasn1_message['extraCerts'][0]
+        subject = cmp_cert[0]['subject']
+
+
+        if sender_dn != subject:
+            print("The sender and subject do not match")
+            raise ValueError
+
+        """recipient - req"""
+        # name of the intended recipient should match ca
+        # Can not be guaranteed in multihop scenario
+
+        recipient = header['recipient']
+
+        recipient_dn = recipient['directoryName'][0][0][0]['value'].asOctets()[2:].decode()
+
+        ca_dn = self.requested_domain.issuing_ca.credential.certificate.common_name
+
+        if recipient_dn != ca_dn:
+            print("The recipient_dn and ca dn not match")
+            raise ValueError
+
+        """messageTime - optional"""
+        confirm_time_wait = None
+        message_time = None
+        with contextlib.suppress(Exception):
+            confirm_time_wait = header['confirmWaitTime']
+        with contextlib.suppress(Exception):
+            message_time = header['messageTime']
+
+        if confirm_time_wait and not message_time:
+            msg = 'messageTime not found even tho confirmTimeWait present'
+            raise ValueError(msg)
+
+        """protectionAlg - reg"""
+        # Test if valid alg
+        protection_alg_identifier = AlgorithmIdentifier(header['protectionAlg']['algorithm'].prettyPrint())
+
+        if protection_alg_identifier == AlgorithmIdentifier.PASSWORD_BASED_MAC:
+            print('Not supported')
+            print(protection_alg_identifier)
+
+        # TODO Check if alg type is MSG_SIG_ALG (RFC 9481 Section 3)
+
+        # Must be consistent with subjectPublicKeyInfo alg
+        subject_public_key_alg = body[0]['certReq']['certTemplate']['publicKey']['algorithm']['algorithm'].prettyPrint()
+        if subject_public_key_alg not in protection_alg_identifier.dotted_string:
+            msg = 'Subject publicKey is not consistent with header protection alg'
+            raise ValueError(msg)
+
+        """ senderKID - recommended """
+        sender_kid: KeyIdentifier = header['senderKID'].prettyPrint()
+        if not sender_kid:
+            msg = 'No senderKID Value'
+            raise ValueError(msg)
+
+        """ transaction ID - req """
+        transaction_id = header['transactionID']
+        if len(transaction_id.prettyPrint()[2:]) != 32: # 1 hex equals 4 bites (32 * 4 = 128)
+            msg = 'TransactionID is not 128 bits'
+            raise ValueError(msg)
+
+        """ senderNonce - req """
+        sender_nonce = header['senderNonce']
+        if len(sender_nonce.prettyPrint()[2:]) < 32: # 1 hex equals 4 bites (32 * 4 = 128)
+            msg = 'senderNonce is not 128 bits'
+            raise ValueError(msg)
+
+        """ recipNonce - recommended """
+        recip_nonce = None
+        with contextlib.suppress(Exception):
+            recip_nonce: OctetString = header['recipNonce']
+
+        # TODO Check why recipNonce is found even tho not in pyasn1 object
+        # if recip_nonce is not None:
+        #     msg = 'recipNonce should not be present'
+        #     print(recip_nonce.asOctets())
+        #     raise ValueError(msg)
+
+        """ generalInfo - optinal """
+        general_info = None
+        with contextlib.suppress(Exception):
+            general_info = header['generalInfo']
+
+        if general_info is not None:
+            implicit_confirm = False
+            for entry in general_info:
+                if entry['infoType'].prettyPrint() == '1.3.6.1.5.5.7.4.13':
+                    implicit_confirm = entry
+                    break
+
+            if not implicit_confirm:
+                msg = 'implicit confirm missing'
+                raise ValueError(msg)
+
+        # ------------- CMP Message protection ------------
+
+        protection = self.serialized_pyasn1_message['protection']
+        if not protection:
+            msg = 'Messages without protection must be rejected'
+            raise ValueError(msg)
+
+        # TODO How can I verify it?
+
+        # Get protection
+        signature = self.serialized_pyasn1_message["protection"].asOctets()
+
+        # Get data to check signature with
+
+        protected_part = rfc4210.ProtectedPart()
+        protected_part['header'] = self.serialized_pyasn1_message['header']
+        protected_part['infoValue'] = self.serialized_pyasn1_message['body']
+        encoded_protected_part = encoder.encode(protected_part)
+
+        # get padding
+        if protection_alg_identifier.padding_scheme == RsaPaddingScheme.PKCS1v15:
+            chosen_padding = padding.PKCS1v15()
+        else:
+            msg = f'Padding not implemented {protection_alg_identifier.padding_scheme}'
+            raise ValueError(msg)
+
+        # Get hash
+        hash_alg = None
+        if protection_alg_identifier == AlgorithmIdentifier.RSA_SHA256:
+            hash_alg = hashes.SHA256()
+        else:
+            msg = 'No hash found'
+            raise ValueError(msg)
+
+        # get public key
+        extra_certs = self.serialized_pyasn1_message["extraCerts"]
+        # TODO Identify cert by sender_kid
+        # signer_cert = None
+        # for cert in extra_certs:
+        #     cert_der = encoder.encode(cert)
+        #     parsed_cert = load_der_x509_certificate(cert_der)
+        #     for ext in parsed_cert.extensions:
+        #         if str(ext.oid.dotted_string) == CertificateExtensionOid.SUBJECT_KEY_IDENTIFIER.dotted_string:
+        #             cert_skid = ext.value.digest
+        #             if cert_skid == sender_kid:
+        #                 signer_cert = parsed_cert
+        #                 print('cert found')
+        #                 break
+        signer_cert = extra_certs[0]
+
+        public_key_der = encoder.encode(signer_cert["tbsCertificate"]["subjectPublicKeyInfo"])
+        public_key = load_der_public_key(public_key_der)
+
+        # Verify protection
+        public_key.verify(
+            signature,
+            encoded_protected_part,
+            chosen_padding,
+            hash_alg
+        )
+
+        uid = None
+        for attribute in header['sender']['directoryName'][0]:
+            if attribute[0]['type'].prettyPrint() == NameOID.USER_ID.dotted_string:
+                uid = attribute[0]['value'][2:]
+                break
+        if not uid:
+            return HttpResponse("No UID found in sender's attributes.", status=400)
+        self.device = DeviceModel.objects.get(pk=uid)
+
+        device: DeviceModel = DeviceModel.objects.get(pk=uid)
+
+        # TODO Maybe verify protection with credential from device
+
+
+        # ------------- ExtraCerts -----------
+
+
+        if not extra_certs.hasValue():
+            msg = 'No extraCerts available'
+            raise ValueError(msg)
+
+        # TODO Verify chain as well
+
+
+
+        # ----------------- Create Response -------------------
+
+        # Issue new certificate
+        common_name = body[0]['certReq']['certTemplate']['issuer'][0][0][0]['value'].prettyPrint()
+        credential_issuer = LocalTlsClientCredentialIssuer(device=device, domain=self.requested_domain)
+        issued_credential_model = credential_issuer.issue_tls_client_credential(common_name=common_name, validity_days=30)
+
+        # Construct CP (Certificate Response) message
+
+        cp_header = rfc4210.PKIHeader()
+
+        cp_header['pvno'] = 2
+
+        issuing_ca_cert = self.requested_domain.issuing_ca.credential.get_certificate()
+        raw_issuing_ca_subject = issuing_ca_cert.subject.public_bytes()
+        name, _ = decoder.decode(raw_issuing_ca_subject, asn1spec=rfc2459.Name())
+        sender = rfc2459.GeneralName()
+        sender['directoryName'][0] = name
+        cp_header['sender'] = sender
+
+        cp_header['recipient'] = header['sender']
+
+        current_time = datetime.datetime.now(datetime.UTC).strftime('%Y%m%d%H%M%SZ')
+        cp_header['messageTime'] = useful.GeneralizedTime(current_time).subtype(
+            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))
+
+        cp_header['protectionAlg'] = header['protectionAlg']
+
+        cp_header['senderKID'] = header['senderKID']
+
+        cp_header['transactionID'] = header['transactionID']
+
+        cp_header['senderNonce'] = univ.OctetString(secrets.token_bytes(16)).subtype(
+            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 5))
+
+        cp_header['recipNonce'] = univ.OctetString(header['senderNonce']).subtype(
+            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 6))
+
+        cp_header['generalInfo'] = header['generalInfo']
+
+
+        cp_extra_certs = univ.SequenceOf()
+
+        certificate_chain = [self.requested_domain.issuing_ca.credential.get_certificate(), *self.requested_domain.issuing_ca.credential.get_certificate_chain()]
+        for certificate in certificate_chain:
+            der_bytes = certificate.public_bytes(encoding=Encoding.DER)
+            asn1_certificate, _ = decoder.decode(der_bytes, asn1Spec=rfc4210.CMPCertificate())
+            cp_extra_certs.append(asn1_certificate)
+
+        # body
+        cp_body = rfc4210.PKIBody()
+        cp_body['cp'] = rfc4210.CertRepMessage().subtype(
+            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1)
+        )
+        cp_body['cp']['caPubs'] = univ.SequenceOf().subtype(
+            sizeSpec=rfc4210.constraint.ValueSizeConstraint(1, rfc4210.MAX),
+            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1))
+        for cert in cp_extra_certs:
+            cp_body['cp']['caPubs'].append(cert)
+
+        response = univ.SequenceOf()
+        cert_response = rfc4210.CertResponse()
+        cert_response['certReqId'] = 0
+
+        pki_status_info = rfc4210.PKIStatusInfo()
+        pki_status_info['status'] = 0
+        cert_response['status'] = pki_status_info
+
+        cmp_cert = rfc4210.CMPCertificate().subtype(
+            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 0))
+
+        encoded_cert = issued_credential_model.credential.get_certificate().public_bytes(
+            encoding=Encoding.DER)
+        der_cert, _ = decoder.decode(encoded_cert, asn1Spec=rfc4210.CMPCertificate())
+        cmp_cert.setComponentByName("tbsCertificate", der_cert['tbsCertificate'])
+        cmp_cert.setComponentByName("signatureValue", der_cert['signatureValue'])
+        cmp_cert.setComponentByName("signatureAlgorithm", der_cert['signatureAlgorithm'])
+        cert_or_enc_cert = rfc4210.CertOrEncCert()
+        cert_or_enc_cert['certificate'] = cmp_cert
+
+        cert_response['certifiedKeyPair']['certOrEncCert'] = cert_or_enc_cert
+
+        cp_body['cp']['response'].append(cert_response)
+
+
+        cp_message = rfc4210.PKIMessage()
+        cp_message['header'] = cp_header
+        cp_message['body'] = cp_body
+        for extra_cert in cp_extra_certs:
+            cp_message['extraCerts'].append(extra_cert)
+
+
+        protected_part = rfc4210.ProtectedPart()
+        protected_part['header'] = cp_message['header']
+        protected_part['infoValue'] = cp_message['body']
+
+        encoded_protected_part = encoder.encode(protected_part)
+
+        signature = self.requested_domain.issuing_ca.credential.get_private_key().sign(algorithm=hash_alg, data=encoded_protected_part, padding=padding.PKCS1v15())
+
+        binary_stuff = bin(int.from_bytes(signature, byteorder='big'))[2:].zfill(160)
+        cp_message['protection'] = rfc4210.PKIProtection(univ.BitString(binary_stuff)).subtype(
+            explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 0))
+
+        encoded_cp_message = encoder.encode(cp_message)
+        decoded_cp_message, _ = decoder.decode(encoded_cp_message, asn1Spec=rfc4210.PKIMessage())
+
+
+        return HttpResponse(encoded_cp_message, content_type='application/pkixcmp', status=200)
+
+
