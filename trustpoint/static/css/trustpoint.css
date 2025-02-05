@@ -864,5 +864,21 @@ code {
     vertical-align: middle; /* Align vertically with the buttons */
 }
 
+/* Add padding to the code block */
+.code-container code {
+    display: block;
+    padding: 1rem;
+}
+/* Style for the copy button */
+.copy-button {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    border: none;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+}
+
 
 /* ----- Testing ----- */
