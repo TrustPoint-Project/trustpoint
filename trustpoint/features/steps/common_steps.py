@@ -1,4 +1,5 @@
-from behave import given, when, then
+from behave import given, then
+from behave.exception import StepNotImplementedError
 
 
 @given("the admin user is logged into TPC_Web")
@@ -14,9 +15,9 @@ def step_admin_logged_in(context):
     - Submit the login form and verify the user is redirected to the dashboard.
 
     Raises:
-        NotImplementedError: This step is not yet implemented.
+        StepNotImplementedError: This step is not yet implemented.
     """
-    raise NotImplementedError("Step not implemented: Admin login to TPC_Web.")
+    raise StepNotImplementedError("Step not implemented: Admin login to TPC_Web.")
 
 
 @then('the system should display a confirmation message')
@@ -28,9 +29,9 @@ def step_confirmation_message(context):
     indicating that the operation completed as intended.
 
     Raises:
-        NotImplementedError: This step is not yet implemented.
+        StepNotImplementedError: This step is not yet implemented.
     """
-    raise NotImplementedError("Step not implemented: Confirmation message check.")
+    raise StepNotImplementedError("Step not implemented: Confirmation message check.")
 
 
 @then('the system should display an error message stating {error_message}')
@@ -42,9 +43,9 @@ def step_error_message(context, error_message):
         error_message (str): The expected error message text.
 
     Raises:
-        NotImplementedError: This step is not yet implemented.
+        StepNotImplementedError: This step is not yet implemented.
     """
-    raise NotImplementedError("Step not implemented: Error message check.")
+    raise StepNotImplementedError("Step not implemented: Error message check.")
 
 
 @given("an API client is authenticated")
@@ -57,9 +58,9 @@ def step_api_client_authenticated(context):
     - Attach the token to subsequent API requests in the Authorization header.
 
     Raises:
-        NotImplementedError: This step is not yet implemented.
+        StepNotImplementedError: This step is not yet implemented.
     """
-    raise NotImplementedError("Step not implemented: API client authentication.")
+    raise StepNotImplementedError("Step not implemented: API client authentication.")
 
 
 @then('the API response should have a status code of {status_code}')
@@ -71,9 +72,9 @@ def step_verify_status_code(context, status_code):
         status_code (str): The expected status code.
 
     Raises:
-        NotImplementedError: This step is not yet implemented.
+        StepNotImplementedError: This step is not yet implemented.
     """
-    raise NotImplementedError("Step not implemented: Verify API response status code.")
+    raise StepNotImplementedError("Step not implemented: Verify API response status code.")
 
 
 @then('the response payload should include an error message stating {error_message}')
@@ -85,6 +86,6 @@ def step_verify_error_message(context, error_message):
         error_message (str): The expected error message text.
 
     Raises:
-        NotImplementedError: This step is not yet implemented.
+        StepNotImplementedError: This step is not yet implemented.
     """
-    raise NotImplementedError("Step not implemented: Verify error message in response payload.")
+    raise StepNotImplementedError("Step not implemented: Verify error message in response payload.")
