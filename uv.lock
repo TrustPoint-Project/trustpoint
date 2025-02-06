@@ -1466,6 +1466,7 @@ dependencies = [
     { name = "psycopg-binary" },
     { name = "pyasn1" },
     { name = "pyasn1-modules" },
+    { name = "ruff" },
     { name = "zeroconf" },
 ]
 
@@ -1507,6 +1508,7 @@ requires-dist = [
     { name = "psycopg-binary", specifier = ">=3.2.4" },
     { name = "pyasn1", specifier = ">=0.6.1,<0.7" },
     { name = "pyasn1-modules", specifier = ">=0.4.1,<0.5" },
+    { name = "ruff", specifier = ">=0.7.4" },
     { name = "zeroconf", specifier = ">=0.139.0,<0.140" },
 ]
 
