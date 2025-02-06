@@ -1,5 +1,5 @@
 name: MyPy Code Quality Check
-on: [ push, pull_request ]
+on: [ pull_request ]
 jobs:
   ruff:
     runs-on: ubuntu-latest
