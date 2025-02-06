@@ -12,12 +12,14 @@
         {% render_table table %}
     </div>
     <div class="card-footer tp-table-footer-btn-group d-flex justify-content-between align-items-center tp-sticky-footer">
-        <button type="button" class="btn btn-secondary tp-table-select-btn" data-tp-url="delete">
-            {% trans "Delete selected" %}
-        </button>
-        <button type="button" class="btn btn-primary tp-table-select-btn" data-tp-url="download">
-            {% trans "Download selected" %}
-        </button>
+        <div>
+            <button type="button" class="btn btn-secondary tp-table-select-btn" data-tp-url="delete">
+                {% trans "Delete selected" %}
+            </button>
+            <button type="button" class="btn btn-primary tp-table-select-btn" data-tp-url="download">
+                {% trans "Download selected" %}
+            </button>
+        </div>
         <a class="btn btn-primary" href="{% url 'pki:truststores-add' %}">{% trans "Add New Trust Store" %}</a>
     </div>
 </div>
