@@ -20,11 +20,17 @@ jobs:
 
       - name: Run unit tests for the file builder module
         run: |
-          uv run pytest --html=file_builder_report.html --junitxml=file_builder_pytest.xml --cov=trustpoint trustpoint/core/tests/file_builder/ | tee file_builder_pytest-coverage.txt
+          uv run pytest --html=file_builder_report.html \
+          --self-contained-html \
+          --junitxml=file_builder_pytest.xml \
+          --cov=trustpoint trustpoint/core/tests/file_builder/ | tee file_builder_pytest-coverage.txt
 
       - name: Run unit tests for the serializer module
         run: |
-          uv run pytest --html=serializer_report.html --junitxml=serializer_pytest.xml --cov=trustpoint trustpoint/core/tests/serializer/ | tee serializer_pytest-coverage.txt
+          uv run pytest --html=serializer_report.html \
+          --self-contained-html \
+          --junitxml=serializer_pytest.xml \
+          --cov=trustpoint trustpoint/core/tests/serializer/ | tee serializer_pytest-coverage.txt
 
       - name: Pytest coverage comment
         uses: MishaKav/pytest-coverage-comment@main
