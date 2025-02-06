@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from core.serializer import CertificateCollectionSerializer
+from core.serializer import CertificateSerializer, CertificateCollectionSerializer
 from core.validator.field import UniqueNameValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
@@ -121,7 +121,7 @@ class TruststoreModel(models.Model):
         """Returns the number of certificates in the truststore."""
         return len(self.certificates.all())
 
-    def get_serializer(self) -> CertificateCollectionSerializer:
+    def get_certificate_collection_serializer(self) -> CertificateCollectionSerializer:
         """Returns a serializer for all certificates in the truststore.
 
         This method gathers all the certificates associated with the truststore,
@@ -129,11 +129,13 @@ class TruststoreModel(models.Model):
         the serialized result.
 
         Returns:
-            CertificateCollectionSerializer: The serialized representation of the certificates.
+            The serialized representation of the certificates.
         """
         return CertificateCollectionSerializer(
-            [cert_model.get_certificate_serializer() for cert_model in self.certificates.all()]
+            [cert.certificate.get_certificate_serializer() for cert in self.truststoreordermodel_set.order_by('order')]
         )
+
+
 
 class TruststoreOrderModel(models.Model):
     """Represents the order of certificates in a truststore."""

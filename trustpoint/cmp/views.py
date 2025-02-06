@@ -524,6 +524,7 @@ class CmpInitializationRequestView(
             # -cmd ir -subject "/CN=Trustpoint Domain Credential" -cert cmp_signer_credential
             # -newkey key.pem -certout cert.pem -implicit_confirm -chainout chain.pem
 
+            print(self.serialized_pyasn1_message)
 
             encoded_ip_message = b''
 
