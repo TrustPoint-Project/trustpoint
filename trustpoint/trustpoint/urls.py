@@ -42,6 +42,7 @@ urlpatterns += [
     path('users/', include('users.urls')),
     path('setup-wizard/', include('setup_wizard.urls')),
     path('pki/', include('pki.urls')),
+    # TODO(Air): Move CRL to REST API endpoint
     path('crl/<int:pk>/', CrlDownloadView.as_view(), name='crl-download'),
     path('.well-known/cmp/', include('cmp.urls')),
     path('home/', include('home.urls')),
