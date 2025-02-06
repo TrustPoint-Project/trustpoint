@@ -26,6 +26,8 @@ dependencies = [
     "behave>=1.2.7.dev6",
     "pre-commit>=4.1.0",
     "ruff>=0.7.4",
+    "pytest-md>=0.2.0",
+    "pytest-emoji>=0.2.0",
 ]
 
 [dependency-groups]
