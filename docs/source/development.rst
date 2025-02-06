@@ -74,8 +74,6 @@ If you are using pyenv, make sure to add the following configuration:
 
    poetry config virtualenvs.prefer-active-python true
 
-.. _install-dependencies-with-poetry:
-
 Install dependencies with poetry.
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
