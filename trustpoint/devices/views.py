@@ -26,7 +26,7 @@ from django.views.generic.base import RedirectView, View
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormMixin, FormView
 from django.views.generic.list import ListView
-from pki.models import CredentialModel
+from pki.models import CertificateModel, CredentialModel
 
 from devices.forms import (
     BrowserLoginForm,
@@ -115,6 +115,7 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SortableTableMix
         for device in context['page_obj']:
             device.onboarding_button = self._render_onboarding(device)
             device.clm_button = self._render_clm(device)
+            device.revoke_button = self._render_revoke(device)
 
         return context
 
@@ -163,6 +164,16 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SortableTableMix
                 f'<a href="certificate-lifecycle-management/{record.pk}/" class="btn btn-primary tp-table-btn w-100">Manage Issued Certificates</a>',
             )
         return ''
+
+    def _render_revoke(self, record: DeviceModel) -> SafeString | str:
+        # TODO(Air): This cursed query may be slow for a large number of devices.
+        if IssuedCredentialModel.objects.filter(device=record,
+                                                credential__primarycredentialcertificate__is_primary=True,
+                                                credential__primarycredentialcertificate__certificate__certificate_status='OK').exists():
+            return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
+                               record.pk, _('Revoke'))
+
+        return format_html('<a class="btn btn-danger tp-table-btn w-100 disabled">{}</a>', _('Revoke'))
 
 
 
@@ -691,6 +702,9 @@ class DeviceCertificateLifecycleManagementSummaryView(
         Returns:
             SafeString: The html hyperlink for the revoke-view.
         """
+        if record.credential.certificate.certificate_status == CertificateModel.CertificateStatus.REVOKED:
+            return format_html('<a class="btn btn-danger tp-table-btn w-100 disabled">{}</a>', _('Revoked'))
+
         return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
                            record.pk, _('Revoke'))
 
