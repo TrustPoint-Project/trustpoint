@@ -7,10 +7,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
         with:
           python-version: 3.12
 
-      - name: Install and run MyPy
-        run: pip install mypy && mypy .
+      - name: Run MyPy
+        run: mypy .
