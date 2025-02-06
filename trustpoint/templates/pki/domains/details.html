@@ -1,6 +1,5 @@
 {% extends 'trustpoint/base.html' %}
 {% load i18n %}
-{% load django_tables2 %}
 {% load crispy_forms_filters %}
 
 {% block content %}
@@ -62,9 +61,7 @@
 
                     <h2>{% trans 'DevID Registration' %}</h2>
                     <hr class="hr-m">
-                    <div class="table-responsive">
-                        {% render_table devid_table %}
-                    </div>
+                        {% include 'pki/devid_registration/table.html' %}
                     </div>
                 </div>
                 <div class="card-footer">
