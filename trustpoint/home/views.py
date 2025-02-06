@@ -183,13 +183,13 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
 
     _logger = logging.getLogger(__name__)
 
-    def get(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> dict[str, Any]:  # noqa: ARG002
+    def get(self, request: HttpRequest, *args: tuple, **kwargs: dict) -> HttpResponse:  # noqa: ARG002
         """Get dashboard data for panels, tables and charts"""
         start_date: str = request.GET.get('start_date', None)
         start_date_object = None
         # Parse the date string into a datetime.date object
         if start_date:
-            start_date_object = dateparse.parse_date(start_date)  # Returns a date object (not datetime)
+            start_date_object = dateparse.parse_datetime(start_date)  # Returns a datetime object
             if not start_date_object:
                 return Response({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
         else:
@@ -197,6 +197,8 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
             start_date_object = datetime.now(tz).date()
 
         dashboard_data: dict[str, Any] = {}
+
+        start_date_object = timezone.make_aware(start_date_object)
 
         device_counts = self.get_device_count_by_onboarding_status(dateparse.parse_date('2023-01-01'))
         dashboard_data['device_counts'] = device_counts
@@ -216,7 +218,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
 
         return JsonResponse(dashboard_data)
 
-    def get_device_charts_data(self, dashboard_data: dict[str, Any], start_date_object: date) -> None:
+    def get_device_charts_data(self, dashboard_data: dict[str, Any], start_date_object: datetime) -> None:
         """Fetch data from database for device charts"""
         device_counts_by_os = self.get_device_count_by_onboarding_status(start_date_object)
         if device_counts_by_os:
@@ -230,7 +232,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
         if device_counts_by_domain:
             dashboard_data['device_counts_by_domain'] = device_counts_by_domain
 
-    def get_cert_charts_data(self, dashboard_data: dict[str, Any], start_date_object: date) -> None:
+    def get_cert_charts_data(self, dashboard_data: dict[str, Any], start_date_object: datetime) -> None:
         """Fetch data from database for certificate charts"""
         cert_counts_by_status = self.get_cert_counts_by_status(start_date_object)
         if cert_counts_by_status:
@@ -244,7 +246,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
         if cert_counts_by_template:
             dashboard_data['cert_counts_by_template'] = cert_counts_by_template
 
-    def get_ca_charts_data(self, dashboard_data: dict[str, Any], start_date_object: date) -> None:
+    def get_ca_charts_data(self, dashboard_data: dict[str, Any], start_date_object: datetime) -> None:
         """Fetch data from database for issuing ca charts"""
         cert_counts_by_issuing_ca = self.get_cert_counts_by_issuing_ca(start_date_object)
         if cert_counts_by_issuing_ca:
@@ -258,7 +260,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
         if issuing_ca_counts_by_type:
             dashboard_data['ca_counts_by_type'] = issuing_ca_counts_by_type
 
-    def get_device_count_by_onboarding_status(self, start_date: date) -> dict[str, Any]:
+    def get_device_count_by_onboarding_status(self, start_date: datetime) -> dict[str, Any]:
         """Get device count by onboarding status from database"""
         device_os_counts = {str(status): 0 for _, status in DeviceModel.OnboardingStatus.choices}
         try:
@@ -326,7 +328,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
             self._logger.exception('Error occurred in certificate count by status query')
         return cert_counts_by_status
 
-    def get_cert_counts_by_status(self, start_date: date) -> dict[str, Any]:
+    def get_cert_counts_by_status(self, start_date: datetime) -> dict[str, Any]:
         """Get certs count by onboarding status from database"""
         cert_status_counts = {str(status): 0 for _, status in CertificateModel.CertificateStatus.choices}
         try:
@@ -386,7 +388,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
             self._logger.exception('Error occurred in device count by date and onboarding status')
         return device_counts_by_date_and_os
 
-    def get_device_count_by_onboarding_protocol(self, start_date: date) -> dict[str, Any]:
+    def get_device_count_by_onboarding_protocol(self, start_date: datetime) -> dict[str, Any]:
         """Get device count by onboarding protocol from database"""
         device_op_counts = {str(status): 0 for _, status in DeviceModel.OnboardingProtocol.choices}
         try:
@@ -403,7 +405,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
             self._logger.exception('Error occurred in device count by onboarding protocol query')
         return device_op_counts
 
-    def get_device_count_by_domain(self, start_date: date) -> list[dict[str, Any]]:
+    def get_device_count_by_domain(self, start_date: datetime) -> list[dict[str, Any]]:
         """Get count of onboarded devices by domain from the database."""
         try:
             device_domain_qr = (
@@ -420,7 +422,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
             self._logger.exception('Error occurred in device count by domain query')
             return []
 
-    def get_cert_counts_by_issuing_ca(self, start_date: date) -> list[dict[str, Any]]:
+    def get_cert_counts_by_issuing_ca(self, start_date: datetime) -> list[dict[str, Any]]:
         """Get certificate count by issuing ca from database"""
         cert_counts_by_issuing_ca = []
         try:
@@ -437,7 +439,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
 
         return cert_counts_by_issuing_ca
 
-    def get_cert_counts_by_issuing_ca_and_date(self, start_date: date) -> list[dict[str, Any]]:
+    def get_cert_counts_by_issuing_ca_and_date(self, start_date: datetime) -> list[dict[str, Any]]:
         """Get certificate count by issuing ca from database"""
         cert_counts_by_issuing_ca_and_date = []
         try:
@@ -455,7 +457,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
             self._logger.exception('Error occurred in certificate count by issuing ca query')
         return cert_counts_by_issuing_ca_and_date
 
-    def get_cert_counts_by_domain(self, start_date: date) -> list[dict[str, Any]]:
+    def get_cert_counts_by_domain(self, start_date: datetime) -> list[dict[str, Any]]:
         """Get certificate count by domain from database"""
         cert_counts_by_domain = []
         try:
@@ -480,7 +482,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
             self._logger.exception('Error occurred in certificate count by issuing ca query')
         return cert_counts_by_domain
 
-    def get_cert_counts_by_template(self, start_date: date) -> dict[str, Any]:
+    def get_cert_counts_by_template(self, start_date: datetime) -> dict[str, Any]:
         """Get certificate count by template from database"""
         cert_counts_by_template = {
             str(status): 0 for _, status in IssuedCredentialModel.IssuedCredentialPurpose.choices
@@ -502,7 +504,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
             self._logger.exception('Error occurred in certificate count by template query')
         return cert_counts_by_template
 
-    def get_issuing_ca_counts_by_type(self, start_date: date) -> dict[str, Any]:
+    def get_issuing_ca_counts_by_type(self, start_date: datetime) -> dict[str, Any]:
         """Get issuing ca counts by type from database"""
         issuing_ca_type_counts = {str(cert_type): 0 for _, cert_type in IssuingCaModel.IssuingCaTypeChoice.choices}
         try:
