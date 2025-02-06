@@ -9,15 +9,16 @@ from typing import TYPE_CHECKING, cast
 from core.file_builder.enum import ArchiveFormat
 from core.serializer import CredentialSerializer
 from core.validator.field import UniqueNameValidator
+from core.oid import PublicKeyInfo
 from django.contrib import messages
 from django.db.models import Q
 from django.forms import BaseModelForm
-from django.http import FileResponse, Http404, HttpResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
-from django.views.generic.base import RedirectView
+from django.views.generic.base import RedirectView, View
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormMixin, FormView
 from django.views.generic.list import ListView
@@ -782,7 +783,9 @@ class TrustpointClientOnboardingPasswordBasedMacView(DeviceContextMixin, TpLogin
 
         Returns:
             The HttpResponse to display the view.
+
         """
+
         device = self.get_object()
         self.object = device
 
@@ -808,10 +811,42 @@ class TrustpointClientOnboardingPasswordBasedMacView(DeviceContextMixin, TpLogin
         else:
             trustpoint_onboarding_process = trustpoint_onboarding_process.first()
 
+        public_key_info = PublicKeyInfo.from_certificate(device.domain.issuing_ca.credential.get_certificate())
+
+        if public_key_info.named_curve:
+            key_type = (
+                    public_key_info.public_key_algorithm_oid.verbose_name
+                    + '-'
+                    + public_key_info.named_curve.verbose_name
+            )
+        else:
+            key_type = public_key_info.public_key_algorithm_oid.verbose_name + '-' + str(public_key_info.key_size)
+
+        # TODO(AlexHx8472): Get current address
+        cmd_verbose = (
+            'trustpoint-client '
+            'onboard shared-secret '
+            '--host 127.0.0.1 '
+            '--port 8000 '
+            f'--key-type {key_type} ' 
+            f'--domain {device.domain.unique_name} '
+            f'--device-id {device.id} '
+            f'--shared-secret {trustpoint_onboarding_process.password}')
+
+        cmd_shorthand = (
+            'trustpoint-client '
+            'onboard shared-secret '
+            '-h 127.0.0.1 '
+            '-p 8000 '
+            f'-k {key_type} '
+            f'-d {device.domain.unique_name } '
+            f'-i {device.id} '
+            f'-s {trustpoint_onboarding_process.password}'
+        )
 
         context = super().get_context_data(**kwargs)
-        context['password'] = trustpoint_onboarding_process.password
-        context['onboarding_process_id'] = trustpoint_onboarding_process.id
+        context['cmd_verbose'] = cmd_verbose
+        context['cmd_shorthand'] = cmd_shorthand
         return self.render_to_response(context=context)
 
 
@@ -842,3 +877,56 @@ class TrustpointClientCancelOnboardingProcessView(
 
         messages.success(request, f'Onboarding process for device {device.unique_name} cancelled.')
         return redirect('devices:devices', permanent=False)
+
+class DeviceOnboardStatusView(TpLoginRequiredMixin, View):
+    """
+    A view to check if a device is already onboarded.
+    This view returns a JSON response with the onboard status.
+    """
+
+    def get(self, request, *args, **kwargs):
+        device_id = request.GET.get('device_id')
+        if not device_id:
+            return JsonResponse({'error': 'Missing device id'}, status=400)
+
+        try:
+            device = DeviceModel.objects.get(pk=device_id)
+        except DeviceModel.DoesNotExist:
+            return JsonResponse({'error': 'Device not found'}, status=404)
+
+        is_onboarded = device.onboarding_status == DeviceModel.OnboardingStatus.ONBOARDED.value
+
+        return JsonResponse({'onboarded': is_onboarded})
+
+
+class DeviceOnboardRedirectView(TpLoginRequiredMixin, RedirectView):
+    """Redirects to the certificate lifecycle management summary view if the device is onboarded,
+    adding a success message.
+    """
+    permanent = False
+
+    def get(self, request, *args, **kwargs):
+        """Fetch the device by pk and add a success message if onboarded, or an info message otherwise.
+
+        Args:
+            request: The HTTP request.
+            *args: Positional arguments.
+            **kwargs: Expects 'pk' for the device ID.
+
+        Returns:
+            A redirect response to the appropriate view.
+        """
+        device_id = kwargs.get('pk')
+        try:
+            device = DeviceModel.objects.get(pk=device_id)
+        except DeviceModel.DoesNotExist:
+            messages.error(request, f"Device with ID {device_id} not found.")
+            return redirect('devices:devices')
+
+        if device.onboarding_status == DeviceModel.OnboardingStatus.ONBOARDED.value:
+            messages.success(request, f"Device {device.unique_name} successfully onboarded.")
+        else:
+            messages.info(request, f"Device {device.unique_name} is not onboarded yet.")
+
+        url = str(reverse('devices:certificate_lifecycle_management', kwargs={'pk': device.id}))
+        return redirect(url)

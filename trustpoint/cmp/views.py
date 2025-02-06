@@ -265,11 +265,12 @@ class CmpInitializationRequestView(
             self.serialized_pyasn1_message['header']['protectionAlg']['algorithm'].prettyPrint())
         if protection_algorithm == AlgorithmIdentifier.PASSWORD_BASED_MAC:
 
+            # openssl cmp -server http://localhost:8000/.well -known/cmp/initialization/phoenix_contact/
+            # -cmd ir -secret pass:mhBaszVCYMClCZoG -subject "/CN=Trustpoint Domain Credential"
+            # -newkey key.pem -certout cert.pem -ref 29 -implicit_confirm -chainout chain.pem
 
             sender_kid = int(self.serialized_pyasn1_message['header']['senderKID'].prettyPrint())
             self.onboarding_process = TrustpointClientOnboardingProcessModel.objects.get(device__pk=sender_kid)
-            print(self.onboarding_process)
-
 
             transaction_id = self.serialized_pyasn1_message['header']['transactionID'].asOctets()
             if len(transaction_id) != 16:
@@ -369,7 +370,6 @@ class CmpInitializationRequestView(
             shared_secret = self.onboarding_process.password.encode()
             salted_secret = shared_secret + salt
             hmac_key = salted_secret
-            print(hmac_key)
             for _ in range(iteration_count):
                 hasher = owf.get_hash_function()
                 hasher.update(hmac_key)
@@ -464,10 +464,13 @@ class CmpInitializationRequestView(
             ip_body['ip']['caPubs'] = univ.SequenceOf().subtype(
                 sizeSpec=rfc4210.constraint.ValueSizeConstraint(1, rfc4210.MAX),
                 explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatConstructed, 1))
-            for cert in ip_extra_certs:
-                ip_body['ip']['caPubs'].append(cert)
+            # TODO(AlexHx8472): Add TLS Server Certificate Root CA
+            root_ca_cert = self.requested_domain.issuing_ca.credential.get_root_ca_certificate()
+            # if root_ca_cert:
+            #     der_bytes = root_ca_cert.public_bytes(encoding=Encoding.DER)
+            #     asn1_certificate, _ = decoder.decode(der_bytes, asn1Spec=rfc4210.CMPCertificate())
+            #     ip_body['ip']['caPubs'].append(asn1_certificate)
 
-            response = univ.SequenceOf()
             cert_response = rfc4210.CertResponse()
             cert_response['certReqId'] = 0
 
@@ -515,6 +518,14 @@ class CmpInitializationRequestView(
 
             encoded_ip_message = encoder.encode(ip_message)
             decoded_ip_message, _ = decoder.decode(encoded_ip_message, asn1Spec=rfc4210.PKIMessage())
+
+        else:
+            # openssl cmp -server http://localhost:8000/.well -known/cmp/initialization/phoenix_contact/
+            # -cmd ir -subject "/CN=Trustpoint Domain Credential" -cert cmp_signer_credential
+            # -newkey key.pem -certout cert.pem -implicit_confirm -chainout chain.pem
+
+
+            encoded_ip_message = b''
 
 
         return HttpResponse(encoded_ip_message, content_type='application/pkixcmp', status=200)
