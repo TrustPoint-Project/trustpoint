@@ -1,0 +1,34 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load static %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+    <form method="POST" autocomplete="off">
+        {% csrf_token %}
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h1>{% trans 'Confirm DevID Pattern Delete' %}</h1>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="tp-card-centered-content">
+                    <p>Are you sure you want to delete the registration pattern: <strong>{{ object.unique_name }}</strong>?</p>
+                    <form method="post">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">Delete</button>
+                        <a href="{{ request.META.HTTP_REFERER }}" class="btn btn-secondary">Cancel</a>
+                    </form>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="tp-card-btn-footer">
+                    <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
+                    <a href="{% url 'pki:domains-add' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                </div>
+            </div>
+        </div>
+    </form>
+{% endblock content %}

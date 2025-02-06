@@ -1,0 +1,69 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+
+{% block content %}
+
+<div class="card" style="max-height: 100%; display: flex; flex-direction: column;">
+    <div class="card-header">
+        <h1>{% trans "Truststores" %}</h1>
+    </div>
+    <div class="card-body text-start" style="overflow: auto; flex-grow: 1; max-height: 90%;">
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th id="checkbox-column"><input type="checkbox"/></th>
+            <th>
+              <a href="?sort={% if current_sort == 'unique_name' %}-{% endif %}unique_name">
+                Unique Name
+              </a>
+            </th>
+            <th>
+              <a href="?sort={% if current_sort == 'intended_usage' %}-{% endif %}intended_usage">
+                Intended Usage
+              </a>
+            </th>
+            <th>
+              <a href="?sort={% if current_sort == 'created_at' %}-{% endif %}created_at">
+                Created-At
+              </a>
+            </th>
+            <th>Details</th>
+            <th>Download</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for truststore in page_obj %}
+          <tr>
+            <td class="row_checkbox">
+              <input type="checkbox" name="row_checkbox" value="{{ truststore.id }}" />
+            </td>
+            <td>{{ truststore.unique_name }}</td>
+            <td>{{ truststore.get_intended_usage_display }}</td>
+            <td>{{ truststore.created_at }}</td>
+            <td><a href="details/{{truststore.id}}/" class="btn btn-primary tp-table-btn">Details</a></td>
+            <td><a href="download/{{truststore.id}}/" class="btn btn-primary tp-table-btn">Download</a></td>
+          </tr>
+          {% empty %}
+          <tr>
+            <td colspan="3">No data available.</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+  
+      {% include 'trustpoint/pagination.html' %}
+    </div>
+    <div class="card-footer tp-table-footer-btn-group d-flex justify-content-between align-items-center tp-sticky-footer">
+        <div>
+            <button type="button" class="btn btn-secondary tp-table-select-btn" data-tp-url="delete">
+                {% trans "Delete selected" %}
+            </button>
+            <button type="button" class="btn btn-primary tp-table-select-btn" data-tp-url="download">
+                {% trans "Download selected" %}
+            </button>
+        </div>
+        <a class="btn btn-primary" href="{% url 'pki:truststores-add' %}">{% trans "Add New Trust Store" %}</a>
+    </div>
+</div>
+
+{% endblock content %}

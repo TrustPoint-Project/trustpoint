@@ -12,7 +12,7 @@
         {% block head %}{% endblock head %}
     </head>
 
-    <body id="bs-override">
+    <body id="bs-override" class="body-users">
         <header class="tp-page-header tp-page-header-users navbar border-bottom border-body">
             <a class="navbar-brand tp-primary" href="#">
                 <!--<img src="{% static 'img/tp-logo-128.png' %}" width="64" height="45" alt="Trustpoint"></a> -->
@@ -31,10 +31,10 @@
         </header>
 
         <main class="tp-main tp-main-users">
-            <div></div>
+            <div>
                 {% block content %}
                 {% endblock content %}
-            <div></div>
+            </div>
         </main>
 
         <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>

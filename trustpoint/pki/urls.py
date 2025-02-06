@@ -2,11 +2,49 @@
 
 from django.urls import path, re_path  # type: ignore[import-untyped]
 
-from pki.views import certificates, domains, issuing_cas
+from pki.views import certificates, domains, issuing_cas, truststores
+from pki.views.domains import DevIdRegistrationCreateView, DevIdRegistrationDeleteView, DevIdMethodSelectView
 
 app_name = 'pki'
 
 urlpatterns = [
+    path(
+        'truststores/',
+        truststores.TruststoreTableView.as_view(),
+        name='truststores',
+    ),
+    path('truststores/add/',
+         truststores.TruststoreCreateView.as_view(),
+         name='truststores-add'),
+    path('truststores/add/<int:pk>/',
+         truststores.TruststoreCreateView.as_view(),
+         name='truststores-add-with-pk'),
+    re_path(
+        r'^truststores/download/(?P<pk>[0-9]+)/?$',
+        truststores.TruststoreDownloadView.as_view(),
+        name='truststore-download',
+    ),
+    re_path(
+        r'^truststores/download/(?P<pks>([0-9]+/)+[0-9]+)/?$',
+        truststores.TruststoreMultipleDownloadView.as_view(),
+        name='truststores-download',
+    ),
+    re_path(
+        r'^truststores/download/multiple/'
+        r'(?P<file_format>[a-zA-Z0-9_]+)/'
+        r'(?P<archive_format>[a-zA-Z0-9_]+)/'
+        r'(?P<pks>([0-9]+/)+[0-9]+)/?$',
+        truststores.TruststoreMultipleDownloadView.as_view(),
+        name='truststores-file-download',
+    ),
+    re_path(
+        r'^truststores/download/(?P<file_format>[a-zA-Z0-9_]+)/(?P<pk>[0-9]+)/?$',
+        truststores.TruststoreDownloadView.as_view(),
+        name='truststore-file-download',
+    ),
+    path('truststores/details/<int:pk>/',
+         truststores.TruststoreDetailView.as_view(),
+         name='truststore-detail'),
     path(
         'certificates/',
         certificates.CertificateTableView.as_view(),
@@ -35,7 +73,9 @@ urlpatterns = [
         certificates.CertificateDownloadView.as_view(),
         name='certificate-file-download',
     ),
-    path('certificates/details/<int:pk>/', certificates.CertificateDetailView.as_view(), name='certificate-detail'),
+    path('certificates/details/<int:pk>/',
+         certificates.CertificateDetailView.as_view(),
+         name='certificate-detail'),
     path('issuing-cas/', issuing_cas.IssuingCaTableView.as_view(), name='issuing_cas'),
     path(
         'issuing-cas/add/method-select/',
@@ -54,6 +94,7 @@ urlpatterns = [
     ),
     path('issuing-cas/detail/<int:pk>/', issuing_cas.IssuingCaDetailView.as_view(), name='issuing_cas-detail'),
     path('issuing-cas/config/<int:pk>/', issuing_cas.IssuingCaConfigView.as_view(), name='issuing_cas-config'),
+    path('issuing-cas/crl-gen/<int:pk>/', issuing_cas.IssuingCaCrlGenerationView.as_view(), name='issuing_cas-crl-gen'),
     re_path(
         r'^issuing-cas/delete/(?P<pks>([0-9]+/)+[0-9]*)/?$',
         issuing_cas.IssuingCaBulkDeleteConfirmView.as_view(),
@@ -68,4 +109,23 @@ urlpatterns = [
         domains.DomainCaBulkDeleteConfirmView.as_view(),
         name='domains-delete_confirm',
     ),
+    path(
+        'devid-registration/method_select/<int:pk>/',
+        DevIdMethodSelectView.as_view(),
+        name='devid_registration-method_select',
+    ),
+    path(
+        'devid-registration/create/<int:pk>/',
+        DevIdRegistrationCreateView.as_view(),
+        name='devid_registration_create',
+    ),
+    path(
+        'devid-registration/create/<int:pk>/<int:truststore_id>/',
+        DevIdRegistrationCreateView.as_view(),
+        name='devid_registration_create-with_truststore_id',
+    ),
+    path('devid-registration/delete/<int:pk>/',
+         DevIdRegistrationDeleteView.as_view(),
+         name='devid_registration_delete'),
+
 ]

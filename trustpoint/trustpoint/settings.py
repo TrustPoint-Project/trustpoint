@@ -91,7 +91,7 @@ def is_postgre_available() -> bool:
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 ADMIN_ENABLED = True if DEBUG else False
-DEVELOPMENT_ENV = False
+DEVELOPMENT_ENV = True
 
 # SECURITY WARNING: keep the secret key used in production secret!
 if DEBUG:
@@ -116,7 +116,6 @@ INSTALLED_APPS = [
     'pki.apps.PkiConfig',
     'cmp.apps.CmpConfig',
     'est.apps.EstConfig',
-    'onboarding.apps.OnboardingConfig',
     'settings.apps.SettingsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -126,7 +125,6 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'crispy_bootstrap5',
-    'django_tables2',
     'behave_django'
 ]
 
@@ -250,10 +248,6 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
-
-# Default django-tables2 template
-DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5.html'
-DJANGO_TABLES2_TABLE_ATTRS = {'class': 'table', 'td': {'class': 'v-middle'}}
 
 LOGIN_REDIRECT_URL = 'home:dashboard'
 LOGIN_URL = 'users:login'

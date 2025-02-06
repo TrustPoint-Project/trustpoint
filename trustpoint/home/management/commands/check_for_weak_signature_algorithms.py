@@ -1,4 +1,5 @@
 """Management command to check for weak signature algorithms."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -11,9 +12,10 @@ from pki.models import CertificateModel
 
 class Command(BaseCommand):
     """Custom Django management command to check certificates for weak signature algorithms."""
+
     help = 'Check certificates with weak or deprecated signature algorithms.'
 
-    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None: # noqa: ARG002
+    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None:  # noqa: ARG002
         """Entrypoint for the command."""
         self._check_for_weak_signature_algorithms()
         self.stdout.write(self.style.SUCCESS('Weak signature algorithms check completed.'))
@@ -36,6 +38,6 @@ class Command(BaseCommand):
                     notification_source=NotificationModel.NotificationSource.CERTIFICATE,
                     notification_type=NotificationModel.NotificationTypes.WARNING,
                     message_type=NotificationModel.NotificationMessageType.WEAK_SIGNATURE_ALGORITHM,
-                    message_data=message_data
+                    message_data=message_data,
                 )
                 notification.statuses.add(new_status)

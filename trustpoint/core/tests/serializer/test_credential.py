@@ -1,4 +1,3 @@
-
 import pytest
 from core.serializer import (
     CertificateCollectionSerializer,
@@ -39,8 +38,10 @@ def test_init_from_credential_serializer(pkcs12_data: bytes) -> None:
     """Test init from another CredentialSerializer instance."""
     original = CredentialSerializer(pkcs12_data)
     clone = CredentialSerializer(original)
-    assert clone.credential_private_key.as_crypto().private_numbers() == \
-           original.credential_private_key.as_crypto().private_numbers()
+    assert (
+        clone.credential_private_key.as_crypto().private_numbers()
+        == original.credential_private_key.as_crypto().private_numbers()
+    )
     assert clone.credential_certificate.as_pem() == original.credential_certificate.as_pem()
     assert len(clone.additional_certificates) == len(original.additional_certificates)
 
@@ -54,9 +55,8 @@ def test_init_from_tuple_2(rsa_private_key: RSAPrivateKey, self_signed_cert: Cer
 
 
 def test_init_from_tuple_3(
-        rsa_private_key: RSAPrivateKey,
-        self_signed_cert: Certificate,
-        second_self_signed_cert: Certificate) -> None:
+    rsa_private_key: RSAPrivateKey, self_signed_cert: Certificate, second_self_signed_cert: Certificate
+) -> None:
     """Test init from tuple of length 3 => (private_key, certificate, additional_certs)."""
     serializer = CredentialSerializer((rsa_private_key, self_signed_cert, [second_self_signed_cert]))
     assert isinstance(serializer.credential_private_key, PrivateKeySerializer)
@@ -127,6 +127,7 @@ def test_as_pkcs12(pkcs12_data: bytes) -> None:
     parsed_correct = pkcs12.load_pkcs12(pkcs12_bytes, b'mypwd')
     assert isinstance(parsed_correct.key, rsa.RSAPrivateKey)
 
+
 def test_len_without_additional_certs(rsa_private_key: RSAPrivateKey, self_signed_cert: Certificate) -> None:
     """Test __len__ returns 1 if no additional certs."""
     serializer = CredentialSerializer((rsa_private_key, self_signed_cert))
@@ -143,8 +144,7 @@ def test_get_as_separate_pem_files_pkcs8(rsa_private_key: RSAPrivateKey, self_si
     """Test get_as_separate_pem_files with PKCS8 format."""
     serializer = CredentialSerializer((rsa_private_key, self_signed_cert))
     priv_pem, cert_pem, add_pem = serializer.get_as_separate_pem_files(
-        private_key_format=CredentialSerializer.PrivateKeyFormat.PKCS8,
-        password=b'secret'
+        private_key_format=CredentialSerializer.PrivateKeyFormat.PKCS8, password=b'secret'
     )
     assert b'-----BEGIN ENCRYPTED PRIVATE KEY-----' in priv_pem
     assert b'-----BEGIN CERTIFICATE-----' in cert_pem
@@ -155,22 +155,25 @@ def test_get_as_separate_pem_files_pkcs1(rsa_private_key: RSAPrivateKey, self_si
     """Test get_as_separate_pem_files with PKCS1 format."""
     serializer = CredentialSerializer((rsa_private_key, self_signed_cert))
     priv_der, cert_pem, add_pem = serializer.get_as_separate_pem_files(
-        private_key_format=CredentialSerializer.PrivateKeyFormat.PKCS1,
-        password=None
+        private_key_format=CredentialSerializer.PrivateKeyFormat.PKCS1, password=None
     )
     assert b'PRIVATE KEY' in priv_der or b'\x30\x82' in priv_der
     assert b'-----BEGIN CERTIFICATE-----' in cert_pem
     assert add_pem is None
 
 
-def test_get_as_separate_pem_files_invalid_format(rsa_private_key: RSAPrivateKey, self_signed_cert: Certificate) -> None:
+def test_get_as_separate_pem_files_invalid_format(
+    rsa_private_key: RSAPrivateKey, self_signed_cert: Certificate
+) -> None:
     """Test get_as_separate_pem_files raises ValueError for unsupported private_key_format."""
     serializer = CredentialSerializer((rsa_private_key, self_signed_cert))
     with pytest.raises(ValueError):
         serializer.get_as_separate_pem_files(private_key_format='SOME_INVALID_FORMAT')
 
 
-def test_credential_private_key_setter(rsa_private_key: RSAPrivateKey, self_signed_cert: Certificate, rsa_private_key_alt) -> None:
+def test_credential_private_key_setter(
+    rsa_private_key: RSAPrivateKey, self_signed_cert: Certificate, rsa_private_key_alt
+) -> None:
     """Test the credential_private_key property setter."""
     serializer = CredentialSerializer((rsa_private_key, self_signed_cert))
     original = serializer.credential_private_key.as_crypto().private_numbers()
@@ -181,7 +184,9 @@ def test_credential_private_key_setter(rsa_private_key: RSAPrivateKey, self_sign
     assert updated is not original
 
 
-def test_credential_certificate_setter(rsa_private_key: RSAPrivateKey, self_signed_cert: Certificate, second_self_signed_cert: Certificate) -> None:
+def test_credential_certificate_setter(
+    rsa_private_key: RSAPrivateKey, self_signed_cert: Certificate, second_self_signed_cert: Certificate
+) -> None:
     """Test the credential_certificate property setter."""
     serializer = CredentialSerializer((rsa_private_key, self_signed_cert))
     original_pem = serializer.credential_certificate.as_pem()

@@ -1,15 +1,15 @@
 {% extends 'trustpoint/base.html' %}
 {% load i18n %}
 {% load crispy_forms_filters %}
-{% load django_tables2 %}
+
 {% block content %}
-{% load static %}
+    {% load static %}
     <script src="{% static 'js/domains.js' %}"></script>
     <div class="card">
         <div class="card-header">
             <h1>{{ domain.unique_name }} {% trans "Configuration" %}</h1>
         </div>
-    
+
         <div class="card">
             <div class="card-body">
                 <div class="tp-card-centered-content">
@@ -65,16 +65,29 @@
                         </div>
                     </div>
 
+                    <h2>{% trans 'DevID Registration' %}</h2>
+                    <hr class="hr-m">
 
+                    <a href="{% url 'pki:devid_registration-method_select' pk=domain.id %}"
+                       class="btn btn-primary tp-table-btn min-width-20 mt-3">
+                        {% trans 'Create new DevID Registration Pattern' %}
+                    </a>
 
-                <div class="tp-form-btn-group">
-                    <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
-                    <a href="{% url 'pki:domains' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
-                    <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
+                    <br>
+
+                    {% include 'pki/devid_registration/table.html' %}
+
+                    <br>
+
+                    <div class="tp-form-btn-group">
+                        <button type="button" value="Back" class="btn btn-secondary"
+                                onClick="history.back()">{% trans 'Back' %}</button>
+                        <a href="{% url 'pki:domains' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+                        <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
-    
-{% endblock content %}
 
+{% endblock content %}

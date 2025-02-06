@@ -1,17 +1,19 @@
 """This module contains a Django management command to execute all task-related notifications sequentially."""
+
 from __future__ import annotations
 
 from typing import Any
 
-from django.core.management import CommandError, call_command # type: ignore[import-untyped]
+from django.core.management import CommandError, call_command  # type: ignore[import-untyped]
 from django.core.management.base import BaseCommand  # type: ignore[import-untyped]
 
 
 class Command(BaseCommand):
     """A Django management command to run all task-related commands in sequence."""
+
     help = 'Run all task-related commands sequentially.'
 
-    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None: # noqa: ARG002
+    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None:  # noqa: ARG002
         """Entrypoint for the command."""
         commands_to_run = [
             'trustpoint_setup_notifications',

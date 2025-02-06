@@ -1,0 +1,43 @@
+{% load i18n %}
+{% block sub_details %}
+    <div>
+        <div>
+            {% for certificate in truststore.certificates.all %}
+                <div>
+                    <a href="{% url 'pki:certificate-detail' pk=certificate.id %}" class="btn btn-primary">
+                        {{ certificate.common_name }}
+                    </a>
+                </div>
+                <br>
+
+                <div class="tp-kvp-list">
+                    <div>
+                        <div>Subject</div>
+                        <div>
+                            {% for entry in certificate.subject.all %}
+                                {{ entry }}<br>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div>Issuer</div>
+                        <div>
+                            {% for entry in certificate.issuer.all %}
+                                {{ entry }}<br>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div>
+                        <div>{% trans 'Serial Number' %}</div>
+                        <div>{{ certificate.serial_number }}</div>
+                    </div>
+                    <div>
+                        <div>Fingerprint (SHA256)</div>
+                        <div>{{ certificate.sha256_fingerprint }}</div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+{% endblock sub_details %}
