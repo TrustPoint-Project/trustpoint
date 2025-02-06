@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed448, ed25519, rsa, x448, x25519
 
 if TYPE_CHECKING:
-    from typing import Self, Union
+    from typing import Self, Union, Optional
 
     from cryptography import x509
 
@@ -306,6 +306,7 @@ class NamedCurve(enum.Enum):
     key_size: int
     curve: type[ec.EllipticCurve]
 
+    NONE = ('None', 'None', 0, None)
     SECP192R1 = ('1.2.840.10045.3.1.1', 'SECP192R1', 192, ec.SECP192R1)
     SECP224R1 = ('1.3.132.0.33', 'SECP224R1', 224, ec.SECP224R1)
     SECP256K1 = ('1.3.132.0.10', 'SECP256K1', 256, ec.SECP256K1)
@@ -326,7 +327,12 @@ class NamedCurve(enum.Enum):
     SECT571K1 = ('1.3.132.0.38', 'SECT571K1', 571, ec.SECT571K1)
     SECT571R1 = ('1.3.132.0.39', 'SECT571R1', 570, ec.SECT571R1)
 
-    def __new__(cls, dotted_string: str, verbose_name: str, key_size: int, curve: type[ec.EllipticCurve]) -> Self:
+    def __new__(
+            cls,
+            dotted_string: str,
+            verbose_name: str,
+            key_size: int,
+            curve: Optional[type[ec.EllipticCurve]]) -> Self:
         """Sets the values for this multi value enum.
 
         Args:

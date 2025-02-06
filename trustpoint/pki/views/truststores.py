@@ -55,16 +55,12 @@ class TruststoreCreateView(TruststoresContextMixin, TpLoginRequiredMixin, FormVi
     ignore_url = reverse_lazy('pki:truststores')
 
     def form_valid(self, form):
-        method_select = form.cleaned_data.get('method_select')
         truststore = form.cleaned_data['truststore']
-        print(truststore.id)
         domain_id = self.kwargs.get("pk")
 
         if domain_id:
-            print(f"Redirecting to DevID registration page with Truststore ID: {truststore.id}")
             return HttpResponseRedirect(reverse('pki:devid_registration_create-with_truststore_id', kwargs={'pk': domain_id, 'truststore_id': truststore.id}))
 
-        print("No domain ID provided, redirecting to Truststore add page.")
         return HttpResponseRedirect(reverse('pki:truststores'))
 
     def get_success_url(self):

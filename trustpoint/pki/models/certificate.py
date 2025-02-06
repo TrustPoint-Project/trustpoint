@@ -301,10 +301,10 @@ class CertificateModel(LoggerMixin, models.Model):
         return issuer
 
     @staticmethod
-    def _get_spki_info(cert: x509.Certificate) -> tuple[PublicKeyAlgorithmOid, int, None | NamedCurve]:
+    def _get_spki_info(cert: x509.Certificate) -> tuple[PublicKeyAlgorithmOid, int, NamedCurve]:
         if isinstance(cert.public_key(), rsa.RSAPublicKey):
             spki_algorithm_oid = PublicKeyAlgorithmOid.RSA
-            spki_ec_curve_oid = None
+            spki_ec_curve_oid = NamedCurve.NONE
         elif isinstance(cert.public_key(), ec.EllipticCurvePublicKey):
             spki_algorithm_oid = PublicKeyAlgorithmOid.ECC
             spki_ec_curve_oid = NamedCurve[cert.public_key().curve.name.upper()]
