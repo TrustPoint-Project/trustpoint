@@ -13,4 +13,4 @@ jobs:
           python-version: 3.12
 
       - name: Run MyPy
-        run: mypy .
+        run: uv run mypy .
