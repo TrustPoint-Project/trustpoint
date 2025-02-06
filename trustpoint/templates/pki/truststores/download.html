@@ -31,7 +31,6 @@
                     <hr>
                     <div>
                         <a class="btn btn-primary min-width-15 mb-3" href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='pem' %}">Download as PEM</a><br>
-                        <a class="btn btn-primary min-width-15 mb-3" href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='der' %}">Download as DER</a><br>
                         <a class="btn btn-primary min-width-15 mb-3" href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='pkcs7_pem' %}">Download as PKCS#7 (PEM)</a><br>
                         <a class="btn btn-primary min-width-15" href="{% url 'pki:truststore-file-download' pk=truststore.id file_format='pkcs7_der' %}">Download as PKCS#7 (DER)</a><br>
                     </div>

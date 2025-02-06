@@ -6,15 +6,15 @@ from typing import TYPE_CHECKING
 
 from django.shortcuts import get_object_or_404
 
-from core.file_builder.certificate import CertificateArchiveFileBuilder, CertificateFileBuilder
+from core.file_builder.certificate import CertificateCollectionArchiveFileBuilder, CertificateCollectionBuilder
 from core.file_builder.enum import ArchiveFormat, CertificateFileFormat
-from django.http import Http404, HttpRequest, HttpResponse, HttpResponseRedirect  # type: ignore[import-untyped]
-from django.urls import reverse_lazy, reverse  # type: ignore[import-untyped]
-from django.views.generic.base import RedirectView  # type: ignore[import-untyped]
-from django.views.generic.detail import DetailView  # type: ignore[import-untyped]
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponseRedirect
+from django.urls import reverse_lazy, reverse
+from django.views.generic.base import RedirectView
+from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormView
-from django.views.generic.list import ListView  # type: ignore[import-untyped]
-from django_tables2 import SingleTableView  # type: ignore[import-untyped]
+from django.views.generic.list import ListView
+from django_tables2 import SingleTableView
 
 from pki.forms import TruststoreAddForm
 from pki.models import DomainModel
@@ -131,8 +131,11 @@ class TruststoreDownloadView(TruststoresContextMixin, TpLoginRequiredMixin, Deta
         except Exception as exception:
             raise Http404 from exception
 
-        certificate_serializer = TruststoreModel.objects.get(pk=pk).get_serializer()
-        file_bytes = CertificateFileBuilder.build(certificate_serializer, file_format=file_format_enum)
+        certificate_serializer = TruststoreModel.objects.get(pk=pk).get_certificate_collection_serializer()
+
+        file_bytes = CertificateCollectionBuilder.build(
+            certificate_serializer,
+            file_format=file_format_enum)
 
         response = HttpResponse(file_bytes, content_type=file_format_enum.mime_type)
         response['Content-Disposition'] = f'attachment; filename="truststore{file_format_enum.file_extension}"'
@@ -217,10 +220,14 @@ class TruststoreMultipleDownloadView(
         except Exception as exception:
             raise Http404 from exception
 
-        file_bytes = CertificateArchiveFileBuilder.build(
-            certificate_serializers=[certificate_model.get_serializer() for certificate_model in self.queryset],
+        certificate_collection_serializers = [
+            TruststoreModel.objects.get(pk=pk).get_certificate_collection_serializer() for pk in pks_list
+        ]
+
+        file_bytes = CertificateCollectionArchiveFileBuilder.build(
+            certificate_collection_serializers=certificate_collection_serializers,
             file_format=file_format_enum,
-            archive_format=archive_format_enum,
+            archive_format=archive_format_enum
         )
 
         response = HttpResponse(file_bytes, content_type=archive_format_enum.mime_type)
