@@ -8,29 +8,30 @@ import secrets
 from typing import TYPE_CHECKING, cast
 
 from core.file_builder.enum import ArchiveFormat
+from core.oid import PublicKeyInfo
 from core.serializer import CredentialSerializer
 from core.validator.field import UniqueNameValidator
-from core.oid import PublicKeyInfo
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.forms import BaseModelForm
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
-from django.shortcuts import redirect, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.html import format_html
-from django.utils.safestring import mark_safe, SafeString
+from django.utils.safestring import SafeString
 from django.utils.translation import gettext_lazy as _
+from django.utils.translation import ngettext
 from django.views.generic.base import RedirectView, View
 from django.views.generic.detail import DetailView
-from django.views.generic.edit import CreateView, FormView
-from django.views.generic.list import ListView  # type: ignore[import-untyped]
-
-from pki.models import CredentialModel
+from django.views.generic.edit import CreateView, FormMixin, FormView
+from django.views.generic.list import ListView
+from pki.models import CertificateModel, CredentialModel
 
 from devices.forms import (
     BrowserLoginForm,
     CredentialDownloadForm,
+    CredentialRevocationForm,
     IssueDomainCredentialForm,
     IssueTlsClientCredentialForm,
     IssueTlsServerCredentialForm,
@@ -42,6 +43,7 @@ from devices.models import (
     RemoteDeviceCredentialDownloadModel,
     TrustpointClientOnboardingProcessModel,
 )
+from devices.revocation import DeviceCredentialRevocation
 from trustpoint.views.base import ListInDetailView, SortableTableMixin, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
@@ -113,6 +115,7 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SortableTableMix
         for device in context['page_obj']:
             device.onboarding_button = self._render_onboarding(device)
             device.clm_button = self._render_clm(device)
+            device.revoke_button = self._render_revoke(device)
 
         return context
 
@@ -161,6 +164,16 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SortableTableMix
                 f'<a href="certificate-lifecycle-management/{record.pk}/" class="btn btn-primary tp-table-btn w-100">Manage Issued Certificates</a>',
             )
         return ''
+
+    def _render_revoke(self, record: DeviceModel) -> SafeString | str:
+        # TODO(Air): This cursed query may be slow for a large number of devices.
+        if IssuedCredentialModel.objects.filter(device=record,
+                                                credential__primarycredentialcertificate__is_primary=True,
+                                                credential__primarycredentialcertificate__certificate__certificate_status='OK').exists():
+            return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
+                               record.pk, _('Revoke'))
+
+        return format_html('<a class="btn btn-danger tp-table-btn w-100 disabled">{}</a>', _('Revoke'))
 
 
 
@@ -692,25 +705,132 @@ class DeviceCertificateLifecycleManagementSummaryView(
         return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
                            record.pk, _('Revoke'))
 
+    # @staticmethod
+    # def _render_common_name(record: IssuedCredentialModel) -> SafeString:
+    #     return format_html(record.credential.certificate.common_name)
 
-class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, RedirectView):
-    """Used to add the revocation not implemented error to the message system."""
+    # @staticmethod
+    # def _render_issued_at(record: IssuedCredentialModel) -> datetime.datetime:
+    #     return record.created_at
 
-    http_method_names = ('get',)
-    permanent = False
+    @staticmethod
+    def _render_expiration_date(record: IssuedCredentialModel) -> datetime.datetime:
+        return record.credential.certificate.not_valid_after
 
-    def get_redirect_url(self, *args: Any, **kwargs: Any) -> str:  # noqa: ARG002
-        """Adds the revocation error message.
+    @staticmethod
+    def _render_expires_in(record: IssuedCredentialModel) -> SafeString:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if now >= record.credential.certificate.not_valid_after:
+            return format_html('Expired')
+        expire_timedelta = record.credential.certificate.not_valid_after - now
+        days = expire_timedelta.days
+        hours, remainder = divmod(expire_timedelta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return format_html(f'{days} days, {hours}:{minutes:02d}:{seconds:02d}')
+
+    @staticmethod
+    def _render_revoke(record: IssuedCredentialModel) -> SafeString:
+        """Creates the html hyperlink for the revoke-view.
 
         Args:
-            *args: Any positional arguments are disregarded.
-            **kwargs: Any keyword arguments are disregarded.
+            record: The current record of the Device model.
 
         Returns:
-            The url to redirect to, which is the HTTP_REFERER.
+            SafeString: The html hyperlink for the revoke-view.
         """
-        messages.error(self.request, 'Revocation is not yet implemented.')
-        return cast('str', self.request.META.get('HTTP_REFERER', '/'))
+        if record.credential.certificate.certificate_status == CertificateModel.CertificateStatus.REVOKED:
+            return format_html('<a class="btn btn-danger tp-table-btn w-100 disabled">{}</a>', _('Revoked'))
+
+        return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
+                           record.pk, _('Revoke'))
+
+
+class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, FormMixin, ListView):
+    """Revokes all active credentials for a given device."""
+
+    http_method_names = ('get', 'post')
+
+    model = DeviceModel
+    template_name = 'devices/revoke.html'
+    context_object_name = 'credentials'
+    form_class = CredentialRevocationForm
+    success_url = reverse_lazy('devices:devices')
+
+    def get_queryset(self):
+        self.device = get_object_or_404(DeviceModel, id=self.kwargs['pk'])
+        # TODO(Air): This query is cursed but works
+        return IssuedCredentialModel.objects.filter(device=self.device,
+                                                    credential__primarycredentialcertificate__is_primary=True,
+                                                    credential__primarycredentialcertificate__certificate__certificate_status='OK')
+
+    def post(self, request, *args, **kwargs):
+        form = self.get_form()
+        if form.is_valid():
+            return self.form_valid(form)
+
+        return self.form_invalid(form)
+
+    def form_valid(self, form) -> HttpResponse:
+        """Handles revocation upon a POST request containing a valid form."""
+        # Revoke all active credentials for the device
+        n_revoked = 0
+        credentials = self.get_queryset()
+        for credential in credentials:
+            revoked_successfully, _msg = DeviceCredentialRevocation.revoke_certificate(
+                credential.id,
+                form.cleaned_data['revocation_reason']
+            )
+            if revoked_successfully:
+                n_revoked += 1
+
+        if n_revoked > 0:
+            msg = ngettext(
+                'Successfully revoked one active credential.',
+                'Successfully revoked %(count)d active credentials.',
+                n_revoked,
+            ) % {'count': n_revoked}
+
+            messages.success(self.request, msg)
+        else:
+            messages.error(self.request, _('No credentials were revoked.'))
+
+        return super().form_valid(form)
+
+
+class DeviceCredentialRevocationView(DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView, FormView):
+    """Revokes a specific issued credential."""
+
+    http_method_names = ('get', 'post')
+
+    model = IssuedCredentialModel
+    template_name = 'devices/revoke.html'
+    context_object_name = 'credential'
+    pk_url_kwarg = 'credential_pk'
+    form_class = CredentialRevocationForm
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['credentials'] = [context['credential']]
+        return context
+
+    def get_success_url(self) -> str:
+        """Returns the URL to redirect to if the form is valid and was successfully processed."""
+        kwargs = {'pk': self.get_object().device.id}
+        return cast('str', reverse_lazy('devices:certificate_lifecycle_management', kwargs=kwargs))
+
+    def form_valid(self, form) -> HttpResponse:
+        """Handles revocation upon a POST request containing a valid form."""
+        revoked_successfully, revocation_msg = DeviceCredentialRevocation.revoke_certificate(
+            self.get_object().id,
+            form.cleaned_data['revocation_reason']
+        )
+
+        if revoked_successfully:
+            messages.success(self.request, revocation_msg)
+        else:
+            messages.error(self.request, revocation_msg)
+
+        return super().form_valid(form)
 
 
 class DeviceBrowserOnboardingOTPView(DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView, RedirectView):
@@ -831,7 +951,6 @@ class TrustpointClientOnboardingPasswordBasedMacView(DeviceContextMixin, TpLogin
             The HttpResponse to display the view.
 
         """
-
         device = self.get_object()
         self.object = device
 
@@ -874,7 +993,7 @@ class TrustpointClientOnboardingPasswordBasedMacView(DeviceContextMixin, TpLogin
             'onboard shared-secret '
             '--host 127.0.0.1 '
             '--port 8000 '
-            f'--key-type {key_type} ' 
+            f'--key-type {key_type} '
             f'--domain {device.domain.unique_name} '
             f'--device-id {device.id} '
             f'--shared-secret {trustpoint_onboarding_process.password}')
@@ -925,8 +1044,7 @@ class TrustpointClientCancelOnboardingProcessView(
         return redirect('devices:devices', permanent=False)
 
 class DeviceOnboardStatusView(TpLoginRequiredMixin, View):
-    """
-    A view to check if a device is already onboarded.
+    """A view to check if a device is already onboarded.
     This view returns a JSON response with the onboard status.
     """
 
@@ -966,13 +1084,13 @@ class DeviceOnboardRedirectView(TpLoginRequiredMixin, RedirectView):
         try:
             device = DeviceModel.objects.get(pk=device_id)
         except DeviceModel.DoesNotExist:
-            messages.error(request, f"Device with ID {device_id} not found.")
+            messages.error(request, f'Device with ID {device_id} not found.')
             return redirect('devices:devices')
 
         if device.onboarding_status == DeviceModel.OnboardingStatus.ONBOARDED.value:
-            messages.success(request, f"Device {device.unique_name} successfully onboarded.")
+            messages.success(request, f'Device {device.unique_name} successfully onboarded.')
         else:
-            messages.info(request, f"Device {device.unique_name} is not onboarded yet.")
+            messages.info(request, f'Device {device.unique_name} is not onboarded yet.')
 
         url = str(reverse('devices:certificate_lifecycle_management', kwargs={'pk': device.id}))
         return redirect(url)

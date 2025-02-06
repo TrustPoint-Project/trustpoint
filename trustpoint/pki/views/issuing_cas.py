@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect
+from django.shortcuts import redirect
+from django.utils.translation import gettext as _
 from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
 from django.views.generic.list import ListView  # type: ignore[import-untyped]
@@ -67,7 +70,7 @@ class IssuingCaAddFileImportSeparateFilesView(IssuingCaContextMixin, TpLoginRequ
 
 class IssuingCaDetailView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):
 
-    http_method_names = ['get']
+    http_method_names = ('get', )
 
     model = IssuingCaModel
     success_url = reverse_lazy('pki:issuing_cas')
@@ -93,3 +96,45 @@ class IssuingCaBulkDeleteConfirmView(IssuingCaContextMixin, TpLoginRequiredMixin
     ignore_url = reverse_lazy('pki:issuing_cas')
     template_name = 'pki/issuing_cas/confirm_delete.html'
     context_object_name = 'issuing_cas'
+
+
+class IssuingCaCrlGenerationView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):
+    """View to manually generate a CRL for an Issuing CA."""
+
+    model = IssuingCaModel
+    success_url = reverse_lazy('pki:issuing_cas')
+    ignore_url = reverse_lazy('pki:issuing_cas')
+    context_object_name = 'issuing_ca'
+
+    http_method_names = ('get', )
+
+    # TODO(Air): This view should use a POST request as it is an action.
+    # However, this is not trivial in the config view as that already contains a form.
+    def get(self, request, *args, **kwargs) -> HttpResponse:
+        issuing_ca = self.get_object()
+        if issuing_ca.issue_crl():
+            messages.success(request, _('CRL for Issuing CA %s has been generated.') % issuing_ca.unique_name)
+        else:
+            messages.error(request, _('Failed to generate CRL for Issuing CA %s.') % issuing_ca.unique_name)
+        return redirect('pki:issuing_cas-config', pk=issuing_ca.id)
+
+
+class CrlDownloadView(IssuingCaContextMixin, DetailView):
+    """Unauthenticated view to download the certificate revocation list of an Issuing CA."""
+
+    http_method_names = ('get', )
+
+    model = IssuingCaModel
+    success_url = reverse_lazy('pki:issuing_cas')
+    ignore_url = reverse_lazy('pki:issuing_cas')
+    context_object_name = 'issuing_ca'
+
+    def get(self, request, *args, **kwargs) -> HttpResponse:
+        issuing_ca = self.get_object()
+        crl_pem = issuing_ca.crl_pem
+        if not crl_pem:
+            messages.warning(request, _('No CRL available for issuing CA %s.') % issuing_ca.unique_name)
+            return redirect('pki:issuing_cas')
+        response = HttpResponse(crl_pem, content_type='application/x-pem-file')
+        response['Content-Disposition'] = f'attachment; filename="{issuing_ca.unique_name}.crl"'
+        return response
