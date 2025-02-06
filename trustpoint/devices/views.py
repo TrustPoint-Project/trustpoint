@@ -43,7 +43,6 @@ from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCrede
 from trustpoint.views.base import TpLoginRequiredMixin
 
 if TYPE_CHECKING:
-    import ipaddress
     from typing import Any, ClassVar
 
     from django.http.request import HttpRequest
