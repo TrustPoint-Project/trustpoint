@@ -23,18 +23,11 @@ jobs:
         with:
           report-title: Unit-Test Report for the file builder module
           custom-pytest:
-            uv run pytest --junitxml=file_builder_pytest.xml --cov=trustpoint trustpoint/core/tests/file_builder/ | tee file_builder_pytest-coverage.txt
+            uv run pytest
 
       - name: Run unit tests for the serializer module
         uses: quantco/pytest-action@v2
         with:
           report-title: Unit-Test Report for the serializer module
           custom-pytest:
-            uv run pytest --junitxml=serializer_pytest.xml --cov=trustpoint trustpoint/core/tests/serializer/ | tee serializer_pytest-coverage.txt
-
-      - name: Pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          multiple-files: |
-            Core Serializer Test, serializer_pytest-coverage.txt, serializer_pytest.xml
-            Core File Builder Test, file_builder_pytest-coverage.txt, file_builder_pytest.xml
+            uv run pytest
