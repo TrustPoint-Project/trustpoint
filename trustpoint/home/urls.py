@@ -1,6 +1,8 @@
-from django.urls import path
-from . import views
+"""Defines URL patterns for the Home application, mapping views to URLs."""
 
+from django.urls import path  # type: ignore[import-untyped]
+
+from . import views
 
 app_name = 'home'
 urlpatterns = [
@@ -8,4 +10,5 @@ urlpatterns = [
     path('dashboard/', views.DashboardView.as_view(), name='dashboard'),
     path('notification/<int:pk>/', views.notification_details_view, name='notification_details'),
     path('notification/<int:pk>/mark-as-solved/', views.mark_as_solved, name='mark_as_solved'),
+    path('dashboard_data/', views.DashboardChartsAndCountsView.as_view(), name='dashboard_data'),
 ]

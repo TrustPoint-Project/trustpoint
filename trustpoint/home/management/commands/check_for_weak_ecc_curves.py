@@ -1,4 +1,5 @@
 """Management command to check for weak ECC curves."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -11,9 +12,10 @@ from pki.models import CertificateModel
 
 class Command(BaseCommand):
     """Custom Django management command to check certificates for deprecated or weak ECC curves."""
+
     help = 'Check certificates using weak or deprecated ECC curves.'
 
-    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None: # noqa: ARG002
+    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None:  # noqa: ARG002
         """Entrypoint for the command."""
         self._check_for_weak_ecc_curves()
         self.stdout.write(self.style.SUCCESS('Weak ECC curves check completed.'))
@@ -36,6 +38,6 @@ class Command(BaseCommand):
                     notification_source=NotificationModel.NotificationSource.CERTIFICATE,
                     notification_type=NotificationModel.NotificationTypes.WARNING,
                     message_type=NotificationModel.NotificationMessageType.WEAK_ECC_CURVE,
-                    message_data=message_data
+                    message_data=message_data,
                 )
                 notification.statuses.add(new_status)

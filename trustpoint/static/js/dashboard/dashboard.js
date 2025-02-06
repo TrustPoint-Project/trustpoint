@@ -2,10 +2,53 @@ let devicesByOSLineChart, devicesByDomainDonutChart, devicesByOPBarChart;
 let certsByStatusLineChart, certsByDomainPieChart, certsByTemplateBarChart;
 let certsByDateStackChart, certsByIssuingCADonutChart, issuingCAsByTypePieChart;
 
+function updateCharts(dashboardChartData) {
+  //updateDeviceDateChart(dashboardData.device_counts_by_date_and_os);
+  updateDeviceByOSBarChart(dashboardChartData.device_counts_by_os);
+  updateDeviceByOPBarChart(dashboardChartData.device_counts_by_op);
+  updateDevicesByDomainDonutChart(dashboardChartData.device_counts_by_domain);
+
+  updateCertsByDateStackChart(dashboardChartData.cert_counts_by_issuing_ca_and_date);
+  updateCertsByDomainPieChart(dashboardChartData.cert_counts_by_domain);
+  updateCertsByTemplateBarChart(dashboardChartData.cert_counts_by_template);
+
+  //updateCertsByStatusLineChart(dashboardChartData.cert_counts_by_status);
+  updateCertsByStatusBarChart(dashboardChartData.cert_counts_by_status);
+  updateCertsByIssuingCAChart(dashboardChartData.cert_counts_by_issuing_ca);
+  updateIssuingCAsByTypePieChart(dashboardChartData.ca_counts_by_type);
+}
+
+// Helper function to format a date as YYYY-MM-DD
+function formatDate(date) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0"); // Months are 0-based
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+function generateDate(period) {
+  // Get today's date
+  const today = new Date();
+  var periodStartDate = today;
+  if (period === "today") {
+    periodStartDate = today;
+  } else if (period === "last_week") {
+    periodStartDate.setDate(today.getDate() - 7);
+  } else if (period === "last_month") {
+    periodStartDate.setMonth(today.getMonth() - 1);
+  } else {
+    periodStartDate = new Date("2023-01-01");
+  }
+
+  return formatDate(periodStartDate);
+}
+
 // Funktion zum Abrufen der Dashboard-Daten über die Backend-API
-async function fetchDasbhboardData() {
+async function fetchDashboardData(period) {
   try {
-    const response = await fetch("/api/home/dashboard_data");
+    const formattedStartDate = generateDate(period);
+    console.log("date", formattedStartDate);
+    const response = await fetch(`/home/dashboard_data?start_date=${formattedStartDate}`);
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
@@ -17,9 +60,9 @@ async function fetchDasbhboardData() {
 }
 
 // Funktion zum Aktualisieren der Dashboard-Daten
-async function fetchAndUpdateDashboardData() {
-  const dashboardData = await fetchDasbhboardData();
-  console.log("dashboard data", dashboardData)
+async function fetchAndUpdateDashboardData(period) {
+  const dashboardData = await fetchDashboardData(period);
+  console.log("dashboard data", dashboardData);
   if (dashboardData) {
     if ("device_counts" in dashboardData) {
       updateDeviceCounts(dashboardData.device_counts);
@@ -30,26 +73,34 @@ async function fetchAndUpdateDashboardData() {
     if ("issuing_ca_counts" in dashboardData) {
       updateIssuingCACounts(dashboardData.issuing_ca_counts);
     }
+    updateCharts(dashboardData);
+  }
+}
 
-    //updateDeviceDateChart(dashboardData.device_counts_by_date_and_os);
-    updateDeviceByOSBarChart(dashboardData.device_counts)
-    updateDeviceByOPLineChart(dashboardData.device_counts_by_op);
-    updateDevicesByDomainDonutChart(dashboardData.device_counts_by_domain);
+function toggleChartButtons() {
+  const buttons = document.querySelectorAll(".chart-period");
+  //console.log("buttons", buttons)
+  buttons.forEach((button) => {
+    button.addEventListener("click", () => {
+      // Remove active class from all buttons
+      buttons.forEach((btn) => btn.classList.remove("active"));
+      // Add active class to the clicked button
+      button.classList.add("active");
+    });
+  });
+}
 
-    updateCertsByDateStackChart(dashboardData.cert_counts_by_issuing_ca_and_date);
-    updateCertsByDomainPieChart(dashboardData.cert_counts_by_domain);
-    updateCertsByTemplateBarChart(dashboardData.cert_counts_by_template);
-
-    //updateCertsByStatusLineChart(dashboardData.cert_counts_by_status);
-    updateCertsByStatusBarChart(dashboardData.cert_counts_by_status)
-
-    updateCertsByIssuingCAChart(dashboardData.cert_counts_by_issuing_ca);
-    updateIssuingCAsByTypePieChart(dashboardData.ca_counts_by_type);
+async function fetchAndUpdateDashboardChartData(period) {
+  const dashboardData = await fetchDashboardData(period);
+  console.log("dashboard data", dashboardData);
+  if (dashboardData) {
+    updateCharts(dashboardData);
   }
 }
 
 // Funktion zum Abrufen und Anzeigen der Dashboard-Daten aufrufen
-fetchAndUpdateDashboardData();
+fetchAndUpdateDashboardData("today");
+toggleChartButtons();
 // every 20 seconds
 //setInterval(fetchAndUpdateDashboardData, 1000*20);
 
@@ -100,10 +151,8 @@ document.addEventListener("DOMContentLoaded", function () {
       //   .getContext("2d");
       // if (!certsByStatusLineChart)
       //   certsByStatusLineChart = new Chart(certsByStatusLineChartEle, lineChartCertConfig);
-
       //var donutChartCertEle = document.getElementById("certsByDomainPieChart").getContext("2d");
       //if (!certsByDomainPieChart) certsByDomainPieChart = new Chart(donutChartCertEle, donutChartCertConfig);
-
       //var barChartCertEle = document.getElementById("barChartCert").getContext("2d");
       //if (!barChartCert) barChartCert = new Chart(barChartCertEle, barChartCertConfig);
     } else if (chartTabId == "caChartTab") {

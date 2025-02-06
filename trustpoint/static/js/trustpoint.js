@@ -123,6 +123,18 @@ function toggleAllCheckboxes() {
     }
 }
 
+// ---------------------------------------- Table Query update ----------------------------------------
+
+function updateQueryParam(event, key, value) {
+    event.preventDefault();
+    const url = new URL(window.location);
+    if (key == 'sort' && value == url.searchParams.get('sort')) {
+        value = `-${value}`; // toggle to descending order
+    }
+    url.searchParams.set(key, value);
+    window.location.href = url.toString();
+}
+
 // ---------------------------------------- Side nav menu toggling ----------------------------------------
 
 function hideMenu() {
