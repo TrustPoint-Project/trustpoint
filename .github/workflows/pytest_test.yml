@@ -20,3 +20,4 @@ jobs:
         with:
           report-title: Core Test Report
           custom-pytest: uv run pytest
+          custom-arguments: 'trustpoint/core/tests/'
