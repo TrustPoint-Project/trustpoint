@@ -9,15 +9,25 @@ from core.serializer import (
     PrivateKeySerializer,
 )
 from core.validator.field import UniqueNameValidator
-from cryptography.hazmat.primitives import hashes
 from django import forms
-from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
 
-from pki.initializer.truststore.truststore import TrustStoreInitializer
-from pki.models import CertificateModel, IssuingCaModel, DevIdRegistration
-from pki.models.truststore import TruststoreModel
+from pki.models import IssuingCaModel, DevIdRegistration
 from trustpoint.views.base import LoggerMixin
+
+from cryptography import x509
+from cryptography.hazmat.primitives import hashes
+from django.core.exceptions import ValidationError
+from pki.models.certificate import CertificateModel
+from pki.models.truststore import TruststoreModel, TruststoreOrderModel
+from typing import TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from typing import Union
+
+    from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
+    PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
 
 
 class DevIdAddMethodSelectForm(forms.Form):
@@ -76,7 +86,7 @@ class TruststoreAddForm(forms.Form):
         validators=[UniqueNameValidator()])
 
     intended_usage = forms.ChoiceField(
-        choices=TruststoreModel.IntendedUsage.choices,
+        choices=TruststoreModel.IntendedUsage,
         label=_('Intended Usage'),
         widget=forms.Select(attrs={'class': 'form-control'}),
         required=True
@@ -120,25 +130,53 @@ class TruststoreAddForm(forms.Form):
                 'Unexpected error occurred while trying to get file contents. Please see logs for further details.')
             raise ValidationError(error_message, code='unexpected-error') from original_exception
 
+        # TODO(FHatCSW): Also support PKCS#7 PEM and PKCS#7 DER files.
         try:
-            initializer = TrustStoreInitializer(
-                unique_name=unique_name,
-                intended_usage=int(intended_usage),
-                trust_store=trust_store_file)
-        except ValidationError:
-            raise
+            certificates = x509.load_pem_x509_certificates(trust_store_file)
         except Exception as exception:
-            err_msg = str(exception)
-            raise ValidationError(err_msg) from exception
+            error_message = f'Unable to process the Trust-Store. May be malformed / corrupted.'
+            raise ValidationError(error_message) from exception
 
         try:
-            truststore = initializer.save()
-        except Exception as original_exception:
-            error_message = 'Unexpected Error. Failed to save validated Trust Store in DB.'
-            raise ValidationError(error_message) from original_exception
+            trust_store_model = self._save_trust_store(
+                unique_name=unique_name,
+                intended_usage=TruststoreModel.IntendedUsage(int(intended_usage)),
+                certificates=certificates,
+            )
+        except Exception as exception:
+            raise ValidationError(str(exception)) from exception
 
-        self.cleaned_data['truststore'] = truststore
+        self.cleaned_data['truststore'] = trust_store_model
         return cleaned_data
+
+    @staticmethod
+    def _save_trust_store(
+            unique_name: str,
+            intended_usage: TruststoreModel.IntendedUsage,
+            certificates: list[x509.Certificate]
+    ) -> TruststoreModel:
+        saved_certs = []
+
+        for certificate in certificates:
+            sha256_fingerprint = certificate.fingerprint(algorithm=hashes.SHA256()).hex().upper()
+            try:
+                saved_certs.append(CertificateModel.objects.get(sha256_fingerprint=sha256_fingerprint))
+            except CertificateModel.DoesNotExist:
+                saved_certs.append(CertificateModel.save_certificate(certificate))
+
+        trust_store_model = TruststoreModel(
+            unique_name=unique_name,
+            intended_usage=intended_usage)
+        trust_store_model.save()
+
+        for number, certificate in enumerate(saved_certs):
+            trust_store_order_model = TruststoreOrderModel()
+            trust_store_order_model.order = number
+            trust_store_order_model.certificate = certificate
+            trust_store_order_model.trust_store = trust_store_model
+            trust_store_order_model.save()
+
+        return trust_store_model
 
 class TruststoreDownloadForm(forms.Form):
     """Form for downloading truststores in various formats.

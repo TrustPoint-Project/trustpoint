@@ -15,7 +15,6 @@ from core.serializer import (
 from django.core.exceptions import ValidationError
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
-from core.x509 import CredentialNormalizer
 from pki.models import CertificateModel
 
 if TYPE_CHECKING:

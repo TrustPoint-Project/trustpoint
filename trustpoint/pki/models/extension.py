@@ -40,6 +40,9 @@ __all__ = [
 ]
 
 
+EXTENSION_STR = 'Extension'
+
+
 class AttributeTypeAndValue(models.Model):
     """AttributeTypeAndValue Model.
 
@@ -220,7 +223,7 @@ class BasicConstraintsExtension(CertificateExtension, models.Model):
     @property
     def extension_oid(self) -> str:
         return CertificateExtensionOid.BASIC_CONSTRAINTS.dotted_string
-    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+    extension_oid.fget.short_description = EXTENSION_STR
 
     critical = models.BooleanField(verbose_name=_('Critical'), editable=False)
 
@@ -291,7 +294,7 @@ class KeyUsageExtension(CertificateExtension, models.Model):
     @property
     def extension_oid(self) -> str:
         return CertificateExtensionOid.KEY_USAGE.dotted_string
-    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+    extension_oid.fget.short_description = EXTENSION_STR
 
     critical = models.BooleanField(verbose_name=_('Critical'), editable=False)
 
@@ -375,7 +378,7 @@ class AlternativeNameExtensionModel(models.Model):
     def extension_oid(self) -> str:
         raise NotImplementedError('This base class (AlternativeNameExtensionModel) does not have an extension_oid.')
 
-    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+    extension_oid.fget.short_description = EXTENSION_STR
 
     rfc822_names = models.ManyToManyField(
         to=GeneralNameRFC822Name,
@@ -571,7 +574,7 @@ class IssuerAlternativeNameExtension(CertificateExtension, AlternativeNameExtens
     @property
     def extension_oid(self) -> str:
         return CertificateExtensionOid.ISSUER_ALTERNATIVE_NAME.dotted_string
-    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+    extension_oid.fget.short_description = EXTENSION_STR
 
     @classmethod
     def save_from_crypto_extensions(cls, crypto_basic_constraints_extension: x509.Extension) \
@@ -612,7 +615,7 @@ class SubjectAlternativeNameExtension(CertificateExtension, AlternativeNameExten
     @property
     def extension_oid(self) -> str:
         return CertificateExtensionOid.SUBJECT_ALTERNATIVE_NAME.dotted_string
-    extension_oid.fget.short_description = CertificateExtensionOid.get_short_description_str()
+    extension_oid.fget.short_description = EXTENSION_STR
 
     @classmethod
     def save_from_crypto_extensions(cls, crypto_basic_constraints_extension: x509.Extension) \

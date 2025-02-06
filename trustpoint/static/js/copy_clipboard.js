@@ -10,9 +10,9 @@ function copyToClipboard(button) {
         .then(() => {
             const iconUse = button.querySelector('svg use');
             if (iconUse) {
-                iconUse.setAttribute('xlink:href', iconSuccessUrl);
+                iconUse.setAttribute('href', iconSuccessUrl);
                 setTimeout(() => {
-                    iconUse.setAttribute('xlink:href', iconCopyUrl);
+                    iconUse.setAttribute('href', iconCopyUrl);
                 }, 2000);
             }
         })

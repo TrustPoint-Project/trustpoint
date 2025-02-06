@@ -41,11 +41,9 @@ else:
 urlpatterns += [
     path('users/', include('users.urls')),
     path('setup-wizard/', include('setup_wizard.urls')),
-    path('pki/', include('pki.urls.pki')),
+    path('pki/', include('pki.urls')),
     path('crl/<int:pk>/', CrlDownloadView.as_view(), name='crl-download'),
-    path('.well-known/est/', include('pki.urls.est')),
     path('.well-known/cmp/', include('cmp.urls')),
-    # path('onboarding/', include('onboarding.urls')),
     path('home/', include('home.urls')),
     path('devices/', include('devices.urls')),
     path('settings/', include('settings.urls')),
