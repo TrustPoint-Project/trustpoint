@@ -40,7 +40,6 @@ from devices.models import (
     RemoteDeviceCredentialDownloadModel,
     TrustpointClientOnboardingProcessModel,
 )
-from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCredentialsTable
 from trustpoint.views.base import ListInDetailView, SortableTableMixin, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
@@ -111,12 +110,12 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SortableTableMix
         context = super().get_context_data(**kwargs)
 
         for device in context['page_obj']:
-            device.onboarding_button = self.render_onboarding(device)
-            device.clm_button = self.render_clm(device)
+            device.onboarding_button = self._render_onboarding(device)
+            device.clm_button = self._render_clm(device)
 
         return context
 
-    def render_onboarding(self, record: any) -> SafeString:
+    def _render_onboarding(self, record: any) -> SafeString | str:
         """Creates the html hyperlink for the onboarding-view.
 
         Args:
@@ -126,41 +125,41 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SortableTableMix
             SafeString: The html hyperlink for the details-view.
         """
         if not record.domain:
-            return mark_safe(
+            return format_html(
                 '<span>{}</span>', _('No Domain configured.'))
         if not record.domain.issuing_ca:
-            return mark_safe(
+            return format_html(
                 '<span>{}</span>', _('No Issuing CA configured.')
             )
         if record.onboarding_status == DeviceModel.OnboardingStatus.PENDING:
             if record.onboarding_protocol == DeviceModel.OnboardingProtocol.MANUAL:
-                return mark_safe(
+                return format_html(
                     f'<a href="onboarding/{record.pk}/manual/issue-domain-credential/" class="btn btn-primary tp-table-btn w-100">Start Onboarding</a>'
                 )
             elif record.onboarding_protocol == DeviceModel.OnboardingProtocol.TP_CLIENT:
                 onboarding_process_model = TrustpointClientOnboardingProcessModel.objects.filter(device=record.pk)
                 if onboarding_process_model.exists():
-                    return mark_safe(
+                    return format_html(
                         f'<a href="onboarding/{record.pk}/trustpoint-client/" class="btn btn-primary tp-table-btn w-100 mb-2">Continue Onboarding</a>'
                         f'<br>'
                         f'<a href="onboarding/{record.pk}/trustpoint-client/cancel/" class="btn btn-danger tp-table-btn w-100">Cancel Onboarding</a>',
                     )
                 else:
-                    return mark_safe(
+                    return format_html(
                         f'<a href="onboarding/{record.pk}/trustpoint-client/" class="btn btn-primary tp-table-btn w-100">Start Onboarding</a>',
                     )
-        return mark_safe('')
+        return ''
 
-    def render_clm(self, record: DeviceModel) -> SafeString:
+    def _render_clm(self, record: DeviceModel) -> SafeString | str:
         valid_onboarding_statuses = (
             DeviceModel.OnboardingStatus.NO_ONBOARDING,
             DeviceModel.OnboardingStatus.ONBOARDED
         )
         if record.onboarding_status in valid_onboarding_statuses:
-            return mark_safe(
+            return format_html(
                 f'<a href="certificate-lifecycle-management/{record.pk}/" class="btn btn-primary tp-table-btn w-100">Manage Issued Certificates</a>',
             )
-        return mark_safe('')
+        return ''
 
 
 
@@ -607,13 +606,14 @@ class DeviceCertificateLifecycleManagementSummaryView(
         context = super().get_context_data(**kwargs)
 
         device = self.get_object()
+        qs = super().get_queryset() # inherited from SortableTableMixin, sorted query
 
         domain_credentials = IssuedCredentialModel.objects.filter(
             Q(device=device) &
             Q(issued_credential_type=IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL.value)
         )
 
-        application_credentials = IssuedCredentialModel.objects.filter(
+        application_credentials = qs.filter(
             Q(device=device) &
             Q(issued_credential_type=IssuedCredentialModel.IssuedCredentialType.APPLICATION_CREDENTIAL.value)
         )
