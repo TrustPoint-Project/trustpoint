@@ -1,26 +1,63 @@
 {% extends 'trustpoint/base.html' %}
-{% load crispy_forms_filters %}
 {% load i18n %}
+
 {% block content %}
-    <div class="card">
-        <div class="card-header d-flex">
-            <h1>{% trans 'Add Device' %}</h1>
-        </div>
-        <div class="card-body py-3">
-            <form method="POST" id="add-device-form">
-                {% csrf_token %}
-                {{ form|crispy }}
+    <form method="POST">
+        {% csrf_token %}
+        <div class="card">
+            <div class="card-header d-flex">
+                <h1>
+                    {% blocktranslate count counter=credentials|length %}
+                    Confirm credential revocation
+                    {% plural %}
+                    Confirm revocation of {{ counter }} credentials
+                    {% endblocktranslate %}
+                </h1>
+            </div>
+            <div class="card-body pt-3 pb-3">
+                {% for credential in credentials %}
+                    <div class="tp-kvp-list">
+                        <div>
+                            <div>{% trans 'Common name' %}</div>
+                            <div>{{ credential.common_name }}</div>
+                        </div>
+                        <div>
+                            <div>{% trans 'Credential purpose' %}</div>
+                            <div>{{ credential.get_issued_credential_purpose_display }}</div>
+                        </div>
+                        <div>
+                            <div>{% trans 'Issued at' %}</div>
+                            <div>{{ credential.created_at }}</div>
+                        </div>
+                        <div>
+                            <div>{% trans 'Associated device' %}</div>
+                            <div>{{ credential.device.unique_name }}</div>
+                        </div>
+                    </div>
+                {% endfor %}
                 <hr>
-                <div class="tp-form-btn-group">
+
+                <div class="form-group">
+                    <label for="id_revocation_reason">{% trans 'Revocation Reason' %}</label>
+                    <select id="id_revocation_reason" name="revocation_reason" class="form-control form-select">
+                        {% for value, name in form.revocation_reason.field.choices %}
+                            <option value="{{ value }}" {% if form.revocation_reason.value == value %}selected{% endif %}>{{ name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div class="tp-form-btn-group tp-form-btn-group pt-4">
                     <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
-                    <button type="submit" class="btn btn-primary">
-                        {% trans 'Add Device' %}
+                    <button type="submit" class="btn btn-danger">
+                        {% blocktranslate count counter=credentials|length %}
+                        Revoke credential
+                        {% plural %}
+                        Revoke {{ counter }} credentials
+                        {% endblocktranslate %}
                     </button>
                 </div>
-            </form>
 
+            </div>
         </div>
-
-
-    </div>
+    </form>
 {% endblock content %}

@@ -9,6 +9,7 @@ from django import forms
 from django.utils.translation import gettext_lazy as _
 
 from devices.models import DeviceModel, IssuedCredentialModel
+from pki.models.certificate import RevokedCertificateModel
 
 PASSWORD_MIN_LENGTH = 12
 
@@ -194,3 +195,10 @@ class BrowserLoginForm(forms.Form):
         cleaned_data['cred_id'] = cred_id
         cleaned_data['otp'] = otp_parts[1]
         return cleaned_data
+
+
+class CredentialRevocationForm(forms.ModelForm):
+    """Form to revoke a device credential."""
+    class Meta:
+        model = RevokedCertificateModel
+        fields = ['revocation_reason']

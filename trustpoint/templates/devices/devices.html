@@ -75,7 +75,7 @@
             <td>{{ device.clm_button| safe}}</td>
             <td><a href="details/{{device.id}}/" class="btn btn-primary tp-table-btn">Details</a></td>
             <td><a href="configure/{{device.id}}/" class="btn btn-primary tp-table-btn">Configure</a></td>
-            <td><a href="revoke/{{device.id}}/" class="btn btn-danger tp-table-btn">Revoke</a></td>
+            <td>{{ device.revoke_button| safe}}</td>
           </tr>
           {% empty %}
           <tr>

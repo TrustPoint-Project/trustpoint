@@ -480,3 +480,57 @@ class CertificateModel(LoggerMixin, models.Model):
             trustpoint.pki.models.Certificate: The certificate object that has just been saved.
         """
         return cls._save_certificate(certificate=certificate)
+
+    def set_status(self, status: CertificateStatus) -> None:
+        """Set the certificate status."""
+        self.certificate_status = status
+        self._save()
+
+
+class RevokedCertificateModel(models.Model):
+    """Model to store revoked certificates."""
+
+    class ReasonCode(models.TextChoices):
+        """Revocation reasons per RFC 5280"""
+        UNSPECIFIED = 'unspecified', _('Unspecified')
+        KEY_COMPROMISE = 'keyCompromise', _('Key Compromise')
+        CA_COMPROMISE = 'cACompromise', _('CA Compromise')
+        AFFILIATION_CHANGED = 'affiliationChanged', _('Affiliation Changed')
+        SUPERSEDED = 'superseded', _('Superseded')
+        CESSATION = 'cessationOfOperation', _('Cessation of Operation')
+        CERTIFICATE_HOLD = 'certificateHold', _('Certificate Hold')
+        PRIVILEGE_WITHDRAWN = 'privilegeWithdrawn', _('Privilege Withdrawn')
+        AA_COMPROMISE = 'aACompromise', _('AA Compromise')
+        REMOVE_FROM_CRL = 'removeFromCRL', _('Remove from CRL')
+
+    certificate = models.OneToOneField(
+        CertificateModel,
+        verbose_name=_('Certificate'),
+        related_name='revoked_certificate',
+        on_delete=models.CASCADE
+    )
+
+    revoked_at = models.DateTimeField(verbose_name=_('Revocation Date'), auto_now_add=True)
+
+    revocation_reason = models.TextField(
+        verbose_name=_('Revocation Reason'),
+        choices=ReasonCode.choices,
+        default=ReasonCode.UNSPECIFIED
+    )
+
+    ca = models.ForeignKey(
+        'IssuingCaModel',
+        verbose_name=_('Issuing CA'),
+        related_name='revoked_certificates',
+        on_delete=models.SET_NULL,  # Safe to remove CRL if CA is removed?
+        null=True
+    )
+
+    def __str__(self) -> str:
+        return f'RevokedCertificate({self.certificate.common_name})'
+
+    @transaction.atomic
+    def save(self, *args, **kwargs) -> None:
+        """Save the revoked certificate and set the certificate status to 'REVOKED'."""
+        self.certificate.set_status(CertificateModel.CertificateStatus.REVOKED)
+        super().save(*args, **kwargs)

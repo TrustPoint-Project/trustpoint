@@ -59,9 +59,42 @@
                                     <div>{{ issuing_ca.created_at }}</div>
                                 </div>
                                 <div>
-                                    <div>{% trans 'Certificates Issued:' %}</div>
+                                    <div>{% trans 'Certificates issued:' %}</div>
                                     <div>-------------------- TODO --------------------</div>
                                 </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tp-card-centered-content">
+                        <div class="card-body">
+                            <h3>{% trans 'CRL' %}</h3>
+                            <hr class="hr-m">
+                        <div class="tp-kvp-list">
+                            <div>
+                                <div>{% trans 'Revocation list' %}</div>
+                                <div>
+                                    <a href="{% url 'pki:issuing_cas-crl-gen' pk=issuing_ca.pk %}" class="btn btn-sm btn-primary me-2">
+                                        {% trans "Generate CRL" %}
+                                    </a>
+                                    {% if issuing_ca.last_crl_issued_at %}
+                                        <a href="{% url 'crl-download' pk=issuing_ca.pk %}" class="btn btn-sm btn-primary">
+                                            {% trans "Download CRL" %}
+                                        </a>
+                                    {% else %}
+                                        <a class="btn btn-sm btn-primary disabled">
+                                            {% trans "Download CRL" %}
+                                        </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div>
+                                <div>{% trans 'Last CRL issued' %}</div>
+                                {% if issuing_ca.last_crl_issued_at %}
+                                    <div>{{ issuing_ca.last_crl_issued_at }}</div>
+                                {% else %}
+                                    <div>{% trans "No CRL has been issued yet." %}</div>
+                                {% endif %}
                             </div>
                         </div>
                     </div>
