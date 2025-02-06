@@ -15,7 +15,7 @@ import socket
 import time
 from pathlib import Path
 
-import psycopg2
+import psycopg
 from django.core.management.utils import get_random_secret_key
 from django.utils.translation import gettext_lazy as _
 
@@ -69,7 +69,7 @@ def is_postgre_available() -> bool:
 
     try:
         print(f"Attempting database login with user '{user}'...")
-        conn = psycopg2.connect(
+        conn = psycopg.connect(
             dbname=db_name,
             user=user,
             password=password,
@@ -78,7 +78,7 @@ def is_postgre_available() -> bool:
         )
         conn.close()
         print('Database login successful.')
-    except psycopg2.OperationalError as e:
+    except psycopg.OperationalError as e:
         msg = f'Failed to log in to PostgreSQL database "{db_name}" as user "{user}". Error: {e}'
         print(msg)
         return False
