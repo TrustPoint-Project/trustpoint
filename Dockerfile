@@ -52,15 +52,6 @@ RUN python -c "from pathlib import Path; from django.core.management.utils impor
 RUN chown -R www-data:www-data /etc/trustpoint/secrets
 RUN chmod -R 700 /etc/trustpoint/secrets
 
-# reset database
-RUN yes | python trustpoint/manage.py reset_db --no-user
-
-# collect static files
-RUN python trustpoint/manage.py collectstatic --noinput
-
-# compile messages (translations)
-RUN python trustpoint/manage.py compilemessages
-
 # Remove any enabled apache2 sites, if any.
 RUN rm -f /etc/apache2/sites-enabled/*
 
@@ -73,5 +64,8 @@ RUN chown -R www-data:www-data .
 # Enable the site configuration
 RUN a2ensite trustpoint-http-init.conf
 
-# RUN apache as www-data user and in foreground
-CMD ["apache2ctl", "-D", "FOREGROUND"]
+# Make entrypoint script executable
+RUN chmod +x docker/entrypoint.sh
+
+# Set entrypoint
+ENTRYPOINT ["docker/entrypoint.sh"]
