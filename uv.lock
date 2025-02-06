@@ -1393,6 +1393,7 @@ dependencies = [
     { name = "pyasn1-modules" },
     { name = "pytest-cov" },
     { name = "pytest-django" },
+    { name = "ruff" },
     { name = "zeroconf" },
 ]
 
@@ -1431,6 +1432,7 @@ requires-dist = [
     { name = "pyasn1-modules", specifier = ">=0.4.1,<0.5" },
     { name = "pytest-cov", specifier = ">=6.0.0,<7" },
     { name = "pytest-django", specifier = ">=4.9.0,<5" },
+    { name = "ruff", specifier = ">=0.7.4" },
     { name = "zeroconf", specifier = ">=0.139.0,<0.140" },
 ]
 
