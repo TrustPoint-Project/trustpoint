@@ -9,7 +9,7 @@ from cryptography.hazmat.primitives.serialization import pkcs7
 
 
 def test_certificate_serializer_init_with_bytes(pem_encoded_cert):
-    """Test that CertificateSerializer correctly initializes from PEM-bytes.
+    """Test that CertificateSerializer correctly initializes from PEM bytes.
 
     Args:
         pem_encoded_cert (bytes): A valid PEM-encoded certificate for testing.
