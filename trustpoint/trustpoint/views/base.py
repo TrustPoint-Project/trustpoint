@@ -7,38 +7,113 @@ which can be used within the apps.
 from __future__ import annotations
 
 from typing import Any, Callable
+import logging
+import traceback
+import functools
 
 from django import forms as dj_forms
 from django.contrib import messages
+from django.db.models import QuerySet
 from django.http import Http404
 from django.core.exceptions import ImproperlyConfigured
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpRequest, HttpResponseRedirect
+from django.shortcuts import get_object_or_404
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.base import RedirectView
 from django.views.generic.edit import FormMixin
-from django.views.generic.list import BaseListView, MultipleObjectTemplateResponseMixin
-from django.db.models import QuerySet
-
-from typing import TYPE_CHECKING
-
-
-if TYPE_CHECKING:
-    from django.db.models import Model
+from django.views.generic.list import BaseListView, ListView, MultipleObjectTemplateResponseMixin
 
 
 class IndexView(RedirectView):
     """View that redirects to the index home page."""
 
     permanent: bool = False
-    pattern_name: str = 'home:dashboard'
+    pattern_name: str = 'pki:certificates'
+
+
+class ListInDetailView(ListView):
+    """Helper view that combines a DetailView and a ListView.
+
+    This is useful for displaying a list within a DetailView.
+    Note that 'model' and 'context_object_name' refer to the ListView.
+    Use 'detail_model' and 'detail_context_object_name' for the DetailView.
+    """
+    detail_context_object_name = 'object'
+
+    def get(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset_for_object(self):
+        return self.detail_model.objects.all()
+
+    def get_object(self):
+        queryset = self.get_queryset_for_object()
+        pk = self.kwargs.get('pk')
+        if pk is None:
+            exc_msg = 'detail object pk expected in url'
+            raise AttributeError(exc_msg)
+        return get_object_or_404(queryset, pk=pk)
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context[self.detail_context_object_name] = self.object
+        return context
+    
+
+class SortableTableMixin:
+    """Adds utility for sorting a ListView query by URL parameters
+
+    default_sort_param must be set in the view to specify default sorting order.
+    """
+
+    @staticmethod
+    def _sort_list_of_dicts(list_of_dicts: list[dict], sort_param: str) -> list[dict]:
+        """Sorts a list of dictionaries by the given sort parameter.
+
+        Args:
+            list_of_dicts: List of dictionaries to sort.
+            sort_param: The parameter to sort by. Prefix with '-' for descending order.
+
+        Returns:
+            The sorted list of dictionaries.
+        """
+        return sorted(list_of_dicts, key=lambda x: x[sort_param.lstrip('-')], reverse=sort_param.startswith('-'))
+
+    def get_queryset(self) -> QuerySet | list:
+        if hasattr(self, 'queryset') and self.queryset is not None:
+            queryset = self.queryset
+        else:
+            queryset = self.model.objects.all()
+
+        # Get sort parameter (e.g., "name" or "-name")
+        sort_param = self.request.GET.get('sort', self.default_sort_param)
+        queryset_type = type(queryset)
+        if queryset_type == QuerySet:
+            return queryset.order_by(sort_param)
+        if queryset_type == list:
+            return self._sort_list_of_dicts(queryset, sort_param)
+
+        exc_msg = f'Unknown queryset type: {type}'
+        raise TypeError(exc_msg)
+
+    def get_context_data(self, **kwargs) -> dict:
+        context = super().get_context_data(**kwargs)
+
+        # Get current sorting column
+        sort_param = self.request.GET.get('sort', self.default_sort_param)
+
+        # Pass sorting details to the template
+        context['current_sort'] = sort_param
+        return context
 
 
 class TpLoginRequiredMixin(LoginRequiredMixin):
     """LoginRequiredMixin that adds a warning message if the user is not logged in."""
     request: HttpRequest
 
-    def handle_no_permission(self) -> str:
+    def handle_no_permission(self) -> HttpResponseRedirect:
         """Redirects to the login page with a warning message if the user is not logged in."""
         messages.add_message(self.request, messages.WARNING, message=_('Login required!'))
         return super().handle_no_permission()
@@ -119,28 +194,25 @@ class BaseBulkDeleteView(BulkDeletionMixin, FormMixin, BaseListView):
         return HttpResponseRedirect(success_url)
 
 
-class PrimaryKeyFromUrlToQuerysetMixin:
+class PrimaryKeyListFromPrimaryKeyString:
 
-    kwargs: dict
-    queryset: QuerySet
-    model: Model
-
-    def get_pks(self) -> list[str]:
-        pks = self.get_pks_path()
+    @staticmethod
+    def get_pks_as_list(pks: str) -> list[str]:
         if pks:
             pks_list = pks.split('/')
 
-            # removing possible trailing emtpy string
+            # removing possible trailing empty string
             if pks_list[-1] == '':
                 del pks_list[-1]
 
             if len(pks_list) != len(set(pks_list)):
-                raise Http404('Duplicate Issuing CA primary keys found.')
+                raise Http404('Duplicates in query primary key list found.')
 
             return pks_list
 
         return []
-
+    
+class PrimaryKeyQuerysetFromUrlMixin(PrimaryKeyListFromPrimaryKeyString):
     def get_pks_path(self) -> str:
         return self.kwargs.get('pks')
 
@@ -148,7 +220,7 @@ class PrimaryKeyFromUrlToQuerysetMixin:
         if self.queryset:
             return self.queryset
 
-        pks = self.get_pks()
+        pks = self.get_pks_as_list(self.get_pks_path())
         if not pks:
             return self.model.objects.all()
         queryset = self.model.objects.filter(pk__in=pks)
@@ -160,5 +232,52 @@ class PrimaryKeyFromUrlToQuerysetMixin:
         return queryset
 
 
-class BulkDeleteView(MultipleObjectTemplateResponseMixin, PrimaryKeyFromUrlToQuerysetMixin, BaseBulkDeleteView):
+class BulkDeleteView(MultipleObjectTemplateResponseMixin, PrimaryKeyQuerysetFromUrlMixin, BaseBulkDeleteView):
     pass
+
+
+class LoggerMixin:
+    """Mixin that adds log features to the subclass."""
+
+    logger: logging.Logger
+
+    @classmethod
+    def __init_subclass__(cls, **kwargs: Any) -> None:
+        """Adds an appropriate logger to the subclass and makes it available through cls.logger."""
+        super().__init_subclass__(**kwargs)
+
+        cls.logger = logging.getLogger('trustpoint').getChild(cls.__module__).getChild(cls.__name__)
+
+
+    @staticmethod
+    def log_exceptions(function):
+        """
+        Decorator that gets an appropriate logger and logs any unhandled exception.
+
+        Logs the type and message to both levels error and debug.
+        Also adds the traceback to the debug level log.
+
+        Args:
+            function: The decorated method or function.
+        """
+
+        @functools.wraps(function)
+        def _wrapper(*args, **kwargs):
+            try:
+                return function(*args, **kwargs)
+            except Exception as exception:
+                logger = logging.getLogger('trustpoint').getChild(function.__module__).getChild(function.__qualname__)
+                logger.error(
+                    f'Exception in {function.__name__}. '
+                    f'Type: {type(exception)}, '
+                    f'Message: {exception}'
+                )
+                logger.debug(
+                    f'Exception in {function.__name__}. '
+                    f'Type: {type(exception)}, '
+                    f'Message: {exception}, '
+                    f'Traceback: {traceback.format_exc()}'
+                )
+                raise
+
+        return _wrapper

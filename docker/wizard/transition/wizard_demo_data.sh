@@ -32,3 +32,6 @@ then
     echo "Failed to create WIZARD_CREATE_SUPER_USER state file."
     exit 4
 fi
+
+log "Transition from WIZARD_DEMO_DATA to WIZARD_CREATE_SUPER_USER completed successfully."
+exit 0

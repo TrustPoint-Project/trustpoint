@@ -1,14 +1,10 @@
-"""Django apps module which defines the app configuration."""
-
+"""Django application configuration."""
 
 from django.apps import AppConfig
 
 
 class DevicesConfig(AppConfig):
-    """Devices app configuration."""
+    """Devices application configuration."""
 
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'devices'
-
-    def ready(self):
-        import devices.signals

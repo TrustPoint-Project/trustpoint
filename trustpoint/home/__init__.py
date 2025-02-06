@@ -1,1 +1,1 @@
-"""Django Home Application."""
+"""Home Django Application."""

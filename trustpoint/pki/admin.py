@@ -1,100 +1,9 @@
 from django.contrib import admin
+from .models import CertificateModel, CredentialModel, CertificateChainOrderModel, IssuingCaModel
 
 
-from .models import (
-    AttributeTypeAndValue,
-    BasicConstraintsExtension,
-    CertificateChainOrderModel,
-    CertificateModel,
-    CRLStorage,
-    DomainModel,
-    IssuedDeviceCertificateModel,
-    IssuerAlternativeNameExtension,
-    IssuingCaModel,
-    KeyUsageExtension,
-    SubjectAlternativeNameExtension,
-    TrustStoreModel,
-    ESTModel,
-    CMPModel
-)
-
-
-class IssuingCaAdmin(admin.ModelAdmin):
-    readonly_fields = [
-        'unique_name',
-        'root_ca_certificate',
-        'intermediate_ca_certificates',
-        'issuing_ca_certificate',
-        'private_key_pem',
-        'added_at'
-    ]
-
-
-class CertificateChainOrderModelAdmin(admin.ModelAdmin):
-    readonly_fields = [
-        'order',
-        'certificate',
-        'issuing_ca'
-    ]
-
-
-class TrustStoreAdmin(admin.ModelAdmin):
-    readonly_fields = [
-        'unique_name'
-    ]
-
-
-class AttributeTypeAndValueAdmin(admin.ModelAdmin):
+class CertificateModelAdmin(admin.ModelAdmin):
     readonly_fields = (
-        'oid',
-        'value'
-    )
-
-
-class AlternativeNameExtensionAdmin(admin.ModelAdmin):
-    readonly_fields = (
-        'extension_oid',
-        'critical',
-        'rfc822_names',
-        'dns_names',
-        'directory_names',
-        'uniform_resource_identifiers',
-        'ip_addresses',
-        'registered_ids',
-        'other_names'
-    )
-
-
-class BasicConstraintsExtensionAdmin(admin.ModelAdmin):
-    readonly_fields = (
-        'extension_oid',
-        'critical',
-        'ca',
-        'path_length_constraint'
-    )
-
-
-class KeyUsageExtensionAdmin(admin.ModelAdmin):
-    readonly_fields = (
-        'extension_oid',
-        'critical',
-        'digital_signature',
-        'content_commitment',
-        'key_encipherment',
-        'data_encipherment',
-        'key_agreement',
-        'key_cert_sign',
-        'crl_sign',
-        'encipher_only',
-        'decipher_only'
-    )
-
-
-class CertificateAdmin(admin.ModelAdmin):
-    readonly_fields = (
-        # 'certificate_hierarchy_type',
-        # 'certificate_hierarchy_depth',
-
         'sha256_fingerprint',
         'common_name',
         'certificate_status',
@@ -124,7 +33,7 @@ class CertificateAdmin(admin.ModelAdmin):
 
         'cert_pem',
         'public_key_pem',
-        'issuing_ca_model',
+        'is_self_signed',
 
         'key_usage_extension',
         'subject_alternative_name_extension',
@@ -132,44 +41,20 @@ class CertificateAdmin(admin.ModelAdmin):
         'basic_constraints_extension'
     )
 
-class CRLStorageAdmin(admin.ModelAdmin):
-    readonly_fields = (
-        'crl',
-        'created_at',
-        'ca'
-    )
 
-class DomainModelAdmin(admin.ModelAdmin):
-    readonly_fields = (
-        'unique_name',
-        'issuing_ca'
-    )
-
-class EstModelAdmin(admin.ModelAdmin):
-    pass
-
-class CmpModelAdmin(admin.ModelAdmin):
+class CredentialModelAdmin(admin.ModelAdmin):
     pass
 
 
-class IssuedDeviceCertificateAdmin(admin.ModelAdmin):
-    readonly_fields = (
-        'device',
-        'certificate_type'
-    )
+class CertificateChainOrderModelAdmin(admin.ModelAdmin):
+    pass
 
 
-admin.site.register(TrustStoreModel, TrustStoreAdmin)
-admin.site.register(IssuingCaModel, IssuingCaAdmin)
-admin.site.register(SubjectAlternativeNameExtension, AlternativeNameExtensionAdmin)
-admin.site.register(IssuerAlternativeNameExtension, AlternativeNameExtensionAdmin)
-admin.site.register(AttributeTypeAndValue, AttributeTypeAndValueAdmin)
-admin.site.register(BasicConstraintsExtension, BasicConstraintsExtensionAdmin)
-admin.site.register(KeyUsageExtension, KeyUsageExtensionAdmin)
-admin.site.register(CertificateModel, CertificateAdmin)
+class IssuingCaModelAdmin(admin.ModelAdmin):
+    pass
+
+
+admin.site.register(CertificateModel, CertificateModelAdmin)
+admin.site.register(CredentialModel, CredentialModelAdmin)
 admin.site.register(CertificateChainOrderModel, CertificateChainOrderModelAdmin)
-admin.site.register(CRLStorage, CRLStorageAdmin)
-admin.site.register(DomainModel, DomainModelAdmin)
-admin.site.register(IssuedDeviceCertificateModel, IssuedDeviceCertificateAdmin)
-admin.site.register(ESTModel, EstModelAdmin)
-admin.site.register(CMPModel, CmpModelAdmin)
+admin.site.register(IssuingCaModel, IssuingCaModelAdmin)

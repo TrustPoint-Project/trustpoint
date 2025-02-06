@@ -13,8 +13,16 @@ import os
 from pathlib import Path
 from django.utils.translation import gettext_lazy as _
 from django.core.management.utils import get_random_secret_key
+import logging
+import time
 
-from log.config import logging_config
+import django_stubs_ext
+
+# Monkeypatching Django, so stubs will work for all generics,
+# see: https://github.com/typeddjango/django-stubs
+django_stubs_ext.monkeypatch()
+
+DOCKER_CONTAINER = False
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -26,6 +34,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 ADMIN_ENABLED = True if DEBUG else False
+DEVELOPMENT_ENV = True
 
 # SECURITY WARNING: keep the secret key used in production secret!
 if DEBUG:
@@ -40,8 +49,6 @@ ALLOWED_HOSTS = ['*']
 ADVERTISED_HOST = '127.0.0.1'
 ADVERTISED_PORT = 443
 
-DOCKER_CONTAINER = False
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -49,11 +56,10 @@ INSTALLED_APPS = [
     'users.apps.UsersConfig',
     'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
-    'log.apps.LogConfig',
-    'discovery.apps.DiscoveryConfig',
-    'onboarding.apps.OnboardingConfig',
     'pki.apps.PkiConfig',
-    'sysconf.apps.SysconfConfig',
+    'cmp.apps.CmpConfig',
+    'est.apps.EstConfig',
+    'settings.apps.SettingsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -62,17 +68,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'crispy_bootstrap5',
-    'django_tables2',
-    'ninja',
-    # TODO(Aircoookie): Required only for HTTPS testing with Django runserver_plus, remove for production
-    'django_extensions',
-    # use "python manage.py runserver_plus 8000 --cert-file ../tests/data/x509/https_server.crt
-    # --key-file ../tests/data/x509/https_server.pem" to run with HTTPS
-    # note: replaces default exception debug page with worse one
-    'taggit',
-    'django_filters',
-    # ensure startup is the last app in the list so that ready() is called after all other apps are initialized
+    'behave_django'
 ]
+
+if DEVELOPMENT_ENV:
+    INSTALLED_APPS.append('django_extensions')
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -90,7 +90,7 @@ ROOT_URLCONF = 'trustpoint.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [BASE_DIR / Path('trustpoint/templates')],
+        'DIRS': [BASE_DIR / Path('templates')],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -149,11 +149,12 @@ LANGUAGES = [
     ("en", _("English")),
 ]
 
-TIME_ZONE = 'UTC'
+
 
 USE_I18N = True
 
 USE_TZ = True
+TIME_ZONE = 'UTC'
 
 LOCALE_PATHS = [BASE_DIR / Path('trustpoint/locale')]
 
@@ -178,17 +179,57 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
-# Default django-tables2 template
-DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5.html'
-DJANGO_TABLES2_TABLE_ATTRS = {'class': 'table', 'td': {'class': 'v-middle'}}
-
 LOGIN_REDIRECT_URL = 'home:dashboard'
 LOGIN_URL = 'users:login'
 
 DJANGO_LOG_LEVEL = 'INFO'
 
-LOGGING = logging_config
-
 TAGGIT_CASE_INSENSITIVE = True
 
 STATIC_ROOT = Path(__file__).parent.parent / Path('collected_static')
+
+LOG_DIR_PATH = BASE_DIR / Path('media/log/')
+LOG_DIR_PATH.mkdir(parents=True, exist_ok=True)
+LOG_FILE_PATH = LOG_DIR_PATH / Path('trustpoint.log')
+
+DATE_FORMAT = '%Y-%m-%d %H:%M:%S'
+
+class UTCFormatter(logging.Formatter):
+    """Custom logging formatter to use UTC time."""
+    converter = time.gmtime
+
+LOGGING = {
+    'version': 1,  # Indicates the version of the logging configuration
+    'disable_existing_loggers': False,  # Don't disable the default Django logging configuration
+    'formatters': {
+        'defaultFormatter': {
+            '()': UTCFormatter,
+            'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+            'datefmt': DATE_FORMAT,
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'defaultFormatter',
+        },
+        'rotatingFile': {
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'formatter': 'defaultFormatter',
+            'filename': LOG_FILE_PATH,
+            'maxBytes': 1048576,  # 1MB
+            'backupCount': 7,
+            'encoding': 'utf8',
+        },
+    },
+    'loggers': {
+        '': {
+            'level': 'DEBUG',
+            'handlers': ['console', 'rotatingFile'],
+        },
+    },
+}
+
+TEST_RUNNER = "django_behave.runner.DjangoBehaveTestSuiteRunner"

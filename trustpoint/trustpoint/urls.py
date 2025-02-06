@@ -24,8 +24,8 @@ from django.utils import timezone
 from django.views.decorators.http import last_modified
 from django.views.decorators.vary import vary_on_cookie
 from django.views.i18n import JavaScriptCatalog
+from pki.views.issuing_cas import CrlDownloadView
 
-from . import api
 from .views import base
 
 last_modified_date = timezone.now()
@@ -39,16 +39,15 @@ else:
     urlpatterns = []
 
 urlpatterns += [
-    path('api/', api.api.urls),
     path('users/', include('users.urls')),
     path('setup-wizard/', include('setup_wizard.urls')),
-    path('pki/', include('pki.urls.pki')),
-    path('.well-known/est/', include('pki.urls.est')),
-    path('.well-known/cmp/', include('pki.urls.cmp')),
+    path('pki/', include('pki.urls')),
+    # TODO(Air): Move CRL to REST API endpoint
+    path('crl/<int:pk>/', CrlDownloadView.as_view(), name='crl-download'),
+    path('.well-known/cmp/', include('cmp.urls')),
     path('home/', include('home.urls')),
     path('devices/', include('devices.urls')),
-    path('onboarding/', include('onboarding.urls')),
-    path('sysconf/', include('sysconf.urls')),
+    path('settings/', include('settings.urls')),
     path('i18n/', include("django.conf.urls.i18n")),
     path(
         'jsi18n/',
@@ -58,6 +57,5 @@ urlpatterns += [
         )),
         name='javascript-catalog'
     ),
-    path('logs/', include("log.urls")),
     path('', base.IndexView.as_view()),
 ]

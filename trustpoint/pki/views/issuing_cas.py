@@ -2,26 +2,23 @@ from __future__ import annotations
 
 from django.contrib import messages
 from django.http import HttpResponse, HttpResponseRedirect
-from django.urls import reverse_lazy
+from django.shortcuts import redirect
 from django.utils.translation import gettext as _
+from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
+from django.views.generic.list import ListView  # type: ignore[import-untyped]
 from django.views.generic.edit import FormView
-from django_tables2 import SingleTableView
-from sysconf.security import SecurityFeatures
-
 from pki.forms import (
-    CRLAutoGenerationForm,
-    CRLGenerationTimeDeltaForm,
     IssuingCaAddFileImportPkcs12Form,
     IssuingCaAddFileImportSeparateFilesForm,
     IssuingCaAddMethodSelectForm,
 )
-from pki.models import CertificateModel, CRLStorage, IssuingCaModel
-from pki.tables import IssuingCaTable
+from pki.models import IssuingCaModel
 from trustpoint.views.base import (
+    LoggerMixin,
     BulkDeleteView,
     ContextDataMixin,
-    PrimaryKeyFromUrlToQuerysetMixin,
+    SortableTableMixin,
     TpLoginRequiredMixin,
 )
 
@@ -32,13 +29,14 @@ class IssuingCaContextMixin(TpLoginRequiredMixin, ContextDataMixin):
     context_page_category = 'pki'
     context_page_name = 'issuing_cas'
 
-
-class IssuingCaTableView(IssuingCaContextMixin, TpLoginRequiredMixin, SingleTableView):
+class IssuingCaTableView(IssuingCaContextMixin, TpLoginRequiredMixin, SortableTableMixin, ListView):
     """Issuing CA Table View."""
 
     model = IssuingCaModel
-    table_class = IssuingCaTable
-    template_name = 'pki/issuing_cas/issuing_cas.html'
+    template_name = 'pki/issuing_cas/issuing_cas.html'  # Template file
+    context_object_name = 'issuing_ca'
+    paginate_by = 5  # Number of items per page
+    default_sort_param = 'unique_name'
 
 
 class IssuingCaAddMethodSelectView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):
@@ -72,55 +70,24 @@ class IssuingCaAddFileImportSeparateFilesView(IssuingCaContextMixin, TpLoginRequ
 
 class IssuingCaDetailView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):
 
+    http_method_names = ('get', )
+
     model = IssuingCaModel
     success_url = reverse_lazy('pki:issuing_cas')
     ignore_url = reverse_lazy('pki:issuing_cas')
     template_name = 'pki/issuing_cas/details.html'
     context_object_name = 'issuing_ca'
 
-class IssuingCaConfigView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailView, FormView):
+
+
+class IssuingCaConfigView(LoggerMixin, IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):
 
     model = IssuingCaModel
-    form_class = CRLGenerationTimeDeltaForm
-    second_form_class = CRLAutoGenerationForm
     success_url = reverse_lazy('pki:issuing_cas')
     ignore_url = reverse_lazy('pki:issuing_cas')
     template_name = 'pki/issuing_cas/config.html'
     context_object_name = 'issuing_ca'
 
-    def get_form_kwargs(self):
-        """Pass the instance to the ModelForm."""
-        kwargs = super().get_form_kwargs()
-        kwargs['instance'] = self.get_object()
-        return kwargs
-
-    def get_second_form_kwargs(self):
-        """Pass the instance to the second ModelForm."""
-        return {
-            'instance': self.get_object()
-        }
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if 'form' not in context:
-            context['form'] = self.get_form(self.get_form_class())
-        if 'form_auto_crl' not in context:
-            context['form_auto_crl'] = self.second_form_class(**self.get_second_form_kwargs())
-        context['crl'] = CRLStorage.get_crl_object(context.get('issuing_ca'))
-        return context
-
-    def post(self, request, *args, **kwargs):
-        """Handle the two forms."""
-        form = self.get_form(self.get_form_class())
-        form_auto_crl = self.second_form_class(request.POST, **self.get_second_form_kwargs())
-
-        if form.is_valid() and form_auto_crl.is_valid():
-            form.save()
-            form_auto_crl.save()
-            messages.success(request, _("Settings updated successfully."))
-            return self.form_valid(form)
-        else:
-            return self.form_invalid(form)
 
 class IssuingCaBulkDeleteConfirmView(IssuingCaContextMixin, TpLoginRequiredMixin, BulkDeleteView):
 
@@ -129,3 +96,45 @@ class IssuingCaBulkDeleteConfirmView(IssuingCaContextMixin, TpLoginRequiredMixin
     ignore_url = reverse_lazy('pki:issuing_cas')
     template_name = 'pki/issuing_cas/confirm_delete.html'
     context_object_name = 'issuing_cas'
+
+
+class IssuingCaCrlGenerationView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):
+    """View to manually generate a CRL for an Issuing CA."""
+
+    model = IssuingCaModel
+    success_url = reverse_lazy('pki:issuing_cas')
+    ignore_url = reverse_lazy('pki:issuing_cas')
+    context_object_name = 'issuing_ca'
+
+    http_method_names = ('get', )
+
+    # TODO(Air): This view should use a POST request as it is an action.
+    # However, this is not trivial in the config view as that already contains a form.
+    def get(self, request, *args, **kwargs) -> HttpResponse:
+        issuing_ca = self.get_object()
+        if issuing_ca.issue_crl():
+            messages.success(request, _('CRL for Issuing CA %s has been generated.') % issuing_ca.unique_name)
+        else:
+            messages.error(request, _('Failed to generate CRL for Issuing CA %s.') % issuing_ca.unique_name)
+        return redirect('pki:issuing_cas-config', pk=issuing_ca.id)
+
+
+class CrlDownloadView(IssuingCaContextMixin, DetailView):
+    """Unauthenticated view to download the certificate revocation list of an Issuing CA."""
+
+    http_method_names = ('get', )
+
+    model = IssuingCaModel
+    success_url = reverse_lazy('pki:issuing_cas')
+    ignore_url = reverse_lazy('pki:issuing_cas')
+    context_object_name = 'issuing_ca'
+
+    def get(self, request, *args, **kwargs) -> HttpResponse:
+        issuing_ca = self.get_object()
+        crl_pem = issuing_ca.crl_pem
+        if not crl_pem:
+            messages.warning(request, _('No CRL available for issuing CA %s.') % issuing_ca.unique_name)
+            return redirect('pki:issuing_cas')
+        response = HttpResponse(crl_pem, content_type='application/x-pem-file')
+        response['Content-Disposition'] = f'attachment; filename="{issuing_ca.unique_name}.crl"'
+        return response
