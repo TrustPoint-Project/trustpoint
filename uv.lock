@@ -519,18 +519,6 @@ wheels = [
 ]
 
 [[package]]
-name = "django-tables2"
-version = "2.7.5"
-source = { registry = "https://pypi.org/simple" }
-dependencies = [
-    { name = "django" },
-]
-sdist = { url = "https://files.pythonhosted.org/packages/19/0f/497ebb829a0f6d93ac8ae720b114a413e6e3a6eb0682f15c7a8d59f69464/django_tables2-2.7.5.tar.gz", hash = "sha256:fb5dcaa09379cf3947598ec7e1bd5f26ed63aafdee3b23963446763bbeac37bf", size = 128618 }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/0b/66/6d454db3edcd285b767caaa790c3e7a3969c91bb6f93601d9a879aab06f2/django_tables2-2.7.5-py3-none-any.whl", hash = "sha256:d9338937797207ffb6f481be2125c5ec3a0bb1858d409c672cc25fc5d654cb22", size = 95984 },
-]
-
-[[package]]
 name = "django-taggit"
 version = "6.1.0"
 source = { registry = "https://pypi.org/simple" }
@@ -1401,9 +1389,6 @@ name = "trustpoint"
 version = "0.1.1"
 source = { editable = "." }
 dependencies = [
-    { name = "behave" },
-    { name = "behave-django" },
-    { name = "behave-html-pretty-formatter" },
     { name = "crispy-bootstrap5" },
     { name = "cryptography" },
     { name = "django" },
@@ -1412,28 +1397,29 @@ dependencies = [
     { name = "django-ninja" },
     { name = "django-stubs" },
     { name = "django-stubs-ext" },
-    { name = "django-tables2" },
     { name = "django-taggit" },
-    { name = "pre-commit" },
     { name = "pyasn1" },
     { name = "pyasn1-modules" },
-    { name = "pytest-cov" },
-    { name = "pytest-django" },
-    { name = "pytest-html" },
-    { name = "ruff" },
     { name = "zeroconf" },
 ]
 
 [package.dev-dependencies]
 dev = [
+    { name = "behave" },
+    { name = "behave-django" },
+    { name = "behave-html-pretty-formatter" },
     { name = "devtools" },
     { name = "django-extensions" },
     { name = "docutils-stubs" },
     { name = "furo" },
     { name = "mypy" },
     { name = "pillow" },
+    { name = "pre-commit" },
     { name = "pyopenssl" },
     { name = "pytest" },
+    { name = "pytest-cov" },
+    { name = "pytest-django" },
+    { name = "pytest-html" },
     { name = "ruff" },
     { name = "sphinx" },
     { name = "sphinxcontrib-plantuml" },
@@ -1442,9 +1428,6 @@ dev = [
 
 [package.metadata]
 requires-dist = [
-    { name = "behave", specifier = ">=1.2.7.dev6" },
-    { name = "behave-django", specifier = "==1.5.0" },
-    { name = "behave-html-pretty-formatter", specifier = ">=1.12.3,<2" },
     { name = "crispy-bootstrap5", specifier = "~=2024.10" },
     { name = "cryptography", specifier = ">=44.0.0,<45" },
     { name = "django", specifier = ">=5.1.5,<6" },
@@ -1453,28 +1436,29 @@ requires-dist = [
     { name = "django-ninja", specifier = ">=1.3.0,<2" },
     { name = "django-stubs", specifier = ">=5.1.2,<6" },
     { name = "django-stubs-ext", specifier = ">=5.1.2,<6" },
-    { name = "django-tables2", specifier = ">=2.7.0,<3" },
     { name = "django-taggit", specifier = ">=6.1.0,<7" },
-    { name = "pre-commit", specifier = ">=4.1.0" },
     { name = "pyasn1", specifier = ">=0.6.1,<0.7" },
     { name = "pyasn1-modules", specifier = ">=0.4.1,<0.5" },
-    { name = "pytest-cov", specifier = ">=6.0.0,<7" },
-    { name = "pytest-django", specifier = ">=4.9.0,<5" },
-    { name = "pytest-html", specifier = ">=4.1.1" },
-    { name = "ruff", specifier = ">=0.7.4" },
     { name = "zeroconf", specifier = ">=0.139.0,<0.140" },
 ]
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "behave", specifier = ">=1.2.7.dev6" },
+    { name = "behave-django", specifier = ">=1.5.0" },
+    { name = "behave-html-pretty-formatter", specifier = ">=1.12.3" },
     { name = "devtools", specifier = ">=0.12.2,<0.13" },
     { name = "django-extensions", specifier = ">=3.2.3,<4" },
     { name = "docutils-stubs", specifier = ">=0.0.22,<0.0.23" },
     { name = "furo", specifier = ">=2024.8.6,<2025" },
     { name = "mypy", specifier = ">=1.13.0,<2" },
     { name = "pillow", specifier = ">=11.0.0,<12" },
+    { name = "pre-commit", specifier = ">=4.1.0" },
     { name = "pyopenssl", specifier = ">=24.2.1,<25" },
     { name = "pytest", specifier = ">=8.3.4" },
+    { name = "pytest-cov", specifier = ">=6.0.0" },
+    { name = "pytest-django", specifier = ">=4.9.0" },
+    { name = "pytest-html", specifier = ">=4.1.1" },
     { name = "ruff", specifier = ">=0.7.3,<0.8" },
     { name = "sphinx", specifier = ">=8.1.3,<9" },
     { name = "sphinxcontrib-plantuml", specifier = ">=0.30,<0.31" },
