@@ -11,6 +11,7 @@ from core.file_builder.enum import ArchiveFormat
 from core.serializer import CredentialSerializer
 from core.validator.field import UniqueNameValidator
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.forms import BaseModelForm
 from django.http import FileResponse, Http404, HttpResponse
@@ -599,7 +600,6 @@ class DeviceCertificateLifecycleManagementSummaryView(
     detail_context_object_name = 'device'
     model = IssuedCredentialModel
     context_object_name = 'issued_credentials'
-    paginate_by = 5
     default_sort_param = 'common_name'
 
     def get_context_data(self, **kwargs):
@@ -620,6 +620,16 @@ class DeviceCertificateLifecycleManagementSummaryView(
 
         context['domain_credentials'] = domain_credentials
         context['application_credentials'] = application_credentials
+
+        paginator_domain = Paginator(domain_credentials, 5)
+        page_number_domain = self.request.GET.get('page', 1)
+        context['domain_credentials'] = paginator_domain.get_page(page_number_domain)
+        context['is_paginated'] = paginator_domain.num_pages > 1
+
+        paginator_application = Paginator(application_credentials, 5)
+        page_number_application = self.request.GET.get('page-a', 1)
+        context['application_credentials'] = paginator_application.get_page(page_number_application)
+        context['is_paginated_a'] = paginator_application.num_pages > 1
 
         for cred in context['domain_credentials']:
             cred.expires_in = self._render_expires_in(cred)
