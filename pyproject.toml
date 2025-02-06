@@ -24,6 +24,7 @@ dependencies = [
     "pytest-cov>=6.0.0,<7",
     "behave-django==1.5.0",
     "behave>=1.2.7.dev6",
+    "pre-commit>=4.1.0",
 ]
 
 [dependency-groups]
