@@ -149,8 +149,8 @@ class TruststoreAddForm(forms.Form):
         self.cleaned_data['truststore'] = trust_store_model
         return cleaned_data
 
+    @staticmethod
     def _save_trust_store(
-            self,
             unique_name: str,
             intended_usage: TruststoreModel.IntendedUsage,
             certificates: list[x509.Certificate]
