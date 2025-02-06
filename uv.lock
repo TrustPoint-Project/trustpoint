@@ -1109,27 +1109,29 @@ wheels = [
 ]
 
 [[package]]
-name = "pytest-emoji"
-version = "0.2.0"
+name = "pytest-html"
+version = "4.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
+    { name = "jinja2" },
     { name = "pytest" },
+    { name = "pytest-metadata" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/88/4d/d489f939f0717a034cea7955d36bc2a7a5ba1b263871e63ad8cb16d47555/pytest-emoji-0.2.0.tar.gz", hash = "sha256:e1bd4790d87649c2d09c272c88bdfc4d37c1cc7c7a46583087d7c510944571e8", size = 6171 }
+sdist = { url = "https://files.pythonhosted.org/packages/bb/ab/4862dcb5a8a514bd87747e06b8d55483c0c9e987e1b66972336946e49b49/pytest_html-4.1.1.tar.gz", hash = "sha256:70a01e8ae5800f4a074b56a4cb1025c8f4f9b038bba5fe31e3c98eb996686f07", size = 150773 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/51/80af966c0aded877da7577d21c4601ca98c6f603c6e6073ddea071af01ec/pytest_emoji-0.2.0-py3-none-any.whl", hash = "sha256:6e34ed21970fa4b80a56ad11417456bd873eb066c02315fe9df0fafe6d4d4436", size = 5664 },
+    { url = "https://files.pythonhosted.org/packages/c8/c7/c160021cbecd956cc1a6f79e5fe155f7868b2e5b848f1320dad0b3e3122f/pytest_html-4.1.1-py3-none-any.whl", hash = "sha256:c8152cea03bd4e9bee6d525573b67bbc6622967b72b9628dda0ea3e2a0b5dd71", size = 23491 },
 ]
 
 [[package]]
-name = "pytest-md"
-version = "0.2.0"
+name = "pytest-metadata"
+version = "3.1.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "pytest" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0e/55/1d4248f08a97255abb23b05d8ba07586333194fadb17beda96b707aebecd/pytest-md-0.2.0.tar.gz", hash = "sha256:3b248d5b360ea5198e05b4f49c7442234812809a63137ec6cdd3643a40cf0112", size = 5985 }
+sdist = { url = "https://files.pythonhosted.org/packages/a6/85/8c969f8bec4e559f8f2b958a15229a35495f5b4ce499f6b865eac54b878d/pytest_metadata-3.1.1.tar.gz", hash = "sha256:d2a29b0355fbc03f168aa96d41ff88b1a3b44a3b02acbe491801c98a048017c8", size = 9952 }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/80/71/23d03f57c18116c6770141478e33b3500c4e92500cf4b49a396e9226733f/pytest_md-0.2.0-py3-none-any.whl", hash = "sha256:4c4cd16fea6d1485e87ee254558712c804a96d2aa9674b780e7eb8fb6526e1d1", size = 6117 },
+    { url = "https://files.pythonhosted.org/packages/3e/43/7e7b2ec865caa92f67b8f0e9231a798d102724ca4c0e1f414316be1c1ef2/pytest_metadata-3.1.1-py3-none-any.whl", hash = "sha256:c8e0844db684ee1c798cfa38908d20d67d0463ecb6137c72e91f418558dd5f4b", size = 11428 },
 ]
 
 [[package]]
@@ -1417,8 +1419,7 @@ dependencies = [
     { name = "pyasn1-modules" },
     { name = "pytest-cov" },
     { name = "pytest-django" },
-    { name = "pytest-emoji" },
-    { name = "pytest-md" },
+    { name = "pytest-html" },
     { name = "ruff" },
     { name = "zeroconf" },
 ]
@@ -1458,8 +1459,7 @@ requires-dist = [
     { name = "pyasn1-modules", specifier = ">=0.4.1,<0.5" },
     { name = "pytest-cov", specifier = ">=6.0.0,<7" },
     { name = "pytest-django", specifier = ">=4.9.0,<5" },
-    { name = "pytest-emoji", specifier = ">=0.2.0" },
-    { name = "pytest-md", specifier = ">=0.2.0" },
+    { name = "pytest-html", specifier = ">=4.1.1" },
     { name = "ruff", specifier = ">=0.7.4" },
     { name = "zeroconf", specifier = ">=0.139.0,<0.140" },
 ]
