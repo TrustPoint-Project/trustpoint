@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import datetime
 import io
 import secrets
 from typing import TYPE_CHECKING, cast
@@ -11,18 +12,20 @@ from core.serializer import CredentialSerializer
 from core.validator.field import UniqueNameValidator
 from core.oid import PublicKeyInfo
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.forms import BaseModelForm
 from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
+from django.utils.html import format_html
+from django.utils.safestring import mark_safe, SafeString
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.base import RedirectView, View
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormView
+from django.views.generic.list import ListView  # type: ignore[import-untyped]
 
-# TODO(AlexHx8472): Remove django_tables2 dependency, and thus remove the type: ignore[misc]
-from django_tables2 import SingleTableView  # type: ignore[import-untyped]
 from pki.models import CredentialModel
 
 from devices.forms import (
@@ -39,8 +42,7 @@ from devices.models import (
     RemoteDeviceCredentialDownloadModel,
     TrustpointClientOnboardingProcessModel,
 )
-from devices.tables import DeviceApplicationCertificatesTable, DeviceDomainCredentialsTable, DeviceTable
-from trustpoint.views.base import TpLoginRequiredMixin
+from trustpoint.views.base import ListInDetailView, SortableTableMixin, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
     from typing import Any, ClassVar
@@ -96,16 +98,70 @@ class DownloadTokenRequiredMixin:
         return super().dispatch(request, *args, **kwargs)
 
 
-# TODO(AlexHx8472): Remove django_tables2 dependency, and thus remove the type: ignore[misc]
-class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SingleTableView):  # type: ignore[misc]
-    """Endpoint Profiles List View."""
-
-    http_method_names = ('get',)
+class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SortableTableMixin, ListView):
+    """Device Table View."""
 
     model = DeviceModel
-    table_class = DeviceTable
-    template_name = 'devices/devices.html'
+    template_name = 'devices/devices.html'  # Template file
     context_object_name = 'devices'
+    paginate_by = 5  # Number of items per page
+    default_sort_param = 'unique_name'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        for device in context['page_obj']:
+            device.onboarding_button = self._render_onboarding(device)
+            device.clm_button = self._render_clm(device)
+
+        return context
+
+    def _render_onboarding(self, record: any) -> SafeString | str:
+        """Creates the html hyperlink for the onboarding-view.
+
+        Args:
+            record (Device): The current record of the Device model.
+
+        Returns:
+            SafeString: The html hyperlink for the details-view.
+        """
+        if not record.domain:
+            return format_html(
+                '<span>{}</span>', _('No Domain configured.'))
+        if not record.domain.issuing_ca:
+            return format_html(
+                '<span>{}</span>', _('No Issuing CA configured.')
+            )
+        if record.onboarding_status == DeviceModel.OnboardingStatus.PENDING:
+            if record.onboarding_protocol == DeviceModel.OnboardingProtocol.MANUAL:
+                return format_html(
+                    f'<a href="onboarding/{record.pk}/manual/issue-domain-credential/" class="btn btn-primary tp-table-btn w-100">Start Onboarding</a>'
+                )
+            elif record.onboarding_protocol == DeviceModel.OnboardingProtocol.TP_CLIENT:
+                onboarding_process_model = TrustpointClientOnboardingProcessModel.objects.filter(device=record.pk)
+                if onboarding_process_model.exists():
+                    return format_html(
+                        f'<a href="onboarding/{record.pk}/trustpoint-client/" class="btn btn-primary tp-table-btn w-100 mb-2">Continue Onboarding</a>'
+                        f'<br>'
+                        f'<a href="onboarding/{record.pk}/trustpoint-client/cancel/" class="btn btn-danger tp-table-btn w-100">Cancel Onboarding</a>',
+                    )
+                else:
+                    return format_html(
+                        f'<a href="onboarding/{record.pk}/trustpoint-client/" class="btn btn-primary tp-table-btn w-100">Start Onboarding</a>',
+                    )
+        return ''
+
+    def _render_clm(self, record: DeviceModel) -> SafeString | str:
+        valid_onboarding_statuses = (
+            DeviceModel.OnboardingStatus.NO_ONBOARDING,
+            DeviceModel.OnboardingStatus.ONBOARDED
+        )
+        if record.onboarding_status in valid_onboarding_statuses:
+            return format_html(
+                f'<a href="certificate-lifecycle-management/{record.pk}/" class="btn btn-primary tp-table-btn w-100">Manage Issued Certificates</a>',
+            )
+        return ''
+
 
 
 class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView[DeviceModel, BaseModelForm[DeviceModel]]):
@@ -533,15 +589,59 @@ class DeviceIssueTlsServerCredential(
 
 
 class DeviceCertificateLifecycleManagementSummaryView(
-    DeviceContextMixin, TpLoginRequiredMixin, DetailView[DeviceModel]
+    DeviceContextMixin, TpLoginRequiredMixin, SortableTableMixin, ListInDetailView[DeviceModel]
 ):
     """This is the CLM summary view in the devices section."""
 
     http_method_names = ('get',)
 
-    model = DeviceModel
+    detail_model = DeviceModel
     template_name = 'devices/credentials/certificate_lifecycle_management.html'
-    context_object_name = 'device'
+    detail_context_object_name = 'device'
+    model = IssuedCredentialModel
+    context_object_name = 'issued_credentials'
+    default_sort_param = 'common_name'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+
+        device = self.get_object()
+        qs = super().get_queryset() # inherited from SortableTableMixin, sorted query
+
+        domain_credentials = IssuedCredentialModel.objects.filter(
+            Q(device=device) &
+            Q(issued_credential_type=IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL.value)
+        )
+
+        application_credentials = qs.filter(
+            Q(device=device) &
+            Q(issued_credential_type=IssuedCredentialModel.IssuedCredentialType.APPLICATION_CREDENTIAL.value)
+        )
+
+        context['domain_credentials'] = domain_credentials
+        context['application_credentials'] = application_credentials
+
+        paginator_domain = Paginator(domain_credentials, 5)
+        page_number_domain = self.request.GET.get('page', 1)
+        context['domain_credentials'] = paginator_domain.get_page(page_number_domain)
+        context['is_paginated'] = paginator_domain.num_pages > 1
+
+        paginator_application = Paginator(application_credentials, 5)
+        page_number_application = self.request.GET.get('page-a', 1)
+        context['application_credentials'] = paginator_application.get_page(page_number_application)
+        context['is_paginated_a'] = paginator_application.num_pages > 1
+
+        for cred in context['domain_credentials']:
+            cred.expires_in = self._render_expires_in(cred)
+            cred.expiration_date = self._render_expiration_date(cred)
+            cred.revoke = self._render_revoke(cred)
+
+        for cred in context['application_credentials']:
+            cred.expires_in = self._render_expires_in(cred)
+            cred.expiration_date = self._render_expiration_date(cred)
+            cred.revoke = self._render_revoke(cred)
+
+        return context
 
     def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
         """Processing of all GET requests.
@@ -554,24 +654,43 @@ class DeviceCertificateLifecycleManagementSummaryView(
         Returns:
             The HttpResponse to display the view.
         """
-        device = self.get_object()
-
-        device_domain_credential_table = DeviceDomainCredentialsTable(
-            IssuedCredentialModel.objects.filter(
-                Q(device=device) &
-                Q(issued_credential_type=IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL.value)
-            )
-        )
-        device_application_certificates_table = DeviceApplicationCertificatesTable(
-            IssuedCredentialModel.objects.filter(
-                Q(device=device) &
-                Q(issued_credential_type=IssuedCredentialModel.IssuedCredentialType.APPLICATION_CREDENTIAL.value)
-            )
-        )
-
-        self.extra_context['device_domain_credential_table'] = device_domain_credential_table
-        self.extra_context['device_application_certificates_table'] = device_application_certificates_table
         return super().get(request, *args, **kwargs)
+    
+    # @staticmethod
+    # def _render_common_name(record: IssuedCredentialModel) -> SafeString:
+    #     return format_html(record.credential.certificate.common_name)
+
+    # @staticmethod
+    # def _render_issued_at(record: IssuedCredentialModel) -> datetime.datetime:
+    #     return record.created_at
+
+    @staticmethod
+    def _render_expiration_date(record: IssuedCredentialModel) -> datetime.datetime:
+        return record.credential.certificate.not_valid_after
+
+    @staticmethod
+    def _render_expires_in(record: IssuedCredentialModel) -> SafeString:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if now >= record.credential.certificate.not_valid_after:
+            return format_html('Expired')
+        expire_timedelta = record.credential.certificate.not_valid_after - now
+        days = expire_timedelta.days
+        hours, remainder = divmod(expire_timedelta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return format_html(f'{days} days, {hours}:{minutes:02d}:{seconds:02d}')
+
+    @staticmethod
+    def _render_revoke(record: IssuedCredentialModel) -> SafeString:
+        """Creates the html hyperlink for the revoke-view.
+
+        Args:
+            record: The current record of the Device model.
+
+        Returns:
+            SafeString: The html hyperlink for the revoke-view.
+        """
+        return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
+                           record.pk, _('Revoke'))
 
 
 class DeviceRevocationView(DeviceContextMixin, TpLoginRequiredMixin, RedirectView):

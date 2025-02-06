@@ -3,19 +3,19 @@ from __future__ import annotations
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse_lazy
 from django.views.generic.detail import DetailView
+from django.views.generic.list import ListView  # type: ignore[import-untyped]
 from django.views.generic.edit import FormView
-from django_tables2 import SingleTableView
 from pki.forms import (
     IssuingCaAddFileImportPkcs12Form,
     IssuingCaAddFileImportSeparateFilesForm,
     IssuingCaAddMethodSelectForm,
 )
 from pki.models import IssuingCaModel
-from pki.tables import IssuingCaTable
 from trustpoint.views.base import (
     LoggerMixin,
     BulkDeleteView,
     ContextDataMixin,
+    SortableTableMixin,
     TpLoginRequiredMixin,
 )
 
@@ -26,13 +26,14 @@ class IssuingCaContextMixin(TpLoginRequiredMixin, ContextDataMixin):
     context_page_category = 'pki'
     context_page_name = 'issuing_cas'
 
-
-class IssuingCaTableView(IssuingCaContextMixin, TpLoginRequiredMixin, SingleTableView):
+class IssuingCaTableView(IssuingCaContextMixin, TpLoginRequiredMixin, SortableTableMixin, ListView):
     """Issuing CA Table View."""
 
     model = IssuingCaModel
-    table_class = IssuingCaTable
-    template_name = 'pki/issuing_cas/issuing_cas.html'
+    template_name = 'pki/issuing_cas/issuing_cas.html'  # Template file
+    context_object_name = 'issuing_ca'
+    paginate_by = 5  # Number of items per page
+    default_sort_param = 'unique_name'
 
 
 class IssuingCaAddMethodSelectView(IssuingCaContextMixin, TpLoginRequiredMixin, FormView):

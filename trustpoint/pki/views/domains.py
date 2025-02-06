@@ -10,14 +10,19 @@ from django.urls import reverse_lazy, reverse
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DeleteView
 from django.views.generic.detail import DetailView
+from django.views.generic.list import ListView  # type: ignore[import-untyped]
 from django.views.generic.edit import CreateView, UpdateView
-from django_tables2 import SingleTableView, RequestConfig
 from django.views.generic.edit import FormView
 from pki.forms import DevIdRegistrationForm, DevIdAddMethodSelectForm
 from pki.models import DomainModel, DevIdRegistration
 from pki.models.truststore import TruststoreModel
-from pki.tables import DomainTable, DevIdRegistrationTable
-from trustpoint.views.base import ContextDataMixin, TpLoginRequiredMixin, BulkDeleteView
+from trustpoint.views.base import (
+    ContextDataMixin,
+    TpLoginRequiredMixin,
+    BulkDeleteView,
+    ListInDetailView,
+    SortableTableMixin
+)
 
 
 class PkiProtocol(enum.Enum):
@@ -36,12 +41,14 @@ class DomainContextMixin(ContextDataMixin):
     context_page_name = 'domains'
 
 
-class DomainTableView(DomainContextMixin, TpLoginRequiredMixin, SingleTableView):
+class DomainTableView(DomainContextMixin, TpLoginRequiredMixin, SortableTableMixin, ListView):
     """Domain Table View."""
 
     model = DomainModel
-    table_class = DomainTable
-    template_name = 'pki/domains/domain.html'
+    template_name = 'pki/domains/domain.html'  # Template file
+    context_object_name = 'domain-new'
+    paginate_by = 5  # Number of items per page
+    default_sort_param = 'unique_name'
 
 
 class DomainCreateView(DomainContextMixin, TpLoginRequiredMixin, CreateView):
@@ -62,10 +69,22 @@ class DomainUpdateView(DomainContextMixin, TpLoginRequiredMixin, UpdateView):
     ignore_url = reverse_lazy('pki:domains')
 
 
-class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
-    model = DomainModel
+class DomainDevIdRegistrationTableMixin(SortableTableMixin, ListInDetailView):
+
+    model = DevIdRegistration
+    paginate_by = 5  # Number of items per page
+    context_object_name = 'devid_registrations'
+    default_sort_param = 'unique_name'
+    
+    def get_queryset(self):
+        self.queryset = DevIdRegistration.objects.filter(domain=self.get_object())
+        return super().get_queryset()
+
+
+class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DomainDevIdRegistrationTableMixin, ListInDetailView):
+    detail_model = DomainModel
     template_name = 'pki/domains/config.html'
-    context_object_name = 'domain'
+    detail_context_object_name = 'domain'
     success_url = reverse_lazy('pki:domains')
 
     def get_context_data(self, **kwargs):
@@ -79,12 +98,6 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
             'scep': domain.scep_protocol if hasattr(domain, 'scep_protocol') else None,
             'rest': domain.rest_protocol if hasattr(domain, 'rest_protocol') else None
         }
-
-        patterns = DevIdRegistration.objects.filter(domain=domain)
-        table = DevIdRegistrationTable(patterns)
-        RequestConfig(self.request, paginate={"per_page": 10}).configure(table)
-        context['devid_table'] = table
-
 
         return context
 
@@ -104,22 +117,11 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
         return HttpResponseRedirect(self.success_url)
 
 
-class DomainDetailView(DomainContextMixin, TpLoginRequiredMixin, DetailView):
+class DomainDetailView(DomainContextMixin, TpLoginRequiredMixin, DomainDevIdRegistrationTableMixin, ListInDetailView):
 
-    model = DomainModel
+    detail_model = DomainModel
     template_name = 'pki/domains/details.html'
-    context_object_name = 'domain'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        domain = self.get_object()
-
-        patterns = DevIdRegistration.objects.filter(domain=domain)
-        table = DevIdRegistrationTable(patterns)
-        RequestConfig(self.request, paginate={"per_page": 10}).configure(table)
-        context['devid_table'] = table
-
-        return context
+    detail_context_object_name = 'domain'
 
 
 class DomainCaBulkDeleteConfirmView(DomainContextMixin, TpLoginRequiredMixin, BulkDeleteView):

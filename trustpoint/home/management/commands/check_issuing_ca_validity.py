@@ -1,4 +1,5 @@
 """Management command to check the validity of Issuing CAs."""
+
 from __future__ import annotations
 
 from typing import Any, cast
@@ -17,9 +18,10 @@ class Command(BaseCommand):
     that are either expiring or expired and generates appropriate notifications for
     them in the system.
     """
+
     help = 'Check for expiring or expired issuing CAs.'
 
-    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None: # noqa: ARG002
+    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None:  # noqa: ARG002
         """Entrypoint for the command."""
         self._check_issuing_ca_validity()
         self.stdout.write(self.style.SUCCESS('Issuing CA validity check completed.'))

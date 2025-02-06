@@ -6,6 +6,7 @@ trigger a WARNING notification, while expired certificates trigger a
 CRITICAL notification. Notifications are created only if they do not
 already exist for the given certificate and event.
 """
+
 from __future__ import annotations
 
 from typing import Any, cast
@@ -22,9 +23,10 @@ class Command(BaseCommand):
 
     Expiring certificates trigger a WARNING notification, while expired certificates trigger a CRITICAL notification.
     """
+
     help = 'Check for expiring or expired certificates.'
 
-    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None: # noqa: ARG002
+    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None:  # noqa: ARG002
         """Entrypoint for the command."""
         self._check_certificate_validity()
         self.stdout.write(self.style.SUCCESS('Certificate validity check completed.'))
@@ -39,12 +41,9 @@ class Command(BaseCommand):
         current_time = timezone.now()
 
         expiring_certificates = CertificateModel.objects.filter(
-            not_valid_after__lte=expiring_threshold,
-            not_valid_after__gt=current_time
+            not_valid_after__lte=expiring_threshold, not_valid_after__gt=current_time
         )
-        expired_certificates = CertificateModel.objects.filter(
-            not_valid_after__lte=current_time
-        )
+        expired_certificates = CertificateModel.objects.filter(not_valid_after__lte=current_time)
 
         new_status, _ = NotificationStatus.objects.get_or_create(status='NEW')
 
@@ -53,10 +52,12 @@ class Command(BaseCommand):
             self._create_notification(
                 certificate=cert,
                 event='CERTIFICATE_EXPIRING',
-                notification_type=cast(NotificationModel.NotificationTypes,
-                                       NotificationModel.NotificationTypes.WARNING),
-                message_type=cast(NotificationModel.NotificationMessageType,
-                                  NotificationModel.NotificationMessageType.CERT_EXPIRING),
+                notification_type=cast(
+                    NotificationModel.NotificationTypes, NotificationModel.NotificationTypes.WARNING
+                ),
+                message_type=cast(
+                    NotificationModel.NotificationMessageType, NotificationModel.NotificationMessageType.CERT_EXPIRING
+                ),
                 new_status=new_status,
             )
 
@@ -65,20 +66,22 @@ class Command(BaseCommand):
             self._create_notification(
                 certificate=cert,
                 event='CERTIFICATE_EXPIRED',
-                notification_type=cast(NotificationModel.NotificationTypes,
-                                       NotificationModel.NotificationTypes.CRITICAL),
-                message_type=cast(NotificationModel.NotificationMessageType,
-                                  NotificationModel.NotificationMessageType.CERT_EXPIRED),
+                notification_type=cast(
+                    NotificationModel.NotificationTypes, NotificationModel.NotificationTypes.CRITICAL
+                ),
+                message_type=cast(
+                    NotificationModel.NotificationMessageType, NotificationModel.NotificationMessageType.CERT_EXPIRED
+                ),
                 new_status=new_status,
             )
 
     def _create_notification(
-            self,
-            certificate: CertificateModel,
-            event: str,
-            notification_type: str | NotificationModel.NotificationTypes,
-            message_type: str | NotificationModel.NotificationMessageType,
-            new_status: NotificationStatus
+        self,
+        certificate: CertificateModel,
+        event: str,
+        notification_type: str | NotificationModel.NotificationTypes,
+        message_type: str | NotificationModel.NotificationMessageType,
+        new_status: NotificationStatus,
     ) -> None:
         """Helper function to create a notification for a certificate.
 
@@ -93,6 +96,6 @@ class Command(BaseCommand):
                 notification_type=notification_type,
                 message_type=message_type,
                 event=event,
-                message_data=message_data
+                message_data=message_data,
             )
             notification.statuses.add(new_status)
