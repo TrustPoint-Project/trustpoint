@@ -668,6 +668,42 @@ class DeviceCertificateLifecycleManagementSummaryView(
             The HttpResponse to display the view.
         """
         return super().get(request, *args, **kwargs)
+    
+    # @staticmethod
+    # def _render_common_name(record: IssuedCredentialModel) -> SafeString:
+    #     return format_html(record.credential.certificate.common_name)
+
+    # @staticmethod
+    # def _render_issued_at(record: IssuedCredentialModel) -> datetime.datetime:
+    #     return record.created_at
+
+    @staticmethod
+    def _render_expiration_date(record: IssuedCredentialModel) -> datetime.datetime:
+        return record.credential.certificate.not_valid_after
+
+    @staticmethod
+    def _render_expires_in(record: IssuedCredentialModel) -> SafeString:
+        now = datetime.datetime.now(datetime.timezone.utc)
+        if now >= record.credential.certificate.not_valid_after:
+            return format_html('Expired')
+        expire_timedelta = record.credential.certificate.not_valid_after - now
+        days = expire_timedelta.days
+        hours, remainder = divmod(expire_timedelta.seconds, 3600)
+        minutes, seconds = divmod(remainder, 60)
+        return format_html(f'{days} days, {hours}:{minutes:02d}:{seconds:02d}')
+
+    @staticmethod
+    def _render_revoke(record: IssuedCredentialModel) -> SafeString:
+        """Creates the html hyperlink for the revoke-view.
+
+        Args:
+            record: The current record of the Device model.
+
+        Returns:
+            SafeString: The html hyperlink for the revoke-view.
+        """
+        return format_html('<a href="revoke/{}/" class="btn btn-danger tp-table-btn w-100">{}</a>',
+                           record.pk, _('Revoke'))
 
     # @staticmethod
     # def _render_common_name(record: IssuedCredentialModel) -> SafeString:
