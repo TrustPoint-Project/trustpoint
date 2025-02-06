@@ -19,15 +19,24 @@ jobs:
           python-version: 3.12
 
       - name: Run unit tests for the file builder module
-        uses: quantco/pytest-action@v2
-        with:
-          report-title: Unit-Test Report for the file builder module
-          custom-pytest:
-            uv run pytest
+        run: |
+          uv run pytest --html=file_builder_report.html --junitxml=file_builder_pytest.xml --cov=trustpoint trustpoint/core/tests/file_builder/ | tee file_builder_pytest-coverage.txt
 
       - name: Run unit tests for the serializer module
-        uses: quantco/pytest-action@v2
+        run: |
+          uv run pytest --html=serializer_report.html --junitxml=serializer_pytest.xml --cov=trustpoint trustpoint/core/tests/serializer/ | tee serializer_pytest-coverage.txt
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
         with:
-          report-title: Unit-Test Report for the serializer module
-          custom-pytest:
-            uv run pytest
+          multiple-files: |
+            Core Serializer Test, serializer_pytest-coverage.txt, serializer_pytest.xml
+            Core File Builder Test, file_builder_pytest-coverage.txt, file_builder_pytest.xml
+
+      - name: Upload html reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: html-reports
+          path: |
+            file_builder_report.html
+            serializer_report.html
