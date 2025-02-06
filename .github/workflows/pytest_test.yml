@@ -1,0 +1,22 @@
+name: Pytest Test
+
+on: [ push ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: 3.12
+
+      - name: Run unit tests for the core module
+        uses: pavelzw/pytest-action@v2
+        with:
+          report-title: Core Test Report
+          custom-pytest: uv run pytest
