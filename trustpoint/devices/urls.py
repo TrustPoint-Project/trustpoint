@@ -17,8 +17,8 @@ urlpatterns = [
         name='manual_issue_domain_credential'),
     path('browser/', views.DeviceOnboardingBrowserLoginView.as_view(), name='browser_login'),
     path('browser/credential-download/<int:pk>/',
-        views.DeviceBrowserCredentialDownloadView.as_view(),
-        name='browser_domain_credential_download'),
+         views.DeviceBrowserCredentialDownloadView.as_view(),
+         name='browser_domain_credential_download'),
     path(
         'credential-download/browser/<int:pk>/',
         views.DeviceBrowserOnboardingOTPView.as_view(),
@@ -62,5 +62,12 @@ urlpatterns = [
         'onboarding/<int:pk>/trustpoint-client/cancel/',
         views.TrustpointClientCancelOnboardingProcessView.as_view(),
         name='trustpoint_client_cancel_onboarding_process'
-    )
+    ),
+    path('onboard-status/',
+         views.DeviceOnboardStatusView.as_view(),
+         name='device_onboard_status'
+         ),
+    path('onboarded/<int:pk>/',
+         views.DeviceOnboardRedirectView.as_view(),
+         name='device_onboard_redirect'),
 ]

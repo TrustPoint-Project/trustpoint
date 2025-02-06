@@ -169,6 +169,7 @@ class IssueTlsServerCredentialForm(forms.Form):
         if not (ipv4_addresses or ipv6_addresses or domain_names):
             err_msg = _('At least one SAN entry is required.')
             raise forms.ValidationError(err_msg)
+        return cleaned_data
 
 
 class BrowserLoginForm(forms.Form):

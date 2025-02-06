@@ -166,14 +166,14 @@ class CertificateModel(LoggerMixin, models.Model):
         max_length=256,
         editable=False,
         choices=PublicKeyEcCurveOidChoices,
-        default=NamedCurve.NONE.dotted_string)
+        default=None)
 
     # Subject Public Key Info - Curve Name if ECC, None otherwise
     spki_ec_curve = models.CharField(
         verbose_name=_('Public Key Curve (ECC)'),
         max_length=256,
         editable=False,
-        default=NamedCurve.NONE.name)
+        default=None)
 
     # ---------------------------------------------------- Raw Data ----------------------------------------------------
 
