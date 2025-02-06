@@ -44,6 +44,8 @@ dev = [
     "pre-commit>=4.1.0",
     "pytest-html>=4.1.1",
     "behave-html-pretty-formatter>=1.12.3",
+    "pytest-md>=0.2.0",
+    "pytest-emoji>=0.2.0",
 ]
 
 [build-system]
