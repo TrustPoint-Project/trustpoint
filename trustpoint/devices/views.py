@@ -13,11 +13,11 @@ from core.oid import PublicKeyInfo
 from django.contrib import messages
 from django.db.models import Q
 from django.forms import BaseModelForm
-from django.http import FileResponse, Http404, HttpResponse
+from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
-from django.views.generic.base import RedirectView
+from django.views.generic.base import RedirectView, View
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormView
 
@@ -805,3 +805,56 @@ class TrustpointClientCancelOnboardingProcessView(
 
         messages.success(request, f'Onboarding process for device {device.unique_name} cancelled.')
         return redirect('devices:devices', permanent=False)
+
+class DeviceOnboardStatusView(TpLoginRequiredMixin, View):
+    """
+    A view to check if a device is already onboarded.
+    This view returns a JSON response with the onboard status.
+    """
+
+    def get(self, request, *args, **kwargs):
+        device_id = request.GET.get('device_id')
+        if not device_id:
+            return JsonResponse({'error': 'Missing device id'}, status=400)
+
+        try:
+            device = DeviceModel.objects.get(pk=device_id)
+        except DeviceModel.DoesNotExist:
+            return JsonResponse({'error': 'Device not found'}, status=404)
+
+        is_onboarded = device.onboarding_status == DeviceModel.OnboardingStatus.ONBOARDED.value
+
+        return JsonResponse({'onboarded': is_onboarded})
+
+
+class DeviceOnboardRedirectView(TpLoginRequiredMixin, RedirectView):
+    """Redirects to the certificate lifecycle management summary view if the device is onboarded,
+    adding a success message.
+    """
+    permanent = False
+
+    def get(self, request, *args, **kwargs):
+        """Fetch the device by pk and add a success message if onboarded, or an info message otherwise.
+
+        Args:
+            request: The HTTP request.
+            *args: Positional arguments.
+            **kwargs: Expects 'pk' for the device ID.
+
+        Returns:
+            A redirect response to the appropriate view.
+        """
+        device_id = kwargs.get('pk')
+        try:
+            device = DeviceModel.objects.get(pk=device_id)
+        except DeviceModel.DoesNotExist:
+            messages.error(request, f"Device with ID {device_id} not found.")
+            return redirect('devices:devices')
+
+        if device.onboarding_status == DeviceModel.OnboardingStatus.ONBOARDED.value:
+            messages.success(request, f"Device {device.unique_name} successfully onboarded.")
+        else:
+            messages.info(request, f"Device {device.unique_name} is not onboarded yet.")
+
+        url = str(reverse('devices:certificate_lifecycle_management', kwargs={'pk': device.id}))
+        return redirect(url)
