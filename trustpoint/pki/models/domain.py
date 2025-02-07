@@ -39,6 +39,32 @@ class DomainModel(models.Model):
         related_name='domains',
     )
 
+    auto_create_new_device = models.BooleanField(
+        _('Auto-create New Device'),
+        default=False,
+        help_text=_(
+            "Automatically create a new device if no device with the same serial number exists in the database."
+        )
+    )
+
+    allow_hmac_registration = models.BooleanField(
+        _('Allow HMAC Registration'),
+        default=False,
+        help_text=_("Allow registration of new devices using an HMAC.")
+    )
+
+    allow_idevid_registration = models.BooleanField(
+        _('Allow IDevID Registration'),
+        default=False,
+        help_text=_("Allow registration of a new device using the IDevID of the Device.")
+    )
+
+    allow_app_certs_without_domain = models.BooleanField(
+        _('Allow Application Certificates without Domain Credential'),
+        default=False,
+        help_text=_("Allow issuance of application certificates without a domain credential.")
+    )
+
     def __repr(self) -> str:
         return f'DomainModel(unique_name={self.unique_name})'
 
@@ -50,3 +76,5 @@ class DomainModel(models.Model):
                 Human-readable representation of the EndpointProfile model instance.
         """
         return self.unique_name
+
+

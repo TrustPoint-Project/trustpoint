@@ -99,19 +99,40 @@ class DomainConfigView(DomainContextMixin, TpLoginRequiredMixin, DomainDevIdRegi
             'rest': domain.rest_protocol if hasattr(domain, 'rest_protocol') else None
         }
 
+        context['registration_options'] = {
+            'auto_create_new_device': domain.auto_create_new_device,
+            'allow_hmac_registration': domain.allow_hmac_registration,
+            'allow_idevid_registration': domain.allow_idevid_registration,
+            'allow_app_certs_without_domain': domain.allow_app_certs_without_domain,
+        }
+
+        context['registration_help_texts'] = {
+            'auto_create_new_device': domain._meta.get_field('auto_create_new_device').help_text,
+            'allow_hmac_registration': domain._meta.get_field('allow_hmac_registration').help_text,
+            'allow_idevid_registration': domain._meta.get_field('allow_idevid_registration').help_text,
+            'allow_app_certs_without_domain': domain._meta.get_field('allow_app_certs_without_domain').help_text,
+        }
+
         return context
 
     def post(self, request, *args, **kwargs):
         domain = self.get_object()
 
-        active_protocols = request.POST.getlist('protocols')
+        # active_protocols = request.POST.getlist('protocols')
+        #
+        # for protocol in PkiProtocol:
+        #     protocol_name = protocol.value
+        #     protocol_object = domain.get_protocol_object(protocol_name)
+        #     if protocol_object is not None:
+        #         protocol_object.status = protocol_name in active_protocols
+        #         protocol_object.save()
 
-        for protocol in PkiProtocol:
-            protocol_name = protocol.value
-            protocol_object = domain.get_protocol_object(protocol_name)
-            if protocol_object is not None:
-                protocol_object.status = protocol_name in active_protocols
-                protocol_object.save()
+        domain.auto_create_new_device = 'auto_create_new_device' in request.POST
+        domain.allow_hmac_registration = 'allow_hmac_registration' in request.POST
+        domain.allow_idevid_registration = 'allow_idevid_registration' in request.POST
+        domain.allow_app_certs_without_domain = 'allow_app_certs_without_domain' in request.POST
+
+        domain.save()
 
         messages.success(request, _("Settings updated successfully."))
         return HttpResponseRedirect(self.success_url)
