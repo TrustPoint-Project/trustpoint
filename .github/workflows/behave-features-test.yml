@@ -21,14 +21,9 @@ jobs:
       with:
         python-version: 3.12
 
-#    - name: Run database migrations
-#      run: |
-#        echo "y" | uv run python trustpoint/manage.py reset_db
-#        uv run python trustpoint/manage.py collectstatic --noinput
-
     - name: Run Behave Tests and Generate HTML Report
       run: |
-        uv run behave trustpoint/manage.py trustpoint/features/ --no-capture \
+        uv run behave trustpoint/manage.py features/ --no-capture \
         -f behave_html_pretty_formatter:PrettyHTMLFormatter \
         -D behave.formatter.html-pretty.title_string="TrustPoint Test Report" \
         -o behave-report.html || true
