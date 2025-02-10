@@ -19,7 +19,6 @@ from django.http import FileResponse, Http404, HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.html import format_html
-from django.utils.safestring import SafeString
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
 from django.views.generic.base import RedirectView, View
@@ -44,12 +43,14 @@ from devices.models import (
     TrustpointClientOnboardingProcessModel,
 )
 from devices.revocation import DeviceCredentialRevocation
+from trustpoint.settings import UIConfig
 from trustpoint.views.base import ListInDetailView, SortableTableMixin, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
     from typing import Any, ClassVar
 
     from django.http.request import HttpRequest
+    from django.utils.safestring import SafeString
 
 
 class DevicesRedirectView(TpLoginRequiredMixin, RedirectView):
@@ -106,10 +107,11 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SortableTableMix
     model = DeviceModel
     template_name = 'devices/devices.html'  # Template file
     context_object_name = 'devices'
-    paginate_by = 5  # Number of items per page
+    paginate_by = UIConfig.paginate_by
     default_sort_param = 'unique_name'
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: dict[str, Any]) -> dict[str, Any]:
+        """Add the context data for the view and render additional table fields."""
         context = super().get_context_data(**kwargs)
 
         for device in context['page_obj']:
@@ -140,7 +142,7 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SortableTableMix
                 return format_html(
                     f'<a href="onboarding/{record.pk}/manual/issue-domain-credential/" class="btn btn-primary tp-table-btn w-100">Start Onboarding</a>'
                 )
-            elif record.onboarding_protocol == DeviceModel.OnboardingProtocol.TP_CLIENT:
+            if record.onboarding_protocol == DeviceModel.OnboardingProtocol.TP_CLIENT:
                 onboarding_process_model = TrustpointClientOnboardingProcessModel.objects.filter(device=record.pk)
                 if onboarding_process_model.exists():
                     return format_html(
@@ -148,10 +150,11 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SortableTableMix
                         f'<br>'
                         f'<a href="onboarding/{record.pk}/trustpoint-client/cancel/" class="btn btn-danger tp-table-btn w-100">Cancel Onboarding</a>',
                     )
-                else:
-                    return format_html(
-                        f'<a href="onboarding/{record.pk}/trustpoint-client/" class="btn btn-primary tp-table-btn w-100">Start Onboarding</a>',
-                    )
+
+                return format_html(
+                    f'<a href="onboarding/{record.pk}/trustpoint-client/" class="btn btn-primary tp-table-btn w-100">'
+                    'Start Onboarding</a>',
+                )
         return ''
 
     def _render_clm(self, record: DeviceModel) -> SafeString | str:
@@ -161,7 +164,8 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SortableTableMix
         )
         if record.onboarding_status in valid_onboarding_statuses:
             return format_html(
-                f'<a href="certificate-lifecycle-management/{record.pk}/" class="btn btn-primary tp-table-btn w-100">Manage Issued Certificates</a>',
+                f'<a href="certificate-lifecycle-management/{record.pk}/" class="btn btn-primary tp-table-btn w-100">'
+                f'Manage Issued Certificates</a>',
             )
         return ''
 
@@ -634,12 +638,12 @@ class DeviceCertificateLifecycleManagementSummaryView(
         context['domain_credentials'] = domain_credentials
         context['application_credentials'] = application_credentials
 
-        paginator_domain = Paginator(domain_credentials, 5)
+        paginator_domain = Paginator(domain_credentials, UIConfig.paginate_by)
         page_number_domain = self.request.GET.get('page', 1)
         context['domain_credentials'] = paginator_domain.get_page(page_number_domain)
         context['is_paginated'] = paginator_domain.num_pages > 1
 
-        paginator_application = Paginator(application_credentials, 5)
+        paginator_application = Paginator(application_credentials, UIConfig.paginate_by)
         page_number_application = self.request.GET.get('page-a', 1)
         context['application_credentials'] = paginator_application.get_page(page_number_application)
         context['is_paginated_a'] = paginator_application.num_pages > 1

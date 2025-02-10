@@ -20,7 +20,7 @@ from django.http import Http404, HttpResponse
 from django.views.generic import TemplateView, View
 from django.views.generic.list import ListView
 
-from trustpoint.settings import LOG_DIR_PATH, DATE_FORMAT
+from trustpoint.settings import LOG_DIR_PATH, DATE_FORMAT, UIConfig
 
 from trustpoint.views.base import TpLoginRequiredMixin, LoggerMixin, SortableTableMixin
 
@@ -61,7 +61,7 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
     template_name = 'settings/logging/logging_files.html'
     context_object_name = 'log_files'
     default_sort_param = 'filename'
-    paginate_by = 5
+    paginate_by = UIConfig.paginate_by
 
     @staticmethod
     @LoggerMixin.log_exceptions

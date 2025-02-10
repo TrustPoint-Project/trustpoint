@@ -13,6 +13,7 @@ from django.views.generic.detail import DetailView  # type: ignore[import-untype
 from django.views.generic.list import ListView  # type: ignore[import-untyped]
 
 from pki.models import CertificateModel
+from trustpoint.settings import UIConfig
 from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, SortableTableMixin, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
@@ -38,7 +39,7 @@ class CertificateTableView(CertificatesContextMixin, TpLoginRequiredMixin, Sorta
     model = CertificateModel
     template_name = 'pki/certificates/certificates.html'  # Template file
     context_object_name = 'certificates'
-    paginate_by = 5  # Number of items per page
+    paginate_by = UIConfig.paginate_by
     default_sort_param = 'common_name'
 
 class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
