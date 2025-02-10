@@ -12,8 +12,6 @@ jobs:
 
       - name: Install the latest version of uv
         uses: astral-sh/setup-uv@v5
-        with:
-          python-version: 3.12
 
       - name: Run unit tests for the core module
         uses: pavelzw/pytest-action@v2
