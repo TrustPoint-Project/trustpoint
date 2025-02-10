@@ -24,7 +24,6 @@ jobs:
     - name: Run database migrations
       run: |
         echo "y" | uv run trustpoint/manage.py reset_db
-#        uv run python trustpoint/manage.py collectstatic --noinput
 
     - name: Run Behave Tests and Generate HTML Report
       run: |
