@@ -23,7 +23,7 @@ jobs:
 
     - name: Run Behave Tests and Generate HTML Report
       run: |
-        uv run behave trustpoint/manage.py features/ --no-capture \
+        uv run trustpoint/manage.py behave features/ --no-capture \
         -f behave_html_pretty_formatter:PrettyHTMLFormatter \
         -D behave.formatter.html-pretty.title_string="TrustPoint Test Report" \
         -o behave-report.html || true
