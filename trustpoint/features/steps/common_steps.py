@@ -18,6 +18,8 @@ def step_admin_logged_in(context):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
+    print('(print) Hello World!')
+    logging.info('(log) Hello World!')
     raise StepNotImplementedError('Step not implemented: Admin login to TPC_Web.')
 
 
