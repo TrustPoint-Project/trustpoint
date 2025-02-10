@@ -2,7 +2,7 @@
 
 from django.db import models
 from django.utils.translation import gettext_lazy as _
-from util.keys import AutoGenPkiKeyAlgorithm
+from pki.util.keys import AutoGenPkiKeyAlgorithm
 
 
 class SecurityConfig(models.Model):

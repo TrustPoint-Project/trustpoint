@@ -5,27 +5,20 @@ from typing import TYPE_CHECKING
 
 from django.contrib import messages
 from django.core.exceptions import ObjectDoesNotExist
-from django.http import JsonResponse
 from django.urls import reverse_lazy
-from django.utils.decorators import method_decorator
 from django.utils.translation import gettext as _
-from django.views import View
-from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import FormView
-from util.keys import SignatureSuite
+from pki.util.keys import AutoGenPkiKeyAlgorithm
 
 from settings.forms import SecurityConfigForm
 from settings.models import SecurityConfig
-from settings.security import manager
-from settings.security.features import AutoGenPkiFeature, SecurityFeature
-from settings.security.manager import SecurityManager
+from settings.security.features import AutoGenPkiFeature
 from settings.security.mixins import SecurityLevelMixin
 from trustpoint.views.base import (
     TpLoginRequiredMixin,
 )
 
 if TYPE_CHECKING:
-    from django.http import HttpRequest, HttpResponse
     from typing import Any
 
 
@@ -65,12 +58,11 @@ class SecurityView(TpLoginRequiredMixin, SecurityLevelMixin, FormView):
 
             if old_auto != new_auto and new_auto:
                 # autogen PKI got enabled
-                key_alg = SignatureSuite(form.cleaned_data.get('auto_gen_pki_key_algorithm'))
+                key_alg = AutoGenPkiKeyAlgorithm(form.cleaned_data.get('auto_gen_pki_key_algorithm'))
                 self.sec.enable_feature(AutoGenPkiFeature, key_alg)
 
             elif old_auto != new_auto and not new_auto:
                 # autogen PKI got disabled
-                print('I WANT TO BREAK FREE')
                 AutoGenPkiFeature.disable()
 
         messages.success(self.request, _('Your changes were saved successfully.'))

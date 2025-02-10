@@ -5,10 +5,9 @@ from __future__ import annotations
 import logging
 import threading
 
-from util.keys import KeyGenerator, SignatureSuite
-
 from pki.management.commands.base_commands import CertificateCreationCommandMixin
 from pki.models import DomainModel, IssuingCaModel
+from pki.util.keys import AutoGenPkiKeyAlgorithm, KeyGenerator
 
 log = logging.getLogger('tp.pki')
 UNIQUE_NAME = 'AutoGenPKI_Issuing_CA'
@@ -28,7 +27,7 @@ class AutoGenPki:
             return None
 
     @classmethod
-    def enable_auto_gen_pki(cls, key_alg: SignatureSuite) -> None:
+    def enable_auto_gen_pki(cls, key_alg: AutoGenPkiKeyAlgorithm) -> None:
         """Enables the auto-generated PKI."""
         with cls._lock:
             log.warning('! Enabling auto-generated PKI !')
@@ -37,17 +36,18 @@ class AutoGenPki:
 
             if not auto_pki:
                 root_ca_name = f'AutoGenPKI_Root_CA_{key_alg}'
-                key_gen = KeyGenerator(key_alg)
+                public_key_info = key_alg.to_public_key_info()
+                key_gen = KeyGenerator()
 
                 # Create root and issuing CAs
                 root_1, root_1_key = CertificateCreationCommandMixin.create_root_ca(
-                    root_ca_name, private_key=key_gen.generate_key()
+                    root_ca_name, private_key=key_gen.generate_private_key_for_public_key_info(public_key_info)
                 )
                 issuing_1, issuing_1_key = CertificateCreationCommandMixin.create_issuing_ca(
                     root_1_key,
                     root_ca_name,
                     UNIQUE_NAME,
-                    private_key=key_gen.generate_key(),
+                    private_key=key_gen.generate_private_key_for_public_key_info(public_key_info),
                     validity_days=50,
                 )
 

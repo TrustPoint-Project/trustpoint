@@ -1,15 +1,20 @@
 """Forms definition"""
 from __future__ import annotations
 
+from typing import TYPE_CHECKING
+
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Fieldset, Layout
 from django import forms
 from django.utils.translation import gettext_lazy as _
-from util.keys import AutoGenPkiKeyAlgorithm
+from pki.util.keys import AutoGenPkiKeyAlgorithm
 
 from settings.models import SecurityConfig
 from settings.security import manager
 from settings.security.features import AutoGenPkiFeature, SecurityFeature
+
+if TYPE_CHECKING:
+    from typing import ClassVar
 
 
 class SecurityConfigForm(forms.ModelForm):
@@ -86,7 +91,7 @@ class SecurityConfigForm(forms.ModelForm):
 
     class Meta:
         model = SecurityConfig
-        fields = [
+        fields : ClassVar[list] = [
             'security_mode',
             'auto_gen_pki',
             'auto_gen_pki_key_algorithm'

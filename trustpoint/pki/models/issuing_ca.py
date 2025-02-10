@@ -2,10 +2,9 @@
 from __future__ import annotations
 
 import datetime
+from typing import TYPE_CHECKING
 
-from core.serializer import CredentialSerializer
 from core.validator.field import UniqueNameValidator
-from core.x509 import CryptographyUtils
 from cryptography import x509
 from cryptography.hazmat.primitives import serialization
 from django.db import models
@@ -13,8 +12,11 @@ from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
 from pki.models.credential import CredentialModel
+from pki.util.keys import CryptographyUtils
 from trustpoint.views.base import LoggerMixin
 
+if TYPE_CHECKING:
+    from core.serializer import CredentialSerializer
 
 class IssuingCaModel(LoggerMixin, models.Model):
     """Issuing CA Model.
