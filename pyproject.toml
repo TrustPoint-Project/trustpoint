@@ -96,11 +96,10 @@ python_files = 'test_*.py'
 
 [tool.behave]
 default_format = "behave_html_pretty_formatter:PrettyHTMLFormatter"
-log_capture = true
 outfiles = ['behave-report.html']
 paths = ['trustpoint/features/']
 
 [tool.behave.userdata]
 "behave.formatter.html-pretty.title_string" = "TrustPoint Test Report"
-
+"behave.formatter.html-pretty.show_summary" = 'false'
 
