@@ -28,10 +28,6 @@ jobs:
     - name: Run Behave Tests and Generate HTML Report
       run: |
         uv run trustpoint/manage.py behave || true
-#             trustpoint/features/ --no-capture \
-#        -f behave_html_pretty_formatter:PrettyHTMLFormatter \
-#        -D behave.formatter.html-pretty.title_string="TrustPoint Test Report" \
-#        -o behave-report.html
 
     - name: Upload HTML Report
       uses: actions/upload-artifact@v4
