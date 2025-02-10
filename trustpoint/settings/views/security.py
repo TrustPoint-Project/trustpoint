@@ -12,9 +12,6 @@ from django.utils.translation import gettext as _
 from django.views import View
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic.edit import FormView
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.views import APIView
 from util.keys import SignatureSuite
 
 from settings.forms import SecurityConfigForm
@@ -29,6 +26,7 @@ from trustpoint.views.base import (
 
 if TYPE_CHECKING:
     from django.http import HttpRequest, HttpResponse
+    from typing import Any
 
 
 
@@ -78,11 +76,11 @@ class SecurityView(TpLoginRequiredMixin, SecurityLevelMixin, FormView):
         messages.success(self.request, _('Your changes were saved successfully.'))
         return super().form_valid(form)
 
-    def form_invalid(self, form):
+    def form_invalid(self, form: SecurityConfigForm):
         messages.error(self.request, _('Error saving the configuration'))
         return self.render_to_response(self.get_context_data(form=form))
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: dict) -> dict[str, Any]:
         context = super().get_context_data(**kwargs)
         context['page_category'] = 'settings'
         context['page_name'] = 'security'

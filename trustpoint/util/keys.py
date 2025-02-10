@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING
 
-from core.oid import EllipticCurveOid, PublicKeyAlgorithmOid
+#from core.oid import EllipticCurveOid, PublicKeyAlgorithmOid
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec, padding, rsa

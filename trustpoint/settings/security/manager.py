@@ -1,7 +1,7 @@
+"""Logic managing the security level setting of the Trustpoint."""
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
-from django.core.cache import cache
 
 from settings.models import SecurityConfig
 from settings.security import LEVEL_FEATURE_MAP
@@ -17,7 +17,10 @@ class SecurityManager(LoggerMixin):
     def is_feature_allowed(self,
                            feature: SecurityFeature,
                            target_level: None | str = None) -> bool:
-        """Checks if the specified feature is allowed under the given security level.If 'target_level' is None, the current security level is used"""
+        """Checks if the specified feature is allowed under the given security level.
+
+        If 'target_level' is None, the current security level is used.
+        """
         sec_level = self.get_security_level() if target_level is None else target_level
 
         if sec_level == SecurityConfig.SecurityModeChoices.DEV:
@@ -38,6 +41,7 @@ class SecurityManager(LoggerMixin):
 
     @classmethod
     def get_features_to_disable(cls, sec_level: str) -> list[SecurityFeature]:
+        """Returns a list of features that must be disabled at the given security level."""
         dev_features = LEVEL_FEATURE_MAP[SecurityConfig.SecurityModeChoices.DEV]
         level_choice = SecurityConfig.SecurityModeChoices(sec_level)
         valid_features = LEVEL_FEATURE_MAP.get(level_choice, set())
@@ -50,14 +54,15 @@ class SecurityManager(LoggerMixin):
         """Disables any feature that is not allowed by the new security mode."""
         features_to_disable = self.get_features_to_disable(new_sec_mode)
         for feature in features_to_disable:
-            log_msg = f"Disabling Feature: {feature}"
+            log_msg = f'Disabling Feature: {feature}'
             self.logger.info(log_msg)
             feature.disable()
 
     def get_security_config_model(self) -> SecurityConfig:
+        """Returns the model holding the security settings."""
         return SecurityConfig.objects.first()
 
-    def enable_feature(self, feature: SecurityFeature, *args):
+    def enable_feature(self, feature: SecurityFeature, *args: dict) -> None:
         """Enables a feature if it is allowed at the current security level."""
         if self.is_feature_allowed(feature):
             feature.enable(*args)
