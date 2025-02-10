@@ -11,7 +11,7 @@ from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
 
 
-from core.oid import SignatureAlgorithmOid, PublicKeyAlgorithmOid, EllipticCurveOid, CertificateExtensionOid, NameOid
+from core.oid import PublicKeyAlgorithmOid, CertificateExtensionOid, NameOid, AlgorithmIdentifier, NamedCurve
 from core.serializer import CertificateSerializer, PublicKeySerializer
 from trustpoint.views.base import LoggerMixin
 
@@ -54,14 +54,14 @@ class CertificateModel(LoggerMixin, models.Model):
         V3 = 2, _('Version 3')
 
     SignatureAlgorithmOidChoices = models.TextChoices(
-        'SIGNATURE_ALGORITHM_OID', [(x.dotted_string, x.dotted_string) for x in SignatureAlgorithmOid])
+        'SIGNATURE_ALGORITHM_OID', [(x.dotted_string, x.dotted_string) for x in AlgorithmIdentifier])
 
     PublicKeyAlgorithmOidChoices = models.TextChoices(
         'PUBLIC_KEY_ALGORITHM_OID', [(x.dotted_string, x.dotted_string) for x in PublicKeyAlgorithmOid]
     )
 
     PublicKeyEcCurveOidChoices = models.TextChoices(
-        'PUBLIC_KEY_EC_CURVE_OID', [(x.dotted_string, x.dotted_string) for x in EllipticCurveOid]
+        'PUBLIC_KEY_EC_CURVE_OID', [(x.dotted_string, x.dotted_string) for x in NamedCurve]
     )
 
     # ----------------------------------------------- Custom Data Fields -----------------------------------------------
@@ -94,14 +94,14 @@ class CertificateModel(LoggerMixin, models.Model):
     # Name of the signature algorithm
     @property
     def signature_algorithm(self) -> str:
-        return SignatureAlgorithmOid(self.signature_algorithm_oid).verbose_name
+        return AlgorithmIdentifier(self.signature_algorithm_oid).verbose_name
 
     signature_algorithm.fget.short_description = _('Signature Algorithm')
 
     # Padding scheme if RSA is used, otherwise None
     @property
     def signature_algorithm_padding_scheme(self) -> str:
-        return SignatureAlgorithmOid(self.signature_algorithm_oid).padding_scheme.verbose_name
+        return AlgorithmIdentifier(self.signature_algorithm_oid).padding_scheme.verbose_name
 
     signature_algorithm_padding_scheme.fget.short_description = _('Signature Padding Scheme')
 
@@ -166,14 +166,14 @@ class CertificateModel(LoggerMixin, models.Model):
         max_length=256,
         editable=False,
         choices=PublicKeyEcCurveOidChoices,
-        default=EllipticCurveOid.NONE.dotted_string)
+        default=None)
 
     # Subject Public Key Info - Curve Name if ECC, None otherwise
     spki_ec_curve = models.CharField(
         verbose_name=_('Public Key Curve (ECC)'),
         max_length=256,
         editable=False,
-        default=EllipticCurveOid.NONE.name)
+        default=None)
 
     # ---------------------------------------------------- Raw Data ----------------------------------------------------
 
@@ -301,13 +301,13 @@ class CertificateModel(LoggerMixin, models.Model):
         return issuer
 
     @staticmethod
-    def _get_spki_info(cert: x509.Certificate) -> tuple[PublicKeyAlgorithmOid, int, EllipticCurveOid]:
+    def _get_spki_info(cert: x509.Certificate) -> tuple[PublicKeyAlgorithmOid, int, NamedCurve]:
         if isinstance(cert.public_key(), rsa.RSAPublicKey):
             spki_algorithm_oid = PublicKeyAlgorithmOid.RSA
-            spki_ec_curve_oid = EllipticCurveOid.NONE
+            spki_ec_curve_oid = NamedCurve.NONE
         elif isinstance(cert.public_key(), ec.EllipticCurvePublicKey):
             spki_algorithm_oid = PublicKeyAlgorithmOid.ECC
-            spki_ec_curve_oid = EllipticCurveOid[cert.public_key().curve.name.upper()]
+            spki_ec_curve_oid = NamedCurve[cert.public_key().curve.name.upper()]
         else:
             raise ValueError('Subject Public Key Info contains an unsupported key type.')
 
@@ -480,3 +480,57 @@ class CertificateModel(LoggerMixin, models.Model):
             trustpoint.pki.models.Certificate: The certificate object that has just been saved.
         """
         return cls._save_certificate(certificate=certificate)
+
+    def set_status(self, status: CertificateStatus) -> None:
+        """Set the certificate status."""
+        self.certificate_status = status
+        self._save()
+
+
+class RevokedCertificateModel(models.Model):
+    """Model to store revoked certificates."""
+
+    class ReasonCode(models.TextChoices):
+        """Revocation reasons per RFC 5280"""
+        UNSPECIFIED = 'unspecified', _('Unspecified')
+        KEY_COMPROMISE = 'keyCompromise', _('Key Compromise')
+        CA_COMPROMISE = 'cACompromise', _('CA Compromise')
+        AFFILIATION_CHANGED = 'affiliationChanged', _('Affiliation Changed')
+        SUPERSEDED = 'superseded', _('Superseded')
+        CESSATION = 'cessationOfOperation', _('Cessation of Operation')
+        CERTIFICATE_HOLD = 'certificateHold', _('Certificate Hold')
+        PRIVILEGE_WITHDRAWN = 'privilegeWithdrawn', _('Privilege Withdrawn')
+        AA_COMPROMISE = 'aACompromise', _('AA Compromise')
+        REMOVE_FROM_CRL = 'removeFromCRL', _('Remove from CRL')
+
+    certificate = models.OneToOneField(
+        CertificateModel,
+        verbose_name=_('Certificate'),
+        related_name='revoked_certificate',
+        on_delete=models.CASCADE
+    )
+
+    revoked_at = models.DateTimeField(verbose_name=_('Revocation Date'), auto_now_add=True)
+
+    revocation_reason = models.TextField(
+        verbose_name=_('Revocation Reason'),
+        choices=ReasonCode.choices,
+        default=ReasonCode.UNSPECIFIED
+    )
+
+    ca = models.ForeignKey(
+        'IssuingCaModel',
+        verbose_name=_('Issuing CA'),
+        related_name='revoked_certificates',
+        on_delete=models.SET_NULL,  # Safe to remove CRL if CA is removed?
+        null=True
+    )
+
+    def __str__(self) -> str:
+        return f'RevokedCertificate({self.certificate.common_name})'
+
+    @transaction.atomic
+    def save(self, *args, **kwargs) -> None:
+        """Save the revoked certificate and set the certificate status to 'REVOKED'."""
+        self.certificate.set_status(CertificateModel.CertificateStatus.REVOKED)
+        super().save(*args, **kwargs)

@@ -1,4 +1,5 @@
 """This module contains a Django management command to generate setup related notifications."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -13,9 +14,10 @@ class Command(BaseCommand):
 
     This command initializes and sets up necessary notifications for Trustpoint.
     """
+
     help = 'Set up initial Trustpoint notifications.'
 
-    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None: # noqa: ARG002
+    def handle(self, *args: Any, **kwargs: dict[str, Any]) -> None:  # noqa: ARG002
         """Entrypoint for the command."""
         self._trustpoint_setup_notifications()
         self.stdout.write(self.style.SUCCESS('Successfully set up Trustpoint notifications.'))

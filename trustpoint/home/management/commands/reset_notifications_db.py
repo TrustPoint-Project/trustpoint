@@ -1,4 +1,5 @@
 """This module defines a Django management command to delete all existing notifications."""
+
 from django.core.management.base import BaseCommand  # type: ignore[import-untyped]
 from home.models import NotificationModel
 
@@ -11,6 +12,7 @@ class Command(BaseCommand):
     If running inside a Docker container, the command deletes notifications
     without user confirmation. Otherwise, it prompts the user for confirmation.
     """
+
     help = 'Deletes all existing notifications'
 
     def handle(self, **options) -> None:

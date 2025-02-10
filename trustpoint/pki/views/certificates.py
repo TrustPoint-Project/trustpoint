@@ -11,11 +11,9 @@ from django.urls import reverse_lazy  # type: ignore[import-untyped]
 from django.views.generic.base import RedirectView  # type: ignore[import-untyped]
 from django.views.generic.detail import DetailView  # type: ignore[import-untyped]
 from django.views.generic.list import ListView  # type: ignore[import-untyped]
-from django_tables2 import SingleTableView  # type: ignore[import-untyped]
 
 from pki.models import CertificateModel
-from pki.tables import CertificateTable
-from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, TpLoginRequiredMixin
+from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, SortableTableMixin, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -34,14 +32,14 @@ class CertificatesContextMixin:
     extra_context: ClassVar = {'page_category': 'pki', 'page_name': 'certificates'}
 
 
-class CertificateTableView(CertificatesContextMixin, TpLoginRequiredMixin, SingleTableView):
-    """Certificates Table View."""
+class CertificateTableView(CertificatesContextMixin, TpLoginRequiredMixin, SortableTableMixin, ListView):
+    """Certificate Table View."""
 
     model = CertificateModel
-    table_class = CertificateTable
-    template_name = 'pki/certificates/certificates.html'
+    template_name = 'pki/certificates/certificates.html'  # Template file
     context_object_name = 'certificates'
-
+    paginate_by = 5  # Number of items per page
+    default_sort_param = 'common_name'
 
 class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
     """The certificate detail view."""
@@ -51,7 +49,6 @@ class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, Deta
     ignore_url = reverse_lazy('pki:certificates')
     template_name = 'pki/certificates/details.html'
     context_object_name = 'cert'
-
 
 class CertificateDownloadView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):
     """View for downloading a single certificate."""

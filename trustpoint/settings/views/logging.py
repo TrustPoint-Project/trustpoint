@@ -1,31 +1,48 @@
 """Django Views"""
 from __future__ import annotations
 
-import datetime
-import io
-import os
-import re
-import tarfile
-import zipfile
-from pathlib import Path
 from typing import TYPE_CHECKING
 
-from django.http import Http404, HttpResponse
+from django.db.models import QuerySet
 from django.shortcuts import render
 from django.utils.translation import gettext as _
-from django.views.generic import TemplateView, View
 from django.views.generic.base import RedirectView
-from django_tables2 import SingleTableView
 
-from trustpoint.settings import DATE_FORMAT, LOG_DIR_PATH
-from trustpoint.views.base import LoggerMixin, TpLoginRequiredMixin
+import os
+from pathlib import Path
+import datetime
+import io
+import re
+import zipfile
+import tarfile
 
-from ..tables import LogFileTable
+from django.http import Http404, HttpResponse
+from django.views.generic import TemplateView, View
+from django.views.generic.list import ListView
+
+from trustpoint.settings import LOG_DIR_PATH, DATE_FORMAT
+
+from trustpoint.views.base import TpLoginRequiredMixin, LoggerMixin, SortableTableMixin
 
 if TYPE_CHECKING:
+    from django.http import HttpRequest, HttpResponse
     from typing import Any
 
-    from django.http import HttpRequest, HttpResponse
+
+class IndexView(RedirectView):
+    """Index view"""
+    permanent = True
+    pattern_name = 'settings:language'
+
+
+def language(request: HttpRequest) -> HttpResponse:
+    """Handle language Configuration
+
+    Returns: HTTPResponse
+    """
+    context = {'page_category': 'settings', 'page_name': 'language'}
+    return render(request, 'settings/language.html', context=context)
+
 # ------------------------------------------------------- Logging ------------------------------------------------------
 
 
@@ -38,11 +55,13 @@ class LoggingContextMixin:
     }
 
 
-class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMixin, SingleTableView):
+class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMixin, SortableTableMixin, ListView):
     http_method_names = ['get']
 
     template_name = 'settings/logging/logging_files.html'
-    table_class = LogFileTable
+    context_object_name = 'log_files'
+    default_sort_param = 'filename'
+    paginate_by = 5
 
     @staticmethod
     @LoggerMixin.log_exceptions
@@ -92,8 +111,8 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
         all_files = os.listdir(LOG_DIR_PATH)
         valid_log_files = [f for f in all_files if re.compile(r'^trustpoint\.log(?:\.\d+)?$').match(f)]
 
-        return [self._get_log_file_data(log_file_name) for log_file_name in valid_log_files]
-
+        self.queryset = [self._get_log_file_data(log_file_name) for log_file_name in valid_log_files]
+        return super().get_queryset()
 
 class LoggingFilesDetailsView(LoggerMixin, LoggingContextMixin, TpLoginRequiredMixin, TemplateView):
     http_method_names = ['get']
@@ -178,5 +197,3 @@ class LoggingFilesDownloadMultipleView(LoggerMixin, LoggingContextMixin, TpLogin
         response = HttpResponse(bytes_io.getvalue(), content_type='application/gzip')
         response['Content-Disposition'] = f'attachment; filename=trustpoint-logs.tar.gz'
         return response
-
-

@@ -5,8 +5,8 @@ from typing import Union
 
 from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 
-PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey, ed448.Ed448PublicKey, ed25519.Ed25519PublicKey]
-PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey, ed448.Ed448PrivateKey, ed25519.Ed25519PrivateKey]
+PublicKey = Union[rsa.RSAPublicKey, ec.EllipticCurvePublicKey]
+PrivateKey = Union[rsa.RSAPrivateKey, ec.EllipticCurvePrivateKey]
 
 
 class Serializer(abc.ABC):

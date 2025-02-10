@@ -39,11 +39,11 @@ Welcome to Trustpoint's documentation!
    :caption: 📍 Indices and tables :
 
    glossary
+   issued_certificates
 
 .. toctree::
    :maxdepth: 2
    :caption: 🧑‍💻 Development :
 
    poetry_environment
-
-
+   test_plan/test_plan

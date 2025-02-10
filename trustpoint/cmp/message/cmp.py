@@ -9,7 +9,7 @@ import datetime
 
 from pyasn1.type import univ
 from pyasn1_modules import rfc2459, rfc4210, rfc2511
-from cmp.message.protection_alg import ProtectionAlgorithmParser, ProtectionAlgorithm, PasswordBasedMacProtection
+from cmp.message.protection_alg import ProtectionAlgorithmParser, ProtectionAlgorithm
 from core.serializer import PublicKeySerializer
 from cryptography.hazmat.primitives import serialization
 from .oid import CmpMessageType
@@ -27,6 +27,18 @@ from pyasn1.type.char import (
 from pyasn1.type.univ import BitString, OctetString
 from pyasn1.type.useful import UTCTime, GeneralizedTime
 import enum
+
+
+class CmpInvalidMessageHeaderError(Exception):
+    """Exception raised when the header of the message contains invalid data."""
+
+    def __init__(self, message: str = 'Invalid cmp message header found.') -> None:
+        """Initialize the CmpHeaderInvalidError exception with a message.
+
+        Args:
+            message: The error message.
+        """
+        self.message = message
 
 
 class PkiMessageType(enum.Enum):
@@ -222,6 +234,9 @@ class NameParser:
             return x509.Name(crypto_rdns_sequence)
 
 
+class CmpInitializationRequestMessage:
+
+    _pyasn1_message: rfc4210.PKIMessage
 
 
 class PkiMessageHeader:
@@ -229,8 +244,8 @@ class PkiMessageHeader:
     _pki_header: rfc4210.PKIHeader
 
     _pvno: int
-    _sender_kid: None | int = None
     _sender: x509.GeneralName
+    _sender_kid: None | int = None
     _recipient_kid: None | int = None
     _recipient: x509.GeneralName
     _message_time: None | datetime.datetime = None
@@ -249,14 +264,13 @@ class PkiMessageHeader:
             raise ValueError('This CMP implementation only supports CMPv2 and CMPv3.')
         self._pvno = pvno
 
-        # TODO(AlexHx8472): Currently not supporting any KID fields
         # unclear of the structure -> RFC 2459 : Octetstring,
         # however RFC4210 and RFC9483 also allow common name / directory name
 
         # CMP lightweight requires this for mac and signature based protection, however the OSSL CMP client leaves
         # it blank for mac based protection.
-        if not self.pki_header['senderKID'].isValue:
-            self._sender_kid = None
+        if self.pki_header['senderKID'].isValue:
+            self._sender_kid = int(self.pki_header['senderKID'].asOctets().decode())
 
         # recipKID will be ignored. Not mentioned by cmp lightweight
         # Generally only supplied if DH keys are used
@@ -295,7 +309,7 @@ class PkiMessageHeader:
             raise ValueError(
                 'CMP message header contains the generalInfo field. '
                 'This is not yet supported by this CMP implementation.')
-        
+
     def __str__(self) -> str:
         transaction_id = self.transaction_id.hex() if isinstance(self.transaction_id, bytes) else self.transaction_id
         sender_nonce = self.sender_nonce.hex() if isinstance(self.sender_nonce, bytes) else self.sender_nonce
@@ -385,8 +399,6 @@ class PkiMessageProtection:
             self._protection_value = self.pki_protection.asOctets()
         else:
             self._protection_value = None
-
-
 
     @property
     def pki_protection(self) -> rfc4210.PKIProtection:
@@ -541,8 +553,6 @@ class PkiRequestTemplate:
         if not cert_template.isValue:
             raise ValueError('Certificate template missing.')
         self._cert_template = cert_template
-
-        print(self.public_key)
 
     @property
     def subject(self) -> None | x509.Name:

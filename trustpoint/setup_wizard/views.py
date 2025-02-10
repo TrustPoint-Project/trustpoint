@@ -6,15 +6,15 @@ import subprocess
 from pathlib import Path
 from typing import Any, ClassVar
 
-from django.contrib import messages  # type: ignore[import-untyped]
-from django.contrib.auth.forms import UserCreationForm  # type: ignore[import-untyped]
-from django.contrib.auth.models import User  # type: ignore[import-untyped]
-from django.core.management import call_command  # type: ignore[import-untyped]
-from django.http import HttpRequest, HttpResponse, HttpResponseRedirect  # type: ignore[import-untyped]
-from django.shortcuts import redirect  # type: ignore[import-untyped]
-from django.urls import reverse_lazy  # type: ignore[import-untyped]
-from django.views.generic import FormView, TemplateView, View  # type: ignore[import-untyped]
-from pki.models import CertificateChainOrderModel, CertificateModel, CredentialModel
+from django.contrib import messages
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.models import User
+from django.core.management import call_command
+from django.http import HttpRequest, HttpResponse, HttpResponseRedirect, HttpResponseBase
+from django.shortcuts import redirect
+from django.urls import reverse_lazy
+from django.views.generic import FormView, TemplateView, View
+from pki.models import CertificateModel, CredentialModel
 from pki.models.truststore import TrustpointTlsServerCredentialModel
 
 from setup_wizard import SetupWizardState
@@ -134,7 +134,7 @@ class SetupWizardInitialView(TemplateView):
         template_name (str): Path to the template used for rendering the initial page.
     """
 
-    http_method_names: ClassVar[list[str]] = ['get']
+    http_method_names = ('get',)
     template_name = 'setup_wizard/initial.html'
 
     def get(self, *args: Any, **kwargs: Any) -> HttpResponse:
@@ -177,12 +177,12 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
         success_url (str): The URL to redirect to upon successful credential generation.
     """
 
-    http_method_names: ClassVar[list[str]] = ['get', 'post']
+    http_method_names = ('get', 'post')
     template_name = 'setup_wizard/generate_tls_server_credential.html'
     form_class = StartupWizardTlsCertificateForm
     success_url = reverse_lazy('setup_wizard:tls_server_credential_apply')
 
-    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         """Override the dispatch method to enforce wizard state validation.
 
         This method ensures that the user is redirected appropriately based on the
@@ -207,7 +207,7 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
 
         return super().dispatch(request, *args, **kwargs)
 
-    def form_valid(self, form: UserCreationForm) -> HttpResponseRedirect:
+    def form_valid(self, form: UserCreationForm) -> HttpResponse:
         """Handle a valid form submission for TLS Server Credential generation.
 
         Args:
@@ -233,26 +233,10 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
             )
             tls_server_credential = generator.generate_tls_credential()
 
-            # Save the main certificate
-            credential_certificate = tls_server_credential.credential_certificate.as_crypto()
-            certificate_model = CertificateModel.save_certificate(credential_certificate)
-
-            # Save the private key
-            private_key_pem = tls_server_credential.credential_private_key.as_pkcs8_pem().decode()
-
-            # Save the credential and chain
-            credential_model = CredentialModel.objects.create(
-                credential_type=CredentialModel.CredentialTypeChoice.TRUSTPOINT_TLS_SERVER,
-                certificate=certificate_model,
-                private_key=private_key_pem,
+            _ = CredentialModel.save_credential_serializer(
+                credential_serializer=tls_server_credential,
+                credential_type=CredentialModel.CredentialTypeChoice.TRUSTPOINT_TLS_SERVER
             )
-
-            # Save the certificate chain
-            for order, additional_certificate in enumerate(tls_server_credential.additional_certificates.as_crypto()):
-                chain_certificate_model = CertificateModel.save_certificate(additional_certificate)
-                CertificateChainOrderModel.objects.create(
-                    credential=credential_model, certificate=chain_certificate_model, order=order
-                )
 
             execute_shell_script(SCRIPT_WIZARD_INITIAL)
 
@@ -284,7 +268,7 @@ class SetupWizardGenerateTlsServerCredentialView(FormView):
 class SetupWizardImportTlsServerCredentialView(View):
     """View for handling the import of TLS Server Credentials."""
 
-    http_method_names: ClassVar[list[str]] = ['get']
+    http_method_names = ('get',)
 
     def get(self) -> HttpResponse:
         """Handle GET requests for importing TLS Server Credentials.
@@ -317,7 +301,7 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
         success_url (str): The URL to redirect to upon successful form submission.
     """
 
-    http_method_names: ClassVar[list[str]] = ['get', 'post']
+    http_method_names = ('get', 'post')
     form_class = EmptyForm
     template_name = 'setup_wizard/tls_server_credential_apply.html'
     success_url = reverse_lazy('setup_wizard:demo_data')
@@ -365,7 +349,7 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
 
         return super().post(*args, **kwargs)
 
-    def form_valid(self, form: UserCreationForm) -> HttpResponseRedirect:
+    def form_valid(self, form: UserCreationForm) -> HttpResponse:
         """Process a valid form submission during the TLS Server Credential application.
 
         Args:
@@ -469,6 +453,9 @@ class SetupWizardTlsServerCredentialApplyView(FormView):
             elif file_format == 'pkcs7_pem':
                 trust_store = serializer.as_pkcs7_pem().decode()
                 content_type = 'application/x-pem-file'
+            else:
+                err_msg = f'Unknown file_format requested: {file_format}'
+                raise ValueError(err_msg)
         except Exception as e:  # noqa: BLE001
             messages.add_message(self.request, messages.ERROR, f'Error generating {file_format} trust store: {e}')
             return redirect('setup_wizard:tls_server_credential_apply', permanent=False)
@@ -500,7 +487,7 @@ class SetupWizardTlsServerCredentialApplyCancelView(View):
         http_method_names (list[str]): Allowed HTTP methods for this view.
     """
 
-    http_method_names: ClassVar[list[str]] = ['get']
+    http_method_names = ('get',)
 
     def get(self, request: HttpRequest) -> HttpResponse:
         """Handle GET requests for the TLS Server Credential import view.
@@ -571,12 +558,12 @@ class SetupWizardDemoDataView(FormView):
     successful completion.
     """
 
-    http_method_names: ClassVar[list[str]] = ['get', 'post']
+    http_method_names = ('get', 'post')
     form_class = EmptyForm
     template_name = 'setup_wizard/demo_data.html'
     success_url = reverse_lazy('setup_wizard:create_super_user')
 
-    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         """Handle request dispatch and wizard state validation."""
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
@@ -587,7 +574,7 @@ class SetupWizardDemoDataView(FormView):
 
         return super().dispatch(request, *args, **kwargs)
 
-    def form_valid(self, form: UserCreationForm) -> HttpResponseRedirect:
+    def form_valid(self, form: UserCreationForm) -> HttpResponse:
         """Handle form submission for demo data setup."""
         try:
             if 'without-demo-data' in self.request.POST:
@@ -669,12 +656,12 @@ class SetupWizardCreateSuperUserView(FormView):
     and transitions the wizard state upon successful completion.
     """
 
-    http_method_names: ClassVar[list[str]] = ['get', 'post']
+    http_method_names = ('get', 'post')
     form_class = UserCreationForm
     template_name = 'setup_wizard/create_super_user.html'
     success_url = reverse_lazy('users:login')
 
-    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+    def dispatch(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponseBase:
         """Handle request dispatch and wizard state validation."""
         if not DOCKER_CONTAINER:
             return redirect('users:login', permanent=False)
@@ -685,7 +672,7 @@ class SetupWizardCreateSuperUserView(FormView):
 
         return super().dispatch(request, *args, **kwargs)
 
-    def form_valid(self, form: UserCreationForm) -> HttpResponseRedirect:
+    def form_valid(self, form: UserCreationForm) -> HttpResponse:
         """Handle form submission for creating a superuser.
 
         Args:

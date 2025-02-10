@@ -9,18 +9,81 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
-import os
-from pathlib import Path
-from django.utils.translation import gettext_lazy as _
-from django.core.management.utils import get_random_secret_key
 import logging
+import os
+import socket
 import time
+from pathlib import Path
+
+import psycopg
+from django.core.management.utils import get_random_secret_key
+from django.utils.translation import gettext_lazy as _
+
+import django_stubs_ext
+
+# Monkeypatching Django, so stubs will work for all generics,
+# see: https://github.com/typeddjango/django-stubs
+django_stubs_ext.monkeypatch()
 
 DOCKER_CONTAINER = False
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Settings for postgreql database
+POSTGRESQL = True
+DATABASE_ENGINE = 'django.db.backends.postgresql'
+DATABASE_HOST = 'localhost'
+DATABASE_PORT = '5432'
+DATABASE_NAME = 'trustpoint_db'
+DATABASE_USER = 'admin'
+DATABASE_PASSWORD = 'testing321'  # noqa: S105
+
+def is_postgre_available() -> bool:
+    """Checks whether PostgreSQL is available and issues differentiated error messages.
+
+    Returns:
+        bool: True, if PostgreSQL is available and accessible.
+
+    Raises:
+        RuntimeError: If PostgreSQL is deactivated, not reachable or not accessible.
+    """
+    if not POSTGRESQL:
+        print('PostgreSQL is disabled. Set POSTGRESQL=True in settings.')
+        return False
+
+    host = os.environ.get('DATABASE_HOST', DATABASE_HOST)
+    port = int(os.environ.get('DATABASE_PORT', DATABASE_PORT))
+    user = os.environ.get('DATABASE_USER', DATABASE_USER)
+    password = os.environ.get('DATABASE_PASSWORD', DATABASE_PASSWORD)
+    db_name = os.environ.get('DATABASE_NAME', DATABASE_NAME)
+
+    try:
+        print(f'Trying to connect to {host}:{port}...')
+        with socket.create_connection((host, port), timeout=5):
+            print(f"Connection to {host}:{port} successful.")
+    except socket.error as e:
+        msg = f'PostgreSQL host {host} on port {port} is unreachable. Error: {e}'
+        print(msg)
+        return False
+
+    try:
+        print(f"Attempting database login with user '{user}'...")
+        conn = psycopg.connect(
+            dbname=db_name,
+            user=user,
+            password=password,
+            host=host,
+            port=port,
+        )
+        conn.close()
+        print('Database login successful.')
+    except psycopg.OperationalError as e:
+        msg = f'Failed to log in to PostgreSQL database "{db_name}" as user "{user}". Error: {e}'
+        print(msg)
+        return False
+
+    return True
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -28,7 +91,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 ADMIN_ENABLED = True if DEBUG else False
-DEVELOPMENT_ENV = False
+DEVELOPMENT_ENV = True
 
 # SECURITY WARNING: keep the secret key used in production secret!
 if DEBUG:
@@ -51,6 +114,8 @@ INSTALLED_APPS = [
     'home.apps.HomeConfig',
     'devices.apps.DevicesConfig',
     'pki.apps.PkiConfig',
+    'cmp.apps.CmpConfig',
+    'est.apps.EstConfig',
     'settings.apps.SettingsConfig',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -60,7 +125,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'crispy_bootstrap5',
-    'django_tables2'
+    'behave_django'
 ]
 
 if DEVELOPMENT_ENV:
@@ -101,15 +166,28 @@ WSGI_APPLICATION = 'trustpoint.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
-        'OPTIONS': {
-            'timeout': 20
+
+if is_postgre_available():
+    DATABASES = {
+        'default': {
+            'ENGINE': os.environ.get('DATABASE_ENGINE', DATABASE_ENGINE),
+            'NAME': os.environ.get('DATABASE_NAME', DATABASE_NAME),
+            'USER': os.environ.get('DATABASE_USER', DATABASE_USER),
+            'PASSWORD': os.environ.get('DATABASE_PASSWORD', DATABASE_PASSWORD),
+            'HOST': os.environ.get('DATABASE_HOST', DATABASE_HOST),
+            'PORT': os.environ.get('DATABASE_PORT', DATABASE_PORT),
         }
-    },
-}
+    }
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+            'OPTIONS': {
+                'timeout': 20
+            }
+        },
+    }
 
 
 # Password validation
@@ -171,10 +249,6 @@ CRISPY_ALLOWED_TEMPLATE_PACKS = 'bootstrap5'
 
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 
-# Default django-tables2 template
-DJANGO_TABLES2_TEMPLATE = 'django_tables2/bootstrap5.html'
-DJANGO_TABLES2_TABLE_ATTRS = {'class': 'table', 'td': {'class': 'v-middle'}}
-
 LOGIN_REDIRECT_URL = 'home:dashboard'
 LOGIN_URL = 'users:login'
 
@@ -227,3 +301,5 @@ LOGGING = {
         },
     },
 }
+
+TEST_RUNNER = "django_behave.runner.DjangoBehaveTestSuiteRunner"

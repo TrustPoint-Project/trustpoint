@@ -1,4 +1,4 @@
-.. _onboarding_link:
+.. _onboarding-mechanisms:
 
 Onboarding Mechanisms
 =====================
