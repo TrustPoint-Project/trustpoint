@@ -1,3 +1,5 @@
+import logging
+
 from behave import given, then
 from behave.exception import StepNotImplementedError
 
@@ -42,6 +44,8 @@ def step_error_message(context, error_message):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
+    print(error_message)
+    logging.info('Hello World!')
     raise StepNotImplementedError('Step not implemented: Error message check.')
 
 
