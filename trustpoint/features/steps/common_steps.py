@@ -1,5 +1,25 @@
+import logging
+
 from behave import given, then
 from behave.exception import StepNotImplementedError
+
+from django.test import Client
+
+HTTP_OK = 200
+
+@given('the TPC_Web application is running')
+def step_tpc_web_running(context):
+    """Verifies that the TPC_Web application is running.
+
+    This step checks that the TPC_Web application is running and accessible at the expected URL.
+
+    Raises:
+        StepNotImplementedError: This step is not yet implemented.
+    """
+    #context.response= context.test.client.get('/users/login/')
+    response = Client().get('/users/login/')
+    assert response.status_code == HTTP_OK
+    #raise StepNotImplementedError('Step not implemented: TPC_Web application running check.')
 
 
 @given('the admin user is logged into TPC_Web')
@@ -16,7 +36,16 @@ def step_admin_logged_in(context):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    raise StepNotImplementedError('Step not implemented: Admin login to TPC_Web.')
+    c = Client()
+    assert c.login(username="admin", password="testing321")
+
+    response = c.get('/pki/certificates/') # authenticated page
+    print(response.headers) # TODO: print doesn't work either
+    logging.warning('TODO: Logging does not yet work!')
+    assert response.status_code == HTTP_OK
+
+    context.authenticated_client = c
+
 
 
 @then('the system should display a confirmation message')
