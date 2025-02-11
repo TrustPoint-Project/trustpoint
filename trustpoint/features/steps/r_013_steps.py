@@ -3,7 +3,7 @@ import logging
 from behave import given, then, when
 from behave.api.pending_step import StepNotImplementedError, PendingStepError
 from devices.models import IssuedCredentialModel
-from devices.tests.conftest import mock_models
+from devices.tests.conftest import create_mock_models
 from django.http.response import HttpResponse
 
 HTTP_OK = 200
@@ -13,13 +13,13 @@ def step_impl(context, id: int):
     print('print test') # TODO: remove
     logging.warning('TODO: Logging test!')
     try:
-        models_dict = mock_models()
+        models_dict = create_mock_models()
         #try:
-        IssuedCredentialModel.objects.get(id=models_dict['issued_credential'].id)
+        context.issued_credential_model = IssuedCredentialModel.objects.get(id=models_dict['issued_credential'].id)
         #except IssuedCredentialModel.DoesNotExist as e:
         #    raise PendingStepError from e
     except Exception as e:
-        print(e)
+        assert False, f'Error: {e}'
     context.download_view_url = f'/devices/credential-download/browser/{id}/'
 
 

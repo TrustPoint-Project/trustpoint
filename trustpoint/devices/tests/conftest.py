@@ -9,8 +9,7 @@ def enable_db_access_for_all_tests(db):
     """Fixture to enable database access for all tests."""
     pass
 
-@pytest.fixture
-def mock_models() -> dict:
+def create_mock_models() -> dict:
     root_1, root_1_key = CertificateCreationCommandMixin.create_root_ca('Test Root CA')
     issuing_1, issuing_1_key = CertificateCreationCommandMixin.create_issuing_ca(
                                     root_1_key, 'Root CA', 'Issuing CA A')
@@ -51,3 +50,7 @@ def mock_models() -> dict:
         'issued_credential': mock_issued_credential,
         'remote_credential_download': mock_remote_credential_download
     }
+
+@pytest.fixture
+def mock_models() -> dict:
+    return create_mock_models()

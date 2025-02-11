@@ -53,17 +53,18 @@ def step_admin_logged_in(context: runner.Context) -> NoReturn:
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    scenario = context.formatter.current_scenario
-    step = scenario.current_step
-    msg = f'Step {step.name} started.'
-    logging.info(msg)
+    #scenario = context.formatter.current_scenario
+    #step = scenario.current_step
+    #msg = f'Step {step.name} started.'
+    #logging.info(msg)
 
     c = Client()
-    assert c.login(username="admin", password="testing321")
-
+    login_success = c.login(username='admin', password='testing321')  # noqa: S106
+    #print(response.headers)
     response = c.get('/pki/certificates/') # authenticated page
     print(response.headers) # TODO: print doesn't work either
     logging.warning('TODO: Logging does not yet work!')
+    assert login_success, 'Login unsuccessful'
     assert response.status_code == HTTP_OK
 
     context.authenticated_client = c
