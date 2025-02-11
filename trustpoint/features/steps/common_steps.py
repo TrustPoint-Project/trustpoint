@@ -10,8 +10,9 @@ from django.test import Client
 
 HTTP_OK = 200
 
+
 @given('the TPC_Web application is running')
-def step_tpc_web_running(context):
+def step_tpc_web_running(context) -> None:
     """Verifies that the TPC_Web application is running.
 
     This step checks that the TPC_Web application is running and accessible at the expected URL.
@@ -19,10 +20,10 @@ def step_tpc_web_running(context):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    #context.response= context.test.client.get('/users/login/')
+    # context.response= context.test.client.get('/users/login/')
     response = Client().get('/users/login/')
     assert response.status_code == HTTP_OK
-    #raise StepNotImplementedError('Step not implemented: TPC_Web application running check.')
+    # raise StepNotImplementedError('Step not implemented: TPC_Web application running check.')
 
 
 @step('Commentary')
@@ -53,26 +54,19 @@ def step_admin_logged_in(context: runner.Context) -> NoReturn:
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    #scenario = context.formatter.current_scenario
-    #step = scenario.current_step
-    #msg = f'Step {step.name} started.'
-    #logging.info(msg)
     try:
         User.objects.create_superuser(username='admin', password='testing321')  # noqa: S106
-
         c = Client()
         login_success = c.login(username='admin', password='testing321')  # noqa: S106
-        #print(response.headers)
-        response = c.get('/pki/certificates/') # authenticated page
-        print(response.headers) # TODO: print doesn't work either
-        logging.warning('TODO: Logging does not yet work!')
         assert login_success, 'Login unsuccessful'
-        assert response.status_code == HTTP_OK
-
         context.authenticated_client = c
-    except Exception as e:
-        assert False, f'Error: {e}'
 
+        response = c.get('/pki/certificates/')  # authenticated page
+        assert response.status_code == HTTP_OK, 'Could not get a HTTP_OK from visiting the certificates page.'
+
+    except Exception as e:  # noqa: BLE001
+        msg = f'Error: {e}'
+        raise AssertionError(msg)
 
 
 @then('the system should display a confirmation message')
@@ -115,7 +109,8 @@ def step_api_client_authenticated(context) -> NoReturn:
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    assert False, 'Expect Failing Step'
+    msg = 'Expect Failing Step'
+    raise AssertionError(msg)
     msg = 'Step not implemented: API client authentication.'
     raise StepNotImplementedError(msg)
 
