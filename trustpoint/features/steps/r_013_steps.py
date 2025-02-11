@@ -1,3 +1,5 @@
+import logging
+
 from behave import given, then, when
 from behave.api.pending_step import StepNotImplementedError, PendingStepError
 from devices.models import IssuedCredentialModel
@@ -6,8 +8,10 @@ from django.http.response import HttpResponse
 
 HTTP_OK = 200
 
-@given(u'an issued credential with ID {id} is successfully issued')
+@given('an issued credential with ID {id} is successfully issued')
 def step_impl(context, id: int):
+    print('print test') # TODO: remove
+    logging.warning('TODO: Logging test!')
     try:
         models_dict = mock_models()
         #try:
