@@ -20,12 +20,17 @@ def step_impl(context, id: int):
         #    raise PendingStepError from e
     except Exception as e:
         assert False, f'Error: {e}'
-    context.download_view_url = f'/devices/credential-download/browser/{id}/'
+    context.download_view_url = f'/devices/credential-download/browser/{context.issued_credential_model.id}/'
 
 
 @when(u'the admin visits the associated "Download on Device browser" view')
 def step_impl(context):
-    raise StepNotImplementedError(u'STEP: When the admin visits the associated "Download on Device browser" view')
+    print('URL test:', context.download_view_url)
+    response = context.authenticated_client.get(context.download_view_url)
+    assert response.status_code == HTTP_OK, 'Non-OK response code'
+
+    print(type(response.content))
+    assert 'id="otp-display"' in response.content.decode()
 
 
 @then(u'a one-time password is displayed which can be used to download the credential from a remote device')

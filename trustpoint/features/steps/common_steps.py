@@ -5,7 +5,7 @@ from typing import NoReturn
 
 from behave import given, runner, step, then
 from behave.exception import StepNotImplementedError
-
+from django.contrib.auth.models import User
 from django.test import Client
 
 HTTP_OK = 200
@@ -57,17 +57,21 @@ def step_admin_logged_in(context: runner.Context) -> NoReturn:
     #step = scenario.current_step
     #msg = f'Step {step.name} started.'
     #logging.info(msg)
+    try:
+        User.objects.create_superuser(username='admin', password='testing321')  # noqa: S106
 
-    c = Client()
-    login_success = c.login(username='admin', password='testing321')  # noqa: S106
-    #print(response.headers)
-    response = c.get('/pki/certificates/') # authenticated page
-    print(response.headers) # TODO: print doesn't work either
-    logging.warning('TODO: Logging does not yet work!')
-    assert login_success, 'Login unsuccessful'
-    assert response.status_code == HTTP_OK
+        c = Client()
+        login_success = c.login(username='admin', password='testing321')  # noqa: S106
+        #print(response.headers)
+        response = c.get('/pki/certificates/') # authenticated page
+        print(response.headers) # TODO: print doesn't work either
+        logging.warning('TODO: Logging does not yet work!')
+        assert login_success, 'Login unsuccessful'
+        assert response.status_code == HTTP_OK
 
-    context.authenticated_client = c
+        context.authenticated_client = c
+    except Exception as e:
+        assert False, f'Error: {e}'
 
 
 
