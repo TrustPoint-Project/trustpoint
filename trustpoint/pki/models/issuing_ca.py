@@ -155,3 +155,10 @@ class IssuingCaModel(LoggerMixin, models.Model):
             return False
 
         return True
+
+
+class RootCaModel(IssuingCaModel):
+    """Root CA model.
+
+    This CA is not shown in the table of available Issuing CAs, but stored to be able to generate CRLs.
+    """

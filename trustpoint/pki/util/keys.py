@@ -7,9 +7,11 @@ from typing import TYPE_CHECKING
 from core.oid import KeyPairGenerator, NamedCurve, PublicKeyAlgorithmOid, PublicKeyInfo
 from core.serializer import PrivateKeySerializer
 from cryptography.hazmat.primitives import hashes
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
 from django.db import models
 
 if TYPE_CHECKING:
+    from core.x509 import PrivateKey
     from pki.models.credential import CredentialModel
     from pki.models.domain import DomainModel
 
@@ -89,4 +91,25 @@ class CryptographyUtils:
         if isinstance(hash_algorithm, hashes.SHA384):
             return hashes.SHA384()
         err_msg = 'Cannot build the domain credential, unknown hash algorithm found.'
+        raise ValueError(err_msg)
+
+    @staticmethod
+    def get_hash_algorithm_for_private_key(private_key: PrivateKey) -> hashes.HashAlgorithm:
+        """Gets a suitable hash algorithm for a given private key.
+
+        Args:
+            private_key: The private key to consider.
+
+        Returns:
+            The hash algorithm to use.
+        """
+        if isinstance(private_key, rsa.RSAPrivateKey):
+            return hashes.SHA256()
+        if isinstance(private_key, ec.EllipticCurvePrivateKey):
+            if private_key.curve == ec.SECP256R1:
+                return hashes.SHA256()
+            if private_key.curve == ec.SECP384R1:
+                return hashes.SHA384()
+
+        err_msg = 'A suitable hash algorithm is not yet specified for the given private key type.'
         raise ValueError(err_msg)

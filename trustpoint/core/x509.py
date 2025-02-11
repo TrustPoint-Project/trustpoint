@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from cryptography.exceptions import InvalidSignature
+from cryptography.hazmat.primitives.asymmetric import ec, rsa
 
 from core.serializer import (
     CertificateCollectionSerializer,
@@ -14,10 +15,10 @@ from core.serializer import (
 
 if TYPE_CHECKING:
     from cryptography import x509
-    from cryptography.hazmat.primitives.asymmetric import ec, rsa
 
-    PrivateKey = ec.EllipticCurvePrivateKey | rsa.RSAPrivateKey
-    PublicKey = ec.EllipticCurvePublicKey | rsa.RSAPublicKey
+
+PrivateKey = ec.EllipticCurvePrivateKey | rsa.RSAPrivateKey
+PublicKey = ec.EllipticCurvePublicKey | rsa.RSAPublicKey
 
 
 class CertificateChainExtractor:
