@@ -5,6 +5,7 @@ from behave.api.pending_step import StepNotImplementedError
 @given('the TPC_Web application is running')
 def step_given_tpc_web_running(context):
     """Ensures the TPC_Web application is running."""
+    assert False, 'Expect Failing Step'
     raise StepNotImplementedError('STEP: Given the TPC_Web application is running')
 
 
