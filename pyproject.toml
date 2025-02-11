@@ -94,12 +94,3 @@ django_settings_module = "trustpoint.settings"
 DJANGO_SETTINGS_MODULE = 'trustpoint.settings'
 python_files = 'test_*.py'
 
-[tool.behave]
-default_format = "behave_html_pretty_formatter:PrettyHTMLFormatter"
-outfiles = ['behave-report.html']
-paths = ['trustpoint/features/']
-
-[tool.behave.userdata]
-"behave.formatter.html-pretty.title_string" = "TrustPoint Test Report"
-"behave.formatter.html-pretty.show_summary" = 'false'
-
