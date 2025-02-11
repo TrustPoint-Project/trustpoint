@@ -2,13 +2,6 @@ from behave import given, then, when
 from behave.api.pending_step import StepNotImplementedError
 
 
-@given('the TPC_Web application is running')
-def step_given_tpc_web_running(context):
-    """Ensures the TPC_Web application is running."""
-    assert False, 'Expect Failing Step'
-    raise StepNotImplementedError('STEP: Given the TPC_Web application is running')
-
-
 @given('the user is an NTEU with username {username} and password {password}')
 def step_given_nteu_credentials(context, username, password):
     """Sets up NTEU login credentials."""

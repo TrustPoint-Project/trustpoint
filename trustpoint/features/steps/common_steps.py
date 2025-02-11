@@ -6,6 +6,24 @@ from typing import NoReturn
 from behave import given, runner, step, then
 from behave.exception import StepNotImplementedError
 
+from django.test import Client
+
+HTTP_OK = 200
+
+@given('the TPC_Web application is running')
+def step_tpc_web_running(context):
+    """Verifies that the TPC_Web application is running.
+
+    This step checks that the TPC_Web application is running and accessible at the expected URL.
+
+    Raises:
+        StepNotImplementedError: This step is not yet implemented.
+    """
+    #context.response= context.test.client.get('/users/login/')
+    response = Client().get('/users/login/')
+    assert response.status_code == HTTP_OK
+    #raise StepNotImplementedError('Step not implemented: TPC_Web application running check.')
+
 
 @step('Commentary')
 def commentary_step(context: runner.Context) -> None:
@@ -40,8 +58,16 @@ def step_admin_logged_in(context: runner.Context) -> NoReturn:
     msg = f'Step {step.name} started.'
     logging.info(msg)
 
-    msg = 'Step not implemented: Admin login to TPC_Web.'
-    raise StepNotImplementedError(msg)
+    c = Client()
+    assert c.login(username="admin", password="testing321")
+
+    response = c.get('/pki/certificates/') # authenticated page
+    print(response.headers) # TODO: print doesn't work either
+    logging.warning('TODO: Logging does not yet work!')
+    assert response.status_code == HTTP_OK
+
+    context.authenticated_client = c
+
 
 
 @then('the system should display a confirmation message')
@@ -84,6 +110,7 @@ def step_api_client_authenticated(context) -> NoReturn:
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
+    assert False, 'Expect Failing Step'
     msg = 'Step not implemented: API client authentication.'
     raise StepNotImplementedError(msg)
 
