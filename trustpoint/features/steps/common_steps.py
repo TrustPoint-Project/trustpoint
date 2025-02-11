@@ -1,11 +1,28 @@
-import logging
+"""File for steps which are used more often across multiple feature files."""
 
-from behave import given, then
+import logging
+from typing import NoReturn
+
+from behave import given, runner, step, then
 from behave.exception import StepNotImplementedError
 
 
+@step('Commentary')
+def commentary_step(context: runner.Context) -> None:
+    """This method is used to provide the annotation "@Commentary" inside the feature files if additional text is needed to explain the step.
+
+    Args:
+        context: the context
+    """
+    # Get the correct step to override.
+    scenario = context.formatter.current_scenario
+    step = scenario.current_step
+    # Override the step, this will prevent the decorator to be generated and only the text will show.
+    step.commentary_override = True
+
+
 @given('the admin user is logged into TPC_Web')
-def step_admin_logged_in(context):
+def step_admin_logged_in(context: runner.Context) -> NoReturn:
     """Logs the admin user into the TPC_Web interface.
 
     This step sets up the initial state for all scenarios, ensuring the admin is authenticated and on the TPC_Web dashboard.
@@ -18,13 +35,17 @@ def step_admin_logged_in(context):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    print('(print) Hello World!')
-    logging.info('(log) Hello World!')
-    raise StepNotImplementedError('Step not implemented: Admin login to TPC_Web.')
+    scenario = context.formatter.current_scenario
+    step = scenario.current_step
+    msg = f'Step {step.name} started.'
+    logging.info(msg)
+
+    msg = 'Step not implemented: Admin login to TPC_Web.'
+    raise StepNotImplementedError(msg)
 
 
 @then('the system should display a confirmation message')
-def step_confirmation_message(context):
+def step_confirmation_message(context) -> NoReturn:
     """Verifies that the system displays a success message after an action.
 
     The confirmation message is expected to include the word "Success" or similar,
@@ -33,11 +54,12 @@ def step_confirmation_message(context):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    raise StepNotImplementedError('Step not implemented: Confirmation message check.')
+    msg = 'Step not implemented: Confirmation message check.'
+    raise StepNotImplementedError(msg)
 
 
 @then('the system should display an error message stating {error_message}')
-def step_error_message(context, error_message):
+def step_error_message(context, error_message) -> NoReturn:
     """Verifies that the system displays a specific error message.
 
     Args:
@@ -46,13 +68,13 @@ def step_error_message(context, error_message):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    print(error_message)
     logging.info('Hello World!')
-    raise StepNotImplementedError('Step not implemented: Error message check.')
+    msg = 'Step not implemented: Error message check.'
+    raise StepNotImplementedError(msg)
 
 
 @given('an API client is authenticated')
-def step_api_client_authenticated(context):
+def step_api_client_authenticated(context) -> NoReturn:
     """Authenticates the API client to enable authorized interactions with the REST API.
 
     Steps:
@@ -62,11 +84,12 @@ def step_api_client_authenticated(context):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    raise StepNotImplementedError('Step not implemented: API client authentication.')
+    msg = 'Step not implemented: API client authentication.'
+    raise StepNotImplementedError(msg)
 
 
 @then('the API response should have a status code of {status_code}')
-def step_verify_status_code(context, status_code):
+def step_verify_status_code(context, status_code) -> NoReturn:
     """Verifies the API response status code.
 
     Args:
@@ -75,11 +98,12 @@ def step_verify_status_code(context, status_code):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    raise StepNotImplementedError('Step not implemented: Verify API response status code.')
+    msg = 'Step not implemented: Verify API response status code.'
+    raise StepNotImplementedError(msg)
 
 
 @then('the response payload should include an error message stating {error_message}')
-def step_verify_error_message(context, error_message):
+def step_verify_error_message(context, error_message) -> NoReturn:
     """Verifies the response payload includes the specified error message.
 
     Args:
@@ -88,4 +112,5 @@ def step_verify_error_message(context, error_message):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    raise StepNotImplementedError('Step not implemented: Verify error message in response payload.')
+    msg = 'Step not implemented: Verify error message in response payload.'
+    raise StepNotImplementedError(msg)
