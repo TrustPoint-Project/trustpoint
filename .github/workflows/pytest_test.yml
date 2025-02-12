@@ -15,9 +15,34 @@ jobs:
         with:
           python-version: 3.12
 
-      - name: Run unit tests for the core module
-        uses: pavelzw/pytest-action@v2
+#      - name: Run unit tests for the core module
+#        uses: pavelzw/pytest-action@v2
+#        with:
+#          report-title: Core Test Report
+#          custom-pytest: uv run pytest
+#          custom-arguments: 'trustpoint/core/tests/'
+
+      - name: Run tests
+        run: uv run pytest trustpoint/core/tests/ --junit-xml=test-results.xml
+
+      - name: Surface failing tests
+        if: always()
+        uses: pmeier/pytest-results-action@main
         with:
-          report-title: Core Test Report
-          custom-pytest: uv run pytest
-          custom-arguments: 'trustpoint/core/tests/'
+          # A list of JUnit XML files, directories containing the former, and wildcard
+          # patterns to process.
+          # See @actions/glob for supported patterns.
+          path: test-results.xml
+
+          # (Optional) Add a summary of the results at the top of the report
+          summary: true
+
+          # (Optional) Select which results should be included in the report.
+          # Follows the same syntax as `pytest -r`
+          display-options: fEX
+
+          # (Optional) Fail the workflow if no JUnit XML was found.
+          fail-on-empty: true
+
+          # (Optional) Title of the test results section in the workflow summary
+          title: Core Unit Test Results
