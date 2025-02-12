@@ -1490,6 +1490,7 @@ dependencies = [
     { name = "pyasn1" },
     { name = "pyasn1-modules" },
     { name = "ruff" },
+    { name = "sphinxcontrib-plantuml" },
     { name = "zeroconf" },
 ]
 
@@ -1536,6 +1537,7 @@ requires-dist = [
     { name = "pyasn1", specifier = ">=0.6.1,<0.7" },
     { name = "pyasn1-modules", specifier = ">=0.4.1,<0.5" },
     { name = "ruff", specifier = ">=0.7.4" },
+    { name = "sphinxcontrib-plantuml", specifier = ">=0.30" },
     { name = "zeroconf", specifier = ">=0.144.1,<0.145" },
 ]
 
