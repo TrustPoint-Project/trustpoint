@@ -46,7 +46,7 @@ def test_certificate_serializer_init_with_serializer(pem_encoded_cert):
     """Test that CertificateSerializer correctly initializes from another CertificateSerializer instance.
 
     Args:
-        pem_encoded_cert (bytes): A valid PEM-encoded certificate for testing.
+        pem_encoded_cert (bytes): A valid PEM encoded certificate for testing.
     """
     existing = CertificateSerializer(pem_encoded_cert)
     new_serializer = CertificateSerializer(existing)
