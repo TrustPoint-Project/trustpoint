@@ -69,3 +69,7 @@ For a quick setup and first impression use our [Quickstart Setup Guide](https://
 We are also providing the Trustpoint as a docker-container. Please see [Trustpoint on Dockerhub] or follow the 
 instructions in our [Trustpoint Documentation](https://trustpoint.readthedocs.io/en/latest/) to build the
 container yourself.
+
+## Tests
+
+![Core Unittest Status](https://github.com/TrustPoint-Project/trustpoint/blob/test-reports/.github/workflows/core-test.yml/badge.svg)
