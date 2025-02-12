@@ -91,4 +91,3 @@ django_settings_module = "trustpoint.settings"
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = 'trustpoint.settings'
 python_files = 'test_*.py'
-
