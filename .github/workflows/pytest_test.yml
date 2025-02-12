@@ -27,7 +27,7 @@ jobs:
           uv run pytest \
           --junitxml=pytest-report.xml \
           --cov=trustpoint \
-          --cov-report=xml \
+          --cov-report=html \
           --cov-report=term-missing \
           --html=pytest-report.html \
           --self-contained-html \
@@ -38,9 +38,9 @@ jobs:
         with:
           name: pytest-reports
           path: |
-            coverage.xml
+            coverage.html
             pytest-report.html
-            pytest-coverage.log
+            pytest-output.log
 
 #      - name: Surface failing tests
 #        if: always()
