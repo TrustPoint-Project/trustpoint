@@ -16,7 +16,7 @@ from .extension import (
     IssuerAlternativeNameExtension,
     SubjectAlternativeNameExtension
 )
-from .certificate import CertificateModel
+from .certificate import CertificateModel, RevokedCertificateModel
 from .issuing_ca import IssuingCaModel
 from .credential import CredentialAlreadyExistsError, CredentialModel, CertificateChainOrderModel
 from .domain import DomainModel

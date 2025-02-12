@@ -11,6 +11,7 @@ from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
 
+from pki.models.certificate import CertificateModel, RevokedCertificateModel
 from pki.models.credential import CredentialModel
 from pki.util.keys import CryptographyUtils
 from trustpoint.views.base import LoggerMixin
@@ -30,11 +31,12 @@ class IssuingCaModel(LoggerMixin, models.Model):
         Depending on the type other fields may be set, e.g. a credential will only be available for local
         Issuing CAs.
         """
-        AUTOGEN = 0, _('Auto-Generated')
-        LOCAL_UNPROTECTED = 1, _('Local-Unprotected')
-        LOCAL_PKCS11 = 2, _('Local-PKCS11')
-        REMOTE_EST = 3, _('Remote-EST')
-        REMOTE_CMP = 4, _('Remote-CMP')
+        AUTOGEN_ROOT = 0, _('Auto-Generated Root')
+        AUTOGEN = 1, _('Auto-Generated')
+        LOCAL_UNPROTECTED = 2, _('Local-Unprotected')
+        LOCAL_PKCS11 = 3, _('Local-PKCS11')
+        REMOTE_EST = 4, _('Remote-EST')
+        REMOTE_CMP = 5, _('Remote-CMP')
 
     unique_name = models.CharField(
         verbose_name=_('Issuing CA Name'),
@@ -86,6 +88,7 @@ class IssuingCaModel(LoggerMixin, models.Model):
             IssuingCaModel: The newly created Issuing CA model.
         """
         issuing_ca_types = (
+            cls.IssuingCaTypeChoice.AUTOGEN_ROOT,
             cls.IssuingCaTypeChoice.AUTOGEN,
             cls.IssuingCaTypeChoice.LOCAL_UNPROTECTED,
             cls.IssuingCaTypeChoice.LOCAL_PKCS11
@@ -156,9 +159,22 @@ class IssuingCaModel(LoggerMixin, models.Model):
 
         return True
 
+    def revoke_all_issued_certificates(self, reason: str = RevokedCertificateModel.ReasonCode.UNSPECIFIED) -> None:
+        """Revokes all certificates issued by this CA."""
+        # Note: This goes through all active certificates and checks issuance by this CA based on cert.issuer_public_bytes == ca.subject_public_bytes
+        # WARNING: This means that it may inadvertently revoke certificates that were issued by a different CA with the same subject name
+        ca_subject_public_bytes = self.credential.certificate.subject_public_bytes
+        qs = CertificateModel.objects.filter(certificate_status=CertificateModel.CertificateStatus.OK) \
+                                     .filter(issuer_public_bytes=ca_subject_public_bytes) \
+                                     .exclude(subject_public_bytes=ca_subject_public_bytes) # do not self-revoke self-signed CA certificate
 
-class RootCaModel(IssuingCaModel):
-    """Root CA model.
+        for cert in qs:
+            RevokedCertificateModel.objects.create(
+                certificate=cert,
+                revocation_reason=reason,
+                ca=self
+            )
+            cert.set_status(CertificateModel.CertificateStatus.REVOKED)
 
-    This CA is not shown in the table of available Issuing CAs, but stored to be able to generate CRLs.
-    """
+        self.logger.info('All %i certificates issued by CA %s have been revoked.', qs.count(), self.unique_name)
+        self.issue_crl()

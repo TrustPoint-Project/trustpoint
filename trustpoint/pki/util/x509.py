@@ -3,17 +3,21 @@
 from __future__ import annotations
 
 import datetime
+import logging
 from typing import TYPE_CHECKING
 
+from core.serializer import CredentialSerializer
 from cryptography import x509
 from cryptography.hazmat.primitives.asymmetric import rsa
 from cryptography.x509.oid import NameOID
 
+from pki.models import IssuingCaModel
 from pki.util.keys import CryptographyUtils
 
 if TYPE_CHECKING:
     from core.x509 import PrivateKey
 
+logger = logging.getLogger(__name__)
 
 class CertificateGenerator:
     """Methods for generating X.509 certificates."""
@@ -119,3 +123,30 @@ class CertificateGenerator:
             private_key=issuer_private_key, algorithm=hash_algorithm,
         )
         return certificate, private_key
+
+    @staticmethod
+    def save_issuing_ca(
+            issuing_ca_cert: x509.Certificate,
+            chain: list[x509.Certificate],
+            private_key: PrivateKey,
+            unique_name: str ='issuing_ca',
+            ca_type: IssuingCaModel.IssuingCaTypeChoice = IssuingCaModel.IssuingCaTypeChoice.LOCAL_UNPROTECTED
+        ) -> IssuingCaModel:
+        """Saves an Issuing CA certificate to the database."""
+        issuing_ca_credential_serializer = CredentialSerializer(
+            (
+                private_key,
+                issuing_ca_cert,
+                chain,
+            )
+        )
+
+        issuing_ca = IssuingCaModel.create_new_issuing_ca(
+            unique_name=unique_name,
+            credential_serializer=issuing_ca_credential_serializer,
+            issuing_ca_type=ca_type
+        )
+
+        logger.info("Issuing CA '%s' saved successfully.", unique_name)
+
+        return issuing_ca

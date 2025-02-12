@@ -6,7 +6,6 @@ from __future__ import annotations
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from core.serializer import CredentialSerializer
 from cryptography import x509
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import rsa
@@ -18,7 +17,7 @@ from cryptography.hazmat.primitives.serialization import (
     pkcs12,
 )
 from cryptography.x509.oid import NameOID
-from pki.models import CertificateModel, IssuingCaModel
+from pki.models import CertificateModel
 from pki.util.x509 import CertificateGenerator
 
 if TYPE_CHECKING:
@@ -54,32 +53,6 @@ class CertificateCreationCommandMixin(CertificateGenerator):
 
         print(f'Issuing CA: {issuing_ca_path}')
         print('Issuing CA - Password: testing321\n')
-
-    @staticmethod
-    def save_issuing_ca(
-            issuing_ca_cert: x509.Certificate,
-            root_ca_cert: x509.Certificate,
-            chain: list[x509.Certificate],
-            private_key: PrivateKey,
-            unique_name: str ='issuing_ca') -> IssuingCaModel:
-
-        issuing_ca_credential_serializer = CredentialSerializer(
-            (
-                private_key,
-                issuing_ca_cert,
-                [root_ca_cert],
-            )
-        )
-
-        issuing_ca = IssuingCaModel.create_new_issuing_ca(
-            unique_name=unique_name,
-            credential_serializer=issuing_ca_credential_serializer,
-            issuing_ca_type=IssuingCaModel.IssuingCaTypeChoice.LOCAL_UNPROTECTED
-        )
-
-        print(f"Issuing CA '{unique_name}' saved successfully.")
-
-        return issuing_ca
 
 
     @staticmethod
