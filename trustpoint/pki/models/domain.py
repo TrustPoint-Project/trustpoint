@@ -1,17 +1,12 @@
 """Module that contains the DomainModel."""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 from core.validator.field import UniqueNameValidator
 from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from . import IssuingCaModel
-
-if TYPE_CHECKING:
-    from typing import ClassVar
 
 __all__ = [
     'DomainModel'
@@ -34,6 +29,11 @@ class DomainModel(models.Model):
         null=True,
         verbose_name=_('Issuing CA'),
         related_name='domains',
+    )
+
+    is_active = models.BooleanField(
+        _('Active'),
+        default=True,
     )
 
     def __str__(self) -> str:

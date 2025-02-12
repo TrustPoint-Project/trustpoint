@@ -30,7 +30,7 @@
         </thead>
         <tbody>
           {% for domain in page_obj %}
-          <tr>
+          <tr{% if not domain.is_active %} class="text-muted"{% endif %}>
             <td class="row_checkbox">
               <input type="checkbox" name="row_checkbox" value="{{ domain.id }}" />
             </td>
@@ -42,7 +42,7 @@
           </tr>
           {% empty %}
           <tr>
-            <td colspan="3">No data available.</td>
+            <td colspan="6">{% trans 'No domains are configured yet.' %}</td>
           </tr>
           {% endfor %}
         </tbody>

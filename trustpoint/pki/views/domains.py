@@ -67,8 +67,9 @@ class DomainCreateView(DomainContextMixin, TpLoginRequiredMixin, CreateView):
         # Filter out autogen root CAs
         form.fields['issuing_ca'].queryset = IssuingCaModel.objects.exclude(
             issuing_ca_type=IssuingCaModel.IssuingCaTypeChoice.AUTOGEN_ROOT
-        )
+        ).filter(is_active=True)
         form.fields['issuing_ca'].empty_label = None # Remove empty "---------" choice
+        del form.fields['is_active']
         return form
 
 

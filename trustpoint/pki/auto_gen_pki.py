@@ -88,6 +88,7 @@ class AutoGenPki:
                 defaults={'issuing_ca': issuing_ca},
             )
             domain.issuing_ca = issuing_ca
+            domain.is_active = True
             domain.save()
 
             log.warning('Auto-generated PKI enabled.')
@@ -105,10 +106,19 @@ class AutoGenPki:
                 return
 
             log.warning('! Disabling auto-generated PKI !')
+            # Domain: set as inactive
+            try:
+                domain = DomainModel.objects.get(unique_name='AutoGenPKI')
+                domain.is_active = False
+                domain.save()
+            except DomainModel.DoesNotExist:
+                pass
+
             # Issuing CA: revoke all issued certificates
             # Rename the issuing CA to something random and hide it from the UI
             issuing_ca.revoke_all_issued_certificates(reason=RevokedCertificateModel.ReasonCode.CESSATION)
             issuing_ca.unique_name = f'{UNIQUE_NAME}_OLD_{secrets.token_hex(16)}'
+            issuing_ca.is_active = False
             issuing_ca.save()
 
             # Root CA: revoke the Issuing CA certificate

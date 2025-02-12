@@ -32,7 +32,7 @@
                     </svg>
                     <div>
                         <strong>{% trans 'WARNING!' %}</strong>
-                        {% trans 'By saving, you will disable the local auto-generated PKI. This revokes all certificates issued by the local auto-generated PKI and deletes the auto-generated Issuing CA.' %}
+                        {% trans 'By saving, you will disable the local auto-generated PKI. This revokes all certificates issued by the local auto-generated PKI.' %}
                         <br>
                         <strong>{% trans 'This action is irreversible.' %}</strong>
                     </div>
@@ -56,5 +56,5 @@
         </button>
     </div>
 </div>
-
+<script src="{% static 'js/settings.js' %}"></script>
 {% endblock content %}

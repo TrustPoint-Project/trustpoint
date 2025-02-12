@@ -51,6 +51,11 @@ class IssuingCaModel(LoggerMixin, models.Model):
         null=False, blank=False
     )
 
+    is_active = models.BooleanField(
+        _('Active'),
+        default=True,
+    )
+
     created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
     updated_at = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
     last_crl_issued_at = models.DateTimeField(verbose_name=_('Last CRL Issued'), null=True, blank=True)

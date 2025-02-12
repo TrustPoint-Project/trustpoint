@@ -26,7 +26,7 @@ from django.views.generic.base import RedirectView, View
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import CreateView, FormMixin, FormView
 from django.views.generic.list import ListView
-from pki.models import CertificateModel, CredentialModel
+from pki.models import CertificateModel, CredentialModel, DomainModel
 
 from devices.forms import (
     BrowserLoginForm,
@@ -186,6 +186,14 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView[Devi
     fields = ('unique_name', 'serial_number', 'onboarding_protocol', 'domain')
     template_name = 'devices/add.html'
     success_url = reverse_lazy('devices:devices')
+
+    def get_form(self, form_class: Any = None) -> Any:
+        """Override get_form to filter out autogen root CAs."""
+        form = super().get_form(form_class)
+        form.fields['domain'].queryset = DomainModel.objects.filter(is_active=True)
+        form.fields['domain'].empty_label = None # Remove empty "---------" choice
+
+        return form
 
     @staticmethod
     def clean_device_name(device_name: str) -> str:
