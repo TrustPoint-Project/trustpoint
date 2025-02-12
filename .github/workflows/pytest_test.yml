@@ -15,58 +15,27 @@ jobs:
         with:
           python-version: 3.12
 
-#      - name: Run unit tests for the core module
-#        uses: pavelzw/pytest-action@v2
-#        with:
-#          report-title: Core Test Report
-#          custom-pytest: uv run pytest
-#          custom-arguments: 'trustpoint/core/tests/'
-
       - name: Run tests with coverage
         run: |
           uv run pytest \
-          --junitxml=pytest-report.xml \
+          --junitxml=core-pytest-report.xml \
           --cov=trustpoint \
           --cov-report=html \
           --cov-report=term-missing \
-          --html=pytest-report.html \
+          --html=core-pytest-report.html \
           --self-contained-html \
-          trustpoint/core/tests/ | tee pytest-output.log
+          trustpoint/core/tests/ | tee core-pytest-output.log
 
-      - name: Upload pytest reports
+      - name: Upload pytest reports for the core module
         uses: actions/upload-artifact@v4
         with:
-          name: pytest-reports
+          name: core-pytest-report
           path: |
-            coverage.html
-            pytest-report.html
-            pytest-output.log
-
-#      - name: Surface failing tests
-#        if: always()
-#        uses: pmeier/pytest-results-action@main
-#        with:
-#          # A list of JUnit XML files, directories containing the former, and wildcard
-#          # patterns to process.
-#          # See @actions/glob for supported patterns.
-#          path: test-results.xml
-#
-#          # (Optional) Add a summary of the results at the top of the report
-#          summary: true
-#
-#          # (Optional) Select which results should be included in the report.
-#          # Follows the same syntax as `pytest -r`
-#          display-options: fEX
-#
-#          # (Optional) Fail the workflow if no JUnit XML was found.
-#          fail-on-empty: true
-#
-#          # (Optional) Title of the test results section in the workflow summary
-#          title: Core Unit Test Results
+            core-pytest-report.html
 
       - name: Display Summary in Job Output
         run: |
-          echo "## Pytest Results :white_check_mark:" >> $GITHUB_STEP_SUMMARY
+          echo "## Pytest Results for the core module :white_check_mark:" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          cat pytest-output.log >> $GITHUB_STEP_SUMMARY
+          cat core-pytest-output.log >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
