@@ -18,35 +18,27 @@ jobs:
         with:
           python-version: 3.12
 
-      - name: Run unit tests for the file builder module
+      - name: Run tests with coverage
         run: |
           uv run pytest \
-          --junitxml=file_builder_pytest.xml \
+          --junitxml=core-pytest-report.xml \
           --cov=trustpoint \
-          --html=file_builder_report.html \
+          --cov-report=html \
+          --cov-report=term-missing \
+          --html=core-pytest-report.html \
           --self-contained-html \
-          trustpoint/core/tests/file_builder/ | tee file_builder_pytest-coverage.txt
+          trustpoint/core/tests/ | tee core-pytest-output.log
 
-      - name: Run unit tests for the serializer module
-        run: |
-          uv run pytest \
-          --junitxml=serializer_pytest.xml \
-          --cov=trustpoint \
-          --html=serializer_report.html \
-          --self-contained-html \
-          trustpoint/core/tests/serializer/ | tee serializer_pytest-coverage.txt
-
-      - name: Upload html reports
+      - name: Upload pytest reports for the core module
         uses: actions/upload-artifact@v4
         with:
-          name: html-reports
+          name: core-pytest-report
           path: |
-            file_builder_report.html
-            serializer_report.html
+            core-pytest-report.html
 
-      - name: Pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          multiple-files: |
-            Core Serializer Test, serializer_pytest-coverage.txt, serializer_pytest.xml
-            Core File Builder Test, file_builder_pytest-coverage.txt, file_builder_pytest.xml
+      - name: Display Summary in Job Output
+        run: |
+          echo "## Pytest Results for the core module :white_check_mark:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat core-pytest-output.log >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
