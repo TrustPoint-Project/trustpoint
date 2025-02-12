@@ -76,38 +76,39 @@
                                    id="auto_create_new_device"
                                    {% if registration_options.auto_create_new_device %}checked{% endif %}>
                             <label class="form-check-label" for="auto_create_new_device">
-                                {% trans "Auto-create New Device" %}
+                                {{ registration_verbose_name.auto_create_new_device }}
                             </label>
                             <br>
                             <small class="form-text text-muted">
                                 {{ registration_help_texts.auto_create_new_device }}
                             </small>
                         </div>
+
                         <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="allow_hmac_registration"
-                                   id="allow_hmac_registration"
-                                   {% if registration_options.allow_hmac_registration %}checked{% endif %}>
-                            <label class="form-check-label" for="allow_hmac_registration">
-                                {% trans "Allow HMAC Registration" %}
+                            <input class="form-check-input" type="checkbox" name="allow_username_password_registration"
+                                   id="allow_username_password_registration"
+                                   {% if registration_options.allow_username_password_registration %}checked{% endif %}>
+                            <label class="form-check-label" for="allow_username_password_registration">
+                                {{ registration_verbose_name.allow_username_password_registration }}
                             </label>
                             <br>
                             <small class="form-text text-muted">
-                                {{ registration_help_texts.allow_hmac_registration }}
+                                {{ registration_help_texts.allow_username_password_registration }}
                             </small>
                         </div>
+
                         <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="allow_idevid_registration"
                                    id="allow_idevid_registration"
                                    {% if registration_options.allow_idevid_registration %}checked{% endif %}>
                             <label class="form-check-label" for="allow_idevid_registration">
-                                {% trans "Allow IDevID Registration" %}
+                                {{ registration_verbose_name.allow_idevid_registration }}
                             </label>
                             <br>
                             <small class="form-text text-muted">
                                 {{ registration_help_texts.allow_idevid_registration }}
                             </small>
                         </div>
-
 
                         <div id="devid-registration-section"
                              style="{% if not registration_options.allow_idevid_registration %}display:none;{% endif %}">
@@ -123,11 +124,37 @@
 
 
                         <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="domain_credential_auth"
+                                   id="domain_credential_auth"
+                                   {% if registration_options.domain_credential_auth %}checked{% endif %}>
+                            <label class="form-check-label" for="domain_credential_auth">
+                                {{ registration_verbose_name.domain_credential_auth }}
+                            </label>
+                            <br>
+                            <small class="form-text text-muted">
+                                {{ registration_help_texts.domain_credential_auth }}
+                            </small>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="username_password_auth"
+                                   id="username_password_auth"
+                                   {% if registration_options.username_password_auth %}checked{% endif %}>
+                            <label class="form-check-label" for="username_password_auth">
+                                {{ registration_verbose_name.username_password_auth }}
+                            </label>
+                            <br>
+                            <small class="form-text text-muted">
+                                {{ registration_help_texts.username_password_auth }}
+                            </small>
+                        </div>
+
+                        <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="allow_app_certs_without_domain"
                                    id="allow_app_certs_without_domain"
                                    {% if registration_options.allow_app_certs_without_domain %}checked{% endif %}>
-                            <label class="form-check-label" for="allow_app_certs_without_domain">
-                                {% trans "Allow Application Certificates without Domain Credential" %}
+                            <label class="form-check-label" for="username_password_auth">
+                                {{ registration_verbose_name.allow_app_certs_without_domain }}
                             </label>
                             <br>
                             <small class="form-text text-muted">

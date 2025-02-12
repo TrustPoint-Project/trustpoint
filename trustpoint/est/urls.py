@@ -11,6 +11,11 @@ urlpatterns = [
         name='simple-enrollment'
     ),
     path(
+        'simplereenroll/<str:domain>/<str:certtemplate>/',
+        views.EstSimpleReenrollmentView.as_view(),
+        name='simple-re-enrollment'
+    ),
+    path(
         'cacerts/<str:domain>/',
         views.EstCACertsView.as_view(),
         name='ca-certs'

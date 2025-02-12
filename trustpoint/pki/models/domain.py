@@ -47,16 +47,28 @@ class DomainModel(models.Model):
         )
     )
 
-    allow_hmac_registration = models.BooleanField(
-        _('Allow HMAC Registration'),
+    allow_username_password_registration = models.BooleanField(
+        _('Allow username:password Registration'),
         default=False,
-        help_text=_("Allow registration of new devices using an HMAC.")
+        help_text=_("New devices can be added with a username and password.")
     )
 
     allow_idevid_registration = models.BooleanField(
         _('Allow IDevID Registration'),
         default=False,
         help_text=_("Allow registration of a new device using the IDevID of the Device.")
+    )
+
+    domain_credential_auth = models.BooleanField(
+        _('Require a Domain Credential for Authentication'),
+        default=True,
+        help_text=_("The EST server requires a domain credential issued by the domain Issuing CA for authenitcation.")
+    )
+
+    username_password_auth = models.BooleanField(
+        _('Require username:password for Authentication'),
+        default=False,
+        help_text=_("The EST server requires username and password for authentication.")
     )
 
     allow_app_certs_without_domain = models.BooleanField(
