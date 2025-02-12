@@ -21,6 +21,7 @@ dependencies = [
     "psycopg>=3.2.4",
     "psycopg-binary>=3.2.4",
     "ruff>=0.7.4",
+    "behave-django>=1.5.0",
 ]
 
 [dependency-groups]
