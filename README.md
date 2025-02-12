@@ -72,4 +72,4 @@ container yourself.
 
 ## Tests
 
-![Core Unittest Status](https://github.com/TrustPoint-Project/trustpoint/blob/test-reports/.github/workflows/core-test.yml/badge.svg)
+![Core Unittest Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/core-test.yml/badge.svg?branch=test-reports)
