@@ -32,7 +32,7 @@ def test_certificate_serializer_init_with_str(pem_encoded_cert):
 
 
 def test_certificate_serializer_init_with_x509_object(self_signed_certificate):
-    """Test that CertificateSerializer correctly initializes from an x509.Certificate object.
+    """Test that CertificateSerializer correctly initializes from a x509.Certificate object.
 
     Args:
         self_signed_certificate (x509.Certificate): A self-signed certificate object for testing.
