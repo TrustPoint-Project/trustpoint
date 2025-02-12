@@ -72,4 +72,6 @@ container yourself.
 
 ## Tests
 
-![Core Unittest Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/core-test.yml/badge.svg?branch=test-reports)
+![Core Unittest Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/core-test.yml/badge.svg)
+![MyPy Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/mypy.yml/badge.svg)
+![Ruff Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/ruff.yml/badge.svg)
