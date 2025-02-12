@@ -36,13 +36,6 @@ jobs:
           --self-contained-html \
           trustpoint/core/tests/serializer/ | tee serializer_pytest-coverage.txt
 
-      - name: Pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          multiple-files: |
-            Core Serializer Test, serializer_pytest-coverage.txt, serializer_pytest.xml
-            Core File Builder Test, file_builder_pytest-coverage.txt, file_builder_pytest.xml
-
       - name: Upload html reports
         uses: actions/upload-artifact@v4
         with:
@@ -50,3 +43,10 @@ jobs:
           path: |
             file_builder_report.html
             serializer_report.html
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          multiple-files: |
+            Core Serializer Test, serializer_pytest-coverage.txt, serializer_pytest.xml
+            Core File Builder Test, file_builder_pytest-coverage.txt, file_builder_pytest.xml
