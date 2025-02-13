@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from devices.models import DeviceModel, IssuedCredentialModel
 from django.contrib import messages  # type: ignore[import-untyped]
@@ -23,12 +23,10 @@ from ninja.responses import Response
 from pki.models import CertificateModel, IssuingCaModel
 
 from trustpoint.settings import UIConfig
-from trustpoint.views.base import TpLoginRequiredMixin, SortableTableMixin
+from trustpoint.views.base import SortableTableMixin, TpLoginRequiredMixin
 
 from .filters import NotificationFilter
 from .models import NotificationModel, NotificationStatus
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from django.utils.safestring import SafeString  # type: ignore[import-untyped]
@@ -199,9 +197,8 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
 
         dashboard_data: dict[str, Any] = {}
 
-        start_date_object = timezone.make_aware(start_date_object)
-
-        device_counts = self.get_device_count_by_onboarding_status(dateparse.parse_date('2023-01-01'))
+        start_date_object = timezone.make_aware(datetime.combine(start_date_object, datetime.min.time()))
+        device_counts = self.get_device_count_by_onboarding_status(start_date_object)
         dashboard_data['device_counts'] = device_counts
         self._logger.debug('device counts %s', device_counts)
 
@@ -349,7 +346,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
     def get_issuing_ca_counts(self) -> dict[str, Any]:
         """Get issuing CA counts from database"""
         # Current date
-        today = timezone.now().date()
+        today = timezone.make_aware(datetime.combine(timezone.now().date(), datetime.min.time()))
         issuing_ca_counts = {}
         try:
             # Query to get total, active, and expired Issuing CAs
