@@ -1,6 +1,6 @@
 name: Run Behave Tests for R_013
 
-on: [push, pull_request]
+on: [pull_request]
 
 jobs:
   r_013-test:
