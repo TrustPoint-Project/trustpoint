@@ -2,7 +2,7 @@ import pytest
 from devices.models import DeviceModel, IssuedCredentialModel, RemoteDeviceCredentialDownloadModel
 from devices.issuer import LocalDomainCredentialIssuer
 from pki.models import DomainModel, IssuingCaModel
-from pki.management.commands.base_commands import CertificateCreationCommandMixin
+from pki.util.x509 import CertificateGenerator
 
 @pytest.fixture(autouse=True)
 def enable_db_access_for_all_tests(db):
@@ -11,15 +11,14 @@ def enable_db_access_for_all_tests(db):
 
 @pytest.fixture
 def mock_models() -> dict:
-    root_1, root_1_key = CertificateCreationCommandMixin.create_root_ca('Test Root CA')
-    issuing_1, issuing_1_key = CertificateCreationCommandMixin.create_issuing_ca(
+    root_1, root_1_key = CertificateGenerator.create_root_ca('Test Root CA')
+    issuing_1, issuing_1_key = CertificateGenerator.create_issuing_ca(
                                     root_1_key, 'Root CA', 'Issuing CA A')
 
-    CertificateCreationCommandMixin.save_issuing_ca(
+    CertificateGenerator.save_issuing_ca(
         issuing_ca_cert=issuing_1,
-        root_ca_cert=root_1,
         private_key=issuing_1_key,
-        chain=[],
+        chain=[root_1],
         unique_name='test_local_ca')
 
     mock_ca = IssuingCaModel.objects.get(unique_name='test_local_ca')
