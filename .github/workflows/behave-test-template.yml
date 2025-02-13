@@ -27,14 +27,14 @@ jobs:
 
       - name: Run Behave Tests and Generate HTML Report for ${{ inputs.feature_file }}
         run: |
-          uv run trustpoint/manage.py behave trustpoint/features/${{ inputs.feature_file }} || echo "Test failed"
+          uv run trustpoint/manage.py behave ${{ inputs.feature_file }} || echo "Test failed"
 
       - name: Upload Test Report
         uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: behave-report-${{ inputs.feature_file }}
-          path: reports/report-${{ inputs.feature_file }}.html
+          name: behave-html-report
+          path: behave-report.html
 
       - name: Fail Job if Tests Failed
         run: |
