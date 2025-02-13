@@ -1,16 +1,20 @@
+"""pytest configuration for the tests in the devices app."""
+
 import pytest
-from devices.models import DeviceModel, IssuedCredentialModel, RemoteDeviceCredentialDownloadModel
-from devices.issuer import LocalDomainCredentialIssuer
 from pki.models import DomainModel, IssuingCaModel
 from pki.util.x509 import CertificateGenerator
 
+from devices.issuer import LocalDomainCredentialIssuer
+from devices.models import DeviceModel, RemoteDeviceCredentialDownloadModel
+
+
 @pytest.fixture(autouse=True)
-def enable_db_access_for_all_tests(db):
+def enable_db_access_for_all_tests(db: None) -> None:
     """Fixture to enable database access for all tests."""
-    pass
 
 @pytest.fixture
 def mock_models() -> dict:
+    """Fixture to create mock CA, domain, device, and credential models for testing."""
     root_1, root_1_key = CertificateGenerator.create_root_ca('Test Root CA')
     issuing_1, issuing_1_key = CertificateGenerator.create_issuing_ca(
                                     root_1_key, 'Root CA', 'Issuing CA A')
