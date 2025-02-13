@@ -17,6 +17,7 @@ from django.views.generic.list import ListView  # type: ignore[import-untyped]
 from pki.forms import DevIdAddMethodSelectForm, DevIdRegistrationForm
 from pki.models import DevIdRegistration, DomainModel, IssuingCaModel
 from pki.models.truststore import TruststoreModel
+from trustpoint.settings import UIConfig
 from trustpoint.views.base import (
     BulkDeleteView,
     ContextDataMixin,
@@ -48,7 +49,7 @@ class DomainTableView(DomainContextMixin, TpLoginRequiredMixin, SortableTableMix
     model = DomainModel
     template_name = 'pki/domains/domain.html'  # Template file
     context_object_name = 'domain-new'
-    paginate_by = 5  # Number of items per page
+    paginate_by = UIConfig.paginate_by
     default_sort_param = 'unique_name'
 
 
@@ -89,7 +90,7 @@ class DomainUpdateView(DomainContextMixin, TpLoginRequiredMixin, UpdateView):
 class DomainDevIdRegistrationTableMixin(SortableTableMixin, ListInDetailView):
 
     model = DevIdRegistration
-    paginate_by = 5  # Number of items per page
+    paginate_by = UIConfig.paginate_by
     context_object_name = 'devid_registrations'
     default_sort_param = 'unique_name'
 

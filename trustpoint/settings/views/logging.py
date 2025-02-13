@@ -17,7 +17,7 @@ from django.views.generic import TemplateView, View
 from django.views.generic.base import RedirectView
 from django.views.generic.list import ListView
 
-from trustpoint.settings import DATE_FORMAT, LOG_DIR_PATH
+from trustpoint.settings import DATE_FORMAT, LOG_DIR_PATH, UIConfig
 from trustpoint.views.base import LoggerMixin, SortableTableMixin, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
@@ -59,7 +59,7 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
     template_name = 'settings/logging/logging_files.html'
     context_object_name = 'log_files'
     default_sort_param = 'filename'
-    paginate_by = 5
+    paginate_by = UIConfig.paginate_by
 
     @staticmethod
     @LoggerMixin.log_exceptions
@@ -92,7 +92,7 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
         else:
             created_at = _('None')
 
-        if isinstance(last_date, datetime.datetime):
+        if isinstance(last_date, datetime.datetime):  # noqa: SIM108
             updated_at = last_date.strftime(f'{DATE_FORMAT} UTC')
         else:
             updated_at = _('None')
