@@ -22,6 +22,7 @@ from django.views.generic.list import ListView
 from ninja.responses import Response
 from pki.models import CertificateModel, IssuingCaModel
 
+from trustpoint.settings import UIConfig
 from trustpoint.views.base import TpLoginRequiredMixin, SortableTableMixin
 
 from .filters import NotificationFilter
@@ -50,7 +51,7 @@ class DashboardView(TpLoginRequiredMixin, SortableTableMixin, ListView):
     model = NotificationModel
     context_object_name = 'notifications'
     default_sort_param = '-created_at'
-    paginate_by = 5
+    paginate_by = UIConfig.notifications_paginate_by
 
     def __init__(self, *args: tuple, **kwargs: dict) -> None:
         """Initializes the parent class with the given arguments and keyword arguments."""
