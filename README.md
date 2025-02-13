@@ -1,5 +1,7 @@
 ![Trustpoint](.github-assets/trustpoint_banner.png)  
 
+<div align="center">
+
 **The open source trust anchor software for machines and factories to manage digital identities.**  
 
 [![Landing Page](https://img.shields.io/badge/Landing_Page-014BAD)](https://trustpoint.campus-schwarzwald.de/en/)
@@ -12,6 +14,8 @@
 ![Coverage](https://codecov.io/gh/TrustPoint-Project/trustpoint/branch/main/graph/badge.svg)
 ![MyPy Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/mypy.yml/badge.svg)
 ![Ruff Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/ruff.yml/badge.svg)
+
+</div>
 
 > [!CAUTION]
 > Trustpoint is currently in a **technology preview** (beta) state. Do not use it in production.
