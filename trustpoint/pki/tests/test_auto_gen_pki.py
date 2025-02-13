@@ -9,13 +9,14 @@ from pki.models import CertificateModel, DomainModel, IssuingCaModel
 from pki.util.keys import AutoGenPkiKeyAlgorithm
 
 
-def test_auto_gen_pki() -> None:
+@pytest.mark.parametrize('key_alg', [AutoGenPkiKeyAlgorithm.RSA2048, AutoGenPkiKeyAlgorithm.SECP256R1])
+def test_auto_gen_pki(key_alg: AutoGenPkiKeyAlgorithm) -> None:
     """Test that the auto-generated PKI can be correctly enabled, used and disabled."""
     # Check that the auto-generated PKI is disabled by default
     assert AutoGenPki.get_auto_gen_pki() is None
 
     # Enable the auto-generated PKI
-    AutoGenPki.enable_auto_gen_pki(AutoGenPkiKeyAlgorithm('SECP256R1SHA256'))
+    AutoGenPki.enable_auto_gen_pki(key_alg=key_alg)
 
     # Check that the auto-generated PKI is enabled
     issuing_ca = AutoGenPki.get_auto_gen_pki()
@@ -48,7 +49,7 @@ def test_auto_gen_pki() -> None:
     assert issuing_ca.credential.certificate.certificate_status == CertificateModel.CertificateStatus.REVOKED
     assert not issuing_ca.is_active
 
-    # Check that the auto-generated PKI is disabled
+    # Check that the auto-generated PKI is disabled (this checks that the Issuing CA has been renamed)
     assert AutoGenPki.get_auto_gen_pki() is None
 
     # Check that the domain has been set as inactive
