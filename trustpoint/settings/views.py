@@ -92,7 +92,7 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
         else:
             created_at = _('None')
 
-        if isinstance(last_date, datetime.datetime):
+        if isinstance(last_date, datetime.datetime):  # noqa: SIM108
             updated_at = last_date.strftime(f'{DATE_FORMAT} UTC')
         else:
             updated_at = _('None')

@@ -70,7 +70,6 @@ ignore = [
     "COM812",               # Not compatible with the formatter
     "ISC001",               # Not compatible with the formatter
     "S101",
-    "SIM108"                # Replace if-else with ternary, ignore reason: often reduces readability
 ]
 
 [tool.ruff.format]
