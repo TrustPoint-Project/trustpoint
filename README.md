@@ -96,7 +96,7 @@ We are also providing the Trustpoint as a docker-container. Please see [Trustpoi
 instructions in our [Trustpoint Documentation](https://trustpoint.readthedocs.io/en/latest/) to build the
 container yourself.
 
-## What features/requirements are finished and which are still w.i.p.?
+## Which features/requirements are finished and which are still w.i.p.?
 
 There are some requirements defined inside
 the [Test Plan](https://trustpoint.readthedocs.io/en/test_plan/test_plan.html)
