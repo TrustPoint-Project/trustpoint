@@ -1,32 +1,29 @@
 """Django Views"""
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
-from django.db.models import QuerySet
-from django.shortcuts import render
-from django.utils.translation import gettext as _
-from django.views.generic.base import RedirectView
-
-import os
-from pathlib import Path
 import datetime
 import io
+import os
 import re
-import zipfile
 import tarfile
+import zipfile
+from pathlib import Path
+from typing import TYPE_CHECKING
 
 from django.http import Http404, HttpResponse
+from django.shortcuts import render
+from django.utils.translation import gettext as _
 from django.views.generic import TemplateView, View
+from django.views.generic.base import RedirectView
 from django.views.generic.list import ListView
 
-from trustpoint.settings import LOG_DIR_PATH, DATE_FORMAT, UIConfig
-
-from trustpoint.views.base import TpLoginRequiredMixin, LoggerMixin, SortableTableMixin
+from trustpoint.settings import DATE_FORMAT, LOG_DIR_PATH, UIConfig
+from trustpoint.views.base import LoggerMixin, SortableTableMixin, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
-    from django.http import HttpRequest, HttpResponse
-    from typing import Any
+    from typing import Any, ClassVar
+
+    from django.http import HttpRequest
 
 
 class IndexView(RedirectView):
@@ -47,16 +44,17 @@ def language(request: HttpRequest) -> HttpResponse:
 
 
 class LoggingContextMixin:
-    """Mixin which adds some extra context for the Logging Views."""
+    """Mixin which adds extra menu context for the Logging Views."""
 
-    extra_context = {
+    extra_context : ClassVar[dict] = {
         'page_category': 'settings',
         'page_name': 'logging'
     }
 
 
 class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMixin, SortableTableMixin, ListView):
-    http_method_names = ['get']
+    """View to display all log files in the log directory in a table."""
+    http_method_names = ('get', )
 
     template_name = 'settings/logging/logging_files.html'
     context_object_name = 'log_files'
@@ -73,8 +71,8 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
         date_regex = re.compile(r'\b\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\b')
         matches = re.findall(date_regex, log_file)
         if matches:
-            first_date = datetime.datetime.strptime(matches[0], DATE_FORMAT)
-            last_date = datetime.datetime.strptime(matches[-1], DATE_FORMAT)
+            first_date = datetime.datetime.strptime(matches[0], DATE_FORMAT).replace(tzinfo=datetime.timezone.utc)
+            last_date = datetime.datetime.strptime(matches[-1], DATE_FORMAT).replace(tzinfo=datetime.timezone.utc)
         else:
             first_date = None
             last_date = None
@@ -94,7 +92,7 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
         else:
             created_at = _('None')
 
-        if isinstance(last_date, datetime.datetime):
+        if isinstance(last_date, datetime.datetime):  # noqa: SIM108
             updated_at = last_date.strftime(f'{DATE_FORMAT} UTC')
         else:
             updated_at = _('None')
@@ -108,6 +106,7 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
 
     @LoggerMixin.log_exceptions
     def get_queryset(self) -> list[dict[str, str]]:
+        """Gets a queryset of all valid Trustpoint log files in the log directory."""
         all_files = os.listdir(LOG_DIR_PATH)
         valid_log_files = [f for f in all_files if re.compile(r'^trustpoint\.log(?:\.\d+)?$').match(f)]
 
@@ -115,13 +114,15 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
         return super().get_queryset()
 
 class LoggingFilesDetailsView(LoggerMixin, LoggingContextMixin, TpLoginRequiredMixin, TemplateView):
-    http_method_names = ['get']
+    """Log file detail view, allows to view the content of a single log file without download."""
+    http_method_names = ('get', )
 
     template_name = 'settings/logging/logging_files_details.html'
     log_directory = LOG_DIR_PATH
 
     @LoggerMixin.log_exceptions
-    def get_context_data(self, **kwargs) -> dict[str, Any]:
+    def get_context_data(self, **kwargs: Any) -> dict[str, Any]:
+        """Get the context data for the view."""
         context = super().get_context_data(**kwargs)
         log_filename = self.kwargs.get('filename')
 
@@ -137,15 +138,17 @@ class LoggingFilesDetailsView(LoggerMixin, LoggingContextMixin, TpLoginRequiredM
 
 class LoggingFilesDownloadView(LoggerMixin, LoggingContextMixin, TpLoginRequiredMixin, TemplateView):
     """View to download a single log file"""
-    http_method_names = ['get']
+    http_method_names = ('get', )
 
     @LoggerMixin.log_exceptions
-    def get(self, *args, **kwargs):
+    def get(self, *_args: Any, **kwargs: Any) -> HttpResponse:
+        """The HTTP GET method for the view."""
         filename = kwargs.get('filename')
         log_file_path = LOG_DIR_PATH / Path(filename)
 
         if not log_file_path.exists() or not log_file_path.is_file():
-            raise Http404('Log-File not found.')
+            exc_msg = 'Log file not found.'
+            raise Http404(exc_msg)
 
         response = HttpResponse(log_file_path.read_text(), content_type='text/plain')
         response['Content-Disposition'] = f'attachment; filename={filename}'
@@ -153,19 +156,23 @@ class LoggingFilesDownloadView(LoggerMixin, LoggingContextMixin, TpLoginRequired
 
 
 class LoggingFilesDownloadMultipleView(LoggerMixin, LoggingContextMixin, TpLoginRequiredMixin, View):
-    http_method_names = ['get']
+    """View to download multiple log files as a single archive."""
+    http_method_names = ('get', )
 
     @classmethod
     @LoggerMixin.log_exceptions
-    def get(cls, *args, **kwargs) -> HttpResponse:
+    def get(cls, *_args: Any, **kwargs: Any) -> HttpResponse:
+        """The HTTP GET method for the view."""
         archive_format = kwargs.get('archive_format')
         filenames = kwargs.get('filenames')
 
         # These should never happen, due to the regex in the urls.py (re_path). ----------------------------------------
         if not archive_format or not filenames:
-            raise Http404('Log-Files not found.')
+            exc_msg = 'Log files not found.'
+            raise Http404(exc_msg)
         if archive_format not in ['zip', 'tar.gz']:
-            raise Http404('Invalid archive format found.')
+            exc_msg = 'Invalid archive format specified.'
+            raise Http404(exc_msg)
         # --------------------------------------------------------------------------------------------------------------
 
         filenames = [filename for filename in filenames.split('/') if filename]
@@ -183,7 +190,7 @@ class LoggingFilesDownloadMultipleView(LoggerMixin, LoggingContextMixin, TpLogin
             zip_file.close()
 
             response = HttpResponse(bytes_io.getvalue(), content_type='application/zip')
-            response['Content-Disposition'] = f'attachment; filename=trustpoint-logs.zip'
+            response['Content-Disposition'] = 'attachment; filename=trustpoint-logs.zip'
             return response
 
         bytes_io = io.BytesIO()
@@ -195,5 +202,5 @@ class LoggingFilesDownloadMultipleView(LoggerMixin, LoggingContextMixin, TpLogin
                 tar.addfile(file_io_bytes_info, file_io_bytes)
 
         response = HttpResponse(bytes_io.getvalue(), content_type='application/gzip')
-        response['Content-Disposition'] = f'attachment; filename=trustpoint-logs.tar.gz'
+        response['Content-Disposition'] = 'attachment; filename=trustpoint-logs.tar.gz'
         return response
