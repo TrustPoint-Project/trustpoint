@@ -625,7 +625,7 @@ class DeviceCertificateLifecycleManagementSummaryView(
         device = self.get_object()
         qs = super().get_queryset() # inherited from SortableTableMixin, sorted query
 
-        domain_credentials = IssuedCredentialModel.objects.filter(
+        domain_credentials = qs.filter(
             Q(device=device) &
             Q(issued_credential_type=IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL.value)
         )
