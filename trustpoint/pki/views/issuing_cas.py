@@ -35,7 +35,7 @@ class IssuingCaTableView(IssuingCaContextMixin, TpLoginRequiredMixin, SortableTa
     model = IssuingCaModel
     template_name = 'pki/issuing_cas/issuing_cas.html'  # Template file
     context_object_name = 'issuing_ca'
-    paginate_by = 5  # Number of items per page
+    paginate_by = 30  # Number of items per page
     default_sort_param = 'unique_name'
 
 

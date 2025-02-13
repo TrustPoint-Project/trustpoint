@@ -304,35 +304,37 @@ class NamedCurve(enum.Enum):
     dotted_string: str
     verbose_name: str
     key_size: int
-    curve: type[ec.EllipticCurve]
+    curve: Optional[type[ec.EllipticCurve]]
+    ossl_curve_name: str
 
-    NONE = ('None', 'None', 0, None)
-    SECP192R1 = ('1.2.840.10045.3.1.1', 'SECP192R1', 192, ec.SECP192R1)
-    SECP224R1 = ('1.3.132.0.33', 'SECP224R1', 224, ec.SECP224R1)
-    SECP256K1 = ('1.3.132.0.10', 'SECP256K1', 256, ec.SECP256K1)
-    SECP256R1 = ('1.2.840.10045.3.1.7', 'SECP256R1', 256, ec.SECP256R1)
-    SECP384R1 = ('1.3.132.0.34', 'SECP384R1', 384, ec.SECP384R1)
-    SECP521R1 = ('1.3.132.0.35', 'SECP521R1', 521, ec.SECP521R1)
-    BRAINPOOLP256R1 = ('1.3.36.3.3.2.8.1.1.7', 'BRAINPOOLP256R1', 256, ec.BrainpoolP256R1)
-    BRAINPOOLP384R1 = ('1.3.36.3.3.2.8.1.1.11', 'BRAINPOOLP384R1', 384, ec.BrainpoolP384R1)
-    BRAINPOOLP512R1 = ('1.3.36.3.3.2.8.1.1.13', 'BRAINPOOLP512R1', 512, ec.BrainpoolP512R1)
-    SECT163K1 = ('1.3.132.0.1', 'SECT163K1', 163, ec.SECT163K1)
-    SECT163R2 = ('1.3.132.0.15', 'SECT163R2', 163, ec.SECT163R2)
-    SECT233K1 = ('1.3.132.0.26', 'SECT233K1', 233, ec.SECT233K1)
-    SECT233R1 = ('1.3.132.0.27', 'SECT233R1', 233, ec.SECT233R1)
-    SECT283K1 = ('1.3.132.0.16', 'SECT283K1', 283, ec.SECT283K1)
-    SECT283R1 = ('1.3.132.0.17', 'SECT283R1', 283, ec.SECT283R1)
-    SECT409K1 = ('1.3.132.0.36', 'SECT409K1', 409, ec.SECT409K1)
-    SECT409R1 = ('1.3.132.0.37', 'SECT409R1', 409, ec.SECT409R1)
-    SECT571K1 = ('1.3.132.0.38', 'SECT571K1', 571, ec.SECT571K1)
-    SECT571R1 = ('1.3.132.0.39', 'SECT571R1', 570, ec.SECT571R1)
+    NONE = ('None', 'None', 0, None, '')
+    SECP192R1 = ('1.2.840.10045.3.1.1', 'SECP192R1', 192, ec.SECP192R1, 'prime192v1')
+    SECP224R1 = ('1.3.132.0.33', 'SECP224R1', 224, ec.SECP224R1, 'secp224r1')
+    SECP256K1 = ('1.3.132.0.10', 'SECP256K1', 256, ec.SECP256K1, 'brainpoolP512r1')
+    SECP256R1 = ('1.2.840.10045.3.1.7', 'SECP256R1', 256, ec.SECP256R1, 'brainpoolP512r1')
+    SECP384R1 = ('1.3.132.0.34', 'SECP384R1', 384, ec.SECP384R1, 'secp384r1')
+    SECP521R1 = ('1.3.132.0.35', 'SECP521R1', 521, ec.SECP521R1, 'secp521r1')
+    BRAINPOOLP256R1 = ('1.3.36.3.3.2.8.1.1.7', 'BRAINPOOLP256R1', 256, ec.BrainpoolP256R1, 'brainpoolP256r1')
+    BRAINPOOLP384R1 = ('1.3.36.3.3.2.8.1.1.11', 'BRAINPOOLP384R1', 384, ec.BrainpoolP384R1, 'brainpoolP384r1')
+    BRAINPOOLP512R1 = ('1.3.36.3.3.2.8.1.1.13', 'BRAINPOOLP512R1', 512, ec.BrainpoolP512R1, 'brainpoolP512r1')
+    SECT163K1 = ('1.3.132.0.1', 'SECT163K1', 163, ec.SECT163K1, 'sect163r1')
+    SECT163R2 = ('1.3.132.0.15', 'SECT163R2', 163, ec.SECT163R2, 'sect163r2')
+    SECT233K1 = ('1.3.132.0.26', 'SECT233K1', 233, ec.SECT233K1, 'sect233k1')
+    SECT233R1 = ('1.3.132.0.27', 'SECT233R1', 233, ec.SECT233R1, 'sect233r1')
+    SECT283K1 = ('1.3.132.0.16', 'SECT283K1', 283, ec.SECT283K1, 'sect283k1')
+    SECT283R1 = ('1.3.132.0.17', 'SECT283R1', 283, ec.SECT283R1, 'sect283r1')
+    SECT409K1 = ('1.3.132.0.36', 'SECT409K1', 409, ec.SECT409K1, 'sect409k1')
+    SECT409R1 = ('1.3.132.0.37', 'SECT409R1', 409, ec.SECT409R1, 'sect409r1')
+    SECT571K1 = ('1.3.132.0.38', 'SECT571K1', 571, ec.SECT571K1, 'sect571k1')
+    SECT571R1 = ('1.3.132.0.39', 'SECT571R1', 570, ec.SECT571R1, 'sect571r1')
 
     def __new__(
             cls,
             dotted_string: str,
             verbose_name: str,
             key_size: int,
-            curve: Optional[type[ec.EllipticCurve]]) -> Self:
+            curve: Optional[type[ec.EllipticCurve]],
+            ossl_curve_name: str) -> Self:
         """Sets the values for this multi value enum.
 
         Args:
@@ -347,6 +349,7 @@ class NamedCurve(enum.Enum):
         obj.verbose_name = verbose_name
         obj.key_size = key_size
         obj.curve = curve
+        obj.ossl_curve_name = ossl_curve_name
         return obj
 
 
@@ -712,8 +715,6 @@ class PublicKeyInfo:
     _key_size: None | int = None
     _named_curve: None | NamedCurve = None
 
-    _specifier: str
-
     def __init__(
         self,
         public_key_algorithm_oid: PublicKeyAlgorithmOid,
@@ -762,6 +763,18 @@ class PublicKeyInfo:
         if self.key_size != other.key_size:
             return False
         return self.named_curve == other.named_curve
+
+    def __str__(self) -> str:
+        """Constructs a human-readable string representation of this SignatureSuite.
+
+        Returns:
+            A human-readable string representation of this SignatureSuite.
+        """
+        if self.public_key_algorithm_oid == PublicKeyAlgorithmOid.RSA:
+            return f'RSA-{self.key_size}'
+        if self.public_key_algorithm_oid == PublicKeyAlgorithmOid.ECC:
+            return f'ECC-{self.named_curve.verbose_name}'
+        return 'Invalid Signature Suite'
 
     @property
     def public_key_algorithm_oid(self) -> PublicKeyAlgorithmOid:

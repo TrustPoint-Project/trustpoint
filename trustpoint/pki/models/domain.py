@@ -6,6 +6,7 @@ from typing import TYPE_CHECKING
 from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from core import oid
 
 from core.validator.field import UniqueNameValidator
 from . import IssuingCaModel
@@ -50,3 +51,11 @@ class DomainModel(models.Model):
                 Human-readable representation of the EndpointProfile model instance.
         """
         return self.unique_name
+
+    @property
+    def signature_suite(self) -> oid.SignatureSuite:
+        return oid.SignatureSuite.from_certificate(self.issuing_ca.credential.get_certificate_serializer().as_crypto())
+
+    @property
+    def public_key_info(self) -> oid.PublicKeyInfo:
+        return self.signature_suite.public_key_info

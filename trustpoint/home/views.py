@@ -50,7 +50,7 @@ class DashboardView(TpLoginRequiredMixin, SortableTableMixin, ListView):
     model = NotificationModel
     context_object_name = 'notifications'
     default_sort_param = '-created_at'
-    paginate_by = 5
+    paginate_by = 30
 
     def __init__(self, *args: tuple, **kwargs: dict) -> None:
         """Initializes the parent class with the given arguments and keyword arguments."""

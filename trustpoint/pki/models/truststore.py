@@ -83,7 +83,7 @@ class TruststoreModel(models.Model):
     class IntendedUsage(models.IntegerChoices):
         """Intended Usage of the Truststore."""
 
-        IDEV_ID = 0, _('IDevID')
+        IDEVID = 0, _('IDevID')
         TLS = 1, _('TLS')
         GENERIC = 2, _('Generic')
 

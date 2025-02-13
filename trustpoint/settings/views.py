@@ -61,7 +61,7 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
     template_name = 'settings/logging/logging_files.html'
     context_object_name = 'log_files'
     default_sort_param = 'filename'
-    paginate_by = 5
+    paginate_by = 30
 
     @staticmethod
     @LoggerMixin.log_exceptions

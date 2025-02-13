@@ -38,7 +38,7 @@ class CertificateTableView(CertificatesContextMixin, TpLoginRequiredMixin, Sorta
     model = CertificateModel
     template_name = 'pki/certificates/certificates.html'  # Template file
     context_object_name = 'certificates'
-    paginate_by = 5  # Number of items per page
+    paginate_by = 30  # Number of items per page
     default_sort_param = 'common_name'
 
 class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):

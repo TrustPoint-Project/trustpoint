@@ -42,7 +42,7 @@ class TruststoreTableView(TruststoresContextMixin, TpLoginRequiredMixin, Sortabl
     model = TruststoreModel
     template_name = 'pki/truststores/truststores.html'
     context_object_name = 'truststores'
-    paginate_by = 5
+    paginate_by = 30
     default_sort_param = 'unique_name'
 
 

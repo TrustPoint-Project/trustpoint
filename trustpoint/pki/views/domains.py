@@ -47,7 +47,7 @@ class DomainTableView(DomainContextMixin, TpLoginRequiredMixin, SortableTableMix
     model = DomainModel
     template_name = 'pki/domains/domain.html'  # Template file
     context_object_name = 'domain-new'
-    paginate_by = 5  # Number of items per page
+    paginate_by = 30  # Number of items per page
     default_sort_param = 'unique_name'
 
 
@@ -72,7 +72,7 @@ class DomainUpdateView(DomainContextMixin, TpLoginRequiredMixin, UpdateView):
 class DomainDevIdRegistrationTableMixin(SortableTableMixin, ListInDetailView):
 
     model = DevIdRegistration
-    paginate_by = 5  # Number of items per page
+    paginate_by = 30  # Number of items per page
     context_object_name = 'devid_registrations'
     default_sort_param = 'unique_name'
     

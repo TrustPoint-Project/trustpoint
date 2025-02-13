@@ -10,4 +10,13 @@ urlpatterns = [
         views.CmpInitializationRequestView.as_view(),
         name='initialization'
     ),
+    path(
+        'certification/<str:domain>/<str:template>/',
+        views.CmpCertificationRequestView.as_view(),
+        name='certification-template'
+    ),
+    path(
+        'certification/<str:domain>/',
+         views.CmpCertificationRequestView.as_view(),
+         name='certification')
 ]
