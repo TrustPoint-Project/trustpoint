@@ -70,7 +70,7 @@ ignore = [
     "FIX",
     "COM812",               # Not compatible with the formatter
     "ISC001",               # Not compatible with the formatter
-    "S101"
+    "S101",
 ]
 
 [tool.ruff.format]
