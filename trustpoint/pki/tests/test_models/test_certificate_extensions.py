@@ -348,5 +348,4 @@ def test_policy_constraints(self_signed_cert_with_ext):
 
 @pytest.mark.django_db
 def test_freshest_crl(self_signed_cert_with_ext):
-    """A"""
-
+    """Test that the freshest crl extension is parsed and stored correctly in the database."""

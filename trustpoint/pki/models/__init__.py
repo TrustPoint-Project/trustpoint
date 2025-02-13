@@ -12,7 +12,6 @@ from .extension import (
     CertificateExtension,
     BasicConstraintsExtension,
     KeyUsageExtension,
-    AlternativeNameExtensionModel,
     IssuerAlternativeNameExtension,
     SubjectAlternativeNameExtension
 )

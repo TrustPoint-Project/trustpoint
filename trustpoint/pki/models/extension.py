@@ -366,8 +366,6 @@ class GeneralNamesModel(models.Model):
 
     _alternative_name_extension_type: str
 
-    critical = models.BooleanField(verbose_name=_('Critical'), editable=False)
-
     @property
     def extension_oid(self) -> str:
         raise NotImplementedError('This base class (AlternativeNameExtensionModel) does not have an extension_oid.')
@@ -725,7 +723,7 @@ class AuthorityKeyIdentifierExtension(CertificateExtension, models.Model):
                 gn.save()
                 gn.save_general_names(aki.authority_cert_issuer)
 
-            aki_extension = AuthorityKeyIdentifierExtension(
+            aki_extension = cls(
                 key_identifier=key_identifier,
                 authority_cert_serial_number=authority_cert_serial_number,
                 critical=extension.critical,

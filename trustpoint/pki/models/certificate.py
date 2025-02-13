@@ -6,11 +6,9 @@ from typing import TYPE_CHECKING
 from core.oid import (
     AlgorithmIdentifier,
     CertificateExtensionOid,
-    EllipticCurveOid,
     NamedCurve,
     NameOid,
     PublicKeyAlgorithmOid,
-    SignatureAlgorithmOid,
 )
 from core.serializer import CertificateSerializer, PublicKeySerializer
 from cryptography import x509
