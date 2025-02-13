@@ -8,9 +8,10 @@
   <img src="https://img.shields.io/badge/License-MIT-014BAD?style=flat">
   <img src="https://img.shields.io/badge/Status-Beta-red?style=flat">
 </p>
+![Pytest Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/pytest.yml/badge.svg)
+![Coverage](https://codecov.io/gh/TrustPoint-Project/trustpoint/branch/main/graph/badge.svg)
 ![MyPy Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/mypy.yml/badge.svg)
 ![Ruff Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/ruff.yml/badge.svg)
-![Pytest Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/pytest.yml/badge.svg)
 
 > [!CAUTION]
 > Trustpoint is currently in a **technology preview** (beta) state. Do not use it in production.
