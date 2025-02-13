@@ -1,0 +1,9 @@
+name: Run Behave Tests for R_013
+
+on: [push, pull_request]
+
+jobs:
+  r_013-test:
+    uses: ./.github/workflows/behave-test-template.yml
+    with:
+      feature_file: trustpoint/features/R_013_remote_credential_download.feature
