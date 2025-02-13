@@ -38,7 +38,7 @@
             <td>{{ domain.issuing_ca.unique_name }}</td>
             <td><a href="detail/{{domain.id}}/" class="btn btn-primary tp-table-btn">Details</a></td>
             <td><a href="config/{{domain.id}}/" class="btn btn-primary tp-table-btn">Config</a></td>
-            <td><a href="delete/{{domain.id}}/" class="btn btn-secondary tp-table-btn">Delete</a></td>
+            <td><a href="delete/{{domain.id}}/" class="btn btn-danger tp-table-btn">Delete</a></td>
           </tr>
           {% empty %}
           <tr>
@@ -52,13 +52,13 @@
     </div>
 
     <div class="card-footer d-flex justify-content-between tp-sticky-footer">
+      <div>
+          <a class="btn btn-primary ms-2" href="{% url 'pki:domains-add' %}">
+              {% trans "Add new Domain" %}
+          </a>
+      </div>
         <div>
-            <button type="button" class="btn btn-secondary tp-table-select-btn" data-tp-url="delete">{% trans "Delete selected" %}</button>
-        </div>
-        <div>
-            <a class="btn btn-primary" href="{% url 'pki:domains-add' %}">
-                {% trans "Add new Domain" %}
-            </a>
+            <button type="button" class="btn btn-danger tp-table-select-btn me-2" data-tp-url="delete">{% trans "Delete selected" %}</button>
         </div>
     </div>
 

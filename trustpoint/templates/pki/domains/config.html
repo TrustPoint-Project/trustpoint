@@ -77,13 +77,14 @@
 
                     {% include 'pki/devid_registration/table.html' %}
 
-                    <br>
-
-                    <div class="tp-form-btn-group">
-                        <button type="button" value="Back" class="btn btn-secondary"
-                                onClick="history.back()">{% trans 'Back' %}</button>
+                </div>
+            </div>
+            <div class="card-footer d-flex justify-content-between align-items-center">
+                <div class="tp-card-btn-footer ms-2">
+                    <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
+                    <div>
+                        <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
                         <a href="{% url 'pki:domains' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
-                        <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
                     </div>
                 </div>
             </div>
