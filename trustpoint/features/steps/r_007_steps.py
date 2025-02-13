@@ -1,5 +1,4 @@
 from behave import then, when
-from behave.api.pending_step import StepNotImplementedError
 
 
 @when('the admin performs an action {action}')
@@ -12,7 +11,7 @@ def step_when_admin_performs_action(context, action):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: When the admin performs an action {action}')
+    assert False, f'STEP: When the admin performs an action {action}'
 
 
 @then('the system logs the action {action} with relevant details')
@@ -25,7 +24,7 @@ def step_then_system_logs_action(context, action):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Then the system logs the action {action} with relevant details')
+    assert False, f'STEP: Then the system logs the action {action} with relevant details'
 
 
 @when('the admin retrieves logs for the time range {time_range}')
@@ -38,7 +37,7 @@ def step_when_admin_retrieves_logs(context, time_range):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: When the admin retrieves logs for the time range {time_range}')
+    assert False, f'STEP: When the admin retrieves logs for the time range {time_range}'
 
 
 @then('the system displays logs within the {time_range}')
@@ -51,7 +50,7 @@ def step_then_system_displays_logs(context, time_range):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Then the system displays logs within the {time_range}')
+    assert False, f'STEP: Then the system displays logs within the {time_range}'
 
 
 @then('logs can be filtered by {filter_criteria}')
@@ -64,7 +63,7 @@ def step_then_logs_can_be_filtered(context, filter_criteria):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Then logs can be filtered by {filter_criteria}')
+    assert False, f'STEP: Then logs can be filtered by {filter_criteria}'
 
 
 @when('the admin modifies logging configuration to {log_level}')
@@ -77,7 +76,7 @@ def step_when_admin_modifies_logging(context, log_level):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: When the admin modifies logging configuration to {log_level}')
+    assert False, f'STEP: When the admin modifies logging configuration to {log_level}'
 
 
 @then('the system applies the new logging configuration')
@@ -87,7 +86,7 @@ def step_then_system_applies_logging_config(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: Then the system applies the new logging configuration')
+    assert False, 'STEP: Then the system applies the new logging configuration'
 
 
 @then('logs reflect the new verbosity level {log_level}')
@@ -100,7 +99,7 @@ def step_then_logs_reflect_log_level(context, log_level):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Then logs reflect the new verbosity level {log_level}')
+    assert False, f'STEP: Then logs reflect the new verbosity level {log_level}'
 
 
 @when('the system restarts')
@@ -110,7 +109,7 @@ def step_when_system_restarts(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: When the system restarts')
+    assert False, 'STEP: When the system restarts'
 
 
 @then('previous logs are still accessible')
@@ -120,7 +119,7 @@ def step_then_previous_logs_are_accessible(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: Then previous logs are still accessible')
+    assert False, 'STEP: Then previous logs are still accessible'
 
 
 @then('unauthorized users cannot delete or modify logs')
@@ -130,4 +129,4 @@ def step_then_unauthorized_users_cannot_modify_logs(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: Then unauthorized users cannot delete or modify logs')
+    assert False, 'STEP: Then unauthorized users cannot delete or modify logs'

@@ -3,7 +3,6 @@
 import logging
 
 from behave import given, runner, then, when
-from behave.api.pending_step import StepNotImplementedError
 from devices.models import IssuedCredentialModel
 from devices.tests.conftest import create_mock_models
 
