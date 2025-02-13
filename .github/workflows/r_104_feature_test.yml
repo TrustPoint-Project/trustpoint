@@ -1,0 +1,9 @@
+name: Run Behave Tests for R_104
+
+on: [pull_request]
+
+jobs:
+  r_013-test:
+    uses: ./.github/workflows/behave-test-template.yml
+    with:
+      feature_file: R_104_certificate_template_security
