@@ -64,6 +64,11 @@ class IssuingCaModel(LoggerMixin, models.Model):
     def __repr__(self) -> str:
         return f'IssuingCaModel(unique_name={self.unique_name})'
 
+    @property
+    def common_name(self) -> str:
+        """Returns common name"""
+        return self.credential.certificate.common_name
+
     @classmethod
     @LoggerMixin.log_exceptions
     def create_new_issuing_ca(
