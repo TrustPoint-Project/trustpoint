@@ -1,8 +1,8 @@
-![Trustpoint](.github-assets/trustpoint_banner.png)  
+![Trustpoint](.github-assets/trustpoint_banner.png)
 
 <div align="center">
 
-**The open source trust anchor software for machines and factories to manage digital identities.**  
+**The open source trust anchor software for machines and factories to manage digital identities.**
 
 [![Landing Page](https://img.shields.io/badge/Landing_Page-014BAD)](https://trustpoint.campus-schwarzwald.de/en/)
 [![GitHub Discussions](https://img.shields.io/badge/GitHub-Discussions-014BAD)](https://github.com/orgs/TrustPoint-Project/discussions)
@@ -117,7 +117,7 @@ state the header and if the [pyhon behave](https://behave.readthedocs.io/en/late
 | R_006       | Backup, Restore, and Update Mechanisms                          | ![Test](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/r_006_feature_test.yml/badge.svg) |
 | R_007       | Logging Capabilities                                            | ![Test](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/r_007_feature_test.yml/badge.svg) |
 | R_008       | Auto-Generated Issuing CAs                                      | ![Test](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/r_008_feature_test.yml/badge.svg) |
-| R_009       | High Availability                                               | ![Test](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/r_009_feature_test.yml/badge.svg) |
+| R_009       | High Availability                                               | No test present.                                                                                             |
 | R_010       | CMP Endpoint for Onboarded Devices                              | ![Test](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/r_010_feature_test.yml/badge.svg) |
 | R_011       | EST Endpoint for Onboarded Devices                              | ![Test](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/r_011_feature_test.yml/badge.svg) |
 | R_012       | Language Selection and Translation                              | ![Test](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/r_012_feature_test.yml/badge.svg) |
