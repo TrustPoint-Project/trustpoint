@@ -6,4 +6,4 @@ jobs:
   r_013-test:
     uses: ./.github/workflows/behave-test-template.yml
     with:
-      feature_file: trustpoint/features/R_013_remote_credential_download.feature
+      feature_file: R_013_remote_credential_download
