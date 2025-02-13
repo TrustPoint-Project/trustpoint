@@ -1,20 +1,17 @@
-<p align="center">
-  <img alt="Trustpoint" src="/.github-assets/trustpoint_banner.png"><br/>
-  <strong>The open source trust anchor software for machines and factories to manage digital identities.</strong><br/><br/>
-  <a href="https://trustpoint.campus-schwarzwald.de/en/"><img src="https://img.shields.io/badge/Landing_Page-014BAD?style=flat"></a>
-  <a href="https://github.com/orgs/TrustPoint-Project/discussions"><img src="https://img.shields.io/badge/GitHub-Discussions-014BAD?style=flat"></a>
-  <a href="https://trustpoint.readthedocs.io"><img src="https://img.shields.io/readthedocs/trustpoint"></a>
-  <a href="https://hub.docker.com/r/trustpoint2023/trustpoint"><img src="https://img.shields.io/docker/automated/trustpoint2023/trustpoint"></a> 
-  <img src="https://img.shields.io/badge/License-MIT-014BAD?style=flat">
-  <img src="https://img.shields.io/badge/Status-Beta-red?style=flat">
+![Trustpoint](.github-assets/trustpoint_banner.png)  
 
+**The open source trust anchor software for machines and factories to manage digital identities.**  
+
+[![Landing Page](https://img.shields.io/badge/Landing_Page-014BAD)](https://trustpoint.campus-schwarzwald.de/en/)
+[![GitHub Discussions](https://img.shields.io/badge/GitHub-Discussions-014BAD)](https://github.com/orgs/TrustPoint-Project/discussions)
+[![Read the Docs](https://img.shields.io/readthedocs/trustpoint)](https://trustpoint.readthedocs.io)
+[![Docker Automated](https://img.shields.io/docker/automated/trustpoint2023/trustpoint)](https://hub.docker.com/r/trustpoint2023/trustpoint)
+![Status](https://img.shields.io/badge/Status-Beta-red)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![Pytest Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/pytest.yml/badge.svg)
 ![Coverage](https://codecov.io/gh/TrustPoint-Project/trustpoint/branch/main/graph/badge.svg)
 ![MyPy Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/mypy.yml/badge.svg)
 ![Ruff Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/ruff.yml/badge.svg)
-
-</p>
-
 
 > [!CAUTION]
 > Trustpoint is currently in a **technology preview** (beta) state. Do not use it in production.
