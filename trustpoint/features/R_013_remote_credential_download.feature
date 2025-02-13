@@ -1,12 +1,13 @@
 Feature: Remote Credential Download
-	It shall be possible to download an issued application credential from a remote device from the Trustpoint server without user authentication with a one-time password.
+	The system must allow users to securely download an issued application credential from a remote device without requiring user authentication.
+	Instead, a one-time password (OTP) should be used to authorize the download.
 
 	Background:
 		Given the TPC_Web application is running
 		
 	Scenario: Admin creates one time password
 		Given an issued credential with ID 15 is successfully issued
-    And the admin user is logged into TPC_Web
+    	And the admin user is logged into TPC_Web
 		When the admin visits the associated "Download on Device browser" view
 		Then a one-time password is displayed which can be used to download the credential from a remote device
 		
