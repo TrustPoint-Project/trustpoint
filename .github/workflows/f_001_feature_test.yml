@@ -3,7 +3,7 @@ name: Run Behave Tests for F_001
 on: [pull_request]
 
 jobs:
-  r_013-test:
+  test:
     uses: ./.github/workflows/behave-test-template.yml
     with:
       feature_file: F_001_nteu_identity_onboarding

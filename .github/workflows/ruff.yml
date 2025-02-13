@@ -1,5 +1,7 @@
 name: Ruff Code Quality Check
+
 on: [ pull_request ]
+
 jobs:
   ruff:
     runs-on: ubuntu-latest
