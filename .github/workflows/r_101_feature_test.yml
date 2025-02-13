@@ -1,4 +1,4 @@
-name: Run Behave Tests for R_101
+name: R_101
 
 on: [pull_request]
 
