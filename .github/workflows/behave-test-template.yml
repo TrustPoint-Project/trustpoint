@@ -1,0 +1,36 @@
+name: Behave Tests
+
+on:
+  workflow_call:
+    inputs:
+      feature_file:
+        description: 'Feature file to test'
+        required: true
+        type: string
+
+jobs:
+  run-behave:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Install and setup uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: 3.12
+
+      - name: Run database migrations
+        run: |
+          echo "y" | uv run trustpoint/manage.py reset_db
+
+      - name: Run Behave Tests and Generate HTML Report for ${{ inputs.feature_file }}
+        run: |
+          uv run trustpoint/manage.py behave trustpoint/features/${{ inputs.feature_file }} || exit 1
+
+      - name: Upload Test Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: behave-report-${{ inputs.feature_file }}
+          path: reports/report-${{ inputs.feature_file }}.html
