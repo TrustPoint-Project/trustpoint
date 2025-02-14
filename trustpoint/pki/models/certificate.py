@@ -682,8 +682,3 @@ class RevokedCertificateModel(models.Model):
 
     def __str__(self) -> str:
         return f'RevokedCertificate({self.certificate.common_name})'
-
-    @transaction.atomic
-    def save(self, *args, **kwargs) -> None:
-        """Save the revoked certificate and set the certificate status to 'REVOKED'."""
-        super().save(*args, **kwargs)
