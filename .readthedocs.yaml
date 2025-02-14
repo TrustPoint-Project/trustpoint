@@ -21,5 +21,4 @@ sphinx:
 # Use pyproject.toml for dependencies
 python:
   install:
-    - method: pip
-      path: .[dev]
+    - method: uv
