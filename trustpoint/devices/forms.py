@@ -11,14 +11,15 @@ from django.utils.translation import gettext_lazy as _
 
 from devices.models import DeviceModel, IssuedCredentialModel
 from pki.models.certificate import RevokedCertificateModel
+from pki.models.domain import DomainModel
 
 from crispy_forms.helper import FormHelper
 from crispy_forms.layout import Layout, HTML, Div
 from crispy_bootstrap5.bootstrap5 import Field
-import enum
 
 from pki.models.truststore import TruststoreModel
-from .widgets import DisableSelectOptionsWidget
+from devices.widgets import DisableSelectOptionsWidget
+from django.db.models.query import QuerySet
 
 
 PASSWORD_MIN_LENGTH = 12
@@ -231,6 +232,12 @@ class CreateDeviceForm(forms.ModelForm):
             'domain_credential_onboarding':
                 _('Domain Credential Onboarding'),
         }
+
+    domain_queryset = cast(QuerySet[DomainModel], DomainModel.objects.filter(is_active=True))
+    domain = forms.ModelChoiceField(
+        queryset=domain_queryset,
+        empty_label=None
+    )
 
     onboarding_and_pki_configuration = forms.ChoiceField(
         choices=[

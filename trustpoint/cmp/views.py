@@ -629,7 +629,7 @@ class CmpCertificationRequestView(
                                 except Exception as exception:
                                     raise ValueError from exception
                         elif name_type == 'dNSName':
-                            dns_names.append(str(value))
+                            dns_names.append(value.decode())
                 else:
                     raise ValueError
 

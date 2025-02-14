@@ -158,22 +158,7 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
     template_name = 'devices/add.html'
 
     def get_success_url(self) -> str:
-        device = self.object
-        if device.onboarding_protocol == DeviceModel.OnboardingProtocol.NO_ONBOARDING.value:
-            match device.pki_protocol:
-                case DeviceModel.PkiProtocol.MANUAL.value:
-                    return reverse_lazy('devices:certificate_lifecycle_management', kwargs={'pk': device.pk})
-                case DeviceModel.PkiProtocol.CMP_SHARED_SECRET.value:
-                    return reverse_lazy('devices:help_no-onboarding_cmp-shared-secret', kwargs={'pk': device.pk})
-        return reverse_lazy('devices:devices')
-
-    def get_form(self, form_class: Any = None) -> Any:
-        """Override get_form to filter out autogen root CAs."""
-        form = super().get_form(form_class)
-        form.fields['domain'].queryset = DomainModel.objects.filter(is_active=True)
-        form.fields['domain'].empty_label = None # Remove empty "---------" choice
-
-        return form
+        return reverse('devices:help_dispatch', kwargs={'pk': self.object.id })
 
     @staticmethod
     def clean_device_name(device_name: str) -> str:
@@ -221,6 +206,7 @@ class NoOnboardingCmpSharedSecretHelpView(DeviceContextMixin, TpLoginRequiredMix
                 f'-genkey -noout -out key.pem')
         else:
             raise ValueError('Unsupported public key algorithm')
+        context['host'] = self.request.META.get('REMOTE_ADDR') + ':' + self.request.META.get('SERVER_PORT')
         context['key_gen_command'] = key_gen_command
         number_of_issued_device_certificates = len(IssuedCredentialModel.objects.filter(device=device))
         context['tls_client_cn'] = f'Trustpoint-TLS-Client-Credential-{number_of_issued_device_certificates}'
@@ -250,6 +236,7 @@ class OnboardingCmpSharedSecretHelpView(DeviceContextMixin, TpLoginRequiredMixin
                 f'-genkey -noout -out key.pem')
         else:
             raise ValueError('Unsupported public key algorithm')
+        context['host'] = self.request.META.get('REMOTE_ADDR') + ':' + self.request.META.get('SERVER_PORT')
         context['domain_credential_key_gen_command'] = domain_credential_key_gen_command
         context['key_gen_command'] = key_gen_command
         number_of_issued_device_certificates = len(IssuedCredentialModel.objects.filter(device=device))
@@ -892,6 +879,3 @@ class CertificateDownloadView(DeviceContextMixin, TpLoginRequiredMixin, DetailVi
     model: type[IssuedCredentialModel] = IssuedCredentialModel
     template_name = 'devices/credentials/certificate_download.html'
     context_object_name = 'issued_credential'
-
-
-
