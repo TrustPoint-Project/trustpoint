@@ -23,4 +23,4 @@ python:
   install:
     - method: pip
       path: .
-      args: ["-e", ".", "[dev]"]
+      args: [".[dev]"]
