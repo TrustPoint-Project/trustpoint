@@ -22,7 +22,10 @@ jobs:
           --cov=trustpoint \
           --cov-report=xml \
           --cov-report=html \
-          --junitxml=reports/pytest-report.xml | tee reports/pytest-output.log
+          --html=reports/pytest-report.html \
+          --self-contained-html \
+          --junitxml=reports/pytest-report.xml \
+          trustpoint/ | tee reports/pytest-output.log
           mv coverage.xml reports/coverage.xml
 
       - name: Upload Test Reports
