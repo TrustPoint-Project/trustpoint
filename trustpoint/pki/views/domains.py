@@ -1,5 +1,3 @@
-"""Views related to domain management."""
-
 from __future__ import annotations
 
 import enum
@@ -12,7 +10,7 @@ from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DeleteView
 from django.views.generic.edit import CreateView, FormView, UpdateView
-from django.views.generic.list import ListView  # type: ignore[import-untyped]
+from django.views.generic.list import ListView
 
 from pki.forms import DevIdAddMethodSelectForm, DevIdRegistrationForm
 from pki.models import DevIdRegistration, DomainModel, IssuingCaModel

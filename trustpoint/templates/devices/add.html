@@ -1,5 +1,5 @@
 {% extends 'trustpoint/base.html' %}
-{% load crispy_forms_filters %}
+{% load crispy_forms_tags %}
 {% load i18n %}
 {% block content %}
     <div class="card">
@@ -8,13 +8,12 @@
         </div>
         <div class="card-body py-3">
             <form method="POST" id="add-device-form">
-                {% csrf_token %}
-                {{ form|crispy }}
+                {%  crispy form %}
                 <hr>
                 <div class="tp-form-btn-group">
                     <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
                     <button type="submit" class="btn btn-primary">
-                        {% trans 'Add Device' %}
+                        {% trans 'Create Device' %}
                     </button>
                 </div>
             </form>

@@ -915,5 +915,9 @@ code {
     opacity: 1;
 }
 
+.asteriskField {
+    display: none;
+}
+
 
 /* ----- Testing ----- */

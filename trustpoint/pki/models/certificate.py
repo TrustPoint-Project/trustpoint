@@ -3,20 +3,26 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
-from core.oid import (
-    AlgorithmIdentifier,
-    CertificateExtensionOid,
-    NamedCurve,
-    NameOid,
-    PublicKeyAlgorithmOid,
-)
-from core.serializer import CertificateSerializer, PublicKeySerializer
+import datetime
 from cryptography import x509
 from cryptography.exceptions import InvalidSignature
 from cryptography.hazmat.primitives import hashes, serialization
 from cryptography.hazmat.primitives.asymmetric import ec, ed448, ed25519, rsa
 from django.db import models, transaction
 from django.utils.translation import gettext_lazy as _
+
+
+from core.oid import (
+    PublicKeyAlgorithmOid,
+    CertificateExtensionOid,
+    NameOid,
+    AlgorithmIdentifier,
+    NamedCurve,
+    SignatureSuite,
+    PublicKeyInfo
+)
+from core.serializer import CertificateSerializer, PublicKeySerializer
+
 
 from pki.models.extension import (
     AttributeTypeAndValue,
@@ -83,8 +89,23 @@ class CertificateModel(LoggerMixin, models.Model):
 
     # ----------------------------------------------- Custom Data Fields -----------------------------------------------
 
-    certificate_status = models.CharField(verbose_name=_('Status'), max_length=4, choices=CertificateStatus,
-                                          editable=False, default=CertificateStatus.OK)
+    @property
+    def signature_suite(self) -> SignatureSuite:
+        return SignatureSuite.from_certificate(self.get_certificate_serializer().as_crypto())
+
+    @property
+    def public_key_info(self) -> PublicKeyInfo:
+        return self.signature_suite.public_key_info
+
+    @property
+    def certificate_status(self) -> CertificateStatus:
+        if RevokedCertificateModel.objects.filter(certificate=self).exists():
+            return self.CertificateStatus.REVOKED
+        elif datetime.datetime.now(datetime. UTC) < self.not_valid_before:
+            return self.CertificateStatus.NOT_YET_VALID
+        elif datetime.datetime.now(datetime. UTC) > self.not_valid_after:
+            return self.CertificateStatus.EXPIRED
+        return self.CertificateStatus.OK
 
     is_self_signed = models.BooleanField(verbose_name=_('Self-Signed'), null=False, blank=False)
 
@@ -351,6 +372,16 @@ class CertificateModel(LoggerMixin, models.Model):
 
     # policy_mappings = None
     # ext_subject_directory_attributes = None
+    # ext_name_constraints = None
+    # ext_policy_constraints = None
+    # ext_extended_key_usage = None
+    # ext_crl_distribution_points = None
+    # ext_inhibit_any_policy = None
+    # ext_freshest_crl = None
+
+    # Private Internet Access
+    # ext_authority_information_access = None
+    # ext_subject_information_access = None
 
     # --------------------------------------------------- Properties ---------------------------------------------------
 
@@ -609,11 +640,6 @@ class CertificateModel(LoggerMixin, models.Model):
         """
         return cls._save_certificate(certificate=certificate)
 
-    def set_status(self, status: CertificateStatus) -> None:
-        """Set the certificate status."""
-        self.certificate_status = status
-        self._save()
-
 
 class RevokedCertificateModel(models.Model):
     """Model to store revoked certificates."""
@@ -642,7 +668,7 @@ class RevokedCertificateModel(models.Model):
 
     revocation_reason = models.TextField(
         verbose_name=_('Revocation Reason'),
-        choices=ReasonCode.choices,
+        choices=ReasonCode,
         default=ReasonCode.UNSPECIFIED
     )
 
@@ -660,5 +686,4 @@ class RevokedCertificateModel(models.Model):
     @transaction.atomic
     def save(self, *args, **kwargs) -> None:
         """Save the revoked certificate and set the certificate status to 'REVOKED'."""
-        self.certificate.set_status(CertificateModel.CertificateStatus.REVOKED)
         super().save(*args, **kwargs)

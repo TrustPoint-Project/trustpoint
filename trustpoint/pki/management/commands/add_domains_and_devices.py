@@ -66,12 +66,12 @@ class Command(BaseCommand):
         }
 
         # onboarding_protocols = [protocol.value for protocol in Device.OnboardingProtocol]
-        onboarding_protocols = [
-            DeviceModel.OnboardingProtocol.NO_ONBOARDING.value,
-            DeviceModel.OnboardingProtocol.MANUAL.value,
-            # DeviceModel.OnboardingProtocol.CLI.value,
-            DeviceModel.OnboardingProtocol.TP_CLIENT.value,
-        ]
+        # onboarding_protocols = [
+        #     DeviceModel.OnboardingProtocol.NO_ONBOARDING.value,
+        #     DeviceModel.OnboardingProtocol.MANUAL.value,
+        #     # DeviceModel.OnboardingProtocol.CLI.value,
+        #     DeviceModel.OnboardingProtocol.TP_CLIENT.value,
+        # ]
 
         print("Starting the process of adding domains and devices...\n")
 
@@ -88,28 +88,27 @@ class Command(BaseCommand):
 
             print(f"Domain({domain_name}, Issuing CA: {domain.issuing_ca})")
 
-            for device_name in devices:
-                onboarding_protocol = random.choice(onboarding_protocols)
+            # for device_name in devices:
+            #     # onboarding_protocol = random.choice(onboarding_protocols)
+            #
+            #     serial_number = ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
+            #
+            #     print(f"Creating device '{device_name}' in domain '{domain_name}' with:")
+            #     print(f"  - Serial Number: {serial_number}")
+                # print(f"  - Onboarding Protocol: {onboarding_protocol}")
 
-                serial_number = ''.join(random.choices(string.ascii_uppercase + string.digits, k=12))
+                # onboarding_status = DeviceModel.OnboardingStatus.NO_ONBOARDING \
+                #     if onboarding_protocol == DeviceModel.OnboardingProtocol.NO_ONBOARDING \
+                #     else DeviceModel.OnboardingStatus.PENDING
 
-                print(f"Creating device '{device_name}' in domain '{domain_name}' with:")
-                print(f"  - Serial Number: {serial_number}")
-                print(f"  - Onboarding Protocol: {onboarding_protocol}")
-
-                onboarding_status = DeviceModel.OnboardingStatus.NO_ONBOARDING \
-                    if onboarding_protocol == DeviceModel.OnboardingProtocol.NO_ONBOARDING \
-                    else DeviceModel.OnboardingStatus.PENDING
-
-                dev = DeviceModel(
-                    unique_name=device_name,
-                    serial_number=serial_number,
-                    onboarding_protocol=onboarding_protocol,
-                    onboarding_status=onboarding_status,
-                    domain=domain
-                )
-
-                dev.save()
-                print(f"Device '{device_name}' created successfully.\n")
+                # dev = DeviceModel(
+                #     unique_name=device_name,
+                #     serial_number=serial_number,
+                #
+                #     domain=domain
+                # )
+                #
+                # dev.save()
+                # print(f"Device '{device_name}' created successfully.\n")
 
         print("\nProcess completed. All domains and devices have been added.")

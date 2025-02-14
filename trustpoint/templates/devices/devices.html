@@ -35,24 +35,21 @@
               </a>
             </th>
             <th>
-              <a href="?sort={% if current_sort == 'updated_at' %}-{% endif %}updated_at">
-                Updated
-              </a>
-            </th>
-            <th>
-              <a
-                href="?sort={% if current_sort == 'onboarding_protocol' %}-{% endif %}onboarding_protocol"
-              >
-                Onboarding Protocol
-              </a>
-            </th>
-            <th>
               <a href="?sort={% if current_sort == 'onboarding_status' %}-{% endif %}onboarding_status">
                 Onboarding Status
               </a>
             </th>
-            <th>Onboarding</th>
-            <th>Certificate Lifecycle Management</th>
+          <th>
+              <a href="?sort={% if current_sort == 'onboarding_protocol' %}-{% endif %}onboarding_protocol">
+                Onboarding Protocol
+              </a>
+            </th>
+            <th>
+              <a href="?sort={% if current_sort == 'pki_protocol' %}-{% endif %}pki_protocol">
+                PKI Protocol
+              </a>
+            </th>
+            <th>Certificate Management</th>
             <th>Details</th>
             <th>Configure</th>
             <th>Revoke</th>
@@ -68,13 +65,20 @@
             <td>{{ device.domain }}</td>
             <td>{{ device.serial_number }}</td>
             <td>{{ device.created_at }}</td>
-            <td>{% if device.updated_at%} {{ device.updated_at }} {% else %}—{% endif %}</td>
-            <td>{{ device.get_onboarding_protocol_display }}</td>
-            <td>{{ device.get_onboarding_status_display }}</td>
-            <td>{{device.onboarding_button| safe}} </td>
+            <td>
+                {% if device.get_onboarding_status_display != 'No Onboarding' %}
+                    {{ device.get_onboarding_status_display }}
+                {% endif %}
+            </td>
+            <td>
+                {% if device.get_onboarding_protocol_display != 'No Onboarding' %}
+                    {{ device.get_onboarding_protocol_display }}
+                {% endif %}
+            </td>
+            <td>{{ device.get_pki_protocol_display }}</td>
             <td>{{ device.clm_button| safe}}</td>
-            <td><a href="details/{{device.id}}/" class="btn btn-primary tp-table-btn">Details</a></td>
-            <td><a href="configure/{{device.id}}/" class="btn btn-primary tp-table-btn">Configure</a></td>
+            <td><a href="details/{{device.id}}/" class="btn btn-primary tp-table-btn w-100">Details</a></td>
+            <td><a href="configure/{{device.id}}/" class="btn btn-primary tp-table-btn w-100">Configure</a></td>
             <td>{{ device.revoke_button| safe}}</td>
           </tr>
           {% empty %}

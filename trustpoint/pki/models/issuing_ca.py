@@ -10,6 +10,7 @@ from cryptography.hazmat.primitives import serialization
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from core import oid
 
 from pki.models.certificate import CertificateModel, RevokedCertificateModel
 from pki.models.credential import CredentialModel
@@ -168,6 +169,14 @@ class IssuingCaModel(LoggerMixin, models.Model):
             return False
 
         return True
+
+    @property
+    def signature_suite(self) -> oid.SignatureSuite:
+        return oid.SignatureSuite.from_certificate(self.credential.get_certificate_serializer().as_crypto())
+
+    @property
+    def public_key_info(self) -> oid.PublicKeyInfo:
+        return self.signature_suite.public_key_info
 
     def revoke_all_issued_certificates(self, reason: str = RevokedCertificateModel.ReasonCode.UNSPECIFIED) -> None:
         """Revokes all certificates issued by this CA."""

@@ -7,17 +7,17 @@ from datetime import date, datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from devices.models import DeviceModel, IssuedCredentialModel
-from django.contrib import messages  # type: ignore[import-untyped]
-from django.contrib.auth.decorators import login_required  # type: ignore[import-untyped]
-from django.core.management import call_command  # type: ignore[import-untyped]
-from django.db.models import Case, Count, F, IntegerField, Q, QuerySet, Value, When  # type: ignore[import-untyped]
-from django.db.models.functions import TruncDate  # type: ignore[import-untyped]
-from django.http import HttpRequest, HttpResponse, JsonResponse  # type: ignore[import-untyped]
-from django.shortcuts import get_object_or_404, redirect, render  # type: ignore[import-untyped]
-from django.utils import dateparse, timezone  # type: ignore[import-untyped]
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.management import call_command
+from django.db.models import Case, Count, F, IntegerField, Q, QuerySet, Value, When
+from django.db.models.functions import TruncDate
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import dateparse, timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from django.views.generic.base import RedirectView, TemplateView  # type: ignore[import-untyped]
+from django.views.generic.base import RedirectView, TemplateView
 from django.views.generic.list import ListView
 from ninja.responses import Response
 from pki.models import CertificateModel, IssuingCaModel
@@ -29,7 +29,7 @@ from .filters import NotificationFilter
 from .models import NotificationModel, NotificationStatus
 
 if TYPE_CHECKING:
-    from django.utils.safestring import SafeString  # type: ignore[import-untyped]
+    from django.utils.safestring import SafeString
 
 SUCCESS = 25
 ERROR = 40
