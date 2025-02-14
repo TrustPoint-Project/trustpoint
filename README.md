@@ -10,10 +10,10 @@
 [![Docker Automated](https://img.shields.io/docker/automated/trustpoint2023/trustpoint)](https://hub.docker.com/r/trustpoint2023/trustpoint)
 ![Status](https://img.shields.io/badge/Status-Beta-red)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-![Pytest Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/pytest.yml/badge.svg)
+[![Pytest Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/pytest.yml/badge.svg)](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/pytest.yml)
 ![Coverage](https://codecov.io/gh/TrustPoint-Project/trustpoint/branch/main/graph/badge.svg)
-![MyPy Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/mypy.yml/badge.svg)
-![Ruff Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/ruff.yml/badge.svg)
+[![MyPy Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/mypy.yml/badge.svg)](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/mypy.yml)
+[![Ruff Status](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/ruff.yml/badge.svg)](https://github.com/TrustPoint-Project/trustpoint/actions/workflows/ruff.yml)
 
 </div>
 
