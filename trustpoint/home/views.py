@@ -19,7 +19,6 @@ from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
 from django.views.generic.base import RedirectView, TemplateView
 from django.views.generic.list import ListView
-from ninja.responses import Response
 from pki.models import CertificateModel, IssuingCaModel
 
 from trustpoint.settings import UIConfig
@@ -190,7 +189,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
         if start_date:
             start_date_object = dateparse.parse_datetime(start_date)  # Returns a datetime object
             if not start_date_object:
-                return Response({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
+                return JsonResponse({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
         else:
             tz = timezone.get_current_timezone()
             start_date_object = datetime.now(tz).date()
