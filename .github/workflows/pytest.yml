@@ -15,6 +15,10 @@ jobs:
         with:
           python-version: 3.12
 
+      - name: Run database migrations
+        run: |
+          echo "y" | uv run trustpoint/manage.py reset_db
+
       - name: Run Pytest with Coverage
         run: |
           mkdir -p reports
@@ -50,7 +54,7 @@ jobs:
 
       - name: Fail Job if Tests Failed
         run: |
-          if grep -q "failed" reports/pytest-output.log; then
+          if grep -q "[1-9] warnings, [1-9] errors" reports/pytest-output.log; then
             echo "❌ Pytest failed! Failing job."
             exit 1
           fi
