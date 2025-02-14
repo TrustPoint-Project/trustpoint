@@ -3,7 +3,8 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta
+from collections import Counter
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from devices.models import DeviceModel, IssuedCredentialModel
@@ -302,10 +303,9 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
         cert_counts_by_status = []
         try:
             cert_status_qr = (
-                CertificateModel.objects.filter(
-                    certificate_status__in=['O', 'R']
-                )  # Optional: Filter nach mehreren Statuswerten
-                .annotate(issue_date=TruncDate('not_valid_before'))
+                CertificateModel.objects.annotate(
+                    issue_date=TruncDate('not_valid_before')
+                )
                 .values('issue_date', 'certificate_status')
                 .annotate(cert_count=Count('id'))
                 .order_by('issue_date', 'certificate_status')
@@ -329,15 +329,11 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
         """Get certs count by onboarding status from database"""
         cert_status_counts = {str(status): 0 for _, status in CertificateModel.CertificateStatus.choices}
         try:
-            cert_status_qr = (
-                CertificateModel.objects.filter(created_at__gt=start_date)
-                .values('certificate_status')
-                .annotate(count=Count('certificate_status'))
-            )
+            cert_status_qr = CertificateModel.objects.filter(created_at__gt=start_date)
+            status_counts = Counter(str(cert.certificate_status.value) for cert in cert_status_qr)
             # Mapping from short code to human-readable name
             status_mapping = {key: str(value) for key, value in CertificateModel.CertificateStatus.choices}
-            cert_status_counts = {status_mapping[item['certificate_status']]: item['count'] for item in cert_status_qr}
-            cert_status_counts['total'] = sum(cert_status_counts.values())
+            cert_status_counts = {status_mapping[key]: value for key, value in status_counts.items()}
         except Exception:
             self._logger.exception('Error occurred in cert counts by status query')
         return cert_status_counts

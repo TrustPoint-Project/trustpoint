@@ -183,17 +183,17 @@ class IssuingCaModel(LoggerMixin, models.Model):
         # Note: This goes through all active certificates and checks issuance by this CA based on cert.issuer_public_bytes == ca.subject_public_bytes
         # WARNING: This means that it may inadvertently revoke certificates that were issued by a different CA with the same subject name
         ca_subject_public_bytes = self.credential.certificate.subject_public_bytes
-        qs = CertificateModel.objects.filter(certificate_status=CertificateModel.CertificateStatus.OK) \
-                                     .filter(issuer_public_bytes=ca_subject_public_bytes) \
+        qs = CertificateModel.objects.filter(issuer_public_bytes=ca_subject_public_bytes) \
                                      .exclude(subject_public_bytes=ca_subject_public_bytes) # do not self-revoke self-signed CA certificate
 
         for cert in qs:
+            if cert.certificate_status != CertificateModel.CertificateStatus.OK:
+                continue
             RevokedCertificateModel.objects.create(
                 certificate=cert,
                 revocation_reason=reason,
                 ca=self
             )
-            cert.set_status(CertificateModel.CertificateStatus.REVOKED)
 
         self.logger.info('All %i certificates issued by CA %s have been revoked.', qs.count(), self.unique_name)
         self.issue_crl()
