@@ -7,7 +7,7 @@ requires-python = "~=3.10"
 readme = "README.md"
 dependencies = [
     "crispy-bootstrap5~=2024.10",
-    "cryptography>=44.0.0,<45",
+    "cryptography>=44.0.1",
     "django>=5.1.6,<6",
     "django-crispy-forms~=2.3",
     "django-filter~=24.3",
