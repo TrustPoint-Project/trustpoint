@@ -1,4 +1,4 @@
-"""Django Views"""
+"""Logging setting specific views."""
 from __future__ import annotations
 
 import datetime

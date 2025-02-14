@@ -18,17 +18,17 @@
               </a>
             </th>
             <th>
-              <a href="?sort={% if current_sort == 'credential__certificate___common_name' %}-{% endif %}issuing_ca__unique_name">
+              <a href="?sort={% if current_sort == 'credential__certificates__common_name' %}-{% endif %}credential__certificates__common_name">
                 Common Name
               </a>
             </th>
             <th>
-              <a href="?sort={% if current_sort == 'credential__certificate___not_valid_after' %}-{% endif %}issuing_ca__unique_name">
+              <a href="?sort={% if current_sort == 'credential__certificates__not_valid_after' %}-{% endif %}credential__certificates__not_valid_after">
                 Not Valid After
               </a>
             </th>
             <th>
-              <a href="?sort={% if current_sort == 'credential__certificate___signature_algorithm' %}-{% endif %}credential__certificate___signature_algorithm">
+              <a href="">
                 Signature-Suite
               </a>
             </th>
@@ -50,7 +50,7 @@
         <tbody>
           {# When adding or removing columns, please update the "colspan" attribute in the {% empty %} section accordingly #}
           {% for ca in page_obj %}
-          <tr>
+          <tr{% if not ca.is_active %} class="text-muted"{% endif %}>
             <td class="row_checkbox">
               <input type="checkbox" name="row_checkbox" value="{{ ca.id }}" />
             </td>
