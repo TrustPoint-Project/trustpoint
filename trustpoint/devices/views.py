@@ -851,10 +851,7 @@ class HelpDispatchView(DeviceContextMixin, TpLoginRequiredMixin, SingleObjectMix
     def get_redirect_url(self, *args: tuple, **kwargs: dict) -> str:
 
         device: DeviceModel = self.get_object()
-        print('what')
         if not device.domain_credential_onboarding:
-            print('works')
-            print(device.pki_protocol)
             if device.pki_protocol == device.PkiProtocol.CMP_SHARED_SECRET.value:
                 return f'{reverse("devices:help_no-onboarding_cmp-shared-secret", kwargs={"pk": device.id})}'
 
@@ -882,6 +879,3 @@ class CertificateDownloadView(DeviceContextMixin, TpLoginRequiredMixin, DetailVi
     model: type[IssuedCredentialModel] = IssuedCredentialModel
     template_name = 'devices/credentials/certificate_download.html'
     context_object_name = 'issued_credential'
-
-
-
