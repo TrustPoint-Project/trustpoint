@@ -21,11 +21,10 @@
                     {{ form|crispy }}
                 </div>
             </div>
-            <div class="card-footer">
-                <div class="tp-card-btn-footer">
-                    <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
-                    <a href="{% url 'pki:domains' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+            <div class="card-footer d-flex justify-content-between align-items-center tp-sticky-footer">
+                <div class="tp-card-btn-footer ms-2">
                     <button type="submit" class="btn btn-primary">{% trans "Add New Domain" %}</button>
+                    <a href="{% url 'pki:domains' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
                 </div>
             </div>
         </div>

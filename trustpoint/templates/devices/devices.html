@@ -89,13 +89,13 @@
     </div>
     <div>
         <div class="card-footer d-flex justify-content-between tp-sticky-footer">
+          <div>
+              <a class="btn btn-primary" href="{% url 'devices:add' %}">
+                  {% trans "Add new Device" %}
+              </a>
+          </div>
             <div>
-                <button type="button" class="btn btn-secondary tp-table-select-btn" data-tp-url="delete">{% trans "Delete selected" %}</button>
-            </div>
-            <div>
-                <a class="btn btn-primary" href="{% url 'devices:add' %}">
-                    {% trans "Add new Device" %}
-                </a>
+                <button type="button" class="btn btn-danger tp-table-select-btn" data-tp-url="delete">{% trans "Delete selected" %}</button>
             </div>
         </div>
     </div>
