@@ -134,7 +134,7 @@ class TruststoreAddForm(forms.Form):
         try:
             certificates = x509.load_pem_x509_certificates(trust_store_file)
         except Exception as exception:
-            error_message = f'Unable to process the Trust-Store. May be malformed / corrupted.'
+            error_message = 'Unable to process the Truststore. May be malformed / corrupted.'
             raise ValidationError(error_message) from exception
 
         try:

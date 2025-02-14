@@ -26,7 +26,7 @@ echo "Static files collected."
 
 # Compile messages (translations)
 echo "Compiling Messages..."
-run_as_www_data "python trustpoint/manage.py compilemessages"
+run_as_www_data "python trustpoint/manage.py compilemessages -l de -l en"
 echo "Messages compiled."
 
 # Start Apache server

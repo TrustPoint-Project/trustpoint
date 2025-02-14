@@ -1,19 +1,19 @@
 from __future__ import annotations
 
 import datetime
-from cryptography import x509
-from pyasn1_modules.rfc5958 import PublicKey
+from typing import TYPE_CHECKING
 
 from core.serializer import CredentialSerializer
-from core.x509 import CryptographyUtils
+from cryptography import x509
+from pki.models import CredentialModel
+from pki.util.keys import CryptographyUtils, KeyGenerator
 
 from devices.models import DeviceModel, DomainModel, IssuedCredentialModel
-from pki.models import CredentialModel
-
-from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import ipaddress
+
+    from pyasn1_modules.rfc5958 import PublicKey
 
 
 class SaveCredentialToDbMixin:
@@ -122,7 +122,7 @@ class LocalDomainCredentialIssuer(SaveCredentialToDbMixin):
     def issue_domain_credential(self, public_key: None | PublicKey = None) -> IssuedCredentialModel:
         certificate_builder = x509.CertificateBuilder()
         if public_key is None:
-            domain_credential_private_key = CryptographyUtils.generate_private_key(domain=self.domain)
+            domain_credential_private_key = KeyGenerator.generate_private_key(domain=self.domain)
             public_key = domain_credential_private_key.public_key_serializer.as_crypto()
         else:
             domain_credential_private_key = None
@@ -242,7 +242,7 @@ class LocalTlsClientCredentialIssuer(SaveCredentialToDbMixin):
         }
 
     def issue_tls_client_credential(self, common_name: str, validity_days: int) -> IssuedCredentialModel:
-        application_credential_private_key = CryptographyUtils.generate_private_key(domain=self.domain)
+        application_credential_private_key = KeyGenerator.generate_private_key(domain=self.domain)
         hash_algorithm = CryptographyUtils.get_hash_algorithm_from_domain(domain=self.domain)
         one_day = datetime.timedelta(1, 0, 0)
 
@@ -364,7 +364,7 @@ class LocalTlsServerCredentialIssuer(SaveCredentialToDbMixin):
             ipv6_addresses: list[ipaddress.IPv6Address],
             domain_names: list[str],
             validity_days: int) -> IssuedCredentialModel:
-        application_credential_private_key = CryptographyUtils.generate_private_key(domain=self.domain)
+        application_credential_private_key = KeyGenerator.generate_private_key(domain=self.domain)
         hash_algorithm = CryptographyUtils.get_hash_algorithm_from_domain(domain=self.domain)
         one_day = datetime.timedelta(1, 0, 0)
 

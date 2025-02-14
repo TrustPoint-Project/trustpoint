@@ -3,20 +3,30 @@ FROM debian:bookworm-slim
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
 
+# Enable bytecode compilation
+ENV UV_COMPILE_BYTECODE=1
+
+# Copy from the cache instead of linking since it's a mounted volume
+ENV UV_LINK_MODE=copy
+
 # Make port 80 and 443 available to the world outside this container.
 # 80 will be redirected to 443 using TLS through the apache.
 EXPOSE 80 443
 
-
 # Update apt repository and install required dependencies from apt
-RUN apt update -y && apt install -y sudo apt-utils apache2 apache2-utils gettext python3 python3-venv libapache2-mod-wsgi-py3 python3-pip sed
+RUN apt update -y && apt install -y sudo apt-utils apache2 apache2-utils gettext python3 libapache2-mod-wsgi-py3 sed
+
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
+
+# Install the project's dependencies using the lockfile and settings
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project --no-dev
 
 # Create a symbolic link, so that calling python will invoke python3
 RUN ln -s /usr/bin/python3 /usr/bin/python
-
-# Install poetry
-ENV POETRY_HOME=/opt/poetry
-RUN python -m venv $POETRY_HOME && $POETRY_HOME/bin/pip install poetry==1.8.2
 
 # Copy the current directory contents into the container
 COPY ./ /var/www/html/trustpoint/
@@ -31,8 +41,12 @@ RUN sed -i '/DEBUG = True/s/True/False/' trustpoint/trustpoint/settings.py
 # Sets DOCKER_CONTAINER = True
 RUN sed -i '/DOCKER_CONTAINER = False/s/False/True/' trustpoint/trustpoint/settings.py
 
-# Install dependencies (we do not need venv in the container)
-RUN $POETRY_HOME/bin/poetry config virtualenvs.create false && $POETRY_HOME/bin/poetry install --no-interaction
+# Installing separately from its dependencies allows optimal layer caching
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev
+
+# Place executables in the environment at the front of the path
+ENV PATH="/var/www/html/trustpoint/.venv/bin:$PATH"
 
 # Create and setup the /etc/trustpoint/ directory
 RUN mkdir /etc/trustpoint/
