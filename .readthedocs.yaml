@@ -22,4 +22,4 @@ sphinx:
 python:
   install:
     - method: setuptools
-    - path: .[dev]
+      path: .[dev]
