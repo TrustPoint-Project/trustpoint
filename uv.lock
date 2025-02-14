@@ -1450,6 +1450,9 @@ name = "trustpoint"
 version = "0.1.1"
 source = { editable = "." }
 dependencies = [
+    { name = "behave" },
+    { name = "behave-django" },
+    { name = "behave-html-pretty-formatter" },
     { name = "crispy-bootstrap5" },
     { name = "cryptography" },
     { name = "django" },
@@ -1469,9 +1472,6 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
-    { name = "behave" },
-    { name = "behave-django" },
-    { name = "behave-html-pretty-formatter" },
     { name = "devtools" },
     { name = "django-extensions" },
     { name = "docutils-stubs" },
@@ -1492,6 +1492,9 @@ dev = [
 
 [package.metadata]
 requires-dist = [
+    { name = "behave", specifier = ">=1.2.7.dev6" },
+    { name = "behave-django", specifier = ">=1.5.0" },
+    { name = "behave-html-pretty-formatter", specifier = ">=1.12.3" },
     { name = "crispy-bootstrap5", specifier = "~=2024.10" },
     { name = "cryptography", specifier = ">=44.0.0,<45" },
     { name = "django", specifier = ">=5.1.6,<6" },
@@ -1511,9 +1514,6 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "behave", specifier = ">=1.2.7.dev6" },
-    { name = "behave-django", specifier = ">=1.5.0" },
-    { name = "behave-html-pretty-formatter", specifier = ">=1.12.3" },
     { name = "devtools", specifier = ">=0.12.2,<0.13" },
     { name = "django-extensions", specifier = ">=3.2.3,<4" },
     { name = "docutils-stubs", specifier = ">=0.0.22,<0.0.23" },

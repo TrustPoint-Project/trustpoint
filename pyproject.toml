@@ -21,6 +21,9 @@ dependencies = [
     "psycopg>=3.2.4",
     "psycopg-binary>=3.2.4",
     "ruff>=0.7.4",
+    "behave-django>=1.5.0",
+    "behave>=1.2.7.dev6",
+    "behave-html-pretty-formatter>=1.12.3",
 ]
 
 [dependency-groups]
@@ -39,11 +42,8 @@ dev = [
     "pytest>=8.3.4",
     "pytest-django>=4.10.0",
     "pytest-cov>=6.0.0",
-    "behave-django>=1.5.0",
-    "behave>=1.2.7.dev6",
     "pre-commit>=4.1.0",
     "pytest-html>=4.1.1",
-    "behave-html-pretty-formatter>=1.12.3",
 ]
 
 [build-system]
