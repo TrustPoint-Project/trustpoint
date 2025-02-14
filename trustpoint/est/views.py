@@ -784,8 +784,3 @@ class EstSimpleReenrollmentView(EstAuthenticationMixin,
             content_type="application/pkix-cert",
             headers={"X-EST-Renewal-Type": renewal_type}
         )
-
-
-
-
-
