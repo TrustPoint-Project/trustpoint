@@ -1,5 +1,4 @@
 from behave import given, then, when
-from behave.api.pending_step import StepNotImplementedError
 
 
 @given('the system enforces encrypted communication with algorithm {algorithm}')
@@ -12,7 +11,7 @@ def step_given_enforced_encryption(context, algorithm):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Given the system enforces encrypted communication with algorithm {algorithm}')
+    assert False, f'STEP: Given the system enforces encrypted communication with algorithm {algorithm}'
 
 
 @given('a machine attempts to communicate using {algorithm}')
@@ -25,7 +24,7 @@ def step_given_machine_attempts_encryption(context, algorithm):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Given a machine attempts to communicate using {algorithm}')
+    assert False, f'STEP: Given a machine attempts to communicate using {algorithm}'
 
 
 @given('a machine attempts to communicate without encryption')
@@ -35,7 +34,7 @@ def step_given_machine_attempts_without_encryption(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: Given a machine attempts to communicate without encryption')
+    assert False, 'STEP: Given a machine attempts to communicate without encryption'
 
 
 @given('two machines establish a secure session using {key_exchange}')
@@ -48,7 +47,7 @@ def step_given_secure_key_exchange(context, key_exchange):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Given two machines establish a secure session using {key_exchange}')
+    assert False, f'STEP: Given two machines establish a secure session using {key_exchange}'
 
 
 @given('an encrypted message is tampered with')
@@ -58,7 +57,7 @@ def step_given_encrypted_message_tampered(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: Given an encrypted message is tampered with')
+    assert False, 'STEP: Given an encrypted message is tampered with'
 
 
 @when('the system verifies the encryption')
@@ -68,7 +67,7 @@ def step_when_system_verifies_encryption(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: When the system verifies the encryption')
+    assert False, 'STEP: When the system verifies the encryption'
 
 
 @when('the system verifies the key exchange')
@@ -78,7 +77,7 @@ def step_when_system_verifies_key_exchange(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: When the system verifies the key exchange')
+    assert False, 'STEP: When the system verifies the key exchange'
 
 
 @when('the system detects tampering')
@@ -88,7 +87,7 @@ def step_when_system_detects_tampering(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: When the system detects tampering')
+    assert False, 'STEP: When the system detects tampering'
 
 
 @then('the communication should be {continuing_action}')
@@ -98,7 +97,7 @@ def step_then_allow_communication(context, continuing_action):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Then the communication should be {continuing_action}')
+    assert False, f'STEP: Then the communication should be {continuing_action}'
 
 
 @then('log the failure with reason {reason}')
@@ -111,4 +110,4 @@ def step_then_log_failure(context, reason):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Then log the failure with reason {reason}')
+    assert False, f'STEP: Then log the failure with reason {reason}'

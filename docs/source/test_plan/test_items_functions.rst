@@ -46,6 +46,7 @@ Functional Requirements
    _`R_010`, "CMP Endpoint for Onboarded Devices", "Provide a CMP endpoint for device onboarding.", "All components", "High"
    _`R_011`, "EST Endpoint for Onboarded Devices", "Provide an EST endpoint for device onboarding.", "All components", "High"
    _`R_012`, "Language Selection and Translation", "Support multi-language UI options for global usability.", "TPC_Web, TP_Client", "Medium"
+   _`R_013`, "Remote Credential Download", "Enable credential downloads from a remote device using a one-time password.", "TPC_Web", "High"
 
 ^^^^^^^^^^^^^^^^^^^^^
 Security Requirements

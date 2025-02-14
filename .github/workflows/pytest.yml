@@ -1,0 +1,60 @@
+name: Pytest
+
+on: [pull_request]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Install the latest version of uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          python-version: 3.12
+
+      - name: Run database migrations
+        run: |
+          echo "y" | uv run trustpoint/manage.py reset_db
+
+      - name: Run Pytest with Coverage
+        run: |
+          mkdir -p reports
+          uv run pytest \
+          --cov=trustpoint \
+          --cov-report=xml \
+          --cov-report=html \
+          --html=reports/pytest-report.html \
+          --self-contained-html \
+          --junitxml=reports/pytest-report.xml \
+          trustpoint/ | tee reports/pytest-output.log
+          mv coverage.xml reports/coverage.xml
+
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: pytest-reports
+          path: reports/
+
+      - name: Upload Coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: reports/coverage.xml
+        continue-on-error: true
+
+      - name: Display Summary in GitHub Actions
+        run: |
+          echo "## Pytest Results :white_check_mark:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat reports/pytest-output.log >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail Job if Tests Failed
+        run: |
+          if grep -q "[1-9] warnings, [1-9] errors" reports/pytest-output.log; then
+            echo "❌ Pytest failed! Failing job."
+            exit 1
+          fi

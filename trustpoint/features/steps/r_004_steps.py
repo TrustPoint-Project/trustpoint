@@ -1,5 +1,4 @@
 from behave import given, then, when
-from behave.api.pending_step import StepNotImplementedError
 
 
 @when('the API client sends a POST request to "/api/identities" with the following payload:')
@@ -14,7 +13,7 @@ def step_post_identity(context, payload):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    raise StepNotImplementedError('Step not implemented: POST request to create an identity.')
+    assert False, 'Step not implemented: POST request to create an identity.'
 
 
 @when('the API client sends a GET request to "/api/identities/<identifier>"')
@@ -27,7 +26,7 @@ def step_get_identity(context, identifier):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    raise StepNotImplementedError('Step not implemented: GET request to retrieve an identity.')
+    assert False, 'Step not implemented: GET request to retrieve an identity.'
 
 
 @when('the API client sends a PUT request to "/api/identities/<identifier>" with the following payload:')
@@ -41,7 +40,7 @@ def step_put_identity(context, identifier, payload):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    raise StepNotImplementedError('Step not implemented: PUT request to update an identity.')
+    assert False, 'Step not implemented: PUT request to update an identity.'
 
 
 @when('the API client sends a DELETE request to "/api/identities/<identifier>"')
@@ -54,7 +53,7 @@ def step_delete_identity(context, identifier):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    raise StepNotImplementedError('Step not implemented: DELETE request to remove an identity.')
+    assert False, 'Step not implemented: DELETE request to remove an identity.'
 
 
 @when('the API client sends a GET request to "/api/identities" without authentication')
@@ -64,7 +63,7 @@ def step_get_without_auth(context):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    raise StepNotImplementedError('Step not implemented: Unauthorized GET request.')
+    assert False, 'Step not implemented: Unauthorized GET request.'
 
 
 @then('the response payload should include the created identity with:')
@@ -77,7 +76,7 @@ def step_verify_created_identity(context, payload):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    raise StepNotImplementedError('Step not implemented: Verify response payload for created identity.')
+    assert False, 'Step not implemented: Verify response payload for created identity.'
 
 
 @then('the response payload should include the identity with:')
@@ -90,38 +89,36 @@ def step_verify_retrieved_identity(context, payload):
     Raises:
         StepNotImplementedError: This step is not yet implemented.
     """
-    raise StepNotImplementedError('Step not implemented: Verify response payload for retrieved identity.')
+    assert False, 'Step not implemented: Verify response payload for retrieved identity.'
 
 
 @given('the identity {identity} exists')
 def step_impl(context, identity):
-    raise StepNotImplementedError('STEP: Given the identity {identity} exists')
+    assert False, 'STEP: Given the identity {identity} exists'
 
 
 @when('the API client sends a GET request to "/api/identities/{identity}')
 def step_impl(context, identity):
-    raise StepNotImplementedError(f'STEP: When the API client sends a GET request to "/api/identities/{identity}')
+    assert False, f'STEP: When the API client sends a GET request to "/api/identities/{identity}'
 
 
 @when('the API client sends a PUT request to "/api/identities/{identity} with the following payload:')
 def step_impl(context, identity, payload):
-    raise StepNotImplementedError(
+    assert False, (
         f'STEP: When the API client sends a PUT request to "/api/identities/{identity} with the following payload: {payload}'
     )
 
 
 @then('the response payload should include the updated identity with:')
 def step_impl(context, payload):
-    raise StepNotImplementedError(
-        f'STEP: Then the response payload should include the updated identity with: {payload}'
-    )
+    assert False, f'STEP: Then the response payload should include the updated identity with: {payload}'
 
 
 @when('the API client sends a DELETE request to "/api/identities/{identity}')
 def step_impl(context, identity):
-    raise StepNotImplementedError(f'STEP: When the API client sends a DELETE request to "/api/identities/{identity}')
+    assert False, f'STEP: When the API client sends a DELETE request to "/api/identities/{identity}'
 
 
 @then('the identity {identity} should no longer exist')
 def step_impl(context, identity):
-    raise StepNotImplementedError(f'STEP: Then the identity {identity} should no longer exist')
+    assert False, f'STEP: Then the identity {identity} should no longer exist'
