@@ -31,6 +31,7 @@ if TYPE_CHECKING:
 
 __all__ = [
     'CertificateModel',
+    'RevokedCertificateModel'
 ]
 
 class CertificateModel(LoggerMixin, models.Model):
