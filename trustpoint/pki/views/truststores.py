@@ -18,6 +18,7 @@ from django.views.generic.list import ListView
 from pki.forms import TruststoreAddForm
 from pki.models import DomainModel
 from pki.models.truststore import TruststoreModel
+from trustpoint.settings import UIConfig
 from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, SortableTableMixin, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
@@ -42,7 +43,7 @@ class TruststoreTableView(TruststoresContextMixin, TpLoginRequiredMixin, Sortabl
     model = TruststoreModel
     template_name = 'pki/truststores/truststores.html'
     context_object_name = 'truststores'
-    paginate_by = 30
+    paginate_by = UIConfig.paginate_by
     default_sort_param = 'unique_name'
 
 

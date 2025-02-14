@@ -4,10 +4,7 @@ from __future__ import annotations
 
 import datetime
 import io
-import uuid
 from typing import TYPE_CHECKING, cast
-
-from django.views.generic import TemplateView
 
 from core.file_builder.enum import ArchiveFormat
 from core.serializer import CredentialSerializer
@@ -16,41 +13,41 @@ from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
 from django.forms import BaseModelForm
-from django.http import FileResponse, Http404, HttpResponse, JsonResponse, HttpResponseBase
+from django.http import FileResponse, Http404, HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse, reverse_lazy
 from django.utils.html import format_html
-from django.utils.safestring import SafeString
 from django.utils.translation import gettext_lazy as _
 from django.utils.translation import ngettext
 from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, FormMixin, FormView
 from django.views.generic.list import ListView
-from pki.models import CertificateModel, CredentialModel
 from core import oid
+from pki.models import CertificateModel, CredentialModel, DomainModel
 
 from devices.forms import (
     BrowserLoginForm,
     CredentialDownloadForm,
     CredentialRevocationForm,
-    IssueDomainCredentialForm,
     IssueTlsClientCredentialForm,
     IssueTlsServerCredentialForm,
     CreateDeviceForm
 )
-from devices.issuer import LocalDomainCredentialIssuer, LocalTlsClientCredentialIssuer, LocalTlsServerCredentialIssuer
+from devices.issuer import LocalTlsClientCredentialIssuer, LocalTlsServerCredentialIssuer
 from devices.models import (
     DeviceModel,
     IssuedCredentialModel,
     RemoteDeviceCredentialDownloadModel)
 from devices.revocation import DeviceCredentialRevocation
+from trustpoint.settings import UIConfig
 from trustpoint.views.base import ListInDetailView, SortableTableMixin, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
     from typing import Any, ClassVar
 
     from django.http.request import HttpRequest
+    from django.utils.safestring import SafeString
 
 
 class Detail404RedirectView(DetailView):
@@ -101,10 +98,11 @@ class DeviceTableView(DeviceContextMixin, TpLoginRequiredMixin, SortableTableMix
     model = DeviceModel
     template_name = 'devices/devices.html'
     context_object_name = 'devices'
-    paginate_by = 30
+    paginate_by = UIConfig.paginate_by
     default_sort_param = 'unique_name'
 
-    def get_context_data(self, **kwargs):
+    def get_context_data(self, **kwargs: dict[str, Any]) -> dict[str, Any]:
+        """Add the context data for the view and render additional table fields."""
         context = super().get_context_data(**kwargs)
 
         for device in context['page_obj']:
@@ -168,6 +166,14 @@ class CreateDeviceView(DeviceContextMixin, TpLoginRequiredMixin, CreateView):
                 case DeviceModel.PkiProtocol.CMP_SHARED_SECRET.value:
                     return reverse_lazy('devices:help_no-onboarding_cmp-shared-secret', kwargs={'pk': device.pk})
         return reverse_lazy('devices:devices')
+
+    def get_form(self, form_class: Any = None) -> Any:
+        """Override get_form to filter out autogen root CAs."""
+        form = super().get_form(form_class)
+        form.fields['domain'].queryset = DomainModel.objects.filter(is_active=True)
+        form.fields['domain'].empty_label = None # Remove empty "---------" choice
+
+        return form
 
     @staticmethod
     def clean_device_name(device_name: str) -> str:
@@ -593,25 +599,25 @@ class DeviceCertificateLifecycleManagementSummaryView(
         device = self.get_object()
         qs = super().get_queryset() # inherited from SortableTableMixin, sorted query
 
-        domain_credentials = IssuedCredentialModel.objects.filter(
+        domain_credentials = qs.filter(
             Q(device=device) &
             Q(issued_credential_type=IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL.value)
-        ).order_by('created_at')
+        )
 
         application_credentials = qs.filter(
             Q(device=device) &
             Q(issued_credential_type=IssuedCredentialModel.IssuedCredentialType.APPLICATION_CREDENTIAL.value)
-        ).order_by('created_at')
+        )
 
         context['domain_credentials'] = domain_credentials
         context['application_credentials'] = application_credentials
 
-        paginator_domain = Paginator(domain_credentials, 5)
+        paginator_domain = Paginator(domain_credentials, UIConfig.paginate_by)
         page_number_domain = self.request.GET.get('page', 1)
         context['domain_credentials'] = paginator_domain.get_page(page_number_domain)
         context['is_paginated'] = paginator_domain.num_pages > 1
 
-        paginator_application = Paginator(application_credentials, 5)
+        paginator_application = Paginator(application_credentials, UIConfig.paginate_by)
         page_number_application = self.request.GET.get('page-a', 1)
         context['application_credentials'] = paginator_application.get_page(page_number_application)
         context['is_paginated_a'] = paginator_application.num_pages > 1

@@ -486,6 +486,10 @@ table .tp-onboarding-btn {
     vertical-align: middle;
 }
 
+tr.text-muted td {
+    color: inherit;
+}
+
 td {
     vertical-align: middle;
 }

@@ -6,13 +6,14 @@ from typing import TYPE_CHECKING
 
 from core.file_builder.certificate import CertificateArchiveFileBuilder, CertificateFileBuilder
 from core.file_builder.enum import ArchiveFormat, CertificateFileFormat
-from django.http import Http404, HttpRequest, HttpResponse  # type: ignore[import-untyped]
-from django.urls import reverse_lazy  # type: ignore[import-untyped]
-from django.views.generic.base import RedirectView  # type: ignore[import-untyped]
-from django.views.generic.detail import DetailView  # type: ignore[import-untyped]
-from django.views.generic.list import ListView  # type: ignore[import-untyped]
+from django.http import Http404, HttpRequest, HttpResponse
+from django.urls import reverse_lazy
+from django.views.generic.base import RedirectView
+from django.views.generic.detail import DetailView
+from django.views.generic.list import ListView
 
 from pki.models import CertificateModel
+from trustpoint.settings import UIConfig
 from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, SortableTableMixin, TpLoginRequiredMixin
 
 if TYPE_CHECKING:
@@ -38,7 +39,7 @@ class CertificateTableView(CertificatesContextMixin, TpLoginRequiredMixin, Sorta
     model = CertificateModel
     template_name = 'pki/certificates/certificates.html'  # Template file
     context_object_name = 'certificates'
-    paginate_by = 30  # Number of items per page
+    paginate_by = UIConfig.paginate_by
     default_sort_param = 'common_name'
 
 class CertificateDetailView(CertificatesContextMixin, TpLoginRequiredMixin, DetailView):

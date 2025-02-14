@@ -4,33 +4,32 @@ from __future__ import annotations
 
 import logging
 from datetime import date, datetime, timedelta
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from devices.models import DeviceModel, IssuedCredentialModel
-from django.contrib import messages  # type: ignore[import-untyped]
-from django.contrib.auth.decorators import login_required  # type: ignore[import-untyped]
-from django.core.management import call_command  # type: ignore[import-untyped]
-from django.db.models import Case, Count, F, IntegerField, Q, QuerySet, Value, When  # type: ignore[import-untyped]
-from django.db.models.functions import TruncDate  # type: ignore[import-untyped]
-from django.http import HttpRequest, HttpResponse, JsonResponse  # type: ignore[import-untyped]
-from django.shortcuts import get_object_or_404, redirect, render  # type: ignore[import-untyped]
-from django.utils import dateparse, timezone  # type: ignore[import-untyped]
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.management import call_command
+from django.db.models import Case, Count, F, IntegerField, Q, QuerySet, Value, When
+from django.db.models.functions import TruncDate
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import dateparse, timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from django.views.generic.base import RedirectView, TemplateView  # type: ignore[import-untyped]
+from django.views.generic.base import RedirectView, TemplateView
 from django.views.generic.list import ListView
 from ninja.responses import Response
 from pki.models import CertificateModel, IssuingCaModel
 
-from trustpoint.views.base import TpLoginRequiredMixin, SortableTableMixin
+from trustpoint.settings import UIConfig
+from trustpoint.views.base import SortableTableMixin, TpLoginRequiredMixin
 
 from .filters import NotificationFilter
 from .models import NotificationModel, NotificationStatus
 
-from typing import TYPE_CHECKING
-
 if TYPE_CHECKING:
-    from django.utils.safestring import SafeString  # type: ignore[import-untyped]
+    from django.utils.safestring import SafeString
 
 SUCCESS = 25
 ERROR = 40
@@ -50,7 +49,7 @@ class DashboardView(TpLoginRequiredMixin, SortableTableMixin, ListView):
     model = NotificationModel
     context_object_name = 'notifications'
     default_sort_param = '-created_at'
-    paginate_by = 30
+    paginate_by = UIConfig.notifications_paginate_by
 
     def __init__(self, *args: tuple, **kwargs: dict) -> None:
         """Initializes the parent class with the given arguments and keyword arguments."""
@@ -198,9 +197,8 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
 
         dashboard_data: dict[str, Any] = {}
 
-        start_date_object = timezone.make_aware(start_date_object)
-
-        device_counts = self.get_device_count_by_onboarding_status(dateparse.parse_date('2023-01-01'))
+        start_date_object = timezone.make_aware(datetime.combine(start_date_object, datetime.min.time()))
+        device_counts = self.get_device_count_by_onboarding_status(start_date_object)
         dashboard_data['device_counts'] = device_counts
         self._logger.debug('device counts %s', device_counts)
 
@@ -348,7 +346,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
     def get_issuing_ca_counts(self) -> dict[str, Any]:
         """Get issuing CA counts from database"""
         # Current date
-        today = timezone.now().date()
+        today = timezone.make_aware(datetime.combine(timezone.now().date(), datetime.min.time()))
         issuing_ca_counts = {}
         try:
             # Query to get total, active, and expired Issuing CAs

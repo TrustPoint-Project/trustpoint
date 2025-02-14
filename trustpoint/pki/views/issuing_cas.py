@@ -14,6 +14,7 @@ from pki.forms import (
     IssuingCaAddMethodSelectForm,
 )
 from pki.models import IssuingCaModel
+from trustpoint.settings import UIConfig
 from trustpoint.views.base import (
     LoggerMixin,
     BulkDeleteView,
@@ -35,7 +36,7 @@ class IssuingCaTableView(IssuingCaContextMixin, TpLoginRequiredMixin, SortableTa
     model = IssuingCaModel
     template_name = 'pki/issuing_cas/issuing_cas.html'  # Template file
     context_object_name = 'issuing_ca'
-    paginate_by = 30  # Number of items per page
+    paginate_by = UIConfig.paginate_by  # Number of items per page
     default_sort_param = 'unique_name'
 
 
