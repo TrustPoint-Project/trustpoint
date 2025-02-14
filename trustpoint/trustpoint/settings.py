@@ -128,7 +128,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
 ]
 
-if DEVELOPMENT_ENV:
+if DEVELOPMENT_ENV and not DOCKER_CONTAINER:
     INSTALLED_APPS.append('django_extensions')
     INSTALLED_APPS.append('behave_django')
     TEST_RUNNER = 'django_behave.runner.DjangoBehaveTestSuiteRunner'
