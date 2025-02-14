@@ -21,4 +21,5 @@ sphinx:
 # Use pyproject.toml for dependencies
 python:
   install:
-    - path: .
+    - method: setuptools
+    - path: .[dev]
