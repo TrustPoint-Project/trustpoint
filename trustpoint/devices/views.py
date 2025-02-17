@@ -245,6 +245,37 @@ class OnboardingCmpSharedSecretHelpView(DeviceContextMixin, TpLoginRequiredMixin
         return context
 
 
+class OnboardingCmpIdevidHelpView(DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView[DeviceModel]):
+
+    model = DeviceModel
+    template_name = 'devices/help/onboarding/cmp_idevid.html'
+    context_object_name = 'device'
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data()
+        device: DeviceModel = self.object
+
+        if device.public_key_info.public_key_algorithm_oid == oid.PublicKeyAlgorithmOid.RSA:
+            domain_credential_key_gen_command = f'openssl genrsa -out domain_credential_key.pem {device.public_key_info.key_size}'
+            key_gen_command = f'openssl genrsa -out key.pem {device.public_key_info.key_size}'
+        elif device.public_key_info.public_key_algorithm_oid == oid.PublicKeyAlgorithmOid.ECC:
+            domain_credential_key_gen_command = (
+                f'openssl ecparam -name {device.public_key_info.named_curve.ossl_curve_name} '
+                f'-genkey -noout -out domain_credential_key.pem')
+            key_gen_command = (
+                f'openssl ecparam -name {device.public_key_info.named_curve.ossl_curve_name} '
+                f'-genkey -noout -out key.pem')
+        else:
+            raise ValueError('Unsupported public key algorithm')
+        context['host'] = self.request.META.get('REMOTE_ADDR') + ':' + self.request.META.get('SERVER_PORT')
+        context['domain_credential_key_gen_command'] = domain_credential_key_gen_command
+        context['key_gen_command'] = key_gen_command
+        number_of_issued_device_certificates = len(IssuedCredentialModel.objects.filter(device=device))
+        context['tls_client_cn'] = f'Trustpoint-TLS-Client-Credential-{number_of_issued_device_certificates}'
+        context['tls_server_cn'] = f'Trustpoint-TLS-Server-Credential-{number_of_issued_device_certificates}'
+        return context
+
+
 class DeviceDetailsView(DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView[DeviceModel]):
     """Device Details View."""
 
@@ -857,6 +888,10 @@ class HelpDispatchView(DeviceContextMixin, TpLoginRequiredMixin, SingleObjectMix
 
         if device.onboarding_protocol == device.OnboardingProtocol.CMP_SHARED_SECRET.value:
             return f'{reverse("devices:help-onboarding_cmp-shared-secret", kwargs={"pk": device.id})}'
+
+        if device.onboarding_protocol == device.OnboardingProtocol.CMP_IDEVID.value:
+            return f'{reverse("devices:help-onboarding_cmp-idevid", kwargs={"pk": device.id})}'
+
         return f"{reverse('devices:devices')}"
 
 
