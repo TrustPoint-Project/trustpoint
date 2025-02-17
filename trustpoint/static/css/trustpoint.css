@@ -713,6 +713,7 @@ pre {
 code {
     padding: 10px;
     tab-size: 4;
+    color: inherit;
 }
 
 .breathing-anim {
