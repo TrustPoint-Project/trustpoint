@@ -75,15 +75,15 @@
                                 <div>{% trans 'Revocation list' %}</div>
                                 <div>
                                     <a href="{% url 'pki:issuing_cas-crl-gen' pk=issuing_ca.pk %}" class="btn btn-sm btn-primary me-2">
-                                        {% trans "Generate CRL" %}
+                                        {% trans 'Generate CRL' %}
                                     </a>
                                     {% if issuing_ca.last_crl_issued_at %}
                                         <a href="{% url 'crl-download' pk=issuing_ca.pk %}" class="btn btn-sm btn-primary">
-                                            {% trans "Download CRL" %}
+                                            {% trans 'Download CRL' %}
                                         </a>
                                     {% else %}
                                         <a class="btn btn-sm btn-primary disabled">
-                                            {% trans "Download CRL" %}
+                                            {% trans 'Download CRL' %}
                                         </a>
                                     {% endif %}
                                 </div>
@@ -93,17 +93,17 @@
                                 {% if issuing_ca.last_crl_issued_at %}
                                     <div>{{ issuing_ca.last_crl_issued_at }}</div>
                                 {% else %}
-                                    <div>{% trans "No CRL has been issued yet." %}</div>
+                                    <div>{% trans 'No CRL has been issued yet.' %}</div>
                                 {% endif %}
                             </div>
                         </div>
                     </div>
                 </div>
             </div>
-            <div class="card-footer d-flex justify-content-between">
-                <div class="tp-card-btn-footer ms-2">
-                    <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
-                    <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
+            <div class="card-footer d-flex">
+                <div class="tp-card-btn-footer m-1">
+                    <a href="{% url 'pki:issuing_cas' %}" class="btn btn-secondary">{% trans 'Cancel' %}</a>
+                    <button type="submit" class="btn btn-primary">{% trans 'Save' %}</button>
                 </div>
             </div>
         </form>

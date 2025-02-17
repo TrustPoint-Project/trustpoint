@@ -80,12 +80,10 @@
                 </div>
             </div>
             <div class="card-footer d-flex justify-content-between align-items-center">
-                <div class="tp-card-btn-footer ms-2">
-                    <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
-                    <div>
-                        <button type="button" value="Back" class="btn btn-secondary" onClick="history.back()">{% trans 'Back' %}</button>
-                        <a href="{% url 'pki:domains' %}" class="btn btn-secondary">{% trans "Cancel" %}</a>
-                    </div>
+                <div class="tp-card-btn-footer m-1">
+                    <button type="button" value="Back" class="btn btn-secondary btn-half" onClick="history.back()">{% trans 'Back' %}</button>
+                    <a href="{% url 'pki:domains' %}" class="btn btn-secondary btn-half">{% trans "Cancel" %}</a>
+                    <button type="submit" class="btn btn-primary disabled">{% trans "Save" %}</button>
                 </div>
             </div>
         </div>

@@ -50,10 +50,12 @@
         </form>
     </div>
 
-    <div class="card-footer text-body-secondary d-flex justify-content-end">
-        <button class="btn btn-primary" type="submit" form="security_configuration">
-            {% trans 'Save' %}
-        </button>
+    <div class="card-footer d-flex justify-content-between tp-sticky-footer">
+        <div class="tp-card-btn-footer m-1">
+            <button class="btn btn-primary" type="submit" form="security_configuration">
+                {% trans 'Save' %}
+            </button>
+        </div>
     </div>
 </div>
 <script src="{% static 'js/settings.js' %}"></script>
