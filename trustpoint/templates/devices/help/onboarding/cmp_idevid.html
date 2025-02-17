@@ -1,0 +1,195 @@
+{% extends 'trustpoint/base.html' %}
+{% load i18n %}
+{% load crispy_forms_filters %}
+
+{% block content %}
+
+    <form method="POST" autocomplete="off">
+        {% csrf_token %}
+
+        <div class="card">
+            <div class="card-header">
+                <div>
+                    <h1>{% trans 'Help - CMP IDevID Onboarding' %}</h1>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="tp-card-centered-content">
+                    <h2>{% trans 'Summary' %}</h2>
+                    <hr>
+                    <ul class="tp-kvp-list">
+                        <li>
+                            <div>{% trans 'Domain Credential Request URL' %}</div>
+                            <div>https://{{ host }}/.well-known/cmp/initialization/{{ device.domain }}</div>
+                        </li>
+                        <li>
+                            <div>{% trans 'TLS-Client Certificate Request URL' %}</div>
+                            <div>https://{{ host }}/.well-known/cmp/certification/{{ device.domain }}/tls-client/</div>
+                        </li>
+                        <li>
+                            <div>{% trans 'TLS-Server Certificate Request URL' %}</div>
+                            <div>https://{{ host }}/.well-known/cmp/certification/{{ device.domain }}/tls-server/</div>
+                        </li>
+                        <li>
+                            <div>{% trans 'Shared Secret' %}</div>
+                            <div>{{ device.cmp_shared_secret }}</div>
+                        </li>
+                        <li>
+                            <div>{% trans 'Key Identifier (KID)' %}</div>
+                            <div>{{ device.id }}</div>
+                        </li>
+                        <li>
+                            <div>{% trans 'Required Public Key Type' %}</div>
+                            <div>{{ device.public_key_info }}</div>
+                        </li>
+
+                    </ul>
+                    <hr>
+
+                    <h2 class="mt-5">{% trans 'OpenSSL 3.x Commands' %}</h2>
+                    <hr>
+
+                    <ul class="tp-kvp-list">
+                        <li>
+                            <div>{% trans 'Domain Credential Key-Pair Generation' %}</div>
+                            <div>{{ domain_credential_key_gen_command }}</div>
+                        </li>
+                        <li>
+                            <div>
+                                    If only a .p12 or .pfx file is available, you need to extract the certificate and
+                                    private key to use it with the OpenSSL CMP command.
+                            </div>
+                            <div>idevid.p12</div>
+                        </li>
+                        <li>
+                            <div>{% trans 'PKCS#12 IDevID Certificate Extraction' %}</div>
+                            <div>openssl pkcs12 -in idevid.p12 -clcerts -nokeys -out idevid.pem</div>
+                        </li>
+                        <li>
+                            <div>{% trans 'PKCS#12 IDevID Certificate Chain Extraction' %}</div>
+                            <div>openssl pkcs12 -in idevid.p12 -cacerts -nokeys -chain -out idevid_chain.pem</div>
+                        </li>
+                        <li>
+                            <div>{% trans 'PKCS#12 IDevID Private Key Extraction' %}</div>
+                            <div>openssl pkcs12 -in idevid.p12 -out idevid.key -nodes -nocerts</div>
+                        </li>
+                        <li>
+                            <div>Remarks</div>
+                            <div>{% trans 'Please make sure that the root CA certificate is not included in the chain. If it is, you should remove it manually, e.g. using a text editor.' %}</div>
+                        </li>
+                    </ul>
+
+                    <ul class="tp-kvp-list">
+
+                        <li>
+                            <h2 class="mt-5">{% trans 'Domain Credential Onboarding' %}</h2>
+                            <hr>
+                            <div>{% trans 'OpenSSL Command' %}</div>
+                            <div>
+                                openssl cmp \<br>
+                                -cmd ir \<br>
+                                -implicit_confirm \<br>
+                                -server https://{{ host }}/.well-known/cmp/initialization/{{ device.domain }}/ \<br>
+                                -tls_used \<br>
+                                -cert idevid.pem \<br>
+                                -key idevid.key \<br>
+                                -extracerts idevid_chain.pem \<br>
+                                -subject "/CN=Trustpoint Domain Credential" \<br>
+                                -newkey domain_credential_key.pem \<br>
+                                -certout domain_credential_cert.pem \<br>
+                                -chainout domain_credential_chain.pem
+                            </div>
+                        </li>
+                    </ul>
+
+                    <ul class="tp-kvp-list">
+
+                        <li>
+                            <h3 class="mt-5">{% trans 'Credential Key-Pair Generation' %}</h3>
+                            <hr>
+                            <div>{% trans 'OpenSSL Command' %}</div>
+                            <div>{{ key_gen_command }}</div>
+                        </li>
+
+                        <li>
+                            <h2 class="mt-5">{% trans 'TLS-Client Certificate' %}</h2>
+                            <hr>
+                            <div>{% trans 'OpenSSL Command' %}</div>
+                            <div>
+                                openssl cmp \<br>
+                                -cmd cr \<br>
+                                -implicit_confirm \<br>
+                                -server https://{{ host }}/.well-known/cmp/certification/{{ device.domain }}/tls-client/ \<br>
+                                -tls_used \<br>
+                                -cert domain_credential_cert.pem \<br>
+                                -key domain_credential_key.pem \<br>
+                                -subject "/CN={{ tls_client_cn }}" \<br>
+                                -days 10 \<br>
+                                -newkey key.pem \<br>
+                                -certout cert.pem \<br>
+                                -chainout chain.pem
+                            </div>
+                        </li>
+                        <li>
+                            <h3 class="mt-3">{% trans 'Mutable Parameters' %}</h3>
+                            <hr>
+                            <div>{% trans 'Common Name' %}</div>
+                            <div>{{ tls_client_cn }}</div>
+                        </li>
+                        <li>
+                            <div>{% trans 'Validity (days)' %}</div>
+                            <div>-days 10</div>
+                        </li>
+                    </ul>
+                    <ul class="tp-kvp-list">
+                        <li>
+                            <h2 class="mt-5">{% trans 'TLS-Server Certificate' %}</h2>
+                            <hr>
+                            <div>{% trans 'OpenSSL Command' %}</div>
+                            <div>
+                                openssl cmp \<br>
+                                -cmd cr \<br>
+                                -implicit_confirm \<br>
+                                -server https://{{ host }}/.well-known/cmp/certification/{{ device.domain }}/tls-server/ \<br>
+                                -tls_used \<br>
+                                -cert domain_credential_cert.pem \<br>
+                                -key domain_credential_key.pem \<br>
+                                -subject "/CN={{ tls_server_cn }}" \<br>
+                                -days 10 \<br>
+                                -sans "critical 127.0.0.1 ::1 localhost" \<br>
+                                -newkey key.pem \<br>
+                                -certout cert.pem \<br>
+                                -chainout chain.pem
+                            </div>
+                        </li>
+                        <li>
+                            <h3 class="mt-3">{% trans 'Mutable Parameters' %}</h3>
+                            <hr>
+                            <div>{% trans 'Common Name' %}</div>
+                            <div>-subject "/CN={{ tls_server_cn }}"</div>
+                        </li>
+                        <li>
+                            <div>{% trans 'Validity (days)' %}</div>
+                            <div>-days 10</div>
+                        </li>
+                        <li>
+                            <div>{% trans 'Subject Alternative Name (SAN)' %}</div>
+                            <div>
+                                -sans "critical 127.0.0.1 ::1 localhost"<br><br>
+                                {% trans 'Add as many SAN entries as desired, separated by whitespace. At least one must be given. The default is to make the SAN extension critical. To make it non-critical, remove the keyword critical.' %}</div>
+                        </li>
+                    </ul>
+                    <hr>
+                </div>
+
+            </div>
+            <div class="card-footer">
+                <div class="tp-card-btn-footer">
+                    <a href="{% url 'devices:devices' %}" class="btn btn-secondary">{% trans "Back" %}</a>
+                    <a href="{% url 'devices:certificate_lifecycle_management' pk=device.pk %}" class="btn btn-primary">{% trans "Certificate Lifecycle Management Summary" %}</a>
+                </div>
+            </div>
+        </div>
+    </form>
+
+{% endblock content %}

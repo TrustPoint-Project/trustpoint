@@ -144,7 +144,9 @@ class TruststoreAddForm(forms.Form):
                 certificates=certificates,
             )
         except Exception as exception:
+
             raise ValidationError(str(exception)) from exception
+
 
         self.cleaned_data['truststore'] = trust_store_model
         return cleaned_data
@@ -163,6 +165,7 @@ class TruststoreAddForm(forms.Form):
                 saved_certs.append(CertificateModel.objects.get(sha256_fingerprint=sha256_fingerprint))
             except CertificateModel.DoesNotExist:
                 saved_certs.append(CertificateModel.save_certificate(certificate))
+
 
         trust_store_model = TruststoreModel(
             unique_name=unique_name,
