@@ -181,17 +181,6 @@ class IssuedCredentialModel(models.Model):
     def __str__(self) -> str:
         return f'IssuedCredentialModel()'
 
-    def clean(self) -> None:
-        if IssuedCredentialModel.objects.filter(common_name=self.common_name, device=self.device).exclude(pk=self.pk).exists():
-            err_msg = (
-                f'Credential with common name {self.common_name} '
-                f'already exists for device {self.device.unique_name}.')
-            raise ValidationError(err_msg)
-
-    def save(self, *args: Any, **kwargs: Any) -> None:
-        self.full_clean()
-        super().save(*args, **kwargs)
-
 
 class RemoteDeviceCredentialDownloadModel(models.Model):
     """Model to associate a credential model with an OTP and token for unauthenticated remoted download."""

@@ -5,6 +5,11 @@ from cmp import views
 app_name = 'cmp'
 
 urlpatterns = [
+path(
+        'initialization/<str:domain>/<str:template>/',
+        views.CmpInitializationRequestView.as_view(),
+        name='certification-template'
+    ),
     path(
         'initialization/<str:domain>/',
         views.CmpInitializationRequestView.as_view(),

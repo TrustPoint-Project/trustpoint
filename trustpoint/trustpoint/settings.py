@@ -126,11 +126,12 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'crispy_forms',
     'crispy_bootstrap5',
-    'behave_django'
 ]
 
-if DEVELOPMENT_ENV:
+if DEVELOPMENT_ENV and not DOCKER_CONTAINER:
     INSTALLED_APPS.append('django_extensions')
+    INSTALLED_APPS.append('behave_django')
+    TEST_RUNNER = 'django_behave.runner.DjangoBehaveTestSuiteRunner'
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -302,8 +303,6 @@ LOGGING = {
         },
     },
 }
-
-TEST_RUNNER = 'django_behave.runner.DjangoBehaveTestSuiteRunner'
 
 # User interface config defaults
 class UIConfig:

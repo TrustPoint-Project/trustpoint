@@ -32,7 +32,7 @@ class SecurityView(TpLoginRequiredMixin, SecurityLevelMixin, FormView):
         kwargs = super().get_form_kwargs()
         try:
             security_config = SecurityConfig.objects.get(id=1)
-        except ObjectDoesNotExist:
+        except SecurityConfig.DoesNotExist:
             security_config = SecurityConfig()
         kwargs['instance'] = security_config
         return kwargs

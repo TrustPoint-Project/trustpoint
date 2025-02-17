@@ -120,13 +120,11 @@ class LocalDomainCredentialIssuer(SaveCredentialToDbMixin):
             'serial_number': device.serial_number
         }
 
-    def issue_domain_credential(self, public_key: oid.PublicKey | None = None) -> IssuedCredentialModel:
+    def issue_domain_credential(self) -> IssuedCredentialModel:
         certificate_builder = x509.CertificateBuilder()
-        if public_key is None:
-            domain_credential_private_key = KeyGenerator.generate_private_key(domain=self.domain)
-            public_key = domain_credential_private_key.public_key_serializer.as_crypto()
-        else:
-            domain_credential_private_key = None
+        domain_credential_private_key = KeyGenerator.generate_private_key(domain=self.domain)
+        public_key = domain_credential_private_key.public_key_serializer.as_crypto()
+
 
         # TODO(AlexHx8472): Check matching public_key and signature suite.
 
@@ -193,6 +191,63 @@ class LocalDomainCredentialIssuer(SaveCredentialToDbMixin):
                 issued_credential_type=IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL,
                 issued_credential_purpose=IssuedCredentialModel.IssuedCredentialPurpose.DOMAIN_CREDENTIAL
             )
+
+        self.device.onboarding_status = self.device.OnboardingStatus.ONBOARDED
+        self.device.save()
+
+        return issued_domain_credential
+
+    def issue_domain_credential_certificate(self, public_key: oid.PublicKey ) -> IssuedCredentialModel:
+        certificate_builder = x509.CertificateBuilder()
+
+        # TODO(AlexHx8472): Check matching public_key and signature suite.
+
+        hash_algorithm = CryptographyUtils.get_hash_algorithm_from_domain(domain=self.domain)
+        one_day = datetime.timedelta(1, 0, 0)
+
+        certificate_builder = certificate_builder.subject_name(x509.Name([
+            x509.NameAttribute(x509.NameOID.COMMON_NAME, self.common_name),
+            x509.NameAttribute(x509.NameOID.DOMAIN_COMPONENT, self.domain_component),
+            x509.NameAttribute(x509.NameOID.SERIAL_NUMBER, self.serial_number),
+            x509.NameAttribute(x509.NameOID.USER_ID, str(self.device.pk))
+        ]))
+        certificate_builder = certificate_builder.issuer_name(
+            self.domain.issuing_ca.credential.get_certificate().subject)
+        certificate_builder = certificate_builder.not_valid_before(datetime.datetime.now(datetime.UTC))
+        certificate_builder = certificate_builder.not_valid_after(
+            datetime.datetime.now(datetime.UTC) + (one_day * 365))
+        certificate_builder = certificate_builder.serial_number(x509.random_serial_number())
+        certificate_builder = certificate_builder.public_key(public_key)
+        certificate_builder = certificate_builder.add_extension(
+            x509.BasicConstraints(ca=False, path_length=None), critical=True
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.AuthorityKeyIdentifier.from_issuer_public_key(
+                self.domain.issuing_ca.credential.get_private_key_serializer().public_key_serializer.as_crypto()
+            ),
+            critical=False
+        )
+        certificate_builder = certificate_builder.add_extension(
+            x509.SubjectKeyIdentifier.from_public_key(public_key),
+            critical=False
+        )
+
+        domain_certificate = certificate_builder.sign(
+            private_key=self.domain.issuing_ca.credential.get_private_key_serializer().as_crypto(),
+            algorithm=hash_algorithm
+        )
+
+        cert_chain = (
+                [self.domain.issuing_ca.credential.get_certificate()] +
+                self.domain.issuing_ca.credential.get_certificate_chain())
+
+        issued_domain_credential = self._save_keyless_credential(
+            certificate=domain_certificate,
+            certificate_chain=cert_chain,
+            common_name=self.common_name,
+            issued_credential_type=IssuedCredentialModel.IssuedCredentialType.DOMAIN_CREDENTIAL,
+            issued_credential_purpose=IssuedCredentialModel.IssuedCredentialPurpose.DOMAIN_CREDENTIAL
+        )
 
         self.device.onboarding_status = self.device.OnboardingStatus.ONBOARDED
         self.device.save()
