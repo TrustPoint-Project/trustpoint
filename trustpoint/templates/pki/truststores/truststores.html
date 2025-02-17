@@ -54,17 +54,17 @@
   
       {% include 'trustpoint/pagination.html' %}
     </div>
-  
-    <div class="card-footer d-flex justify-content-between">
-        <div class="ms-2 tp-card-btn-footer">
-          <a class="btn btn-primary" href="{% url 'pki:truststores-add' %}">{% trans "Add new Trust Store" %}</a>
+
+    <div class="card-footer d-flex justify-content-between tp-sticky-footer">
+        <div class="tp-card-btn-footer m-1">
+            <!-- <button type="button" class="btn btn-danger tp-table-select-btn" data-tp-url="delete">{% trans 'Delete selected' %}</button> -->
             <button type="button" class="btn btn-primary tp-table-select-btn" data-tp-url="download">
-                {% trans "Download selected" %}
+                {% trans 'Download selected' %}
             </button>
         </div>
-        <button type="button" class="btn btn-danger tp-table-select-btn me-2" data-tp-url="delete">
-            {% trans "Delete selected" %}
-        </button>
+        <div class="m-1">
+          <a class="btn btn-primary" href="{% url 'pki:truststores-add' %}">{% trans 'Add new Truststore' %}</a>
+        </div>
     </div>
 </div>
 
