@@ -1,5 +1,4 @@
 from behave import given, then, when
-from behave.api.pending_step import StepNotImplementedError
 
 
 @given('the user has role {role}')
@@ -12,7 +11,7 @@ def step_given_user_role(context, role):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Given the user has role {role}')
+    assert False, f'STEP: Given the user has role {role}'
 
 
 @given('a certificate template named {template_name} exists')
@@ -25,7 +24,7 @@ def step_given_certificate_template_exists(context, template_name):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Given a certificate template named {template_name} exists')
+    assert False, f'STEP: Given a certificate template named {template_name} exists'
 
 
 @when('the user attempts to access certificate templates')
@@ -35,7 +34,7 @@ def step_when_user_attempts_access_templates(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: When the user attempts to access certificate templates')
+    assert False, 'STEP: When the user attempts to access certificate templates'
 
 
 @when('the user attempts to modify the certificate template')
@@ -45,7 +44,7 @@ def step_when_user_attempts_modify_template(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: When the user attempts to modify the certificate template')
+    assert False, 'STEP: When the user attempts to modify the certificate template'
 
 
 @when('an unauthorized user attempts to access it')
@@ -55,7 +54,7 @@ def step_when_unauthorized_access_attempted(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: When an unauthorized user attempts to access it')
+    assert False, 'STEP: When an unauthorized user attempts to access it'
 
 
 @when('a non-admin user attempts to delete it')
@@ -65,7 +64,7 @@ def step_when_non_admin_attempts_delete(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: When a non-admin user attempts to delete it')
+    assert False, 'STEP: When a non-admin user attempts to delete it'
 
 
 @when('an admin exports the template')
@@ -75,7 +74,7 @@ def step_when_admin_exports_template(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: When an admin exports the template')
+    assert False, 'STEP: When an admin exports the template'
 
 
 @when('a non-admin user attempts to export the template')
@@ -85,7 +84,7 @@ def step_when_non_admin_attempts_export(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: When a non-admin user attempts to export the template')
+    assert False, 'STEP: When a non-admin user attempts to export the template'
 
 
 @then('access should be {access_outcome}')
@@ -98,7 +97,7 @@ def step_then_access_outcome(context, access_outcome):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Then access should be {access_outcome}')
+    assert False, f'STEP: Then access should be {access_outcome}'
 
 
 @then('modification should be {modification_outcome}')
@@ -111,7 +110,7 @@ def step_then_modification_outcome(context, modification_outcome):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Then modification should be {modification_outcome}')
+    assert False, f'STEP: Then modification should be {modification_outcome}'
 
 
 @then('the deletion should be rejected')
@@ -121,7 +120,7 @@ def step_then_deletion_rejected(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: Then the deletion should be rejected')
+    assert False, 'STEP: Then the deletion should be rejected'
 
 
 @then('an error message {error_message} should be shown')
@@ -134,7 +133,7 @@ def step_then_error_message_shown(context, error_message):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Then an error message {error_message} should be shown')
+    assert False, f'STEP: Then an error message {error_message} should be shown'
 
 
 @then('the exported template should be encrypted')
@@ -144,7 +143,7 @@ def step_then_export_encrypted(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: Then the exported template should be encrypted')
+    assert False, 'STEP: Then the exported template should be encrypted'
 
 
 @then('export should be denied')
@@ -154,9 +153,9 @@ def step_then_export_denied(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: Then export should be denied')
+    assert False, 'STEP: Then export should be denied'
 
 
 @then('the attempt should be logged')
 def step_impl(context):
-    raise StepNotImplementedError('STEP: Then the attempt should be logged')
+    assert False, 'STEP: Then the attempt should be logged'

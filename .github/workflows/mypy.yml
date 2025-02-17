@@ -1,4 +1,4 @@
-name: MyPy Code Quality Check
+name: MyPy
 on: [ pull_request ]
 jobs:
   ruff:

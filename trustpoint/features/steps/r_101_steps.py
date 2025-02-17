@@ -1,5 +1,4 @@
 from behave import given, then, when
-from behave.api.pending_step import StepNotImplementedError
 
 
 @given('the system enforces certificate validation for all devices')
@@ -9,7 +8,7 @@ def step_given_system_enforces_cert_validation(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: Given the system enforces certificate validation for all devices')
+    assert False, 'STEP: Given the system enforces certificate validation for all devices'
 
 
 @given('a device has a {validity} certificate')
@@ -19,7 +18,7 @@ def step_given_device_with_cert(context, validity):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Given a device has a {validity} certificate')
+    assert False, f'STEP: Given a device has a {validity} certificate'
 
 
 @given('a device does not present a certificate')
@@ -29,7 +28,7 @@ def step_given_device_without_cert(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: Given a device does not present a certificate')
+    assert False, 'STEP: Given a device does not present a certificate'
 
 
 @when('the device attempts to establish communication')
@@ -39,7 +38,7 @@ def step_when_device_attempts_communication(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: When the device attempts to establish communication')
+    assert False, 'STEP: When the device attempts to establish communication'
 
 
 @then('the system should {allow_deny} the communication')
@@ -49,7 +48,7 @@ def step_then_allow_deny_communication(context, allow_deny):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Then the system should {allow_deny} the communication')
+    assert False, f'STEP: Then the system should {allow_deny} the communication'
 
 
 @then('log the authentication failure with reason {reason}')
@@ -62,4 +61,4 @@ def step_then_log_failure(context, reason):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Then log the authentication failure with reason {reason}')
+    assert False, f'STEP: Then log the authentication failure with reason {reason}'

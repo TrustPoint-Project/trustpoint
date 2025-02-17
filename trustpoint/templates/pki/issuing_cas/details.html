@@ -71,7 +71,7 @@
                         </div>
 
                         <h2>
-                            {% if issuing_ca.issuing_ca_certificate.subject_public_bytes == issuing_ca.issuing_ca_certificate.issuer_public_bytes %}
+                            {% if issuing_ca.credential.certificate.subject_public_bytes == issuing_ca.credential.certificate.issuer_public_bytes %}
                                 Issuing CA Certificate (This is a self-signed Root CA Certificate)
                             {% else %}
                                 Issuing CA Certificate

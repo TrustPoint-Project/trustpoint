@@ -430,3 +430,47 @@ Feature File
 
 .. literalinclude:: ../../../trustpoint/features/R_012_multi_language_support.feature
    :language: gherkin
+
+^^^^^
+R_013
+^^^^^
+
+This testcase is related to requirement `R_013`_.
+
+"""""""""
+Test Idea
+"""""""""
+
+The Remote Credential Download feature allows users to download an issued application credential
+from a remote device using a one-time password (OTP).
+The test covers the following scenarios:
+
+#. Admin Generates One-Time Password
+    - An admin successfully generates a one-time password (OTP) for a specific issued credential.
+    - The OTP is displayed in the "Download on Device Browser" view.
+    - The OTP should be valid for a limited time.
+
+#. User Enters OTP Correctly
+    - The user visits the "/devices/browser" endpoint.
+    - They enter a valid OTP.
+    - The system grants access to a page where the user can select the format for the credential download.
+
+#. User Enters OTP Incorrectly
+    - The user visits the "/devices/browser" endpoint.
+    - They enter an invalid OTP.
+    - The system displays a warning message indicating the OTP is incorrect.
+    - The user is not granted access to download the credential.
+
+#. User Downloads Credential
+    - The user is on the credential download page.
+    - The download token is still valid (not expired).
+    - The user enters a password to encrypt the private key.
+    - The user selects a file format.
+    - The credential is successfully downloaded in the selected format.
+
+""""""""""""
+Feature File
+""""""""""""
+
+.. literalinclude:: ../../../trustpoint/features/R_013_remote_credential_download.feature
+   :language: gherkin

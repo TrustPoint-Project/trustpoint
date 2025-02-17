@@ -5,8 +5,9 @@
 
 import os
 import sys
-import django
 from pathlib import Path
+
+import django
 
 sys.path.insert(0, os.path.abspath('../../trustpoint'))
 os.environ['DJANGO_SETTINGS_MODULE'] = 'trustpoint.settings'

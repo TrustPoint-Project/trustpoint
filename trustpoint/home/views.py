@@ -3,23 +3,23 @@
 from __future__ import annotations
 
 import logging
-from datetime import date, datetime, timedelta
+from collections import Counter
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any
 
 from devices.models import DeviceModel, IssuedCredentialModel
-from django.contrib import messages  # type: ignore[import-untyped]
-from django.contrib.auth.decorators import login_required  # type: ignore[import-untyped]
-from django.core.management import call_command  # type: ignore[import-untyped]
-from django.db.models import Case, Count, F, IntegerField, Q, QuerySet, Value, When  # type: ignore[import-untyped]
-from django.db.models.functions import TruncDate  # type: ignore[import-untyped]
-from django.http import HttpRequest, HttpResponse, JsonResponse  # type: ignore[import-untyped]
-from django.shortcuts import get_object_or_404, redirect, render  # type: ignore[import-untyped]
-from django.utils import dateparse, timezone  # type: ignore[import-untyped]
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.core.management import call_command
+from django.db.models import Case, Count, F, IntegerField, Q, QuerySet, Value, When
+from django.db.models.functions import TruncDate
+from django.http import HttpRequest, HttpResponse, JsonResponse
+from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import dateparse, timezone
 from django.utils.html import format_html
 from django.utils.translation import gettext_lazy as _
-from django.views.generic.base import RedirectView, TemplateView  # type: ignore[import-untyped]
+from django.views.generic.base import RedirectView, TemplateView
 from django.views.generic.list import ListView
-from ninja.responses import Response
 from pki.models import CertificateModel, IssuingCaModel
 
 from trustpoint.settings import UIConfig
@@ -29,7 +29,7 @@ from .filters import NotificationFilter
 from .models import NotificationModel, NotificationStatus
 
 if TYPE_CHECKING:
-    from django.utils.safestring import SafeString  # type: ignore[import-untyped]
+    from django.utils.safestring import SafeString
 
 SUCCESS = 25
 ERROR = 40
@@ -190,7 +190,7 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
         if start_date:
             start_date_object = dateparse.parse_datetime(start_date)  # Returns a datetime object
             if not start_date_object:
-                return Response({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
+                return JsonResponse({'error': 'Invalid date format. Use YYYY-MM-DD.'}, status=400)
         else:
             tz = timezone.get_current_timezone()
             start_date_object = datetime.now(tz).date()
@@ -303,10 +303,9 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
         cert_counts_by_status = []
         try:
             cert_status_qr = (
-                CertificateModel.objects.filter(
-                    certificate_status__in=['O', 'R']
-                )  # Optional: Filter nach mehreren Statuswerten
-                .annotate(issue_date=TruncDate('not_valid_before'))
+                CertificateModel.objects.annotate(
+                    issue_date=TruncDate('not_valid_before')
+                )
                 .values('issue_date', 'certificate_status')
                 .annotate(cert_count=Count('id'))
                 .order_by('issue_date', 'certificate_status')
@@ -330,15 +329,11 @@ class DashboardChartsAndCountsView(TpLoginRequiredMixin, TemplateView):
         """Get certs count by onboarding status from database"""
         cert_status_counts = {str(status): 0 for _, status in CertificateModel.CertificateStatus.choices}
         try:
-            cert_status_qr = (
-                CertificateModel.objects.filter(created_at__gt=start_date)
-                .values('certificate_status')
-                .annotate(count=Count('certificate_status'))
-            )
+            cert_status_qr = CertificateModel.objects.filter(created_at__gt=start_date)
+            status_counts = Counter(str(cert.certificate_status.value) for cert in cert_status_qr)
             # Mapping from short code to human-readable name
             status_mapping = {key: str(value) for key, value in CertificateModel.CertificateStatus.choices}
-            cert_status_counts = {status_mapping[item['certificate_status']]: item['count'] for item in cert_status_qr}
-            cert_status_counts['total'] = sum(cert_status_counts.values())
+            cert_status_counts = {status_mapping[key]: value for key, value in status_counts.items()}
         except Exception:
             self._logger.exception('Error occurred in cert counts by status query')
         return cert_status_counts

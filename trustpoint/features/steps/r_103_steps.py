@@ -1,5 +1,4 @@
 from behave import given, then, when
-from behave.api.pending_step import StepNotImplementedError
 
 
 @given('the TrustPoint component {component} is selected')
@@ -12,7 +11,7 @@ def step_given_component_selected(context, component):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Given the TrustPoint component {component} is selected')
+    assert False, f'STEP: Given the TrustPoint component {component} is selected'
 
 
 @given('the TrustPoint component {component} has security level {security_level}')
@@ -26,9 +25,7 @@ def step_given_component_has_security_level(context, component, security_level):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(
-        f'STEP: Given the TrustPoint component {component} has security level {security_level}'
-    )
+    assert False, f'STEP: Given the TrustPoint component {component} has security level {security_level}'
 
 
 @when('the admin sets the security level to {security_level}')
@@ -41,7 +38,7 @@ def step_when_admin_sets_security_level(context, security_level):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: When the admin sets the security level to {security_level}')
+    assert False, f'STEP: When the admin sets the security level to {security_level}'
 
 
 @when('the system is restarted')
@@ -51,7 +48,7 @@ def step_when_system_restarts(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: When the system is restarted')
+    assert False, 'STEP: When the system is restarted'
 
 
 @when('an unauthorized user attempts access')
@@ -61,7 +58,7 @@ def step_when_unauthorized_access_attempted(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: When an unauthorized user attempts access')
+    assert False, 'STEP: When an unauthorized user attempts access'
 
 
 @then('the system should apply the security level {security_level}')
@@ -74,7 +71,7 @@ def step_then_system_applies_security_level(context, security_level):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Then the system should apply the security level {security_level}')
+    assert False, f'STEP: Then the system should apply the security level {security_level}'
 
 
 @then('the system should reject the input with error {error_message}')
@@ -87,7 +84,7 @@ def step_then_reject_invalid_input(context, error_message):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(f'STEP: Then the system should reject the input with error {error_message}')
+    assert False, f'STEP: Then the system should reject the input with error {error_message}'
 
 
 @then('the TrustPoint component {component} should still have security level {security_level}')
@@ -101,9 +98,7 @@ def step_then_security_level_persists(context, component, security_level):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError(
-        f'STEP: Then the TrustPoint component {component} should still have security level {security_level}'
-    )
+    assert False, f'STEP: Then the TrustPoint component {component} should still have security level {security_level}'
 
 
 @then('access should be denied')
@@ -113,7 +108,7 @@ def step_then_access_denied(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: Then access should be denied')
+    assert False, 'STEP: Then access should be denied'
 
 
 @then('the system should log the security level change with details')
@@ -123,4 +118,4 @@ def step_then_log_security_change(context):
     Raises:
         StepNotImplementedError: Step not yet implemented.
     """
-    raise StepNotImplementedError('STEP: Then the system should log the security level change with details')
+    assert False, 'STEP: Then the system should log the security level change with details'

@@ -5,25 +5,20 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from cryptography.exceptions import InvalidSignature
-from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.primitives.asymmetric import ec, rsa
 
 from core.serializer import (
     CertificateCollectionSerializer,
     CertificateSerializer,
     CredentialSerializer,
-    PrivateKeySerializer,
 )
 
 if TYPE_CHECKING:
-    from typing import Union
-
     from cryptography import x509
 
-    PrivateKey = Union[ec.EllipticCurvePrivateKey, rsa.RSAPrivateKey]
-    PublicKey = Union[ec.EllipticCurvePublicKey, rsa.RSAPublicKey]
-    from pki.models.credential import CredentialModel
-    from pki.models.domain import DomainModel
+
+PrivateKey = ec.EllipticCurvePrivateKey | rsa.RSAPrivateKey
+PublicKey = ec.EllipticCurvePublicKey | rsa.RSAPublicKey
 
 
 class CertificateChainExtractor:
@@ -211,60 +206,3 @@ class CredentialNormalizer:
             True if the private key matches the certificate, False otherwise.
         """
         return private_key.public_key() == certificate.public_key()
-
-
-class CryptographyUtils:
-    """Utilities methods for cryptography corresponding to Trustpoint models.
-
-    TODO(AlexHx8472): Move this out of the core.
-    """
-
-    @staticmethod
-    def generate_private_key(domain: DomainModel) -> PrivateKeySerializer:
-        """Generates a key pair of the type corresponding to the domain model.
-
-        Args:
-            domain: The domain to consider.
-
-        Returns:
-            The generated private key / key pair.
-        """
-        issuing_ca_private_key = domain.issuing_ca.credential.get_private_key()
-        if isinstance(issuing_ca_private_key, rsa.RSAPrivateKey):
-            key_size = issuing_ca_private_key.key_size
-            return PrivateKeySerializer(rsa.generate_private_key(key_size=key_size, public_exponent=65537))
-        if isinstance(issuing_ca_private_key, ec.EllipticCurvePrivateKey):
-            curve = issuing_ca_private_key.curve
-            return PrivateKeySerializer(ec.generate_private_key(curve=curve))
-        err_msg = 'Cannot build the domain credential, unknown key type found.'
-        raise ValueError(err_msg)
-
-    @classmethod
-    def get_hash_algorithm_from_domain(cls, domain: DomainModel) -> hashes.SHA256 | hashes.SHA384:
-        """Gets the hash algorithm for a given domain.
-
-        Args:
-            domain: The domain to consider.
-
-        Returns:
-            The hash algorithm as cryptography object.
-        """
-        return cls.get_hash_algorithm_from_credential(domain.issuing_ca.credential)
-
-    @staticmethod
-    def get_hash_algorithm_from_credential(credential: CredentialModel) -> hashes.SHA256 | hashes.SHA384:
-        """Gets the hash algorithm for a given credential model.
-
-        Args:
-            credential: The credential to consider.
-
-        Returns:
-            The hash algorithm as cryptography object.
-        """
-        hash_algorithm = credential.get_certificate().signature_hash_algorithm
-        if isinstance(hash_algorithm, hashes.SHA256):
-            return hashes.SHA256()
-        if isinstance(hash_algorithm, hashes.SHA384):
-            return hashes.SHA384()
-        err_msg = 'Cannot build the domain credential, unknown hash algorithm found.'
-        raise ValueError(err_msg)

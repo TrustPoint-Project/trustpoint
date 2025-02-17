@@ -486,6 +486,10 @@ table .tp-onboarding-btn {
     vertical-align: middle;
 }
 
+tr.text-muted td {
+    color: inherit;
+}
+
 td {
     vertical-align: middle;
 }
@@ -909,6 +913,10 @@ code {
 
 .copy-button:hover::after {
     opacity: 1;
+}
+
+.asteriskField {
+    display: none;
 }
 
 

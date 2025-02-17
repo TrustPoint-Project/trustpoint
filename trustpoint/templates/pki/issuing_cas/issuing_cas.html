@@ -50,7 +50,7 @@
         <tbody>
           {# When adding or removing columns, please update the "colspan" attribute in the {% empty %} section accordingly #}
           {% for ca in page_obj %}
-          <tr>
+          <tr{% if not ca.is_active %} class="text-muted"{% endif %}>
             <td class="row_checkbox">
               <input type="checkbox" name="row_checkbox" value="{{ ca.id }}" />
             </td>

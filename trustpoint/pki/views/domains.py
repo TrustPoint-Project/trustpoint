@@ -4,25 +4,24 @@ import enum
 from typing import Any, cast
 
 from django.contrib import messages
-from django.http import HttpResponseRedirect, HttpResponse, Http404
+from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
-from django.urls import reverse_lazy, reverse
+from django.urls import reverse, reverse_lazy
 from django.utils.translation import gettext_lazy as _
 from django.views.generic import DeleteView
-from django.views.generic.detail import DetailView
-from django.views.generic.list import ListView  # type: ignore[import-untyped]
-from django.views.generic.edit import CreateView, UpdateView
-from django.views.generic.edit import FormView
-from pki.forms import DevIdRegistrationForm, DevIdAddMethodSelectForm
-from pki.models import DomainModel, DevIdRegistration
+from django.views.generic.edit import CreateView, FormView, UpdateView
+from django.views.generic.list import ListView
+
+from pki.forms import DevIdAddMethodSelectForm, DevIdRegistrationForm
+from pki.models import DevIdRegistration, DomainModel, IssuingCaModel
 from pki.models.truststore import TruststoreModel
 from trustpoint.settings import UIConfig
 from trustpoint.views.base import (
-    ContextDataMixin,
-    TpLoginRequiredMixin,
     BulkDeleteView,
+    ContextDataMixin,
     ListInDetailView,
-    SortableTableMixin
+    SortableTableMixin,
+    TpLoginRequiredMixin,
 )
 
 
@@ -53,6 +52,7 @@ class DomainTableView(DomainContextMixin, TpLoginRequiredMixin, SortableTableMix
 
 
 class DomainCreateView(DomainContextMixin, TpLoginRequiredMixin, CreateView):
+    """View to create a new domain."""
 
     model = DomainModel
     fields = '__all__'
@@ -60,8 +60,23 @@ class DomainCreateView(DomainContextMixin, TpLoginRequiredMixin, CreateView):
     success_url = reverse_lazy('pki:domains')
     ignore_url = reverse_lazy('pki:domains')
 
+    def get_form(self, form_class: Any = None) -> Any:
+        """Override get_form to filter out autogen root CAs."""
+        form = super().get_form(form_class)
+        # Filter out autogen root CAs
+        form.fields['issuing_ca'].queryset = IssuingCaModel.objects.exclude(
+            issuing_ca_type=IssuingCaModel.IssuingCaTypeChoice.AUTOGEN_ROOT
+        ).filter(is_active=True)
+        form.fields['issuing_ca'].empty_label = None # Remove empty "---------" choice
+        del form.fields['is_active']
+        return form
+
 
 class DomainUpdateView(DomainContextMixin, TpLoginRequiredMixin, UpdateView):
+    """View to edit a domain."""
+
+    # TODO(Air): This view is currently UNUSED.
+    # If used, a mixin implementing the get_form method from the DomainCreateView should be added.
 
     model = DomainModel
     fields = '__all__'
@@ -76,7 +91,7 @@ class DomainDevIdRegistrationTableMixin(SortableTableMixin, ListInDetailView):
     paginate_by = UIConfig.paginate_by
     context_object_name = 'devid_registrations'
     default_sort_param = 'unique_name'
-    
+
     def get_queryset(self):
         self.queryset = DevIdRegistration.objects.filter(domain=self.get_object())
         return super().get_queryset()
