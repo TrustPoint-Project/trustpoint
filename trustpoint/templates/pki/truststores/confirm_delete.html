@@ -12,19 +12,11 @@
             </div>
             <div class="card-body">
                 <div class="tp-card-centered-content">
-                    {% if object %}
-                        <!-- Single-object deletion (DeleteView) -->
-                        <h2>{% trans 'Truststore' %}: {{ object.unique_name }}</h2>
-                        <hr class="hr-m">
-                        {% include 'pki/truststores/sub_details.html' with truststore=object %}
-                    {% elif truststores %}
-                        <!-- Multiple-object deletion (BulkDeleteView) -->
+                    {% if truststores %}
                         {% for truststore in truststores %}
                             <h2>({{ forloop.counter }}) {% trans 'Truststore' %}: {{ truststore.unique_name }}</h2>
                             <hr class="hr-m">
-                            <div class="tp-kvp-list">
-                                {% include 'pki/truststores/sub_details.html' with truststore=truststore %}
-                            </div>
+                            {% include 'pki/truststores/sub_details.html' with truststore=truststore %}
                             <input type="hidden" name="truststore_ids" value="{{ truststore.id }}">
                         {% empty %}
                             <p>{% trans 'No Truststores selected.' %}</p>

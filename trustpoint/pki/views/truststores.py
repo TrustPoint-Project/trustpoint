@@ -22,7 +22,8 @@ from pki.forms import TruststoreAddForm
 from pki.models import DomainModel
 from pki.models.truststore import TruststoreModel
 from trustpoint.settings import UIConfig
-from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, SortableTableMixin, TpLoginRequiredMixin
+from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, SortableTableMixin, TpLoginRequiredMixin, \
+    BulkDeleteView
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -235,28 +236,23 @@ class TruststoreMultipleDownloadView(
 
         return response
 
-class TruststoreDeleteView(TruststoresContextMixin, TpLoginRequiredMixin, DeleteView):
-    """View to delete a DevID Registration."""
+class TruststoreBulkDeleteConfirmView(TruststoresContextMixin, TpLoginRequiredMixin, BulkDeleteView):
+
     model = TruststoreModel
-    template_name = 'pki/truststores/confirm_delete.html'
     success_url = reverse_lazy('pki:truststores')
-
-    def delete(self, request, *args, **kwargs):
-        """Override delete method to add a success message."""
-        response = super().delete(request, *args, **kwargs)
-        messages.success(request, _('DevID Registration Pattern deleted successfully.'))
-        return response
-
-class TruststoreBulkDeleteView(TruststoresContextMixin, TpLoginRequiredMixin, View):
+    ignore_url = reverse_lazy('pki:truststores')
     template_name = 'pki/truststores/confirm_delete.html'
+    context_object_name = 'truststores'
 
-    def post(self, request, *args, **kwargs):
-        truststore_ids = request.POST.getlist('truststore_ids')
-        truststores = TruststoreModel.objects.filter(id__in=truststore_ids)
+    def form_valid(self, form):
+        queryset = self.get_queryset()
+        deleted_count = queryset.count()
 
-        if 'confirm' in request.POST:
-            deleted_count, _ = truststores.delete()
-            messages.success(request, _(f'{deleted_count} Truststore(s) deleted successfully.'))
-            return redirect('pki:truststores')
+        response = super().form_valid(form)
 
-        return render(request, self.template_name, {'truststores': truststores})
+        messages.success(
+            self.request,
+            _('Successfully deleted {count} Truststore(s).').format(count=deleted_count)
+        )
+
+        return response

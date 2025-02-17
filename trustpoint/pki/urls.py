@@ -45,9 +45,11 @@ urlpatterns = [
     path('truststores/details/<int:pk>/',
          truststores.TruststoreDetailView.as_view(),
          name='truststore-detail'),
-    path('truststores/delete/<int:pk>/',
-         truststores.TruststoreDeleteView.as_view(),
-         name='truststore-delete'),
+    re_path(
+        r'^truststores/delete/(?P<pks>([0-9]+/)+[0-9]*)/?$',
+        truststores.TruststoreBulkDeleteConfirmView.as_view(),
+        name='truststore-delete_confirm',
+    ),
     path(
         'certificates/',
         certificates.CertificateTableView.as_view(),

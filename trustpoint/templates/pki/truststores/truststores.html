@@ -65,10 +65,15 @@
 
         <div class="card-footer d-flex justify-content-between tp-sticky-footer">
             <div class="tp-card-btn-footer m-1">
-                <!-- <button type="button" class="btn btn-danger tp-table-select-btn" data-tp-url="delete">{% trans 'Delete selected' %}</button> -->
-                <button type="button" class="btn btn-primary tp-table-select-btn" data-tp-url="download">
-                    {% trans 'Download selected' %}
-                </button>
+                <div class="tp-card-btn-footer m-1">
+                    <button type="button" class="btn btn-danger tp-table-select-btn me-2"
+                            data-tp-url="delete">{% trans 'Delete selected' %}</button>
+                </div>
+                <div class="tp-card-btn-footer m-1">
+                    <button type="button" class="btn btn-primary tp-table-select-btn" data-tp-url="download">
+                        {% trans 'Download selected' %}
+                    </button>
+                </div>
             </div>
             <div class="m-1">
                 <a class="btn btn-primary" href="{% url 'pki:truststores-add' %}">{% trans 'Add new Truststore' %}</a>
