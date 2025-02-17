@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.shortcuts import get_object_or_404
+from django.views.generic import DeleteView
 
 from core.file_builder.certificate import CertificateCollectionArchiveFileBuilder, CertificateCollectionBuilder
 from core.file_builder.enum import ArchiveFormat, CertificateFileFormat
@@ -14,6 +15,8 @@ from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormView
 from django.views.generic.list import ListView
+from django.contrib import messages
+from django.utils.translation import gettext_lazy as _
 
 from pki.forms import TruststoreAddForm
 from pki.models import DomainModel
@@ -231,3 +234,29 @@ class TruststoreMultipleDownloadView(
         response['Content-Disposition'] = f'attachment; filename="truststores{archive_format_enum.file_extension}"'
 
         return response
+
+class TruststoreDeleteView(TruststoresContextMixin, TpLoginRequiredMixin, DeleteView):
+    """View to delete a DevID Registration."""
+    model = TruststoreModel
+    template_name = 'pki/truststores/confirm_delete.html'
+    success_url = reverse_lazy('pki:truststores')
+
+    def delete(self, request, *args, **kwargs):
+        """Override delete method to add a success message."""
+        response = super().delete(request, *args, **kwargs)
+        messages.success(request, _('DevID Registration Pattern deleted successfully.'))
+        return response
+
+class TruststoreBulkDeleteView(TruststoresContextMixin, TpLoginRequiredMixin, View):
+    template_name = 'pki/truststores/confirm_delete.html'
+
+    def post(self, request, *args, **kwargs):
+        truststore_ids = request.POST.getlist('truststore_ids')
+        truststores = TruststoreModel.objects.filter(id__in=truststore_ids)
+
+        if 'confirm' in request.POST:
+            deleted_count, _ = truststores.delete()
+            messages.success(request, _(f'{deleted_count} Truststore(s) deleted successfully.'))
+            return redirect('pki:truststores')
+
+        return render(request, self.template_name, {'truststores': truststores})
