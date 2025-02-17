@@ -5,7 +5,7 @@ Installation
 ------------
 
 | Trustpoint uses the Python Django framework.
-| We are using uv to manage different python versions and
+| We are using `uv <https://docs.astral.sh/uv/>`__ to manage different python versions and
   dependencies.
 
 Please note that the current version is in **development status** and
@@ -46,7 +46,6 @@ Finally, install everything through uv:
 .. code:: shell
 
    cd /path/to/trustpoint/
-   uv init
    uv sync
 
 Activating the environment

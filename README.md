@@ -50,8 +50,8 @@ As a result, Trustpoint aims to offer a solution tailored to the domain of machi
 A device can be onboarded by issuing it an LDevID called the Domain Credential to support automated certificate management.
 Trustpoint offers several methods for obtaining the Domain Credential:
 
-- **[Trustpoint Client](https://github.com/TrustPoint-Project/trustpoint-client)**: User-friendly CMP-based onboarding through a client
-  interface.
+- **[Trustpoint Client](https://github.com/TrustPoint-Project/trustpoint-client)**: User-friendly onboarding through a client
+  interface; based on CMP (RFCs [4210](https://datatracker.ietf.org/doc/html/rfc4210) and [9483](https://datatracker.ietf.org/doc/rfc9483/)).
 <!-- - **AOKI Zero Touch**: Fully automated mutually authenticated onboarding. -->
 - **Command-Line Interface (CLI)**: Onboard devices manually via CMP using Linux/openssl commands.
 
@@ -59,7 +59,7 @@ Trustpoint offers several methods for obtaining the Domain Credential:
 
 - **CMP certificate request**: Request a new application certificate using the previously obtained Domain Credential
 - **CMP with shared secret**: Allows using CMP one-time to request an application credential (without Domain Credential)
-- **Manual download**: Generates both the keypair and certificate in Trustpoint and allows download in PKCS#12 and PEM format
+- **Manual download**: Generates both the keypair and certificate in Trustpoint and allows their download in PKCS#12 as well as in PEM format
 - **Remote credential download**: Allows download of the credential directly on the target device's browser using a one-time-password
 
 ### 3. Certificate Authority (CA) Modes
