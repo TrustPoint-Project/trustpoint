@@ -53,7 +53,7 @@ Requirements:
 
 - A Linux machine with access to the command line.
 - Necessary permissions.
-- An connection to communicate with Trustpoint services.
+- A connection to communicate with Trustpoint services.
 
 Example for CMP with shared secret onboarding
 """""""""""""""""""""""""""""""""""""""""""""
@@ -79,7 +79,7 @@ Next, use the CMP protocol with a shared secret to request the domain credential
     openssl cmp \
     -cmd ir \
     -implicit_confirm \
-    -server http://127.0.0.1:8000/.well-known/cmp/initialization/homag/ \
+    -server http://127.0.0.1:8000/.well-known/cmp/initialization/custom_domain/ \
     -ref 11 \
     -secret pass:None \
     -subject "/CN=Trustpoint Domain Credential" \
@@ -107,7 +107,7 @@ Trustpoint provides a user-friendly client application that simplifies the onboa
 
 How It Works:
 
-- A new device with the Onboarded protocol **Trustpoint client** is added to Trustpoint
+- A new device with the onboarding protocol **Trustpoint client** is added to Trustpoint
 - In **Devices** click **Start Onboarding** on the new device
 - Copy the provided command to your clipboard and execute it on the device
 - The device is onboarded
@@ -116,9 +116,9 @@ How It Works:
 Requirements:
 
 - Access to the Device.
-- Python 3.10 or greater on device.
+- Python 3.12 or greater on device.
 - Trustpoint-Client installed on the device (via `pip install trustpoint-client`).
-- An connection to communicate with Trustpoint services.
+- A connection to communicate with Trustpoint services.
 
 Zero-Touch Onboarding (Work in Progress)
 ----------------------------------------
