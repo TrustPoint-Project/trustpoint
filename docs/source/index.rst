@@ -19,12 +19,11 @@ Welcome to Trustpoint's documentation!
    :caption: 🚀 Getting Started :
 
    introduction
-   faq
    quickstart_setup
    quickstart_operate
-   community_support
    usage_guide
-   development
+   community_support
+   faq
 
 
 .. toctree::
@@ -47,3 +46,4 @@ Welcome to Trustpoint's documentation!
 
    poetry_environment
    test_plan/test_plan
+   development
