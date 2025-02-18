@@ -75,7 +75,15 @@ class Command(BaseCommand):
         print("Starting the process of adding domains and devices...\n")
 
         for domain_name, devices in data.items():
-            issuing_ca = random.choice(['issuing-ca-a', 'issuing-ca-b', 'issuing-ca-c'])
+            issuing_ca = random.choice(
+                [
+                    'issuing-ca-a',
+                    'issuing-ca-b',
+                    'issuing-ca-c',
+                    'issuing-ca-d',
+                    'issuing-ca-e',
+                    'issuing-ca-f',
+                 ])
             domain, created = DomainModel.objects.get_or_create(unique_name=domain_name)
             domain.issuing_ca = IssuingCaModel.objects.get(unique_name=issuing_ca)
             domain.save()
