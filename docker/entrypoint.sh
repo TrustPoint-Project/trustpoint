@@ -13,7 +13,7 @@ fi
 # eset the database
 echo "Resetting the database..."
 uv run trustpoint/manage.py reset_db --no-user --force
-echo "Database reseted."
+echo "Database reset."
 
 # Collect static files
 echo "Collecting static files..."
