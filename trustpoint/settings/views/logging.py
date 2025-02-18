@@ -66,7 +66,7 @@ class LoggingFilesTableView(LoggerMixin, TpLoginRequiredMixin, LoggingContextMix
     def _get_first_and_last_entry_date(
             log_file_path: Path
     ) -> tuple[None | datetime.datetime, None | datetime.datetime]:
-        log_file = log_file_path.read_text()
+        log_file = log_file_path.read_text(encoding='utf-8', errors='backslashreplace')
 
         date_regex = re.compile(r'\b\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}\b')
         matches = re.findall(date_regex, log_file)
@@ -131,7 +131,7 @@ class LoggingFilesDetailsView(LoggerMixin, LoggingContextMixin, TpLoginRequiredM
         if not log_file_path.exists() or not log_file_path.is_file():
             context['log_content'] = 'Log-File not found.'
         else:
-            context['log_content'] = log_file_path.read_text()
+            context['log_content'] = log_file_path.read_text(encoding='utf-8', errors='backslashreplace')
 
         return context
 
@@ -150,7 +150,7 @@ class LoggingFilesDownloadView(LoggerMixin, LoggingContextMixin, TpLoginRequired
             exc_msg = 'Log file not found.'
             raise Http404(exc_msg)
 
-        response = HttpResponse(log_file_path.read_text(), content_type='text/plain')
+        response = HttpResponse(log_file_path.read_text(encoding='utf-8', errors='backslashreplace'), content_type='text/plain')
         response['Content-Disposition'] = f'attachment; filename={filename}'
         return response
 

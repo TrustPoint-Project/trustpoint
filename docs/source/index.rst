@@ -44,6 +44,5 @@ Welcome to Trustpoint's documentation!
    :maxdepth: 2
    :caption: 🧑‍💻 Development :
 
-   poetry_environment
-   test_plan/test_plan
    development
+   test_plan/test_plan
