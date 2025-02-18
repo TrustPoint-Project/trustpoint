@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.contrib import messages
+from django.db.models import ProtectedError
 from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import redirect
 from django.utils.translation import gettext as _
@@ -102,14 +103,24 @@ class IssuingCaBulkDeleteConfirmView(IssuingCaContextMixin, TpLoginRequiredMixin
         queryset = self.get_queryset()
         deleted_count = queryset.count()
 
-        response = super().form_valid(form)
+        try:
+            response = super().form_valid(form)
 
-        messages.success(
-            self.request,
-            _('Successfully deleted {count} Issuing CA(s).').format(count=deleted_count)
-        )
+            messages.success(
+                self.request,
+                _('Successfully deleted {count} Issuing CA(s).').format(count=deleted_count)
+            )
 
-        return response
+            return response
+
+        except ProtectedError as e:
+            messages.error(
+                self.request,
+                _(
+                    "Cannot delete the selected Issuing CA(s) because they are referenced by other objects."
+                )
+            )
+            return HttpResponseRedirect(self.success_url)
 
 
 class IssuingCaCrlGenerationView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):

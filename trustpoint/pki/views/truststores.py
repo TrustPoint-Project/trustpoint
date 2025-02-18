@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from django.db.models import ProtectedError
 from django.shortcuts import get_object_or_404
 from django.views.generic import DeleteView
 
@@ -248,11 +249,21 @@ class TruststoreBulkDeleteConfirmView(TruststoresContextMixin, TpLoginRequiredMi
         queryset = self.get_queryset()
         deleted_count = queryset.count()
 
-        response = super().form_valid(form)
+        try:
+            response = super().form_valid(form)
 
-        messages.success(
-            self.request,
-            _('Successfully deleted {count} Truststore(s).').format(count=deleted_count)
-        )
+            messages.success(
+                self.request,
+                _('Successfully deleted {count} Truststore(s).').format(count=deleted_count)
+            )
 
-        return response
+            return response
+
+        except ProtectedError as e:
+            messages.error(
+                self.request,
+                _(
+                    "Cannot delete the selected Truststore(s) because they are referenced by other objects."
+                )
+            )
+            return HttpResponseRedirect(self.success_url)

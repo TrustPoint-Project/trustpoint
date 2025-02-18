@@ -4,6 +4,7 @@ import enum
 from typing import Any, cast
 
 from django.contrib import messages
+from django.db.models import ProtectedError
 from django.http import Http404, HttpResponse, HttpResponseRedirect
 from django.shortcuts import get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -147,6 +148,29 @@ class DomainCaBulkDeleteConfirmView(DomainContextMixin, TpLoginRequiredMixin, Bu
     ignore_url = reverse_lazy('pki:domains')
     template_name = 'pki/domains/confirm_delete.html'
     context_object_name = 'domains'
+
+    def form_valid(self, form):
+        queryset = self.get_queryset()
+        deleted_count = queryset.count()
+
+        try:
+            response = super().form_valid(form)
+
+            messages.success(
+                self.request,
+                _('Successfully deleted {count} Domainss).').format(count=deleted_count)
+            )
+
+            return response
+
+        except ProtectedError as e:
+            messages.error(
+                self.request,
+                _(
+                    "Cannot delete the selected Domains(s) because they are referenced by other objects."
+                )
+            )
+            return HttpResponseRedirect(self.success_url)
 
 
 class DevIdRegistrationCreateView(DomainContextMixin, TpLoginRequiredMixin, FormView):
