@@ -51,7 +51,7 @@
             </th>
             <th>Certificate Management</th>
             <th>Details</th>
-            <th>Configure</th>
+{#            <th>Configure</th>#}
             <th>Revoke</th>
           </tr>
         </thead>
@@ -78,7 +78,7 @@
             <td>{{ device.get_pki_protocol_display }}</td>
             <td>{{ device.clm_button| safe}}</td>
             <td><a href="details/{{device.id}}/" class="btn btn-primary tp-table-btn w-100">Details</a></td>
-            <td><a href="configure/{{device.id}}/" class="btn btn-primary tp-table-btn w-100">Configure</a></td>
+{#            <td><a href="configure/{{device.id}}/" class="btn btn-primary tp-table-btn w-100">Configure</a></td>#}
             <td>{{ device.revoke_button| safe}}</td>
           </tr>
           {% empty %}
