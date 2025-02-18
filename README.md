@@ -47,28 +47,34 @@ As a result, Trustpoint aims to offer a solution tailored to the domain of machi
 
 ### 1. Device Onboarding
 
-- **[Trustpoint Client](https://github.com/TrustPoint-Project/trustpoint-client)**: Simple onboarding through a client
-  interface.
-- **Command-Line Interface (CLI)**: Onboard devices manually via Linux commands.
-- **Browser-Based Onboarding**: Use a web interface for easy onboarding.
-- **PKCS#12 File**: Download certificate files for manual installation.
+A device can be onboarded by issuing it an LDevID called the Domain Credential to support automated certificate management.
+Trustpoint offers several methods for obtaining the Domain Credential:
+
+- **[Trustpoint Client](https://github.com/TrustPoint-Project/trustpoint-client)**: User-friendly onboarding through a client
+  interface; based on CMP (RFCs [4210](https://datatracker.ietf.org/doc/html/rfc4210) and [9483](https://datatracker.ietf.org/doc/rfc9483/)).
+<!-- - **AOKI Zero Touch**: Fully automated mutually authenticated onboarding. -->
+- **Command-Line Interface (CLI)**: Onboard devices manually via CMP using Linux/openssl commands.
 
 ### 2. Application Certificate Management
 
-- **Certificate Requests**: Issue certificates for apps or systems.
+- **CMP certificate request**: Request a new application certificate using the previously obtained Domain Credential
+- **CMP with shared secret**: Allows using CMP one-time to request an application credential (without Domain Credential)
+- **Manual download**: Generates both the keypair and certificate in Trustpoint and allows their download in PKCS#12 as well as in PEM format
+- **Remote credential download**: Allows download of the credential directly on the target device's browser using a one-time-password
 
 ### 3. Certificate Authority (CA) Modes
 
 - **Import Issuing CA**: Integrate with an existing PKI by importing external CAs.
-- **Self-Generated CA**: Create a root and issuing CA for testing purposes.
+- **Auto-Generated CA**: Create a root and issuing CA for testing purposes.
 
 ### 4. Miscellaneous
 
 - **User Interface**: Manage certificates and devices through an intuitive web-based UI.
-- **Dashboard**: View device and certificate statuses.
+- **Dashboard**: View the status of devices and certificates.
 - **Deployment**: Easily deploy TrustPoint using Docker for simplified installation and scaling.
 - **Certificate Management Protocol (CMP)**: Supports CMP for automated certificate management, allowing easy
   integration with other CMP-compliant systems.
+- **Certificate Lifecycle Management**: Revoke certificates, issue CRLs, deploy short-lived certificates
 
 ## Who is developing Trustpoint?
 
@@ -90,9 +96,10 @@ the full [Trustpoint-Client Documentation](https://trustpoint-client.readthedocs
 For a quick setup and first impression use
 our [Quickstart Setup Guide](https://trustpoint.readthedocs.io/en/latest/quickstart_setup.html#)
 
-### Dockerhub
+### Docker Hub
 
-We are also providing the Trustpoint as a docker-container. Please see [Trustpoint on Dockerhub] or follow the
+We are also providing the Trustpoint as a docker-container. Please see
+[Trustpoint on Docker Hub](https://hub.docker.com/r/trustpoint2023/trustpoint) or follow the
 instructions in our [Trustpoint Documentation](https://trustpoint.readthedocs.io/en/latest/) to build the
 container yourself.
 

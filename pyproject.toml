@@ -3,11 +3,11 @@ name = "trustpoint"
 version = "0.1.1"
 description = "Trustpoint Server Software"
 authors = [{ name = "TrustPoint-Project" }]
-requires-python = "~=3.10"
+requires-python = ">=3.11"
 readme = "README.md"
 dependencies = [
     "crispy-bootstrap5~=2024.10",
-    "cryptography>=44.0.0,<45",
+    "cryptography>=44.0.1",
     "django>=5.1.6,<6",
     "django-crispy-forms~=2.3",
     "django-filter~=25.1",
@@ -108,7 +108,6 @@ docstring-code-format = true
 convention = "google"
 
 [tool.mypy]
-python_version = "3.12"
 strict = true
 plugins = ["mypy_django_plugin.main"]
 
@@ -119,3 +118,12 @@ django_settings_module = "trustpoint.settings"
 DJANGO_SETTINGS_MODULE = 'trustpoint.settings'
 python_files = 'test_*.py'
 
+[tool.behave]
+default_format = 'behave_html_pretty_formatter:PrettyHTMLFormatter'
+outfiles = ['behave-report.html']
+paths = ['trustpoint/features/']
+
+[tool.behave.userdata]
+'behave.formatter.html-pretty.title_string' = 'TrustPoint Test Report'
+'behave.formatter.html-pretty.show_summary' = 'true'
+'behave.formatter.html-pretty.collapse' = 'all'

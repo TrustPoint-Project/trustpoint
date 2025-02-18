@@ -934,7 +934,7 @@ class CertificatePoliciesExtension(CertificateExtension, models.Model):
                     policy_information.save()
 
                 # Add policy qualifiers if present
-                for qualifier in policy_info.policy_qualifiers:
+                for qualifier in policy_info.policy_qualifiers or []:
                     if isinstance(qualifier, x509.UserNotice):
                         # Save User Notice
                         notice_reference = qualifier.notice_reference
@@ -1303,7 +1303,7 @@ class DistributionPointModel(CertificateExtension, models.Model):
         Returns:
             List[DistributionPointModel]: List of created DistributionPoint objects.
         """
-        if not isinstance(extension, x509.CRLDistributionPoints):
+        if not isinstance(extension.value, x509.CRLDistributionPoints):
             raise TypeError(extension)
 
         distribution_points = []
@@ -1358,7 +1358,7 @@ class DistributionPointModel(CertificateExtension, models.Model):
                 #         reasons_list.append("aACompromise")
                 # reasons_list = cls.reasons_list_to_bitstring(dp.reasons)"""
 
-            dp_model = DistributionPointModel.objects.get_or_create(
+            dp_model, _created = DistributionPointModel.objects.get_or_create(
                 distribution_point_name=dpn,
                 reasons=reasons_list,
                 crl_issuer=crl_issuer

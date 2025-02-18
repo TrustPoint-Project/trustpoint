@@ -5,6 +5,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.shortcuts import get_object_or_404
+from django.views.generic import DeleteView
 
 from core.file_builder.certificate import CertificateCollectionArchiveFileBuilder, CertificateCollectionBuilder
 from core.file_builder.enum import ArchiveFormat, CertificateFileFormat
@@ -14,12 +15,15 @@ from django.views.generic.base import RedirectView
 from django.views.generic.detail import DetailView
 from django.views.generic.edit import FormView
 from django.views.generic.list import ListView
+from django.contrib import messages
+from django.utils.translation import gettext_lazy as _
 
 from pki.forms import TruststoreAddForm
 from pki.models import DomainModel
 from pki.models.truststore import TruststoreModel
 from trustpoint.settings import UIConfig
-from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, SortableTableMixin, TpLoginRequiredMixin
+from trustpoint.views.base import PrimaryKeyListFromPrimaryKeyString, SortableTableMixin, TpLoginRequiredMixin, \
+    BulkDeleteView
 
 if TYPE_CHECKING:
     from typing import ClassVar
@@ -229,5 +233,26 @@ class TruststoreMultipleDownloadView(
 
         response = HttpResponse(file_bytes, content_type=archive_format_enum.mime_type)
         response['Content-Disposition'] = f'attachment; filename="truststores{archive_format_enum.file_extension}"'
+
+        return response
+
+class TruststoreBulkDeleteConfirmView(TruststoresContextMixin, TpLoginRequiredMixin, BulkDeleteView):
+
+    model = TruststoreModel
+    success_url = reverse_lazy('pki:truststores')
+    ignore_url = reverse_lazy('pki:truststores')
+    template_name = 'pki/truststores/confirm_delete.html'
+    context_object_name = 'truststores'
+
+    def form_valid(self, form):
+        queryset = self.get_queryset()
+        deleted_count = queryset.count()
+
+        response = super().form_valid(form)
+
+        messages.success(
+            self.request,
+            _('Successfully deleted {count} Truststore(s).').format(count=deleted_count)
+        )
 
         return response
