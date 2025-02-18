@@ -1,4 +1,4 @@
-FROM debian:bookworm-slim
+FROM ghcr.io/astral-sh/uv:bookworm-slim
 
 ENV PYTHONUNBUFFERED=1
 ENV PYTHONDONTWRITEBYTECODE=1
@@ -14,36 +14,29 @@ ENV UV_LINK_MODE=copy
 EXPOSE 80 443
 
 # Update apt repository and install required dependencies from apt
-RUN apt update -y && apt install -y sudo apt-utils apache2 apache2-utils gettext python3 libapache2-mod-wsgi-py3 sed
+RUN apt update -y && apt install -y sudo apt-utils apache2 apache2-utils gettext python3 libapache2-mod-wsgi-py3 sed git
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-# Install the project's dependencies using the lockfile and settings
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
-    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
-    uv sync --frozen --no-install-project --no-dev
-
-# Create a symbolic link, so that calling python will invoke python3
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
-# Copy the current directory contents into the container
-COPY ./ /var/www/html/trustpoint/
-RUN rm -f /var/www/html/trustpoint/trustpoint/db.sqlite3
+# Clone the git repository - main branch
+RUN git clone https://github.com/TrustPoint-Project/trustpoint.git /var/www/html/trustpoint/
+# If you want to use your current project instead of the current main branch, comment out the git clone and
+# uncomment the following:
+# COPY ./ /var/www/html/trustpoint/
 
 # Sets the current WORKDIR for the following commands
 WORKDIR /var/www/html/trustpoint/
+
+#RUN uv sync --frozen
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --frozen --no-install-project
 
 # Sets DEBUG = False in the Django settings
 RUN sed -i '/DEBUG = True/s/True/False/' trustpoint/trustpoint/settings.py
 
 # Sets DOCKER_CONTAINER = True
 RUN sed -i '/DOCKER_CONTAINER = False/s/False/True/' trustpoint/trustpoint/settings.py
-
-# Installing separately from its dependencies allows optimal layer caching
-RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev
 
 # Place executables in the environment at the front of the path
 ENV PATH="/var/www/html/trustpoint/.venv/bin:$PATH"
