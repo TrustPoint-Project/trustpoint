@@ -8,7 +8,8 @@ from typing import TYPE_CHECKING
 
 from core.serializer import CredentialSerializer
 from cryptography import x509
-from cryptography.hazmat.primitives.asymmetric import rsa
+from cryptography.hazmat.primitives.asymmetric import rsa, ec
+from cryptography.hazmat.primitives.hashes import HashAlgorithm, SHA256
 from cryptography.x509.oid import NameOID
 
 from pki.models import IssuingCaModel
@@ -25,9 +26,10 @@ class CertificateGenerator:
     @staticmethod
     def create_root_ca(cn: str,
             validity_days: int = 7300,
-            private_key: None | rsa.RSAPrivateKey = None) -> tuple[x509.Certificate, PrivateKey]:
+            private_key: None | rsa.RSAPrivateKey | ec.EllipticCurvePrivateKey = None,
+            hash_algorithm: None | HashAlgorithm = None) -> tuple[x509.Certificate, PrivateKey]:
         """Creates a root CA certificate. (for testing and AutoGenPKI)"""
-        return CertificateGenerator.create_issuing_ca(None, cn, cn, private_key, validity_days)
+        return CertificateGenerator.create_issuing_ca(None, cn, cn, private_key, validity_days, hash_algorithm)
 
     @staticmethod
     def create_issuing_ca(
@@ -35,7 +37,8 @@ class CertificateGenerator:
             issuer_cn: str,
             subject_cn: str,
             private_key: None | PrivateKey = None,
-            validity_days: int = 3650
+            validity_days: int = 3650,
+            hash_algorithm: None | HashAlgorithm = None
     ) -> tuple[x509.Certificate, PrivateKey]:
         """Creates an issuing CA certificate + key pair."""
         one_day = datetime.timedelta(1, 0, 0)
@@ -48,6 +51,9 @@ class CertificateGenerator:
             # If issuer private key is not provided, make self-signed (aka root CA)
             issuer_private_key = private_key
             issuer_cn = subject_cn
+
+        if hash_algorithm is None:
+            hash_algorithm = SHA256()
 
         public_key = private_key.public_key()
         builder = x509.CertificateBuilder()
@@ -70,7 +76,6 @@ class CertificateGenerator:
         builder = builder.add_extension(
             x509.AuthorityKeyIdentifier.from_issuer_public_key(issuer_private_key.public_key()), critical=False
         )
-        hash_algorithm = CryptographyUtils.get_hash_algorithm_for_private_key(issuer_private_key)
 
         certificate = builder.sign(
             private_key=issuer_private_key, algorithm=hash_algorithm,
