@@ -78,7 +78,6 @@
             <td>{{ device.get_pki_protocol_display }}</td>
             <td>{{ device.clm_button| safe}}</td>
             <td><a href="details/{{device.id}}/" class="btn btn-primary tp-table-btn w-100">Details</a></td>
-{#            <td><a href="configure/{{device.id}}/" class="btn btn-primary tp-table-btn w-100">Configure</a></td>#}
             <td>{{ device.revoke_button| safe}}</td>
           </tr>
           {% empty %}
@@ -93,10 +92,6 @@
     </div>
       <div class="card-footer d-flex justify-content-between tp-sticky-footer">
           <div class="m-1">
-            <!-- TODO: temporarily disabled as device deletion is not implemented -->
-            <button type="button" class="btn btn-danger tp-table-select-btn disabled" data-tp-url="delete">
-              {% trans "Delete selected" %}
-            </button>
           </div>
           <div class="m-1">
             <a class="btn btn-primary" href="{% url 'devices:add' %}">
@@ -105,6 +100,6 @@
           </div>
         </div>
     </div>
-</div>
+
 
 {% endblock content %}
