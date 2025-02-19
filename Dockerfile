@@ -9,6 +9,9 @@ ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
 
+# Set the uv cache directory to be in the project directory (owned by www-data user)
+ENV UV_CACHE_DIR=/var/www/html/trustpoint/.cache/uv
+
 # Make port 80 and 443 available to the world outside this container.
 # 80 will be redirected to 443 using TLS through the apache.
 EXPOSE 80 443
@@ -16,19 +19,17 @@ EXPOSE 80 443
 # Update apt repository and install required dependencies from apt
 RUN apt update -y && apt install -y sudo apt-utils apache2 apache2-utils gettext python3 libapache2-mod-wsgi-py3 sed git
 
-
-# Clone the git repository - main branch
-RUN git clone https://github.com/TrustPoint-Project/trustpoint.git /var/www/html/trustpoint/
-# If you want to use your current project instead of the current main branch, comment out the git clone and
-# uncomment the following:
-# COPY ./ /var/www/html/trustpoint/
+# Copy source from current local branch
+COPY ./ /var/www/html/trustpoint/
+# Alternatively, clone the git repository - main branch
+# For git, comment out the above COPY and uncomment the following line:
+#RUN git clone https://github.com/TrustPoint-Project/trustpoint.git /var/www/html/trustpoint/
 
 # Sets the current WORKDIR for the following commands
 WORKDIR /var/www/html/trustpoint/
 
 #RUN uv sync --frozen
-RUN --mount=type=cache,target=/root/.cache/uv \
-    --mount=type=bind,source=uv.lock,target=uv.lock \
+RUN --mount=type=bind,source=uv.lock,target=uv.lock \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --frozen --no-install-project
 
