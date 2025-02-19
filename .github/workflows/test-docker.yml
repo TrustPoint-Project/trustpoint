@@ -1,6 +1,10 @@
 name: Test docker compose build
 
-on: workflow_dispatch
+#on: workflow_dispatch
+
+on:
+  push:
+    branches: [ "docker-compose-test-pipeline" ]
 
 jobs:
 
@@ -12,11 +16,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Run docker compose action
-#        https://github.com/adambirds/docker-compose-action
+        #        https://github.com/adambirds/docker-compose-action
         uses: adambirds/docker-compose-action@v1.5.0
         with:
           compose-file: "./docker-compose.yml"
-          up-flags: "--build"
-          down-flags: "--volumes"
-          test-container: "test-container"
-          test-command: "npm test"
+#          up-flags: "--build"
+#          down-flags: "--volumes"
+#          test-container: "test-container"
+#          test-command: "npm test"
