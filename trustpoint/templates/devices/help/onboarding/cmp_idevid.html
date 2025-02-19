@@ -1,6 +1,11 @@
 {% extends 'trustpoint/base.html' %}
 {% load i18n %}
+{% load static %}
 {% load crispy_forms_filters %}
+
+{% block head %}
+    <script src="{% static 'js/copy_clipboard.js' %}"></script>
+{% endblock head %}
 
 {% block content %}
 
@@ -20,19 +25,59 @@
                     <ul class="tp-kvp-list">
                         <li>
                             <div>{% trans 'Domain Credential Request URL' %}</div>
-                            <div>https://{{ host }}/.well-known/cmp/initialization/{{ device.domain }}</div>
+                            <div class="copy-container" style="position: relative;">
+                                <code class="command-text language-bash">
+                                    https://{{ host }}/.well-known/cmp/initialization/{{ device.domain }}
+                                </code>
+
+                                <button type="button" class="copy-button" data-tooltip="Copy to clipboard" aria-label="Copy to clipboard">
+                                    <svg class="icon icon-copy" width="40" height="40" fill="currentColor">
+                                        <use href="{% static 'img/icons.svg' %}#icon-copy"></use>
+                                    </svg>
+                                </button>
+                            </div>
                         </li>
                         <li>
                             <div>{% trans 'TLS-Client Certificate Request URL' %}</div>
-                            <div>https://{{ host }}/.well-known/cmp/certification/{{ device.domain }}/tls-client/</div>
+                            <div class="copy-container" style="position: relative;">
+                                <code class="command-text language-bash">
+                                    https://{{ host }}/.well-known/cmp/certification/{{ device.domain }}/tls-client/
+                                </code>
+
+                                <button type="button" class="copy-button" data-tooltip="Copy to clipboard" aria-label="Copy to clipboard">
+                                    <svg class="icon icon-copy" width="40" height="40" fill="currentColor">
+                                        <use href="{% static 'img/icons.svg' %}#icon-copy"></use>
+                                    </svg>
+                                </button>
+                            </div>
                         </li>
                         <li>
                             <div>{% trans 'TLS-Server Certificate Request URL' %}</div>
-                            <div>https://{{ host }}/.well-known/cmp/certification/{{ device.domain }}/tls-server/</div>
+                            <div class="copy-container" style="position: relative;">
+                                <code class="command-text language-bash">
+                                    https://{{ host }}/.well-known/cmp/certification/{{ device.domain }}/tls-server/
+                                </code>
+
+                                <button type="button" class="copy-button" data-tooltip="Copy to clipboard" aria-label="Copy to clipboard">
+                                    <svg class="icon icon-copy" width="40" height="40" fill="currentColor">
+                                        <use href="{% static 'img/icons.svg' %}#icon-copy"></use>
+                                    </svg>
+                                </button>
+                            </div>
                         </li>
                         <li>
                             <div>{% trans 'Shared Secret' %}</div>
-                            <div>{{ device.cmp_shared_secret }}</div>
+                            <div class="copy-container" style="position: relative;">
+                                <code class="command-text language-bash">
+                                    {{ device.cmp_shared_secret }}
+                                </code>
+
+                                <button type="button" class="copy-button" data-tooltip="Copy to clipboard" aria-label="Copy to clipboard">
+                                    <svg class="icon icon-copy" width="40" height="40" fill="currentColor">
+                                        <use href="{% static 'img/icons.svg' %}#icon-copy"></use>
+                                    </svg>
+                                </button>
+                            </div>
                         </li>
                         <li>
                             <div>{% trans 'Key Identifier (KID)' %}</div>
@@ -52,7 +97,17 @@
                     <ul class="tp-kvp-list">
                         <li>
                             <div>{% trans 'Domain Credential Key-Pair Generation' %}</div>
-                            <div>{{ domain_credential_key_gen_command }}</div>
+                            <div class="copy-container" style="position: relative;">
+                                <code class="command-text language-bash">
+                                    {{ domain_credential_key_gen_command }}
+                                </code>
+
+                                <button type="button" class="copy-button" data-tooltip="Copy to clipboard" aria-label="Copy to clipboard">
+                                    <svg class="icon icon-copy" width="40" height="40" fill="currentColor">
+                                        <use href="{% static 'img/icons.svg' %}#icon-copy"></use>
+                                    </svg>
+                                </button>
+                            </div>
                         </li>
                         <li>
                             <div>
@@ -63,15 +118,45 @@
                         </li>
                         <li>
                             <div>{% trans 'PKCS#12 IDevID Certificate Extraction' %}</div>
-                            <div>openssl pkcs12 -in idevid.p12 -clcerts -nokeys -out idevid.pem</div>
+                            <div class="copy-container" style="position: relative;">
+                                <code class="command-text language-bash">
+                                    openssl pkcs12 -in idevid.p12 -clcerts -nokeys -out idevid.pem
+                                </code>
+
+                                <button type="button" class="copy-button" data-tooltip="Copy to clipboard" aria-label="Copy to clipboard">
+                                    <svg class="icon icon-copy" width="40" height="40" fill="currentColor">
+                                        <use href="{% static 'img/icons.svg' %}#icon-copy"></use>
+                                    </svg>
+                                </button>
+                            </div>
                         </li>
                         <li>
                             <div>{% trans 'PKCS#12 IDevID Certificate Chain Extraction' %}</div>
-                            <div>openssl pkcs12 -in idevid.p12 -cacerts -nokeys -chain -out idevid_chain.pem</div>
+                            <div class="copy-container" style="position: relative;">
+                                <code class="command-text language-bash">
+                                    openssl pkcs12 -in idevid.p12 -cacerts -nokeys -chain -out idevid_chain.pem
+                                </code>
+
+                                <button type="button" class="copy-button" data-tooltip="Copy to clipboard" aria-label="Copy to clipboard">
+                                    <svg class="icon icon-copy" width="40" height="40" fill="currentColor">
+                                        <use href="{% static 'img/icons.svg' %}#icon-copy"></use>
+                                    </svg>
+                                </button>
+                            </div>
                         </li>
                         <li>
                             <div>{% trans 'PKCS#12 IDevID Private Key Extraction' %}</div>
-                            <div>openssl pkcs12 -in idevid.p12 -out idevid.key -nodes -nocerts</div>
+                            <div class="copy-container" style="position: relative;">
+                                <code class="command-text language-bash">
+                                    openssl pkcs12 -in idevid.p12 -out idevid.key -nodes -nocerts
+                                </code>
+
+                                <button type="button" class="copy-button" data-tooltip="Copy to clipboard" aria-label="Copy to clipboard">
+                                    <svg class="icon icon-copy" width="40" height="40" fill="currentColor">
+                                        <use href="{% static 'img/icons.svg' %}#icon-copy"></use>
+                                    </svg>
+                                </button>
+                            </div>
                         </li>
                         <li>
                             <div>Remarks</div>
@@ -85,19 +170,27 @@
                             <h2 class="mt-5">{% trans 'Domain Credential Onboarding' %}</h2>
                             <hr>
                             <div>{% trans 'OpenSSL Command' %}</div>
-                            <div>
-                                openssl cmp \<br>
-                                -cmd ir \<br>
-                                -implicit_confirm \<br>
-                                -server https://{{ host }}/.well-known/cmp/initialization/{{ device.domain }}/ \<br>
-                                -tls_used \<br>
-                                -cert idevid.pem \<br>
-                                -key idevid.key \<br>
-                                -extracerts idevid_chain.pem \<br>
-                                -subject "/CN=Trustpoint Domain Credential" \<br>
-                                -newkey domain_credential_key.pem \<br>
-                                -certout domain_credential_cert.pem \<br>
-                                -chainout domain_credential_chain.pem
+                            <div class="copy-container" style="position: relative;">
+                                <code class="command-text language-bash">
+                                    openssl cmp \<br>
+                                    -cmd ir \<br>
+                                    -implicit_confirm \<br>
+                                    -server https://{{ host }}/.well-known/cmp/initialization/{{ device.domain }}/ \<br>
+                                    -tls_used \<br>
+                                    -cert idevid.pem \<br>
+                                    -key idevid.key \<br>
+                                    -extracerts idevid_chain.pem \<br>
+                                    -subject "/CN=Trustpoint Domain Credential" \<br>
+                                    -newkey domain_credential_key.pem \<br>
+                                    -certout domain_credential_cert.pem \<br>
+                                    -chainout domain_credential_chain.pem
+                                </code>
+
+                                <button type="button" class="copy-button" data-tooltip="Copy to clipboard" aria-label="Copy to clipboard">
+                                    <svg class="icon icon-copy" width="40" height="40" fill="currentColor">
+                                        <use href="{% static 'img/icons.svg' %}#icon-copy"></use>
+                                    </svg>
+                                </button>
                             </div>
                         </li>
                     </ul>
@@ -108,26 +201,44 @@
                             <h3 class="mt-5">{% trans 'Credential Key-Pair Generation' %}</h3>
                             <hr>
                             <div>{% trans 'OpenSSL Command' %}</div>
-                            <div>{{ key_gen_command }}</div>
+                            <div class="copy-container" style="position: relative;">
+                                <code class="command-text language-bash">
+                                    {{ key_gen_command }}
+                                </code>
+
+                                <button type="button" class="copy-button" data-tooltip="Copy to clipboard" aria-label="Copy to clipboard">
+                                    <svg class="icon icon-copy" width="40" height="40" fill="currentColor">
+                                        <use href="{% static 'img/icons.svg' %}#icon-copy"></use>
+                                    </svg>
+                                </button>
+                            </div>
                         </li>
 
                         <li>
                             <h2 class="mt-5">{% trans 'TLS-Client Certificate' %}</h2>
                             <hr>
                             <div>{% trans 'OpenSSL Command' %}</div>
-                            <div>
-                                openssl cmp \<br>
-                                -cmd cr \<br>
-                                -implicit_confirm \<br>
-                                -server https://{{ host }}/.well-known/cmp/certification/{{ device.domain }}/tls-client/ \<br>
-                                -tls_used \<br>
-                                -cert domain_credential_cert.pem \<br>
-                                -key domain_credential_key.pem \<br>
-                                -subject "/CN={{ tls_client_cn }}" \<br>
-                                -days 10 \<br>
-                                -newkey key.pem \<br>
-                                -certout cert.pem \<br>
-                                -chainout chain.pem
+                            <div class="copy-container" style="position: relative;">
+                                <code class="command-text language-bash">
+                                    openssl cmp \<br>
+                                    -cmd cr \<br>
+                                    -implicit_confirm \<br>
+                                    -server https://{{ host }}/.well-known/cmp/certification/{{ device.domain }}/tls-client/ \<br>
+                                    -tls_used \<br>
+                                    -cert domain_credential_cert.pem \<br>
+                                    -key domain_credential_key.pem \<br>
+                                    -subject "/CN={{ tls_client_cn }}" \<br>
+                                    -days 10 \<br>
+                                    -newkey key.pem \<br>
+                                    -certout cert.pem \<br>
+                                    -chainout chain.pem
+                                </code>
+
+                                <button type="button" class="copy-button" data-tooltip="Copy to clipboard" aria-label="Copy to clipboard">
+                                    <svg class="icon icon-copy" width="40" height="40" fill="currentColor">
+                                        <use href="{% static 'img/icons.svg' %}#icon-copy"></use>
+                                    </svg>
+                                </button>
                             </div>
                         </li>
                         <li>
@@ -146,20 +257,28 @@
                             <h2 class="mt-5">{% trans 'TLS-Server Certificate' %}</h2>
                             <hr>
                             <div>{% trans 'OpenSSL Command' %}</div>
-                            <div>
-                                openssl cmp \<br>
-                                -cmd cr \<br>
-                                -implicit_confirm \<br>
-                                -server https://{{ host }}/.well-known/cmp/certification/{{ device.domain }}/tls-server/ \<br>
-                                -tls_used \<br>
-                                -cert domain_credential_cert.pem \<br>
-                                -key domain_credential_key.pem \<br>
-                                -subject "/CN={{ tls_server_cn }}" \<br>
-                                -days 10 \<br>
-                                -sans "critical 127.0.0.1 ::1 localhost" \<br>
-                                -newkey key.pem \<br>
-                                -certout cert.pem \<br>
-                                -chainout chain.pem
+                            <div class="copy-container" style="position: relative;">
+                                <code class="command-text language-bash">
+                                    openssl cmp \<br>
+                                    -cmd cr \<br>
+                                    -implicit_confirm \<br>
+                                    -server https://{{ host }}/.well-known/cmp/certification/{{ device.domain }}/tls-server/ \<br>
+                                    -tls_used \<br>
+                                    -cert domain_credential_cert.pem \<br>
+                                    -key domain_credential_key.pem \<br>
+                                    -subject "/CN={{ tls_server_cn }}" \<br>
+                                    -days 10 \<br>
+                                    -sans "critical 127.0.0.1 ::1 localhost" \<br>
+                                    -newkey key.pem \<br>
+                                    -certout cert.pem \<br>
+                                    -chainout chain.pem
+                                </code>
+
+                                <button type="button" class="copy-button" data-tooltip="Copy to clipboard" aria-label="Copy to clipboard">
+                                    <svg class="icon icon-copy" width="40" height="40" fill="currentColor">
+                                        <use href="{% static 'img/icons.svg' %}#icon-copy"></use>
+                                    </svg>
+                                </button>
                             </div>
                         </li>
                         <li>
