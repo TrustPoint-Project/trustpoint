@@ -1,4 +1,4 @@
-FROM python:3.12-slim-bookworm
+FROM debian:bookworm-slim
 COPY --from=ghcr.io/astral-sh/uv:0.6.1 /uv /uvx /bin/
 
 ENV PYTHONUNBUFFERED=1
@@ -13,7 +13,7 @@ ENV UV_FROZEN=1
 EXPOSE 80 443
 
 # Update apt repository and install required dependencies from apt
-RUN apt update -y && apt install -y sudo apt-utils apache2 apache2-utils gettext libapache2-mod-wsgi-py3 sed
+RUN apt update -y && apt upgrade -y && apt install -y sudo apt-utils apache2 apache2-utils gettext libapache2-mod-wsgi-py3 sed
 
 # Sets the current WORKDIR for the following commands
 WORKDIR /var/www/html/trustpoint/
