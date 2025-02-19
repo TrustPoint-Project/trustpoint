@@ -108,12 +108,24 @@ class Command(BaseCommand):
                     if onboarding_protocol == DeviceModel.OnboardingProtocol.NO_ONBOARDING \
                     else DeviceModel.OnboardingStatus.PENDING
 
+                domain_credential_onboarding = False \
+                    if onboarding_protocol == DeviceModel.OnboardingProtocol.NO_ONBOARDING \
+                    else True
+
+                pki_protocol = DeviceModel.PkiProtocol.CMP_CLIENT_CERTIFICATE.value \
+                    if (onboarding_protocol == DeviceModel.OnboardingProtocol.CMP_IDEVID or
+                        onboarding_protocol == DeviceModel.OnboardingProtocol.CMP_SHARED_SECRET) \
+                    else random.choice([DeviceModel.PkiProtocol.MANUAL.value,
+                                        DeviceModel.PkiProtocol.CMP_SHARED_SECRET.value])
+
                 dev = DeviceModel(
                     unique_name=device_name,
                     serial_number=serial_number,
                     domain=domain,
                     onboarding_protocol=onboarding_protocol,
-                    onboarding_status=onboarding_status
+                    onboarding_status=onboarding_status,
+                    domain_credential_onboarding=domain_credential_onboarding,
+                    pki_protocol=pki_protocol
                 )
 
                 try:
