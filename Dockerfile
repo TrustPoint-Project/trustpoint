@@ -38,8 +38,6 @@ USER www-data
 RUN uv sync --python-preference only-system --python 3.11.2
 USER root
 
-#RUN chown -R www-data:www-data /var/www/html/trustpoint/.venv
-
 # Sets DEBUG = False in the Django settings
 RUN sed -i '/DEBUG = True/s/True/False/' trustpoint/trustpoint/settings.py
 
