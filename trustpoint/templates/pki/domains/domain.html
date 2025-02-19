@@ -23,7 +23,7 @@
                 Issuing CA Name
               </a>
             </th>
-            <th>Details</th>
+
             <th>Config</th>
             <th>Delete</th>
           </tr>
@@ -36,7 +36,7 @@
             </td>
             <td>{{ domain.unique_name }}</td>
             <td>{{ domain.issuing_ca.unique_name }}</td>
-            <td><a href="detail/{{domain.id}}/" class="btn btn-primary tp-table-btn">Details</a></td>
+
             <td><a href="config/{{domain.id}}/" class="btn btn-primary tp-table-btn">Config</a></td>
             <td><a href="delete/{{domain.id}}/" class="btn btn-danger tp-table-btn">Delete</a></td>
           </tr>
