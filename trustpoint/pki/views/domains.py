@@ -142,6 +142,7 @@ class DomainDetailView(DomainContextMixin, TpLoginRequiredMixin, DomainDevIdRegi
 
 
 class DomainCaBulkDeleteConfirmView(DomainContextMixin, TpLoginRequiredMixin, BulkDeleteView):
+    """View to confirm the deletion of multiple Domains."""
 
     model = DomainModel
     success_url = reverse_lazy('pki:domains')
@@ -149,28 +150,28 @@ class DomainCaBulkDeleteConfirmView(DomainContextMixin, TpLoginRequiredMixin, Bu
     template_name = 'pki/domains/confirm_delete.html'
     context_object_name = 'domains'
 
-    def form_valid(self, form):
+    def form_valid(self, form) -> HttpResponse:
+        """Attempt to delete domains if the form is valid."""
         queryset = self.get_queryset()
         deleted_count = queryset.count()
 
         try:
             response = super().form_valid(form)
-
-            messages.success(
-                self.request,
-                _('Successfully deleted {count} Domainss).').format(count=deleted_count)
-            )
-
-            return response
-
-        except ProtectedError as e:
+        except ProtectedError:
             messages.error(
                 self.request,
                 _(
-                    "Cannot delete the selected Domains(s) because they are referenced by other objects."
+                    'Cannot delete the selected Domains(s) because they are referenced by other objects.'
                 )
             )
             return HttpResponseRedirect(self.success_url)
+
+        messages.success(
+            self.request,
+            _('Successfully deleted {count} Domains.').format(count=deleted_count)
+        )
+
+        return response
 
 
 class DevIdRegistrationCreateView(DomainContextMixin, TpLoginRequiredMixin, FormView):
