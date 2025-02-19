@@ -1,6 +1,10 @@
 #!/bin/bash
 set -e  # Exit on error
 
+run_as_www_data() {
+  su -s /bin/bash www-data -c "$1"
+}
+
 # Wait for the database to be ready (only for PostgreSQL)
 if [ "$DATABASE_ENGINE" == "django.db.backends.postgresql" ]; then
   echo "Waiting for PostgreSQL database..."
@@ -10,19 +14,19 @@ if [ "$DATABASE_ENGINE" == "django.db.backends.postgresql" ]; then
   echo "PostgreSQL database is available!"
 fi
 
-# eset the database
+# Reset the database
 echo "Resetting the database..."
-uv run trustpoint/manage.py reset_db --no-user --force
+run_as_www_data "uv run trustpoint/manage.py reset_db --no-user --force"
 echo "Database reset."
 
 # Collect static files
 echo "Collecting static files..."
-uv run trustpoint/manage.py collectstatic --noinput
+run_as_www_data "uv run trustpoint/manage.py collectstatic --noinput"
 echo "Static files collected."
 
 # Compile messages (translations)
 echo "Compiling Messages..."
-uv run trustpoint/manage.py compilemessages -l de -l en
+run_as_www_data "uv run trustpoint/manage.py compilemessages -l de -l en"
 echo "Messages compiled."
 
 # Start Apache server
