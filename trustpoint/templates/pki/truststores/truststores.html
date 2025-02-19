@@ -54,7 +54,7 @@
                     </tr>
                 {% empty %}
                     <tr>
-                        <td colspan="6" class="middle">{% trans 'No Truststore has been added yet.' %}</td>
+                        <td colspan="7" class="middle">{% trans 'No Truststore has been added yet.' %}</td>
                     </tr>
                 {% endfor %}
                 </tbody>
@@ -64,7 +64,7 @@
         </div>
 
         <div class="card-footer d-flex justify-content-between tp-sticky-footer">
-            <div class="tp-card-btn-footer m-1">
+            <div class="tp-card-btn-footer">
                 <div class="tp-card-btn-footer m-1">
                     <button type="button" class="btn btn-danger tp-table-select-btn me-2"
                             data-tp-url="delete">{% trans 'Delete selected' %}</button>
