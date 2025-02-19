@@ -509,6 +509,10 @@ td {
     width: 15rem;
 }
 
+.card-footer .btn-half {
+    width: 7.5rem;
+}
+
 /* ----- General layout utility classes ----- */
 
 .tp-d-none {
@@ -713,6 +717,7 @@ pre {
 code {
     padding: 10px;
     tab-size: 4;
+    color: inherit;
 }
 
 .breathing-anim {

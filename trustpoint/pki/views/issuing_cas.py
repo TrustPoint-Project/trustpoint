@@ -98,6 +98,19 @@ class IssuingCaBulkDeleteConfirmView(IssuingCaContextMixin, TpLoginRequiredMixin
     template_name = 'pki/issuing_cas/confirm_delete.html'
     context_object_name = 'issuing_cas'
 
+    def form_valid(self, form):
+        queryset = self.get_queryset()
+        deleted_count = queryset.count()
+
+        response = super().form_valid(form)
+
+        messages.success(
+            self.request,
+            _('Successfully deleted {count} Issuing CA(s).').format(count=deleted_count)
+        )
+
+        return response
+
 
 class IssuingCaCrlGenerationView(IssuingCaContextMixin, TpLoginRequiredMixin, DetailView):
     """View to manually generate a CRL for an Issuing CA."""

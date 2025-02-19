@@ -23,7 +23,6 @@ from core.oid import (
 )
 from core.serializer import CertificateSerializer, PublicKeySerializer
 
-
 from pki.models.extension import (
     AttributeTypeAndValue,
     AuthorityInformationAccessExtension,
@@ -575,7 +574,6 @@ class CertificateModel(LoggerMixin, models.Model):
             elif isinstance(extension.value, x509.CertificatePolicies):
                 cert_model.certificate_policies_extension = CertificatePoliciesExtension.save_from_crypto_extensions(extension)
             elif isinstance(extension.value, x509.ExtendedKeyUsage):
-                from pki.models.extension import ExtendedKeyUsageExtension
                 cert_model.extended_key_usage_extension = ExtendedKeyUsageExtension.save_from_crypto_extensions(extension)
             elif isinstance(extension.value, x509.NameConstraints):
                 cert_model.name_constraints_extension = NameConstraintsExtension.save_from_crypto_extensions(extension)
@@ -609,10 +607,9 @@ class CertificateModel(LoggerMixin, models.Model):
                 cert_model.common_name = value
         cls._save_subject(cert_model, subject)
         cls._save_issuer(cert_model, issuer)
-
         cls._save_extensions(cert_model, certificate)
-        cert_model._save()  # noqa: SLF001
 
+        cert_model._save()  # noqa: SLF001
         return cert_model
 
     # ---------------------------------------------- Public save methods -----------------------------------------------
