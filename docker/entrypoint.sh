@@ -14,7 +14,7 @@ if [ "$DATABASE_ENGINE" == "django.db.backends.postgresql" ]; then
   echo "PostgreSQL database is available!"
 fi
 
-# eset the database
+# Reset the database
 echo "Resetting the database..."
 run_as_www_data "uv run trustpoint/manage.py reset_db --no-user --force"
 echo "Database reset."
