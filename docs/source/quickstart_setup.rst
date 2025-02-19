@@ -103,7 +103,7 @@ Step-by-Step Setup (Load from Dockerhub) ⬇️
 
 1. **Pull the Trustpoint and Postres Docker Images**
 
-   You can pull the pre-built docker images from the docker hub with following:
+   You can pull the pre-built docker images from Docker Hub with the following command:
 
    .. code-block:: bash
 
@@ -111,7 +111,7 @@ Step-by-Step Setup (Load from Dockerhub) ⬇️
 
 2. **Run the Trustpoint and Postgres Containers** 🚀
 
-   Once the images are pull, you can start trustpoint and prostgres containers with following command:
+   Once the images are pulled, you can start trustpoint and prostgres containers with following command:
 
    .. code-block:: bash
 
@@ -132,6 +132,10 @@ Step-by-Step Setup (Build container) 🔧
        cd trustpoint
 
    This command downloads the Trustpoint source code to your local machine and navigates into the project directory.
+
+   .. note::
+      The database connection between the containers uses default credentials for testing. THIS IS INSECURE.
+      It is highly encouraged to change the default credentials in the `docker-compose.yml` file before building the containers.
 
 2. **Build the Trustpoint and Postgres Docker Images**
 
@@ -157,15 +161,13 @@ Verify the Setup 🔍
 
 Once the containers are running, you can verify the setup:
 
-- **Web Interface**: Open `https://localhost` in your browser to access the Trustpoint interface.
-- **Default Credentials**: Use the following login information to access the Trustpoint interface:
+- **Web Interface**: Open `http://localhost` in your browser to access the Trustpoint setup wizard.
+- **TLS Connection**: As the first step of the wizard, a TLS server certificate is generated. After this, only HTTPS connections will be accepted.
 
-  - **Username**: `admin`
-  - **Password**: `testing321`
+.. note::
+   You may need to accept a self-signed certificate in your browser to proceed.
 
-  .. note::
-     You may need to accept a self-signed certificate in your browser to proceed.
-
+- **Set Credentials**: Be sure to choose a strong password for the admin user during the setup wizard.
 
 .. admonition:: 🥳 CONGRATULATIONS!
    :class: tip
@@ -175,7 +177,7 @@ Once the containers are running, you can verify the setup:
 Change the Current Admin User Password 🔑
 -----------------------------------------
 
-To secure your Trustpoint setup, it's important to change the default admin user password:
+To secure your Trustpoint setup, it may be important to change the default admin user password:
 
 - Go to https://localhost/admin
 - Click on the **Users** section in the Django admin dashboard.
