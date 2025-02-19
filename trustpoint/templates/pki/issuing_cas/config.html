@@ -11,35 +11,35 @@
             {% csrf_token %}
             <div class="card tp-card-centered">
                 <div class="card-body">
-                    <div class="tp-card-centered-content">
-                        <div class="card-body">
-                            <h3>{% trans "Domains" %}</h3>
-                            <hr class="hr-m">
-                            {% if issuing_ca.domain_set.all %} {# TODO #}
-                                {% for domain in issuing_ca.domain_set.all %}
-                                    <li class="tp-card-split">
-                                        {{ domain.unique_name }}
-                                        <div>
-                                            {#                                            <a href="{% url 'pki:domains-detail' domain.id %}" class="primary">#}
-                                            {#                                                {% trans "Details" %}#}
-                                            {#                                            </a>#}
-                                            |
-                                            {#                                            <a href="{% url 'pki:domains-config' domain.id %}" class="primary">#}
-                                            {#                                                {% trans "Config" %}#}
-                                            {#                                            </a>#}
-                                        </div>
-                                    </li>
-                                {% endfor %}
-                            {% else %}
-                                <div class="tp-kvp-list">
-                                    <div class="text-muted">
-                                        {% trans "No associated domains" %}
-                                    </div>
-                                </div>
-                            {% endif %}
-
-                        </div>
-                    </div>
+{#                    <div class="tp-card-centered-content">#}
+{#                        <div class="card-body">#}
+{#                            <h3>{% trans "Domains" %}</h3>#}
+{#                            <hr class="hr-m">#}
+{#                            {% if issuing_ca.domain_set.all %} {# TODO #}
+{#                                {% for domain in issuing_ca.domain_set.all %}#}
+{#                                    <li class="tp-card-split">#}
+{#                                        {{ domain.unique_name }}#}
+{#                                        <div>#}
+{#                                            <a href="{% url 'pki:domains-detail' domain.id %}" class="primary">#}
+{#                                                {% trans "Details" %}#}
+{#                                            </a>#}
+{#|#}
+{#                                            <a href="{% url 'pki:domains-config' domain.id %}" class="primary">#}
+{#                                                {% trans "Config" %}#}
+{#                                            </a>#}
+{#                                        </div>#}
+{#                                    </li>#}
+{#                                {% endfor %}#}
+{#                            {% else %}#}
+{#                                <div class="tp-kvp-list">#}
+{#                                    <div class="text-muted">#}
+{#                                        {% trans "No associated domains" %}#}
+{#                                    </div>#}
+{#                                </div>#}
+{#                            {% endif %}#}
+{##}
+{#                        </div>#}
+{#                    </div>#}
 
                     <div class="tp-card-centered-content">
                         <div class="card-body">
@@ -100,10 +100,10 @@
                                         {% endif %}
                                     {% endfor %}
                                 </div>
-                                <div>
-                                    <div>{% trans 'Certificates issued:' %}</div>
-                                    <div>-------------------- TODO --------------------</div>
-                                </div>
+{#                                <div>#}
+{#                                    <div>{% trans 'Certificates issued:' %}</div>#}
+{#                                    <div>-------------------- TODO --------------------</div>#}
+{#                                </div>#}
                             </div>
                         </div>
                     </div>
