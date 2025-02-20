@@ -42,7 +42,7 @@ jobs:
           path: reports/
 
       - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v5.0.6
         with:
 #          token: ${{ secrets.CODECOV_TOKEN }}
           files: reports/coverage.xml
