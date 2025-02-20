@@ -27,6 +27,7 @@ jobs:
           mkdir -p reports
           uv run pytest \
           --cov=trustpoint \
+          --cov-report=term-missing:skip-covered \
           --cov-report=xml \
           --cov-report=html \
           --html=reports/pytest-report.html \
