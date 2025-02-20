@@ -22,17 +22,16 @@ jobs:
         run: |
           echo "y" | uv run trustpoint/manage.py reset_db
 
-      - name: Run Pytest with Coverage
+      - name: Run Pytest with Coverage and move reports to reports folder
         run: |
           mkdir -p reports
           uv run pytest \
           --cov=trustpoint \
           --cov-report=xml \
-          --cov-report=html \
           --html=reports/pytest-report.html \
           --self-contained-html \
-          --junitxml=reports/pytest-report.xml \
-          trustpoint/ | tee reports/pytest-output.log
+          --junitxml=reports/junit-report.xml \
+          trustpoint/ | tee reports/output.log
           mv coverage.xml reports/coverage.xml
 
       - name: Upload Test Reports
@@ -50,7 +49,7 @@ jobs:
 
       - name: Fail Job if Tests Failed
         run: |
-          if grep -q "[1-9] warnings, [1-9] errors" reports/pytest-output.log; then
+          if grep -q "errors="[1-9]" failures="[1-9]" skipped="[1-9]"" reports/junit-report.xml; then
             echo "❌ Pytest failed! Failing job."
             exit 1
           fi
