@@ -34,10 +34,7 @@ jobs:
           trustpoint/ | tee reports/pytest-output.log
           mv coverage.xml reports/coverage.xml
 
-      - uses: test-summary/action@v2
-        with:
-          paths: "reports/junit-report.xml"
-          show: "all"
+      - uses: jeantessier/test-summary-action@v1
         if: always()
 
       - name: Upload Test Reports
