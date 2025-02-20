@@ -1,4 +1,4 @@
-The following elements are required to support the testing effort at all levels within the TrustPoint project:
+The following elements are required to support the testing effort at all levels within the Trustpoint project:
 
 #. Access to Development and Staging Environments:
     - A dedicated development environment for initial testing, debugging, and iterative fixes.
@@ -15,7 +15,7 @@ The following elements are required to support the testing effort at all levels 
     - A clear separation between testing and production data to ensure no overlap or accidental data modification.
 
 #. Secure Networking Configuration:
-    - A secure network environment for testing interactions between TrustPoint components, including domain validation and security protocol testing.
+    - A secure network environment for testing interactions between Trustpoint components, including domain validation and security protocol testing.
 
 #. Access to Backup/Recovery Processes:
     - Access to nightly backup and recovery tools for safeguarding test environment data.

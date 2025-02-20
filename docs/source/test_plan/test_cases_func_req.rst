@@ -86,7 +86,7 @@ This testcase is related to requirement `R_004`_.
 Test Idea
 """""""""
 
-To test the REST API for interacting with TrustPoint programmatically,
+To test the REST API for interacting with Trustpoint programmatically,
 we focus on verifying CRUD operations (Create, Read, Update, Delete) and additional actions like querying and filtering.
 We begin by validating that authorized API clients can authenticate successfully and perform each operation on digital identities.
 This includes creating a new identity,
@@ -114,7 +114,7 @@ This testcase is related to requirement `R_005`_.
 Test Idea
 """""""""
 
-This requirement states that we want to distribute TrustPoint in a fully-configured Docker container.
+This requirement states that we want to distribute Trustpoint in a fully-configured Docker container.
 The idea for testing would be to build the container,
 run it on a production system and then check all other requirements manually or build a test suite and check the requirements automatically.
 Since the code is the same, just executed in a Docker environment, we see no need to let those tests run automatically.
@@ -258,7 +258,7 @@ This testcase is related to requirement `R_009`_.
 Test Idea
 """""""""
 
-There is no High Availability Concept for TrustPoint yet,
+There is no High Availability Concept for Trustpoint yet,
 so that the test needs to be redesigned after we decided on which concept top use.
 For now, the test assumes a multi-server setup.
 

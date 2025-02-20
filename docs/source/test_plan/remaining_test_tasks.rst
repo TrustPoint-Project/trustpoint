@@ -3,7 +3,7 @@
    :widths: 60, 20, 15
 
    "Collect and finalize testing requirements (e.g., PKI workflows, certificate lifecycle scenarios).", "TM, PM, Client", "In Progress"
-   "Define and finalize acceptance criteria for TrustPoint’s features.", "TM, PM, Client", "Pending"
+   "Define and finalize acceptance criteria for Trustpoint’s features.", "TM, PM, Client", "Pending"
    "Configure and validate the test environments (development and staging).", "TM, Dev", "In Progress"
    "Develop unit tests using pytest for core functionalities (e.g., certificate issuance, renewal, and revocation).", "Dev", "In Progress"
    "Develop integration tests using behave (Python Cucumber framework) for end-to-end workflows.", "TM, Dev", "Pending"

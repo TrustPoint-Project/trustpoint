@@ -1,4 +1,4 @@
-The following consolidated deliverable will be provided at the conclusion of the TrustPoint testing process:
+The following consolidated deliverable will be provided at the conclusion of the Trustpoint testing process:
 
 *Comprehensive Test Report:*
 
