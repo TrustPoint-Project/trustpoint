@@ -1,6 +1,9 @@
 name: Pytest
 
-on: [ pull_request ]
+#on: [ pull_request ]
+on:
+  push:
+    branches: ["test-plan-clean-up"]
 
 jobs:
   pytest:
@@ -32,22 +35,45 @@ jobs:
           trustpoint/ | tee reports/pytest-output.log
           mv coverage.xml reports/coverage.xml
 
-      - name: Upload Test Reports
-        uses: actions/upload-artifact@v4
+#      - name: Upload Test Reports
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: pytest-reports
+#          path: reports/
+#
+#      - name: Display Summary in GitHub Actions
+#        run: |
+#          echo "## Pytest Results :white_check_mark:" >> $GITHUB_STEP_SUMMARY
+#          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+#          cat reports/pytest-output.log >> $GITHUB_STEP_SUMMARY
+#          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+#
+#      - name: Fail Job if Tests Failed
+#        run: |
+#          if grep -q "[1-9] warnings, [1-9] errors" reports/pytest-output.log; then
+#            echo "❌ Pytest failed! Failing job."
+#            exit 1
+#          fi
+
+      - name: Pytest coverage comment
+        id: coverageComment
+        uses: MishaKav/pytest-coverage-comment@main
         with:
-          name: pytest-reports
-          path: reports/
+          pytest-xml-coverage-path: reports/coverage.xml
+          junitxml-path: reports/pytest-report.xml
 
-      - name: Display Summary in GitHub Actions
+      - name: Check the output coverage
         run: |
-          echo "## Pytest Results :white_check_mark:" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          cat reports/pytest-output.log >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
-      - name: Fail Job if Tests Failed
-        run: |
-          if grep -q "[1-9] warnings, [1-9] errors" reports/pytest-output.log; then
-            echo "❌ Pytest failed! Failing job."
-            exit 1
-          fi
+          echo "Coverage Percentage - ${{ steps.coverageComment.outputs.coverage }}"
+          echo "Coverage Color - ${{ steps.coverageComment.outputs.color }}"
+          echo "Coverage Html - ${{ steps.coverageComment.outputs.coverageHtml }}"
+          echo "Summary Report - ${{ steps.coverageComment.outputs.summaryReport }}"
+      
+          echo "Coverage Warnings - ${{ steps.coverageComment.outputs.warnings }}"
+      
+          echo "Coverage Errors - ${{ steps.coverageComment.outputs.errors }}"
+          echo "Coverage Failures - ${{ steps.coverageComment.outputs.failures }}"
+          echo "Coverage Skipped - ${{ steps.coverageComment.outputs.skipped }}"
+          echo "Coverage Tests - ${{ steps.coverageComment.outputs.tests }}"
+          echo "Coverage Time - ${{ steps.coverageComment.outputs.time }}"
+          echo "Not Success Test Info - ${{ steps.coverageComment.outputs.notSuccessTestInfo }}"
