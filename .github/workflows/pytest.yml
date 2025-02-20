@@ -42,7 +42,7 @@ jobs:
 
       - name: Display Summary in GitHub Actions
         run: |
-#          echo "## Pytest Results" >> $GITHUB_STEP_SUMMARY
+          echo "## Pytest Results" >> $GITHUB_STEP_SUMMARY
 #          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
           cat reports/pytest-report.html >> $GITHUB_STEP_SUMMARY
 #          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
