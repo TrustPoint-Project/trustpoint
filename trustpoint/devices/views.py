@@ -944,4 +944,6 @@ class OnboardingIdevidRegistrationHelpView(DeviceContextMixin, TpLoginRequiredMi
         number_of_issued_device_certificates = 0
         context['tls_client_cn'] = f'Trustpoint-TLS-Client-Credential-{number_of_issued_device_certificates}'
         context['tls_server_cn'] = f'Trustpoint-TLS-Server-Credential-{number_of_issued_device_certificates}'
+        context['public_key_info'] = devid_registration.domain.public_key_info
+        context['domain'] = devid_registration.domain
         return context
