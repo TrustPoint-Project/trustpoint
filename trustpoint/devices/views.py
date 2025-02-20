@@ -6,6 +6,8 @@ import datetime
 import io
 from typing import TYPE_CHECKING, cast
 
+from cryptography.hazmat.primitives import serialization
+
 from core.file_builder.enum import ArchiveFormat
 from core.serializer import CredentialSerializer
 from core.validator.field import UniqueNameValidator
@@ -239,6 +241,8 @@ class OnboardingCmpSharedSecretHelpView(DeviceContextMixin, TpLoginRequiredMixin
         context['host'] = self.request.META.get('REMOTE_ADDR') + ':' + self.request.META.get('SERVER_PORT')
         context['domain_credential_key_gen_command'] = domain_credential_key_gen_command
         context['key_gen_command'] = key_gen_command
+        context['issuing_ca_pem'] = device.domain.issuing_ca.credential.get_certificate().public_bytes(
+            encoding=serialization.Encoding.PEM).decode()
         number_of_issued_device_certificates = len(IssuedCredentialModel.objects.filter(device=device))
         context['tls_client_cn'] = f'Trustpoint-TLS-Client-Credential-{number_of_issued_device_certificates}'
         context['tls_server_cn'] = f'Trustpoint-TLS-Server-Credential-{number_of_issued_device_certificates}'
@@ -270,6 +274,8 @@ class OnboardingCmpIdevidHelpView(DeviceContextMixin, TpLoginRequiredMixin, Deta
         context['host'] = self.request.META.get('REMOTE_ADDR') + ':' + self.request.META.get('SERVER_PORT')
         context['domain_credential_key_gen_command'] = domain_credential_key_gen_command
         context['key_gen_command'] = key_gen_command
+        context['issuing_ca_pem'] = device.domain.issuing_ca.credential.get_certificate().public_bytes(
+            encoding=serialization.Encoding.PEM).decode()
         number_of_issued_device_certificates = len(IssuedCredentialModel.objects.filter(device=device))
         context['tls_client_cn'] = f'Trustpoint-TLS-Client-Credential-{number_of_issued_device_certificates}'
         context['tls_server_cn'] = f'Trustpoint-TLS-Server-Credential-{number_of_issued_device_certificates}'
@@ -941,6 +947,8 @@ class OnboardingIdevidRegistrationHelpView(DeviceContextMixin, TpLoginRequiredMi
         context['host'] = self.request.META.get('REMOTE_ADDR') + ':' + self.request.META.get('SERVER_PORT')
         context['domain_credential_key_gen_command'] = domain_credential_key_gen_command
         context['key_gen_command'] = key_gen_command
+        context['issuing_ca_pem'] = devid_registration.domain.issuing_ca.credential.get_certificate().public_bytes(
+            encoding=serialization.Encoding.PEM).decode()
         number_of_issued_device_certificates = 0
         context['tls_client_cn'] = f'Trustpoint-TLS-Client-Credential-{number_of_issued_device_certificates}'
         context['tls_server_cn'] = f'Trustpoint-TLS-Server-Credential-{number_of_issued_device_certificates}'
