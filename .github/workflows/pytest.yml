@@ -34,14 +34,7 @@ jobs:
           --junitxml=reports/junit-report.xml \
           trustpoint/
 
-      - name: Upload Test Reports
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: pytest-reports
-          path: reports/
-
-      - name: Display Summary in GitHub Actions
+      - name: Display Summary in GitHub Actions even if tests fail
         if: always()
         run: |
           echo "<details><summary>Pytest Report</summary>" >> $GITHUB_STEP_SUMMARY
@@ -50,6 +43,13 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "</details>" >> $GITHUB_STEP_SUMMARY
 
+      - name: Upload Test Reports even if tests fail
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: pytest-reports
+          path: reports/
+
       - name: Render the report to the PR when tests fail
         uses: marocchino/sticky-pull-request-comment@v2
         if: failure()
@@ -57,10 +57,3 @@ jobs:
           header: test-report
           recreate: true
           path: md-report.md
-
-#      - name: Fail Job if Tests Failed
-#        run: |
-#          if grep -q "errors="[1-9]" failures="[1-9]" skipped="[1-9]"" reports/junit-report.xml; then
-#            echo "❌ Pytest failed! Failing job."
-#            exit 1
-#          fi
