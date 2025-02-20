@@ -1,6 +1,9 @@
 name: Pytest
 
-on: [pull_request]
+#on: [pull_request]
+on:
+  push:
+    branches: ["test-plan-clean-up"]
 
 jobs:
   pytest:
@@ -41,8 +44,9 @@ jobs:
       - name: Upload Coverage to Codecov
         uses: codecov/codecov-action@v5
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
+#          token: ${{ secrets.CODECOV_TOKEN }}
           files: reports/coverage.xml
+          verbose: true
         continue-on-error: true
 
       - name: Display Summary in GitHub Actions
