@@ -164,6 +164,7 @@ class Command(BaseCommand):
                         print(f"Creating device '{dev.unique_name}' (ID {dev.pk}) in domain '{dev.domain}' with:")
                         print(f"  - Serial Number: {dev.serial_number}")
                         print(f"  - Onboarding Protocol: {dev.onboarding_protocol}")
+                        print(f"  - PKI Protocol: {dev.pki_protocol}")
                     else:
                         print(f"Device '{device_name}' was not saved correctly.")
                 except Exception as e:
