@@ -34,18 +34,22 @@ jobs:
           trustpoint/ | tee reports/pytest-output.log
           mv coverage.xml reports/coverage.xml
 
+      - uses: test-summary/action@v2
+        with:
+          paths: "reports/junit-report.xml"
+
       - name: Upload Test Reports
         uses: actions/upload-artifact@v4
         with:
           name: pytest-reports
           path: reports/
 
-      - name: Display Summary in GitHub Actions
-        run: |
-          echo "## Pytest Results" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          cat reports/pytest-output.log >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+#      - name: Display Summary in GitHub Actions
+#        run: |
+#          echo "## Pytest Results" >> $GITHUB_STEP_SUMMARY
+#          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+#          cat reports/pytest-output.log >> $GITHUB_STEP_SUMMARY
+#          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
 
       - name: Fail Job if Tests Failed
         run: |
