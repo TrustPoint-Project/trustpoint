@@ -34,6 +34,7 @@ import datetime
 from datetime import timezone
 from pyasn1_modules import rfc2459
 from cryptography.hazmat.primitives.serialization import load_pem_private_key
+import logging
 
 if TYPE_CHECKING:
     from django.http import HttpRequest
@@ -354,18 +355,18 @@ class CmpInitializationRequestView(
 
                         for general_name in san_asn1:
                             name_type = general_name.getName()
-                            value = str(general_name.getComponent()).encode()
+                            value = general_name.getComponent()
 
                             if name_type == 'iPAddress':
                                 try:
-                                    ipv4_addresses.append(ipaddress.IPv4Address(value))
+                                    ipv4_addresses.append(ipaddress.IPv4Address(value.asOctets()))
                                 except Exception:
                                     try:
-                                        ipv6_addresses.append(ipaddress.IPv6Address(value))
+                                        ipv6_addresses.append(ipaddress.IPv6Address(value.asOctets()))
                                     except Exception as exception:
                                         raise ValueError from exception
                             elif name_type == 'dNSName':
-                                dns_names.append(value.decode())
+                                dns_names.append(str(value))
                     else:
                         raise ValueError
 
@@ -739,10 +740,15 @@ class CmpInitializationRequestView(
 
             device_serial_number = cmp_signer_cert.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value
 
-            device_candidates = DeviceModel.objects.filter(serial_number=device_serial_number)
+            device_candidates = DeviceModel.objects.filter(
+                serial_number=device_serial_number,
+                domain=self.requested_domain
+            )
             if device_candidates:
                 for device_candidate in device_candidates:
 
+                    if not device_candidate.idevid_trust_store:
+                        continue
                     trust_store = device_candidate.idevid_trust_store.get_certificate_collection_serializer().as_crypto()
                     for cert in trust_store:
                         try:
@@ -1225,18 +1231,18 @@ class CmpCertificationRequestView(
 
                     for general_name in san_asn1:
                         name_type = general_name.getName()
-                        value = str(general_name.getComponent()).encode()
+                        value = general_name.getComponent()
 
                         if name_type == 'iPAddress':
                             try:
-                                ipv4_addresses.append(ipaddress.IPv4Address(value))
+                                ipv4_addresses.append(ipaddress.IPv4Address(value.asOctets()))
                             except Exception:
                                 try:
-                                    ipv6_addresses.append(ipaddress.IPv6Address(value))
+                                    ipv6_addresses.append(ipaddress.IPv6Address(value.asOctets()))
                                 except Exception as exception:
                                     raise ValueError from exception
                         elif name_type == 'dNSName':
-                            dns_names.append(value.decode())
+                            dns_names.append(str(value))
                 else:
                     raise ValueError
 
@@ -1521,18 +1527,19 @@ class CmpCertificationRequestView(
 
                     for general_name in san_asn1:
                         name_type = general_name.getName()
-                        value = str(general_name.getComponent()).encode()
+                        value = general_name.getComponent()
+
 
                         if name_type == 'iPAddress':
                             try:
-                                ipv4_addresses.append(ipaddress.IPv4Address(value))
+                                ipv4_addresses.append(ipaddress.IPv4Address(value.asOctets()))
                             except Exception:
                                 try:
-                                    ipv6_addresses.append(ipaddress.IPv6Address(value))
+                                    ipv6_addresses.append(ipaddress.IPv6Address(value.asOctets()))
                                 except Exception as exception:
                                     raise ValueError from exception
                         elif name_type == 'dNSName':
-                            dns_names.append(value.decode())
+                            dns_names.append(str(value))
                 else:
                     raise ValueError
 
