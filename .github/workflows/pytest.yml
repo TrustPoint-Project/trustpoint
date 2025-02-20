@@ -26,8 +26,6 @@ jobs:
         run: |
           mkdir -p reports
           uv run pytest \
-          --cov=trustpoint \
-          --cov-report=xml \
           --html=reports/pytest-report.html \
           --junitxml=reports/junit-report.xml \
           trustpoint/ | tee reports/pytest-output.log
