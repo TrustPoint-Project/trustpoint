@@ -22,66 +22,35 @@ jobs:
         run: |
           echo "y" | uv run trustpoint/manage.py reset_db
 
-#      - name: Run Pytest with Coverage
-#        run: |
-#          mkdir -p reports
-#          uv run pytest \
-#          --cov=trustpoint \
-#          --cov-report=term-missing:skip-covered \
-#          --cov-report=xml \
-#          --cov-report=html \
-#          --html=reports/pytest-report.html \
-#          --self-contained-html \
-#          --junitxml=reports/pytest-report.xml \
-#          trustpoint/ | tee reports/pytest-output.log
-#          mv coverage.xml reports/coverage.xml
-
-#      - name: Upload Test Reports
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: pytest-reports
-#          path: reports/
-#
-#      - name: Display Summary in GitHub Actions
-#        run: |
-#          echo "## Pytest Results :white_check_mark:" >> $GITHUB_STEP_SUMMARY
-#          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-#          cat reports/pytest-output.log >> $GITHUB_STEP_SUMMARY
-#          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-#
-#      - name: Fail Job if Tests Failed
-#        run: |
-#          if grep -q "[1-9] warnings, [1-9] errors" reports/pytest-output.log; then
-#            echo "❌ Pytest failed! Failing job."
-#            exit 1
-#          fi
-
       - name: Run Pytest with Coverage
         run: |
+          mkdir -p reports
           uv run pytest \
-          --junitxml=pytest.xml \
-          --cov-report=term-missing:skip-covered \
-          --cov=trustpoint trustpoint/ | tee pytest-coverage.txt
+          --cov=trustpoint \
+          --cov-report=xml \
+          --cov-report=html \
+          --html=reports/pytest-report.html \
+          --self-contained-html \
+          --junitxml=reports/pytest-report.xml \
+          trustpoint/ | tee reports/pytest-output.log
+          mv coverage.xml reports/coverage.xml
 
-      - name: Pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@main
+      - name: Upload Test Reports
+        uses: actions/upload-artifact@v4
         with:
-          pytest-coverage-path: ./pytest-coverage.txt
-          junitxml-path: ./pytest.xml
-          hide-report: true
+          name: pytest-reports
+          path: reports/
 
-      - name: Check the output coverage
+      - name: Display Summary in GitHub Actions
         run: |
-          echo "Coverage Percentage - ${{ steps.coverageComment.outputs.coverage }}"
-          echo "Coverage Color - ${{ steps.coverageComment.outputs.color }}"
-          echo "Coverage Html - ${{ steps.coverageComment.outputs.coverageHtml }}"
-          echo "Summary Report - ${{ steps.coverageComment.outputs.summaryReport }}"
-      
-          echo "Coverage Warnings - ${{ steps.coverageComment.outputs.warnings }}"
-      
-          echo "Coverage Errors - ${{ steps.coverageComment.outputs.errors }}"
-          echo "Coverage Failures - ${{ steps.coverageComment.outputs.failures }}"
-          echo "Coverage Skipped - ${{ steps.coverageComment.outputs.skipped }}"
-          echo "Coverage Tests - ${{ steps.coverageComment.outputs.tests }}"
-          echo "Coverage Time - ${{ steps.coverageComment.outputs.time }}"
-          echo "Not Success Test Info - ${{ steps.coverageComment.outputs.notSuccessTestInfo }}"
+          echo "## Pytest Results :white_check_mark:" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          cat reports/pytest-output.log >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+      - name: Fail Job if Tests Failed
+        run: |
+          if grep -q "[1-9] warnings, [1-9] errors" reports/pytest-output.log; then
+            echo "❌ Pytest failed! Failing job."
+            exit 1
+          fi
