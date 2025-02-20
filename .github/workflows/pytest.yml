@@ -22,19 +22,19 @@ jobs:
         run: |
           echo "y" | uv run trustpoint/manage.py reset_db
 
-      - name: Run Pytest with Coverage
-        run: |
-          mkdir -p reports
-          uv run pytest \
-          --cov=trustpoint \
-          --cov-report=term-missing:skip-covered \
-          --cov-report=xml \
-          --cov-report=html \
-          --html=reports/pytest-report.html \
-          --self-contained-html \
-          --junitxml=reports/pytest-report.xml \
-          trustpoint/ | tee reports/pytest-output.log
-          mv coverage.xml reports/coverage.xml
+#      - name: Run Pytest with Coverage
+#        run: |
+#          mkdir -p reports
+#          uv run pytest \
+#          --cov=trustpoint \
+#          --cov-report=term-missing:skip-covered \
+#          --cov-report=xml \
+#          --cov-report=html \
+#          --html=reports/pytest-report.html \
+#          --self-contained-html \
+#          --junitxml=reports/pytest-report.xml \
+#          trustpoint/ | tee reports/pytest-output.log
+#          mv coverage.xml reports/coverage.xml
 
 #      - name: Upload Test Reports
 #        uses: actions/upload-artifact@v4
@@ -56,12 +56,18 @@ jobs:
 #            exit 1
 #          fi
 
+      - name: Run Pytest with Coverage
+        run: |
+          uv run pytest \
+          --junitxml=pytest.xml \
+          --cov-report=term-missing:skip-covered \
+          --cov=trustpoint trustpoint/ | tee pytest-coverage.txt
+
       - name: Pytest coverage comment
-        id: coverageComment
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          pytest-xml-coverage-path: reports/coverage.xml
-          junitxml-path: reports/pytest-report.xml
+          pytest-coverage-path: ./pytest-coverage.txt
+          junitxml-path: ./pytest.xml
 
       - name: Check the output coverage
         run: |
