@@ -742,7 +742,7 @@ class CmpInitializationRequestView(
 
             device_candidates = DeviceModel.objects.filter(
                 serial_number=device_serial_number,
-                domain=self.device.domain
+                domain=self.requested_domain
             )
             if device_candidates:
                 for device_candidate in device_candidates:
