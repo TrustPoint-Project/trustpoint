@@ -47,7 +47,8 @@ jobs:
 #          token: ${{ secrets.CODECOV_TOKEN }}
           files: reports/coverage.xml
           verbose: true
-        continue-on-error: true
+          fail_ci_if_error: false
+#        continue-on-error: true
 
       - name: Display Summary in GitHub Actions
         run: |
