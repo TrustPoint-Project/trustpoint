@@ -1,9 +1,6 @@
 name: Pytest
 
-#on: [ pull_request ]
-on:
-  push:
-    branches: ["test-plan-clean-up"]
+on: [ pull_request ]
 
 jobs:
   pytest:
@@ -25,7 +22,7 @@ jobs:
         run: |
           echo "y" | uv run trustpoint/manage.py reset_db
 
-      - name: Run Pytest with Coverage and move reports to reports folder
+      - name: Run Pytest and create reports
         run: |
           mkdir -p reports
           uv run pytest \
@@ -40,6 +37,7 @@ jobs:
           name: pytest-reports
           path: reports/
 
+      # https://pypi.org/project/pytest-md-report/
       - name: Display Summary in GitHub Actions
         run: |
           echo "<details><summary>Pytest Report</summary>" >> $GITHUB_STEP_SUMMARY
