@@ -25,9 +25,9 @@ def step_given_issued_credential_exists(context: runner.Context) -> None:
     try:
         models_dict = create_mock_models()
         context.issued_credential_model = IssuedCredentialModel.objects.get(id=models_dict['issued_credential'].id)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         msg = f'Error: {e}'
-        raise AssertionError(msg)  # noqa: B904
+        raise AssertionError(msg) from e
     context.download_view_url = f'/devices/credential-download/browser/{context.issued_credential_model.id}/'
 
 
@@ -59,7 +59,6 @@ def step_then_an_otp_is_displayed(context: runner.Context) -> None:
     element = soup.find(id='otp-display')
     assert element is not None, 'otp-display not in response'
     otp = element.text.strip()
-    print(otp)
     assert len(otp) >= MIN_OTP_LENGTH, 'OTP string shorter than 9 characters'
     assert len(otp) <= MAX_OTP_LENGTH, 'OTP string longer than 32 characters'
 
@@ -81,9 +80,9 @@ def step_given_an_otp(context: runner.Context) -> None:
         step_given_issued_credential_exists(context)
         step_when_admin_visits_the_given_view(context)
         step_then_an_otp_is_displayed(context)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         msg = f'Error in Scenario prerequisites: {e}'
-        raise AssertionError(msg)  # noqa: B904
+        raise AssertionError(msg) from e
     assert context.otp is not None, 'Correct OTP not in context'
 
 
@@ -164,9 +163,9 @@ def step_given_the_user_is_on_the_page(context: runner.Context) -> None:
         step_given_an_otp(context)
         step_when_user_visits_endpoint(context)
         step_then_they_will_receive_page_to_select_the_format(context)
-    except Exception as e:  # noqa: BLE001
+    except Exception as e:
         msg = f'Error in Scenario prerequisites: {e}'
-        raise AssertionError(msg)  # noqa: B904
+        raise AssertionError(msg) from e
 
 
 @given('the download token is not yet expired')
@@ -184,7 +183,6 @@ def step_given_the_download_is_not_yet_expired(context: runner.Context) -> None:
         'Actual token from URL should be valid'
 
 
-
 @when('the user enters a password to encrypt the credential private key')
 def step_when_the_user_enters_a_pw_to_encrypt_the_cred_priv_key(context: runner.Context) -> None:
     """Ensures that the user enters a password to encrypt the credential private key.
@@ -196,7 +194,7 @@ def step_when_the_user_enters_a_pw_to_encrypt_the_cred_priv_key(context: runner.
 
 
 @when('selects a file format')
-def step_when_user_selects_a_file(context: runner.Context) -> None:  # noqa: ARG001
+def step_when_user_selects_a_file(context: runner.Context) -> None:
     """Ensures that the user selects a file format.
 
     Args:
@@ -214,7 +212,7 @@ def step_when_user_selects_a_file(context: runner.Context) -> None:  # noqa: ARG
 
 
 @then('the credential will be downloaded to their browser in the requested format')
-def step_then_the_cred_will_be_downloaded(context: runner.Context) -> None:  # noqa: ARG001
+def step_then_the_cred_will_be_downloaded(context: runner.Context) -> None:
     """Ensures that the credential will be downloaded to their browser in the requested format.
 
     Args:

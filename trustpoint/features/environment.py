@@ -28,23 +28,27 @@ original_given = given
 original_when = when
 original_then = then
 
-def patched_step(*args, **kwargs):
-    def decorator(func):
+def patched_step(*args: tuple, **kwargs: dict) -> Callable:
+    """Monkey-patched step decorator that wraps the step function to fail on any exception."""
+    def decorator(func: Callable) -> Callable:
         return original_step(*args, **kwargs)(fail_on_exception(func))
     return decorator
 
-def patched_given(*args, **kwargs):
-    def decorator(func):
+def patched_given(*args: tuple, **kwargs: dict) -> Callable:
+    """Monkey-patched given decorator that wraps the step function to fail on any exception."""
+    def decorator(func: Callable) -> Callable:
         return original_given(*args, **kwargs)(fail_on_exception(func))
     return decorator
 
-def patched_when(*args, **kwargs):
-    def decorator(func):
+def patched_when(*args: tuple, **kwargs: dict) -> Callable:
+    """Monkey-patched when decorator that wraps the step function to fail on any exception."""
+    def decorator(func: Callable) -> Callable:
         return original_when(*args, **kwargs)(fail_on_exception(func))
     return decorator
 
-def patched_then(*args, **kwargs):
-    def decorator(func):
+def patched_then(*args: tuple, **kwargs: dict) -> Callable:
+    """Monkey-patched then decorator that wraps the step function to fail on any exception."""
+    def decorator(func: Callable) -> Callable:
         return original_then(*args, **kwargs)(fail_on_exception(func))
     return decorator
 
