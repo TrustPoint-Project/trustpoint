@@ -15,6 +15,7 @@ def test_certificate_serializer_init_with_bytes(pem_encoded_cert):
         pem_encoded_cert (bytes): A valid PEM-encoded certificate for testing.
     """
     serializer = CertificateSerializer(pem_encoded_cert)
+    assert False
     assert isinstance(serializer.as_crypto(), x509.Certificate)
     assert serializer.as_pem() == pem_encoded_cert
 
