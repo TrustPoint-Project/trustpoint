@@ -31,7 +31,7 @@ jobs:
           --html=reports/pytest-report.html \
           --self-contained-html \
           --junitxml=reports/junit-report.xml \
-          trustpoint/ | tee reports/output.log
+          trustpoint/ | tee reports/pytest-output.log
           mv coverage.xml reports/coverage.xml
 
       - name: Upload Test Reports
