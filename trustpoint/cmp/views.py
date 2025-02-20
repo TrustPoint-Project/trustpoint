@@ -634,9 +634,7 @@ class CmpInitializationRequestView(
 
                 ip_header['protectionAlg'] = self.serialized_pyasn1_message['header']['protectionAlg']
 
-                ski = x509.SubjectKeyIdentifier.from_public_key(issuing_ca_cert.public_key())
-                ip_header['senderKID'] = rfc2459.KeyIdentifier(ski.digest).subtype(
-                    explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
+                ip_header['senderKID'] = self.serialized_pyasn1_message['header']['senderKID']
 
                 ip_header['transactionID'] = self.serialized_pyasn1_message['header']['transactionID']
 
@@ -930,7 +928,9 @@ class CmpInitializationRequestView(
 
             ip_header['protectionAlg'] = self.serialized_pyasn1_message['header']['protectionAlg']
 
-            ip_header['senderKID'] = self.serialized_pyasn1_message['header']['senderKID']
+            ski = x509.SubjectKeyIdentifier.from_public_key(issuing_ca_cert.public_key())
+            ip_header['senderKID'] = rfc2459.KeyIdentifier(ski.digest).subtype(
+                explicitTag=tag.Tag(tag.tagClassContext, tag.tagFormatSimple, 2))
 
             ip_header['transactionID'] = self.serialized_pyasn1_message['header']['transactionID']
 
