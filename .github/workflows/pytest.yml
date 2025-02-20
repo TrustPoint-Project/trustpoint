@@ -42,13 +42,13 @@ jobs:
           path: reports/
 
       - name: Upload Coverage to Codecov
-        uses: codecov/codecov-action@v5.0.6
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ""
         with:
-#          token: ${{ secrets.CODECOV_TOKEN }}
           files: reports/coverage.xml
           verbose: true
           fail_ci_if_error: false
-#        continue-on-error: true
 
       - name: Display Summary in GitHub Actions
         run: |
