@@ -1,9 +1,6 @@
 name: Codecov upload
 
-#on: [ pull_request ]
-on:
-  push:
-    branches: ["test-plan-clean-up"]
+on: [ pull_request ]
 
 jobs:
   codecov-upload:
