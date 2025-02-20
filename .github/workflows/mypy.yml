@@ -1,7 +1,9 @@
 name: MyPy
+
 on: [ pull_request ]
+
 jobs:
-  ruff:
+  mypy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
