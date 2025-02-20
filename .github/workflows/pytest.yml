@@ -19,9 +19,9 @@ jobs:
           enable-cache: true
           python-version: 3.12
 
-      - name: Run database migrations
-        run: |
-          echo "y" | uv run trustpoint/manage.py reset_db
+#      - name: Run database migrations
+#        run: |
+#          echo "y" | uv run trustpoint/manage.py reset_db
 
       - name: Run Pytest with Coverage
         run: |
