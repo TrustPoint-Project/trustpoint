@@ -24,7 +24,7 @@ from django.views.generic.detail import DetailView, SingleObjectMixin
 from django.views.generic.edit import CreateView, FormMixin, FormView
 from django.views.generic.list import ListView
 from core import oid
-from pki.models import CertificateModel, CredentialModel, DomainModel
+from pki.models import CertificateModel, CredentialModel, DevIdRegistration
 
 from devices.forms import (
     BrowserLoginForm,
@@ -914,3 +914,34 @@ class CertificateDownloadView(DeviceContextMixin, TpLoginRequiredMixin, DetailVi
     model: type[IssuedCredentialModel] = IssuedCredentialModel
     template_name = 'devices/credentials/certificate_download.html'
     context_object_name = 'issued_credential'
+
+
+class OnboardingIdevidRegistrationHelpView(DeviceContextMixin, TpLoginRequiredMixin, Detail404RedirectView[DevIdRegistration]):
+
+    model = DevIdRegistration
+    template_name = 'devices/help/onboarding/cmp_idevid_registration.html'
+    context_object_name = 'devid_registration'
+
+    def get_context_data(self, **kwargs) -> dict[str, Any]:
+        context = super().get_context_data()
+        devid_registration: DevIdRegistration = self.object
+
+        if devid_registration.domain.public_key_info.public_key_algorithm_oid == oid.PublicKeyAlgorithmOid.RSA:
+            domain_credential_key_gen_command = f'openssl genrsa -out domain_credential_key.pem {devid_registration.domain.public_key_info.key_size}'
+            key_gen_command = f'openssl genrsa -out key.pem {devid_registration.domain.public_key_info.key_size}'
+        elif devid_registration.domain.public_key_info.public_key_algorithm_oid == oid.PublicKeyAlgorithmOid.ECC:
+            domain_credential_key_gen_command = (
+                f'openssl ecparam -name {devid_registration.domain.public_key_info.named_curve.ossl_curve_name} '
+                f'-genkey -noout -out domain_credential_key.pem')
+            key_gen_command = (
+                f'openssl ecparam -name {devid_registration.domain.public_key_info.named_curve.ossl_curve_name} '
+                f'-genkey -noout -out key.pem')
+        else:
+            raise ValueError('Unsupported public key algorithm')
+        context['host'] = self.request.META.get('REMOTE_ADDR') + ':' + self.request.META.get('SERVER_PORT')
+        context['domain_credential_key_gen_command'] = domain_credential_key_gen_command
+        context['key_gen_command'] = key_gen_command
+        number_of_issued_device_certificates = 0
+        context['tls_client_cn'] = f'Trustpoint-TLS-Client-Credential-{number_of_issued_device_certificates}'
+        context['tls_server_cn'] = f'Trustpoint-TLS-Server-Credential-{number_of_issued_device_certificates}'
+        return context

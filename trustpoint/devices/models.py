@@ -118,7 +118,6 @@ class DeviceModel(models.Model):
         on_delete=models.DO_NOTHING)
 
     created_at = models.DateTimeField(verbose_name=_('Created'), auto_now_add=True)
-    updated_at = models.DateTimeField(verbose_name=_('Updated'), auto_now=True)
 
     @property
     def signature_suite(self) -> oid.SignatureSuite:
