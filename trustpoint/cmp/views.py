@@ -740,10 +740,15 @@ class CmpInitializationRequestView(
 
             device_serial_number = cmp_signer_cert.subject.get_attributes_for_oid(x509.NameOID.SERIAL_NUMBER)[0].value
 
-            device_candidates = DeviceModel.objects.filter(serial_number=device_serial_number)
+            device_candidates = DeviceModel.objects.filter(
+                serial_number=device_serial_number,
+                domain=self.device.domain
+            )
             if device_candidates:
                 for device_candidate in device_candidates:
 
+                    if not device_candidate.idevid_trust_store:
+                        continue
                     trust_store = device_candidate.idevid_trust_store.get_certificate_collection_serializer().as_crypto()
                     for cert in trust_store:
                         try:
