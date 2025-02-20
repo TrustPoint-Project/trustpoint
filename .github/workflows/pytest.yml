@@ -1,9 +1,6 @@
 name: Pytest
 
-#on: [ pull_request ]
-on:
-  push:
-    branch: ['test-plan-cleanup']
+on: [ pull_request ]
 
 jobs:
   pytest:
