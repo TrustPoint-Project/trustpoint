@@ -68,6 +68,7 @@ jobs:
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml
+          hide-report: true
 
       - name: Check the output coverage
         run: |
