@@ -3,7 +3,6 @@ from __future__ import annotations
 import datetime
 from typing import TYPE_CHECKING
 
-from core.oid import SignatureSuite
 from core.serializer import CredentialSerializer
 from core import oid
 
@@ -129,7 +128,7 @@ class LocalDomainCredentialIssuer(SaveCredentialToDbMixin):
 
         # TODO(AlexHx8472): Check matching public_key and signature suite.
 
-        hash_algorithm = SignatureSuite.from_certificate(
+        hash_algorithm = oid.SignatureSuite.from_certificate(
             self.domain.issuing_ca.credential.get_certificate()).algorithm_identifier.hash_algorithm.hash_algorithm()
         one_day = datetime.timedelta(1, 0, 0)
 
@@ -204,7 +203,7 @@ class LocalDomainCredentialIssuer(SaveCredentialToDbMixin):
 
         # TODO(AlexHx8472): Check matching public_key and signature suite.
 
-        hash_algorithm = SignatureSuite.from_certificate(
+        hash_algorithm = oid.SignatureSuite.from_certificate(
             self.domain.issuing_ca.credential.get_certificate()).algorithm_identifier.hash_algorithm.hash_algorithm()
         one_day = datetime.timedelta(1, 0, 0)
 
@@ -305,7 +304,7 @@ class LocalTlsClientCredentialIssuer(SaveCredentialToDbMixin):
 
         application_credential_private_key = KeyGenerator.generate_private_key(domain=self.domain)
         application_credential_public_key = application_credential_private_key.public_key_serializer.as_crypto()
-        hash_algorithm = SignatureSuite.from_certificate(
+        hash_algorithm = oid.SignatureSuite.from_certificate(
             self.domain.issuing_ca.credential.get_certificate()).algorithm_identifier.hash_algorithm.hash_algorithm()
         one_day = datetime.timedelta(1, 0, 0)
 
@@ -384,7 +383,7 @@ class LocalTlsClientCredentialIssuer(SaveCredentialToDbMixin):
             public_key: oid.PublicKey
     ) -> IssuedCredentialModel:
 
-        hash_algorithm = SignatureSuite.from_certificate(
+        hash_algorithm = oid.SignatureSuite.from_certificate(
             self.domain.issuing_ca.credential.get_certificate()).algorithm_identifier.hash_algorithm.hash_algorithm()
         one_day = datetime.timedelta(1, 0, 0)
 
@@ -500,7 +499,7 @@ class LocalTlsServerCredentialIssuer(SaveCredentialToDbMixin):
             validity_days: int
     ) -> IssuedCredentialModel:
         application_credential_private_key = KeyGenerator.generate_private_key(domain=self.domain)
-        hash_algorithm = SignatureSuite.from_certificate(
+        hash_algorithm = oid.SignatureSuite.from_certificate(
             self.domain.issuing_ca.credential.get_certificate()).algorithm_identifier.hash_algorithm.hash_algorithm()
         one_day = datetime.timedelta(1, 0, 0)
 
@@ -592,7 +591,7 @@ class LocalTlsServerCredentialIssuer(SaveCredentialToDbMixin):
             public_key: oid.PublicKey
     ) -> IssuedCredentialModel:
 
-        hash_algorithm = SignatureSuite.from_certificate(
+        hash_algorithm = oid.SignatureSuite.from_certificate(
             self.domain.issuing_ca.credential.get_certificate()).algorithm_identifier.hash_algorithm.hash_algorithm()
         one_day = datetime.timedelta(1, 0, 0)
 
