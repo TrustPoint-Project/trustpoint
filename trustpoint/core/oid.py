@@ -6,7 +6,7 @@ import enum
 from typing import TYPE_CHECKING, cast
 
 from cryptography.hazmat.primitives import hashes
-from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed448, ed25519, rsa, x448, x25519
+from cryptography.hazmat.primitives.asymmetric import dsa, ec, ed448, ed25519, rsa, x448, x25519, dh
 
 if TYPE_CHECKING:
     from typing import Self, Union, Optional
@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from cryptography import x509
 
     PublicKey = Union[
+        dh.DHPublicKey,
         dsa.DSAPublicKey,
         rsa.RSAPublicKey,
         ec.EllipticCurvePublicKey,
@@ -23,6 +24,7 @@ if TYPE_CHECKING:
         x448.X448PublicKey,
     ]
     PrivateKey = Union[
+        dh.DHPrivateKey,
         dsa.DSAPrivateKey,
         rsa.RSAPrivateKey,
         ec.EllipticCurvePrivateKey,
@@ -477,6 +479,7 @@ class AlgorithmIdentifier(enum.Enum):
     verbose_name: str
     public_key_algo_oid: PublicKeyAlgorithmOid
     padding_scheme: RsaPaddingScheme
+    hash_algorithm: HashAlgorithm
 
     RSA_MD5 = (
         '1.2.840.113549.1.1.4',
